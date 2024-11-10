@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body{
-  --main:#E13939;
+  --main:#A093F7;
   --main-fade:rgba(255,91,91,1);
   --dark:#02000D;
   --dark1:#06131C;
@@ -37,7 +37,7 @@ body{background:var(--dark);font-family:'productsans';}
 .heading-xl{@apply heading text-[52px] leading-[47px]}
 .normal-heading{@apply text-white text-[24px] font-bold}
 .para{@apply text-white text-[24px] font-bold}
-.input{@apply input-field justify-center input-field border items-start px-[25px] py-[21px] mt-2.5 w-full whitespace-nowrap text-white rounded-[20px] bg-dark1 max-w-full}
+.input{@apply  justify-center  border-gray-600 border items-start px-[25px] py-[21px] mt-2.5 w-full whitespace-nowrap text-white rounded-[20px] bg-black max-w-full}
 .box{@apply rounded-[30px] bg-dark1}
 }
 .disabled{opacity:0.5;pointer-events:none;cursor:none;}

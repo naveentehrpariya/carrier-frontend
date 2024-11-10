@@ -1,13 +1,12 @@
 import React, { useContext, useState } from "react";
 import Button from "../common/Button";
 import { Link, useNavigate } from "react-router-dom";
-import Layout from "../../layout/Layout";
+import loginbg from "../../img/login-bg.png";
 import Endpoints from "../../api/Endpoints";
 import { UserContext } from "../../context/AuthProvider";
 import toast from "react-hot-toast";
 import CheckLogin from "./CheckLogin";
 import Logotext from "../common/Logotext";
-import ForgotPasswors from "./ForgotPassword";
 
 export default function Login() {
   
@@ -15,7 +14,8 @@ export default function Login() {
     function LoginForm(){
 
     const inputFields = [
-      { type:"text", name :"email", label: "Email" },
+      { type:"text", name :"email", label: "Corporate ID" },
+      { type:"text", name :"password", label: "Username/Email" },
       { type:"password", name :"password", label: "Password" },
     ];
       
@@ -63,39 +63,45 @@ export default function Login() {
     return (
       <>
         {inputFields.map((field, index) => (
+          <>
+          <label className="mt-4 block">{field.label}</label>
           <input required key={index} name={field.name} onChange={handleinput} type={field.type} placeholder={field.label} className="input" />
+          </>
         ))}
-        <div className="m-auto table mt-8">
-          <Button loading={loading} onclick={handleLogin} type={"button"} text='Login Now' classes={`m-auto `}  />
+
+        <div className="mt-8">
+          <Link to='/home' className="btn md mt-6 px-[50px] main-btn text-black font-bold">Submit</Link>
         </div>
+        
+        {/* <button className="btn md mt-6 px-[50px] main-btn text-black font-bold">Submit</button> */}
+        {/* <div className="mt-8">
+          <Button loading={loading} onclick={handleLogin} type={"button"} text='Login Now' classes={`m-auto `}  />
+        </div> */}
       </>
     );
     }
 
     return (
-      <Layout>
-        <CheckLogin takeaction={true}  redirect={true} />
-        <div className="h-[100vh] flex justify-center items-center" >
-          <div className="w-full flex flex-col px-5 text-base leading-4 max-w-[590px] text-slate-500">
-          <header>
-              <Link to="/" className="self-center table  m-auto text-3xl font-mono font-bold text-center text-red-500 drunk lowercase">
+      <>
+        {/* <CheckLogin takeaction={true}  redirect={true} /> */}
+        <div className="h-[100vh] overflow-hidden flex justify-center items-center" >
+          <div className="side-image w-full max-w-[50%] ">
+            <img src={loginbg} className="img-fluid block m-3 rounded-[30px]" alt="loginimage" />
+          </div>
+          <div className="w-full max-w-[50%]">
+            <div className="w-full px-5   text-slate-500">
+              <Link to="/" className="self-center  text-3xl font-mono font-bold  text-red-500 drunk lowercase">
                 <Logotext />
               </Link>
-              <h2 className="font-bold mb-1 text-center font-mono text-[20px] mt-6   text-white">Login into runstream</h2>
-              <div className="flex justify-center py-3">
-              <ForgotPasswors />
-              </div>
-          </header>
-          <main className="mt-8" >
-              <LoginForm />
-          </main> 
-          <footer>
-              <Link to="/signup" className="text-center mt-4 text-normal table m-auto  text-white">
-                Create an account?
-              </Link>
-          </footer>
+              <h2 className="font-bold mb-1 text-[24px] mt-6   text-white">Welcome to Capital Logistics </h2>
+              <p className="text-gray-500">Enter your credentials to login to your account </p>
+              <div className='bg-[#D278D5] h-[3px] w-[100px] mt-4'></div>
+              <main className="mt-8" >
+                <LoginForm />
+              </main> 
+            </div>
           </div>
         </div>
-      </Layout>
+      </>
     );
 }

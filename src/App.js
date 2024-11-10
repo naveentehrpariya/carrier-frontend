@@ -4,6 +4,11 @@ import { Toaster } from 'react-hot-toast';
 import UserContextProvider from './context/AuthProvider';
 import Error404 from './404';
 import Dashboardindex from './pages/dashboard';
+import Overview from './pages/dashboard/Overview';
+import Login from './pages/auth/LogIn';
+import Orders from './pages/dashboard/Orders';
+import Customers from './pages/dashboard/Customers';
+import Carriers from './pages/dashboard/Carriers';
 
 
 function App() {
@@ -13,7 +18,11 @@ function App() {
               <Router>
                 <div className="routes">
                   <Routes>
-                    <Route path="/" element={<Dashboardindex /> } />
+                    <Route path="/login" element={<Login /> } />
+                    <Route path="/home" element={<Overview /> } />
+                    <Route path="/orders" element={<Orders /> } />
+                    <Route path="/customers" element={<Customers /> } />
+                    <Route path="/carriers" element={<Carriers /> } />
                     <Route path="*" element={<Error404 />} /> 
                   </Routes>
                 </div>
