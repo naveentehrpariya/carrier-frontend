@@ -69,7 +69,7 @@ export default function AuthLayout({children, heading}) {
             </div>
           </div>
         </main>
-        {/* <CheckLogin takeaction={true} /> */}
+        <CheckLogin takeaction={true} />
       </div>
     </>
   );

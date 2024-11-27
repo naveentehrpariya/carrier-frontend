@@ -1,16 +1,15 @@
 import React, { useContext, useEffect, useState } from 'react'
-import Endpoints from '../../api/Endpoints';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../../context/AuthProvider';
+import Api from '../../api/Api';
 export default function CheckLogin({redirect, takeaction}) {
 
-  const {Errors, setIsAuthenticated, setUser} = useContext(UserContext);
+  const { Errors, setIsAuthenticated, setUser} = useContext(UserContext);
   const navigate = useNavigate();
 
   function check_login(e) {
-      const m = new Endpoints();
-      const resp = m.user_profile();
+      const resp = Api.get('/user/profile');
       resp.then((res) => {
         if(res.data.status){
           if(res.data.user && res.data.user.mailVerifiedAt === null){
@@ -32,9 +31,7 @@ export default function CheckLogin({redirect, takeaction}) {
         console.log("errors",err);
         if(takeaction){
           navigate('/login');
-        } else {
-          // navigate('/login');
-        }
+        } 
       });
   }
 
