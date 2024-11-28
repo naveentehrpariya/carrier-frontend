@@ -69,7 +69,7 @@ export default function Login() {
         ))}
 
         <div className="mt-2">
-        <button loading={loading} onClick={handleLogin} className="btn md mt-6 px-[50px] main-btn text-black font-bold">Submit</button>
+        <button  onClick={handleLogin} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
         </div>
         
         
