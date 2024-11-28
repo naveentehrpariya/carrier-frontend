@@ -8,7 +8,7 @@ import Overview from './pages/dashboard/Overview';
 import Login from './pages/auth/LogIn';
 import Orders from './pages/dashboard/Orders';
 import Customers from './pages/dashboard/Customers';
-import Carriers from './pages/dashboard/Carriers';
+import Carriers from './pages/dashboard/carrier/Carriers';
 
 
 function App() {

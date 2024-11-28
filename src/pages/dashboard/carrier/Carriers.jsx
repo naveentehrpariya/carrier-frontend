@@ -1,15 +1,14 @@
 import React from 'react'
-import AuthLayout from '../../layout/AuthLayout';
+import AuthLayout from '../../../layout/AuthLayout';
+import AddCarrier from './AddCarrier';
 export default function Carriers() {
   return (
       <AuthLayout> 
          <div className='flex justify-between items-center'>
             <h2 className='text-white text-2xl'>Carriers</h2>
+            <AddCarrier />
          </div>
-         
          <div className='recent-orders overflow-hidden mt-6 border border-gray-900 rounded-[30px]'>
-            <h2 className='text-white p-[20px] text-lg mb-4 border-b border-gray-900'>Carriers Listing</h2>
-
             <table className='w-full p-2' cellPadding={'20'}>
                <tr>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer ID</th>

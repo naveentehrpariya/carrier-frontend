@@ -27,27 +27,21 @@ export default function AuthLayout({children, heading}) {
       window.removeEventListener("resize", handleResize);
     };
   }, []);
-  
   const [toggle, setToggle] = React.useState(false);
 
   return (
     <>
       <Helmet>
          <meta charSet="utf-8" />
-         <title>{heading ? `${heading} | ` : '' } RunStream </title>
+         <title>{heading ? `${heading} | ` : '' } Capital Logistics </title>
          <link rel="canonical" href={window.location.href || "https://runstream.co"} />
       </Helmet>
-
       <div className="auth-wrap flex justify-between max-lg:flex-wrap">
-        
-
         <main className="main-wrap">
-          <header className="fixed top-6 lg:top-0  z-10 bg-dark border-b border-gray-900 px-6 md:px-7 py-4 xl:py-6 flex items-center w-full justify-between">
+          <header className="fixed top-6 lg:top-0 z-10 bg-dark border-b border-gray-900 px-6 md:px-7 py-4 xl:py-6 flex items-center w-full justify-between">
             <Logo /> 
             <div className="flex gap-5 items-center">
             <TbUserSquareRounded color="#fff" className='me-2' size={'2rem'} /> 
-            
-
               <button onClick={() => setToggle(!toggle)} className="sidebar-toggle text-base leading-6 whitespace-nowrap text-neutral-400">
                 <span className="" ></span>
                 <span className="my-2" ></span>
@@ -56,7 +50,7 @@ export default function AuthLayout({children, heading}) {
             </div>
             
           </header>
-          <div className="flex pt-[100px]">
+          <div className="flex ">
             <Sidebar logout={logout} trial={<>
               {user && user.trialStatus === "active" ? 
                 <div className="text-white justify-center mt-4 flex md:hidden items-center font-bold text-sm ">
@@ -64,7 +58,7 @@ export default function AuthLayout({children, heading}) {
                 </div>
               : ''}
             </>} toggle={toggle} />
-            <div className="content  p-6 md:p-8 w-full" >
+            <div className="content p-6 md:p-8  !pt-[110px] w-full" >
                 {children} 
             </div>
           </div>

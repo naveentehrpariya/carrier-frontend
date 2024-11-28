@@ -12,7 +12,7 @@ import { MdOutlineLogout } from "react-icons/md";
 
 export default function Sidebar() {
   return (
-    <div className='sticky top-0 p-8 bg-dark border-r max-h-[100vh] overflow-auto pb-22 w-full max-w-[300px] border-gray-900'>
+    <div className='sticky top-0 pt-[110px] p-8 bg-dark border-r max-h-[100vh] overflow-auto pb-22 w-full max-w-[300px] border-gray-900'>
       <h2 className='mb-3 text-sm uppercase text-gray-400'>Main Menu</h2>
       <ul>
         <li>
@@ -29,6 +29,22 @@ export default function Sidebar() {
         </li>
         <li>
           <Link className='text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/carriers'} ><TbTruckDelivery className='me-2' size={'1.4rem'} /> Carriers 
+         </Link>
+        </li>
+        <li>
+          <Link className='disabled text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/dashboard'} ><VscGraphLine className='me-2' size={'1.4rem'} /> Accounting 
+         </Link>
+        </li>
+        <li>
+          <Link className='disabled text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/dashboard'} ><FaUsers className='me-2' size={'1.4rem'} /> Staff 
+         </Link>
+        </li>
+        <li>
+          <Link className='disabled text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/dashboard'} ><VscGraphLine className='me-2' size={'1.4rem'} /> Accounting 
+         </Link>
+        </li>
+        <li>
+          <Link className='disabled text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/dashboard'} ><FaUsers className='me-2' size={'1.4rem'} /> Staff 
          </Link>
         </li>
         <li>
