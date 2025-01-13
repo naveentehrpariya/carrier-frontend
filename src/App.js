@@ -18,8 +18,6 @@ function App() {
               <Router>
                 <div className="routes">
                   <Routes>
-
-                    
                     <Route path="/login" element={<Login /> } />
                     <Route path="/" element={<Login /> } />
                     <Route path="/home" element={<Overview /> } />
