@@ -11,6 +11,14 @@ import { BiSupport } from "react-icons/bi";
 import { MdOutlineLogout } from "react-icons/md";
 
 export default function Sidebar() {
+
+
+  const logout = () => { 
+    localStorage && localStorage.removeItem("token");
+    window.location.href = "/login";
+  }
+
+
   return (
     <div className='sticky top-0 pt-[110px] p-8 bg-dark border-r max-h-[100vh] overflow-auto pb-22 w-full max-w-[300px] border-gray-900'>
       <h2 className='mb-3 text-sm uppercase text-gray-400'>Main Menu</h2>
@@ -20,11 +28,15 @@ export default function Sidebar() {
          </Link>
         </li>
         <li>
+          <Link className='text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/orders'} ><FiBox className='me-2' size={'1.4rem'} /> Orders 
+         </Link>
+        </li>
+        <li>
           <Link className='text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/customers'} ><TbUserSquareRounded className='me-2' size={'1.4rem'} /> Customers 
          </Link>
         </li>
         <li>
-          <Link className='text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/orders'} ><FiBox className='me-2' size={'1.4rem'} /> Orders 
+          <Link className='text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/drivers'} ><TbUserSquareRounded className='me-2' size={'1.4rem'} /> Drivers 
          </Link>
         </li>
         <li>
@@ -68,8 +80,8 @@ export default function Sidebar() {
           </Link>
         </li>
         <li>
-            <Link className='text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/login'} ><MdOutlineLogout className='me-2' size={'1.4rem'} /> Logout 
-          </Link>
+          <button className='text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' onClick={logout} ><MdOutlineLogout className='me-2' size={'1.4rem'} /> Logout 
+          </button>
         </li>
       </ul>
     </div>

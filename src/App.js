@@ -3,13 +3,13 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import UserContextProvider from './context/AuthProvider';
 import Error404 from './404';
-import Dashboardindex from './pages/dashboard';
 import Overview from './pages/dashboard/Overview';
 import Login from './pages/auth/LogIn';
-import Orders from './pages/dashboard/Orders';
-import Customers from './pages/dashboard/Customers';
 import Carriers from './pages/dashboard/carrier/Carriers';
-
+import Drivers from './pages/dashboard/driver/Drivers';
+import Customers from './pages/dashboard/customer/Customers';
+import Orders from './pages/dashboard/order/Orders';
+import AddOrder from './pages/dashboard/order/AddOrder';
 
 function App() {
   return (
@@ -18,11 +18,16 @@ function App() {
               <Router>
                 <div className="routes">
                   <Routes>
+
+                    
                     <Route path="/login" element={<Login /> } />
+                    <Route path="/" element={<Login /> } />
                     <Route path="/home" element={<Overview /> } />
                     <Route path="/orders" element={<Orders /> } />
+                    <Route path="/order/add" element={<AddOrder /> } />
                     <Route path="/customers" element={<Customers /> } />
                     <Route path="/carriers" element={<Carriers /> } />
+                    <Route path="/drivers" element={<Drivers /> } />
                     <Route path="*" element={<Error404 />} /> 
                   </Routes>
                 </div>

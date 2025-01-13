@@ -7,7 +7,6 @@ export default function Popup({btnclasses, btntext, size, children, space, actio
   const cancelButtonRef = useRef(null);
 
   useEffect(() => {
-    console.log("action", action);
     if (action === "open") {
       setOpen(true)
     } 

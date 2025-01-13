@@ -2,6 +2,7 @@ import React from 'react'
 import AuthLayout from '../../layout/AuthLayout';
 import revanue from '../../img/revenue-graph.png'
 import loads from '../../img/loads-stats.png'
+import RecentOrdersLists from './order/RecentOrderLists';
 export default function Overview() {
   return (
       <AuthLayout> 
@@ -90,7 +91,8 @@ export default function Overview() {
          </div>
 
 
-         <div className='recent-orders overflow-hidden mt-6 border border-gray-900 rounded-[30px]'>
+<RecentOrdersLists />
+         {/* <div className='recent-orders overflow-hidden mt-6 border border-gray-900 rounded-[30px]'>
             <h2 className='text-white p-[20px] text-lg mb-4 border-b border-gray-900'>Recent Orders</h2>
 
             <table className='w-full p-2' cellPadding={'20'}>
@@ -150,7 +152,7 @@ export default function Overview() {
                </tr>
             </table>
          
-         </div>
+         </div> */}
       </AuthLayout>
   )
 }

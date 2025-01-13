@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 
-const useHumanReadableDate = (isoDateString) => {
-  const [humanReadableDate, setHumanReadableDate] = useState("");
+const useHumanReadableDate = (string) => {
 
+  const [humanReadableDate, setHumanReadableDate] = useState("");
   useEffect(() => {
-    const date = new Date(isoDateString);
+    const date = new Date(string);
     const options = {
       year: 'numeric',
       month: 'long',
@@ -16,12 +16,11 @@ const useHumanReadableDate = (isoDateString) => {
     };
     const formattedDate = date.toLocaleString('en-US', options);
     setHumanReadableDate(formattedDate);
-  }, [isoDateString]);
+  }, [string]);
 
   return humanReadableDate;
 };
 
 export default function TimeFormat({date}) {
-
   return <>{useHumanReadableDate(date)}</> ;
 }
