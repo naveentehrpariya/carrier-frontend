@@ -34,11 +34,7 @@ export default function Sidebar() {
         <li>
           <Link className='text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/customers'} ><TbUserSquareRounded className='me-2' size={'1.4rem'} /> Customers 
          </Link>
-        </li>
-        <li>
-          <Link className='text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/drivers'} ><TbUserSquareRounded className='me-2' size={'1.4rem'} /> Drivers 
-         </Link>
-        </li>
+        </li> 
         <li>
           <Link className='text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/carriers'} ><TbTruckDelivery className='me-2' size={'1.4rem'} /> Carriers 
          </Link>

@@ -8,24 +8,18 @@ import { useNavigate } from 'react-router-dom';
 
 export default function AddOrder(){
 
-  const currencies = [
+  const revanue_items = [
     {
-      label: "USD",
-      value: "usd"
+      label: "Fright Charge",
+      value: "fright"
     },
     {
-      label: "CAD",
-      value: "cad"
-    },
-    {
-      label: "GBP",
-      value: "gbp"
-    },
-    {
-      label: "INR",
-      value: "inr"
+      label: "Fuel Surcharge",
+      value: "fuel"
     }
   ]
+
+
   const appointment = [
     {
       label: "Appointment",
@@ -188,147 +182,141 @@ export default function AddOrder(){
   return (
     <AuthLayout>
       <div >
-         <h2 className='text-white heading xl text-3xl'>Add New Order</h2>
-         <div className='grid grid-cols-3 gap-5'>
+         <h2 className='text-white heading xl text-3xl pt-4 '>Add New Order</h2>
+
+          <p className='text-gray-400 heading xl text-lg mt-6'>Customer Details</p>
+        {/* <div className='border mt-6 rounded-[20px] bg-dark border-gray-900 p-6'> */}
+          <div className='grid grid-cols-3 gap-5'>
             
             <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Order No.</label>
-               <input required name='order_no' onChange={handleinput} type={'number'} placeholder={"Order Number"} className="input-sm" />
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Company Name</label>
+                <input name='company_name' disabled type={'text'} placeholder='Capital Logistics' className="input-sm" />
+            </div>
+            <div className='input-item'>
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Order No.</label>
+                <input required name='customer_order_no' onChange={handleinput} type={'number'} placeholder={"Order Number"} className="input-sm" />
             </div>
 
 
             <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Customer</label>
-               <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Customer</label>
+                <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
                 onChange={chooseCustomer}
                 options={customersListing} />
             </div>
 
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Carrier</label>
-               <Select classNamePrefix="react-select input"  placeholder={'Choose Carrier'}
+            {/* <div className='input-item'>
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Carrier</label>
+                <Select classNamePrefix="react-select input"  placeholder={'Choose Carrier'}
                 onChange={chooseCarrier}
                 options={carriersListing} />
-            </div>
+            </div> */}
 
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Driver</label>
-               <Select classNamePrefix="react-select input"  placeholder={'Choose Driver'}
-                onChange={chooseDriver}
-                options={driversListing} />
-            </div>
+          </div>
+        {/* </div> */}
 
+
+        <div className='flex justify-between mt-12 mb-4 items-center'>
+            <p className='text-gray-400 heading xl text-xl'>Shipping Details</p>
+            <button className='btn text-black font-bold'>Add new</button>
+        </div>
+
+        <div className='border mt-2 rounded-[20px] bg-dark border-gray-900 p-6'>
+          <div className='grid grid-cols-3 gap-5 pb-8 border-b border-gray-800 mb-8'>
             <div className='input-item'>
-                <label className="mt-4 mb-0 block text-sm text-gray-400">Currency</label>
-                <Select classNamePrefix="react-select input"  placeholder={'Currency'}
-                  onChange={chooseAmountCurrency}
-                  options={currencies} />
+                <label className=" mb-0 block text-sm text-gray-400">Community</label>
+                <input required name='delivery_phone' onChange={handleinput} type={'number'} placeholder={"Enter delivery Phone Number"} className="input-sm" />
             </div>
             
             <div className='input-item'>
-                <label className="mt-4 mb-0 block text-sm text-gray-400">Order Amount</label>
-                <input required name='order_amount' onChange={handleinput} type={'number'} placeholder={"Order Amount"} className="input-sm" />
+                <label className=" mb-0 block text-sm text-gray-400">Equipment</label>
+                <Select classNamePrefix="react-select input"  placeholder={'Choose Appointment'}
+                onChange={chooseDeliveryAppointment}
+                options={appointment} />
             </div>
-
-         </div>
-
-
-        <p className='mt-8 pt-4 text-gray-300 heading xl text-xl'>Pickup Information</p>
-        <div className='grid grid-cols-2 gap-5'>
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Pickup Location</label>
-              <input required name='pickup_location' onChange={handleinput} type={'text'} placeholder={"Pickup Location"} className="input-sm" />
+            
+            <div className='input-item'>
+                <label className=" mb-0 block text-sm text-gray-400">Weight</label>
+                <input required name='delivery_date' onChange={handleinput} type={'date'} placeholder={"Enter Pickup Date"} className="input-sm" />
+            </div>
           </div>
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Pickup Reference No.</label>
-              <input required name='pickup_reference_no' onChange={handleinput} type={'text'} placeholder={"Pickup Reference No."} className="input-sm" />
+          <div className='grid grid-cols-2 gap-5'>
+            <div className='input-item'>
+                <label className=" mb-0 block text-sm text-gray-400">Pickup Location</label>
+                <input required name='pickup_location' onChange={handleinput} type={'text'} placeholder={"Pickup Location"} className="input-sm" />
+            </div>
+            <div className='input-item'>
+                <label className=" mb-0 block text-sm text-gray-400">Pickup Reference No.</label>
+                <input required name='pickup_reference_no' onChange={handleinput} type={'text'} placeholder={"Pickup Reference No."} className="input-sm" />
+            </div>
+            <div className='input-item'>
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Pickup Appointment</label>
+                <Select classNamePrefix="react-select input"  placeholder={'Choose Appointment Type'}
+                onChange={choosePickupAppointment}
+                options={appointment} />
+            </div>
+            
+            <div className='input-item'>
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Pickup Date</label>
+                <input required name='pickup_date' onChange={handleinput} type={'date'} placeholder={"Enter Pickup Date"} className="input-sm" />
+            </div>
           </div>
-        </div>
-
-        <div className='grid grid-cols-3 gap-5'>
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Pickup Phone Number</label>
-              <input required name='pickup_phone' onChange={handleinput} type={'number'} placeholder={"Enter Pickup Phone Number"} className="input-sm" />
-          </div>
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Pickup Appointment</label>
-              <Select classNamePrefix="react-select input"  placeholder={'Choose Appointment Type'}
-              onChange={choosePickupAppointment}
-              options={appointment} />
-          </div>
-          
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Pickup Date</label>
-              <input required name='pickup_date' onChange={handleinput} type={'date'} placeholder={"Enter Pickup Date"} className="input-sm" />
-          </div>
-        </div>
-
-
-        <p className='mt-8 pt-4 text-gray-300 heading xl text-xl'>Delivery Information</p>
-        <div className='grid grid-cols-2 gap-5'>
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Location</label>
-              <input required name='delivery_location' onChange={handleinput} type={'text'} placeholder={"Delivery Location"} className="input-sm" />
-          </div>
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Reference No.</label>
-              <input required name='delivery_reference_no' onChange={handleinput} type={'text'} placeholder={"Delivery Reference No."} className="input-sm" />
-          </div>
-        </div>
-
-        <div className='grid grid-cols-3 gap-5'>
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Phone Number</label>
-              <input required name='delivery_phone' onChange={handleinput} type={'number'} placeholder={"Enter delivery Phone Number"} className="input-sm" />
-          </div>
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Appointment Type</label>
-              <Select classNamePrefix="react-select input"  placeholder={'Choose Appointment'}
-              onChange={chooseDeliveryAppointment}
-              options={appointment} />
-          </div>
-          
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Date</label>
-              <input required name='delivery_date' onChange={handleinput} type={'date'} placeholder={"Enter Pickup Date"} className="input-sm" />
+          <div className='grid grid-cols-2 mt-2  gap-5 border-t pt-6 mt-8 border-gray-800'>
+            <div className='input-item'>
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Location</label>
+                <input required name='delivery_location' onChange={handleinput} type={'text'} placeholder={"Delivery Location"} className="input-sm" />
+            </div>
+            <div className='input-item'>
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Reference No.</label>
+                <input required name='delivery_reference_no' onChange={handleinput} type={'text'} placeholder={"Delivery Reference No."} className="input-sm" />
+            </div>
+            <div className='input-item'>
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Appointment Type</label>
+                <Select classNamePrefix="react-select input"  placeholder={'Choose Appointment'}
+                onChange={chooseDeliveryAppointment}
+                options={appointment} />
+            </div>
+            
+            <div className='input-item'>
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Date</label>
+                <input required name='delivery_date' onChange={handleinput} type={'date'} placeholder={"Enter Pickup Date"} className="input-sm" />
+            </div>
           </div>
         </div>
+       
 
+          <p className='text-gray-400 mt-8 mb-4 heading xl text-xl'>Revenue Items</p>
+          <div className='border rounded-[20px] bg-dark border-gray-900 p-6'>
+            <div className='grid grid-cols-4 gap-5'>
+              <div className='input-item'>
+                  <label className="block text-sm text-gray-400">Revenue Item</label>
+                  <Select classNamePrefix="react-select input"  placeholder={'Revenue Items'}
+                  onChange={chooseCustomer}
+                  options={revanue_items} />
+              </div>
+              <div className='input-item'>
+                  <label className="block text-sm text-gray-400">Rate Method</label>
+                  <Select classNamePrefix="react-select input"  placeholder={'Choose Rate'}
+                  onChange={chooseCustomer}
+                  options={revanue_items} />
+              </div>
+              <div className='input-item'>
+                  <label className="block text-sm text-gray-400">Rate</label>
+                  <input required name='delivery_location' onChange={handleinput} type={'number'} placeholder={"Rate"} className="input-sm" />
+              </div>
+              <div className='input-item'>
+                  <label className="block text-sm text-gray-400">Value</label>
+                  <input required name='delivery_reference_no' onChange={handleinput} type={'text'} placeholder={"Value"} className="input-sm" />
+              </div>
+            </div>
+            
+          </div>
 
-        <p className='mt-8 pt-4 text-gray-300 heading xl text-xl'>Shipment Information</p>
-        <div className='grid grid-cols-2 gap-5'>
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Location</label>
-              <input required name='delivery_location' onChange={handleinput} type={'text'} placeholder={"Delivery Location"} className="input-sm" />
+          <div className='flex justify-between items-center'>
+            <button onClick={addcarrier} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Assign Carrier"}</button>
+            <button onClick={addcarrier} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
           </div>
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Reference No.</label>
-              <input required name='delivery_reference_no' onChange={handleinput} type={'text'} placeholder={"Delivery Reference No."} className="input-sm" />
-          </div>
-        </div>
 
-        <div className='grid grid-cols-3 gap-5'>
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Phone Number</label>
-              <input required name='delivery_phone' onChange={handleinput} type={'number'} placeholder={"Enter delivery Phone Number"} className="input-sm" />
-          </div>
-          
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Appointment Type</label>
-              <Select classNamePrefix="react-select input"  placeholder={'Choose Appointment'}
-              onChange={chooseDeliveryAppointment}
-              options={appointment} />
-          </div>
-          
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Delivery Date</label>
-              <input required name='delivery_date' onChange={handleinput} type={'date'} placeholder={"Enter Pickup Date"} className="input-sm" />
-          </div>
-        </div>
-
-        <div className='flex justify-center items-center'>
-          <button onClick={addcarrier} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
-        </div>
 
       </div>
     </AuthLayout>

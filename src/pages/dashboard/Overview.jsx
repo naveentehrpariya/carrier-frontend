@@ -90,8 +90,7 @@ export default function Overview() {
             </div>
          </div>
 
-
-<RecentOrdersLists />
+         <RecentOrdersLists />
          {/* <div className='recent-orders overflow-hidden mt-6 border border-gray-900 rounded-[30px]'>
             <h2 className='text-white p-[20px] text-lg mb-4 border-b border-gray-900'>Recent Orders</h2>
 

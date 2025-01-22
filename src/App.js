@@ -6,7 +6,6 @@ import Error404 from './404';
 import Overview from './pages/dashboard/Overview';
 import Login from './pages/auth/LogIn';
 import Carriers from './pages/dashboard/carrier/Carriers';
-import Drivers from './pages/dashboard/driver/Drivers';
 import Customers from './pages/dashboard/customer/Customers';
 import Orders from './pages/dashboard/order/Orders';
 import AddOrder from './pages/dashboard/order/AddOrder';
@@ -25,7 +24,6 @@ function App() {
                     <Route path="/order/add" element={<AddOrder /> } />
                     <Route path="/customers" element={<Customers /> } />
                     <Route path="/carriers" element={<Carriers /> } />
-                    <Route path="/drivers" element={<Drivers /> } />
                     <Route path="*" element={<Error404 />} /> 
                   </Routes>
                 </div>

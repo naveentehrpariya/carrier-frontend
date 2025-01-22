@@ -1,6 +1,6 @@
 import axios from 'axios';
-const APP_URL = "https://carrier-backend-drab.vercel.app/";
-// const APP_URL = "http://localhost:8080";
+// const APP_URL = "https://carrier-backend-drab.vercel.app/";
+const APP_URL = "http://localhost:8080";
 
 function getToken(){
   const data = localStorage && localStorage.getItem('token');
@@ -15,6 +15,7 @@ let Api = axios.create({
     'Access-Control-Allow-Origin': '*'
   }
 }); 
+
 
 Api.interceptors.request.use(
   async (config) => {
