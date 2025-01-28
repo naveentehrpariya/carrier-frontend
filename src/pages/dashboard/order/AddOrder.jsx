@@ -28,6 +28,12 @@ const equipmentOptions = [
   { value: 'Dry Container',  label: "Dry Container" },
   { value: 'Packets',  label: "Packets" },
 ];
+const weightUnits = [
+  { value: "kg", label: "Kg" },
+  { value: 'g',  label: "Grams" },
+  { value: 'tons',  label: "Tons" },
+  { value: 'pounds',  label: "pounds" },
+];
 
 export default function AddOrder(){
     const [closeCarrierPopup, setCloseCarrierPopup] = useState();
@@ -71,6 +77,7 @@ export default function AddOrder(){
           community: null,
           equipment: null,
           weight: "",
+          weight_unit: "",
           pickupLocation: "",
           pickupReferenceNo: "",
           pickupAppointment: null,
@@ -113,7 +120,6 @@ export default function AddOrder(){
       "company_name" : "Capital Logistics",
       "customer_order_no": '',
       "customer" : '',
-      "shipping_details" : shippingDetails || [],
       "carrier" : '',
       "carrier_amount" : 0,
       "payment_status" : "pending",
@@ -121,9 +127,11 @@ export default function AddOrder(){
       "carrier_payment_status" : "pending",
       "carrier_payment_method" : "none",
       "revenue_currency" : '',
-      "revenue_items"  : revenueItems || [],
       "order_status" : "added"
     });
+
+    
+
 
     const [customersListing, setCustomersListing] = useState([]);
     const [carriersListing, setCarrierListings] = useState([]);
@@ -183,6 +191,10 @@ export default function AddOrder(){
     }
     const chooseCarrier = (e) => { 
       setData({ ...data, carrier: e.value});
+      
+    }
+
+    const closePopup = () => { 
       setCloseCarrierPopup(false);
       setTimeout(() => {
         setCloseCarrierPopup();
@@ -192,18 +204,63 @@ export default function AddOrder(){
     const chooseAmountCurrency = (e) => { 
       setData({ ...data, order_amount_currency: e.value});
     } 
-
     const {Errors} = useContext(UserContext);
     const [loading, setLoading] = useState(false);
     const handleinput = (e) => {
       setData({ ...data, [e.target.name]: e.target.value});
     }
+
+    
     const navigate = useNavigate();
     const addcarrier = () => {
-      console.log("data",data);
-      return false;
+
+      const alldata = {...data, 
+        "revenue_items"  : revenueItems || [],
+        "shipping_details" : shippingDetails || []
+      }
+
+      if(alldata.customer === '') {
+        toast.error('Please select a customer');
+        return false;
+      }
+
+      if(alldata.carrier === '') {
+        toast.error('Please select a carrier');
+        return false;
+      }
+      if(alldata.carrier_amount === '') {
+        toast.error('Carrier amount is required');
+        return false;
+      }
+
+      if(alldata.customer_order_no === '') {
+        toast.error('Please enter a customer order number');
+        return false;
+      }
+
+      if(alldata.order_amount === '') {
+        toast.error('Please enter an order amount');
+        return false;
+      }
+
+      // if(alldata.revenue_currency === '') {
+      //   toast.error('Please select a revenue currency');
+      //   return false;
+      // }
+
+      if(alldata.revenue_items.length === 0) {
+        toast.error('Please add at least one revenue item');
+        return false;
+      }
+
+      if(alldata.shipping_details.length === 0) {
+        toast.error('Please add at least one shipping detail');
+        return false;
+      }
+
+      
       setLoading(true);
-      const resp = Api.post(`/order/add`, data);
+      const resp = Api.post(`/order/add`, alldata);
       resp.then((res) => {
         setLoading(false);
         if (res.data.status === true) {
@@ -218,14 +275,13 @@ export default function AddOrder(){
       });
     }
 
-     
-
   return (
     <AuthLayout>
-      <div >
+      <div>
+         
          <h2 className='text-white heading xl text-3xl pt-4 '>Add New Order</h2>
-
           <p className='text-gray-400 heading xl text-lg mt-6'>Customer Details</p>
+          
           <div className='grid grid-cols-3 gap-5'>
             
             <div className='input-item'>
@@ -254,15 +310,13 @@ export default function AddOrder(){
                 onClick={addNewShippingBlock}> + Add New
               </button>
             </div>
-
             {shippingDetails.map((detail, index) => (
               <>
-              <div
-                key={index}
+              <div key={index}
                 className="border mt-2 rounded-[20px] bg-dark border-gray-900 p-6 mb-6">
                 <p className="text-gray-400 heading xl text-xl mb-4">Shipment {index+1}</p>
 
-                <div className="grid grid-cols-3 gap-5 pb-8 border-b border-gray-800 mb-8">
+                <div className="grid grid-cols-4 gap-4 pb-8 border-b border-gray-800 mb-8">
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Community</label>
                     <input
@@ -281,6 +335,17 @@ export default function AddOrder(){
                       placeholder={"Equipment"}
                       onChange={(selected) =>handleInputChange(index, "equipment", selected)}
                       options={equipmentOptions}
+                    />
+                  </div>
+                  <div className="input-item">
+                    <label className="mb-0 block text-sm text-gray-400">Weight Unit</label>
+                    <Select
+                      classNamePrefix="react-select input"
+                      placeholder={"Weight Unit"}
+                      onChange={(selected) =>
+                        handleInputChange(index, "weight_init", selected && selected.value)
+                      }
+                      options={weightUnits}
                     />
                   </div>
                   <div className="input-item">
@@ -421,120 +486,120 @@ export default function AddOrder(){
               </>
             ))}
           </div>
-
           
           <div>
-      <div className="flex justify-between mt-12 mb-4 items-center">
-        <p className="text-gray-400 heading xl text-xl">Revenue Items</p>
-        <button
-          className="btn text-black font-bold"
-          onClick={addNewItem}
-        >
-          + Add New
-        </button>
-      </div>
-      <div className="border rounded-[20px] bg-dark border-gray-900 p-6">
-        {revenueItems.map((item, index) => (
-          <div key={index} className="rev-items flex justify-between items-center mb-4">
-            <div className="grid grid-cols-4 w-full gap-5">
-              <div className="input-item">
-                <label className="block text-sm text-gray-400">Revenue Item</label>
-                <Select
-                  classNamePrefix="react-select input"
-                  placeholder="Revenue Items"
-                  onChange={(option) =>
-                    handlerevanue(index, "revenue_item", option.value)
-                  }
-                  options={revenueItemOptions}
-                  value={
-                    item.revenue_item
-                      ? {
-                          label: item.revenue_item,
-                          value: item.revenue_item,
-                        }
-                      : null
-                  }
-                />
-              </div>
-              <div className="input-item">
-                <label className="block text-sm text-gray-400">Rate Method</label>
-                <Select
-                  classNamePrefix="react-select input"
-                  placeholder="Choose Rate"
-                  onChange={(option) =>
-                    handlerevanue(index, "rate_method", option.value)
-                  }
-                  options={rateMethodOptions}
-                  value={
-                    item.rate_method
-                      ? {
-                          label: item.rate_method,
-                          value: item.rate_method,
-                        }
-                      : null
-                  }
-                />
-              </div>
-              <div className="input-item">
-                <label className="block text-sm text-gray-400">Rate</label>
-                <input
-                  required
-                  name="rate"
-                  type="number"
-                  placeholder="Rate"
-                  className="input-sm"
-                  value={item.rate}
-                  onChange={(e) =>
-                    handlerevanue(index, "rate", e.target.value)
-                  }
-                />
-              </div>
-              <div className="input-item">
-                <label className="block text-sm text-gray-400">Value</label>
-                <input
-                  required
-                  name="value"
-                  type="text"
-                  placeholder="Value"
-                  className="input-sm"
-                  value={item.value}
-                  onChange={(e) =>
-                    handlerevanue(index, "value", e.target.value)
-                  }
-                />
-              </div>
-            </div>
-            <div className="flex items-center">
-              <button  className="btn bg-red-700 mt-[20px] ms-3 text-white"
-              onClick={() => removeItem(index)} >Remove
+            <div className="flex justify-between mt-12 mb-4 items-center">
+              <p className="text-gray-400 heading xl text-xl">Revenue Items</p>
+              <button
+                className="btn text-black font-bold"
+                onClick={addNewItem}
+              >
+                + Add New
               </button>
             </div>
+            <div className="border rounded-[20px] bg-dark border-gray-900 p-6">
+              {revenueItems.map((item, index) => (
+                <div key={index} className="rev-items flex justify-between items-center mb-4">
+                  <div className="grid grid-cols-4 w-full gap-5">
+                    <div className="input-item">
+                      <label className="block text-sm text-gray-400">Revenue Item</label>
+                      <Select
+                        classNamePrefix="react-select input"
+                        placeholder="Revenue Items"
+                        onChange={(option) =>
+                          handlerevanue(index, "revenue_item", option.value)
+                        }
+                        options={revenueItemOptions}
+                        value={
+                          item.revenue_item
+                            ? {
+                                label: item.revenue_item,
+                                value: item.revenue_item,
+                              }
+                            : null
+                        }
+                      />
+                    </div>
+                    <div className="input-item">
+                      <label className="block text-sm text-gray-400">Rate Method</label>
+                      <Select
+                        classNamePrefix="react-select input"
+                        placeholder="Choose Rate"
+                        onChange={(option) =>
+                          handlerevanue(index, "rate_method", option.value)
+                        }
+                        options={rateMethodOptions}
+                        value={
+                          item.rate_method
+                            ? {
+                                label: item.rate_method,
+                                value: item.rate_method,
+                              }
+                            : null
+                        }
+                      />
+                    </div>
+                    <div className="input-item">
+                      <label className="block text-sm text-gray-400">Rate</label>
+                      <input
+                        required
+                        name="rate"
+                        type="number"
+                        placeholder="Rate"
+                        className="input-sm"
+                        value={item.rate}
+                        onChange={(e) =>
+                          handlerevanue(index, "rate", e.target.value)
+                        }
+                      />
+                    </div>
+                    <div className="input-item">
+                      <label className="block text-sm text-gray-400">Value</label>
+                      <input
+                        required
+                        name="value"
+                        type="text"
+                        placeholder="Value"
+                        className="input-sm"
+                        value={item.value}
+                        onChange={(e) =>
+                          handlerevanue(index, "value", e.target.value)
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <button  className="btn bg-red-700 mt-[20px] ms-3 text-white"
+                    onClick={() => removeItem(index)} >Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-        ))}
-      </div>
-    </div>
 
-      <div className='flex justify-between items-center'>
-          <Popup action={closeCarrierPopup} size="md:max-w-xl" space='p-8' bg="bg-black" btnclasses="" btntext={"Assign Carrier"} >
-              <h2 className='text-white text-2xl font-bold'>Assign Carrier</h2>
-              <div className=''>
-                <div className='input-item'>
-                  <label className="mt-4 mb-0 block text-sm text-gray-400">Choose Carrier</label>
-                  <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
-                    onChange={chooseCarrier}
-                    options={carriersListing} />
-                </div>
-                <div className='input-item'>
-                    <label className="mt-4 mb-0 block text-sm text-gray-400">Amount</label>
-                    <input required onChange={handleinput} name='carrier_amount' type={'number'} placeholder={"Enter carrier amount"} className="input-sm" />
-                </div>
-              </div>
-              <div className='flex justify-center items-center'>
-                <button  className="btn md mt-6 px-[50px] main-btn text-black font-bold">ADD</button>
-              </div>
-          </Popup>
-        <button onClick={addcarrier} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
-      </div>
+          <div className='flex justify-between items-center'>
+              <Popup action={closeCarrierPopup} size="md:max-w-xl" space='p-8' bg="bg-black" btnclasses="" btntext={"Assign Carrier"} >
+                  <h2 className='text-white text-2xl font-bold'>Assign Carrier</h2>
+                  <div className=''>
+                    <div className='input-item'>
+                      <label className="mt-4 mb-0 block text-sm text-gray-400">Choose Carrier</label>
+                      <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
+                        onChange={chooseCarrier}
+                        options={carriersListing} />
+                    </div>
+                    <div className='input-item'>
+                        <label className="mt-4 mb-0 block text-sm text-gray-400">Amount</label>
+                        <input required onChange={handleinput} name='carrier_amount' type={'number'} placeholder={"Enter carrier amount"} className="input-sm" />
+                    </div>
+                  </div>
+                  <div className='flex justify-center items-center'>
+                    <button onClick={closePopup} className="btn md mt-6 px-[50px] main-btn text-black font-bold">ADD</button>
+                  </div>
+              </Popup>
+            <button onClick={addcarrier} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
+          </div>
+
       </div>
     </AuthLayout>
   )

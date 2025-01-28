@@ -6,6 +6,7 @@ import TimeFormat from '../../common/TimeFormat';
 import Loading from '../../common/Loading';
 import { Link } from 'react-router-dom';
 import Nocontent from '../../common/NoContent';
+import Badge from '../../common/Badge';
 export default function Orders() {
 
    const [loading, setLoading] = useState(true);
@@ -56,20 +57,19 @@ export default function Orders() {
                         return <tr key={`carriew-${index}`}>
 
                            <td className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>
-                              <p className='whitespace-nowrap'>Order No. : {c.order_no || "--"}</p>
+                              <p className='whitespace-nowrap'>Order No. : {c.customer_order_no || "--"}</p>
                               <p>{c.company_name || "--"}</p>
                            </td>
                           
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                               <p>Customer : {c.customer?.name || "--"}</p>
                               <p className='mt-1'>Carrier : {c.carrier?.name || "--"}</p>
-                              <p className='mt-1'>Driver : {c.driver?.name || "--"}</p>
                            </td>
                            
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                              <p>Pickup Date : <TimeFormat date={c.pickup_date || "--"} /> </p>
-                              <p>Delivery Date : <TimeFormat date={c.delivery_date || "--"} /> </p>
-                              <p>Order Created : <TimeFormat date={c.createdAt || "--"} /> </p>
+                              {/* <p className='mb-1'>Order Status : <Badge classes="ms-2" status={c.order_status} /> </p> */}
+                              <p className='mb-1'>Customer Payment : <Badge classes="ms-2" status={c.payment_status} /> </p>
+                              <p className='mb-1'>Carrier Payment : <Badge classes="ms-2" status={c.carrier_payment_status} /> </p>
                            </td>
                           
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>

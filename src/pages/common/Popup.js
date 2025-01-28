@@ -46,7 +46,7 @@ export default function Popup({btnclasses, btntext, size, children, space, actio
               <Dialog.Panel className={` transform overflow-hidden rounded-[35px] ${bg ? bg : "bg-white"} text-left shadow-xl transition-all sm:my-8 w-full md:w-full ${size ? size : 'md:max-w-lg'} ${space}`}>
                   <button
                     type="button"
-                    className="close absolute top-0 right-4 text-[30px] "
+                    className="close absolute top-2 right-6 text-white text-[30px] "
                     onClick={() => setOpen(false)}
                     ref={cancelButtonRef}>
                     &times;   
