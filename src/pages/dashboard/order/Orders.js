@@ -3,10 +3,10 @@ import AuthLayout from '../../../layout/AuthLayout';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import TimeFormat from '../../common/TimeFormat';
-import Loading from '../../common/Loading';
 import { Link } from 'react-router-dom';
 import Nocontent from '../../common/NoContent';
 import Badge from '../../common/Badge';
+import Currency from '../../common/Currency';
 export default function Orders() {
 
    const [loading, setLoading] = useState(true);
@@ -49,8 +49,9 @@ export default function Orders() {
                   <table className='w-full p-2' cellPadding={'20'}>
                      <tr>
                         <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Order ID</th>
-                        <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier / Driver</th>
-                        <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Pickup and Delivery</th>
+                        <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer / Carrier </th>
+                        <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer Payment</th>
+                        <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier Payment</th>
                         <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Created Date</th>
                      </tr>
                      {lists && lists.map((c, index) => {
@@ -65,15 +66,19 @@ export default function Orders() {
                               <p>Customer : {c.customer?.name || "--"}</p>
                               <p className='mt-1'>Carrier : {c.carrier?.name || "--"}</p>
                            </td>
-                           
+
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                              {/* <p className='mb-1'>Order Status : <Badge classes="ms-2" status={c.order_status} /> </p> */}
-                              <p className='mb-1'>Customer Payment : <Badge classes="ms-2" status={c.payment_status} /> </p>
-                              <p className='mb-1'>Carrier Payment : <Badge classes="ms-2" status={c.carrier_payment_status} /> </p>
+                              <p><Badge status={c.payment_status} /> | {c.payment_method}</p>
+                           </td>
+                            
+                           <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
+                              <p>Carrier Amount : <Currency amount={c.carrier_amount} currency='usd' /></p>
+                              <p><Badge status={c.carrier_payment_status} /> | {c.carrier_payment_method}</p>
                            </td>
                           
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                               <Link className='text-main disabled' to="/">View Details</Link>
+                              <p className='mb-2'><Link className='disabled bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]' to="/">View Details</Link></p>
+                              <p><TimeFormat date={c.createdAt || "--"} /></p>
                            </td>
                         </tr>
                      })}

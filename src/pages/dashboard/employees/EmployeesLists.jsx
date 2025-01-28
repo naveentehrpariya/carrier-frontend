@@ -1,10 +1,11 @@
 import React, { useContext, useEffect, useState } from 'react'
-import AuthLayout from '../../../layout/AuthLayout';
-import AddCarrier from './AddCarrier';
-import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
+import Api from '../../../api/Api';
+import AuthLayout from '../../../layout/AuthLayout';
+import AddCustomer from './AddEmployee';
 import TimeFormat from '../../common/TimeFormat';
-export default function Carriers() {
+import AddEmployee from './AddEmployee';
+export default function EmployeesLists() {
 
 
    const [loading, setLoading] = useState(true);
@@ -13,11 +14,11 @@ export default function Carriers() {
 
    const fetchLists = () => {
       setLoading(true);
-      const resp = Api.get(`/carriers/listings`);
+      const resp = Api.get(`/user/employeesLisiting`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
-            setLists(res.data.carriers);
+            setLists(res.data.lists);
          } else {
             setLists([]);
          }
@@ -35,8 +36,8 @@ export default function Carriers() {
   return (
       <AuthLayout> 
          <div className='flex justify-between items-center'>
-            <h2 className='text-white text-2xl'>Carriers</h2>
-            <AddCarrier fetchLists={fetchLists} />
+            <h2 className='text-white text-2xl'>Employees</h2>
+            <AddEmployee fetchLists={fetchLists} />
          </div>
 
          {loading ? <p>Loading..</p>
@@ -45,32 +46,34 @@ export default function Carriers() {
             <table className='w-full p-2' cellPadding={'20'}>
                <tr>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Role</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone/Email</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Location</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Staff Commision</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Added By</th>
                </tr>
                {lists && lists.map((c, index) => {
                   return <tr key={`carriew-${index}`}>
 
-                     <td className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>
+                     <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
                         <p>{c.name}</p>
-                        <p>{c.carrierID}</p>
+                        <p>{c.corporateID}</p>
                      </td>
-
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        <p>{c.phone || "--"}</p>
-                        <p>{c.email || "--"}</p>
+                        <p>{c.role == '2' ? "Accountant" : "Staff"}</p>
                      </td>
-                     
-                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>{c.location || "--"}</td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        <p>{c.created_by.name || "--"}</p>
+                        <p>{c.email || ""}</p>
+                     </td>
+                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
+                        <p>{c.staff_commision ? `${c.staff_commision}%` : "N/A"}</p>
+                     </td>
+                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
+                        {/* <p>{c.created_by.name || "--"}</p> */}
                         <p><TimeFormat date={c.createdAt || "--"} /> </p>
 
                      </td>
                   </tr>
                })}
-               
             </table>
          
          </div>

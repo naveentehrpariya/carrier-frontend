@@ -6,6 +6,7 @@ import AuthLayout from '../../../layout/AuthLayout';
 import Select from 'react-select'
 import { useNavigate } from 'react-router-dom';
 import Popup from '../../common/Popup';
+import axios from 'axios';
 
 
 const revenueItemOptions = [
@@ -46,8 +47,12 @@ export default function AddOrder(){
         label: 'No appointment',
         value: 0
       }
-    ]
+    ];
 
+
+    
+
+    
     const [shippingDetails, setShippingDetails] = useState([
       {
         community: null,
@@ -126,7 +131,7 @@ export default function AddOrder(){
       "payment_method" : "none",
       "carrier_payment_status" : "pending",
       "carrier_payment_method" : "none",
-      "revenue_currency" : '',
+      "revenue_currency" : 'cad',
       "order_status" : "added"
     });
 
@@ -191,7 +196,6 @@ export default function AddOrder(){
     }
     const chooseCarrier = (e) => { 
       setData({ ...data, carrier: e.value});
-      
     }
 
     const closePopup = () => { 
@@ -202,7 +206,7 @@ export default function AddOrder(){
     }
     
     const chooseAmountCurrency = (e) => { 
-      setData({ ...data, order_amount_currency: e.value});
+      setData({ ...data, revenue_currency: e.target.value});
     } 
     const {Errors} = useContext(UserContext);
     const [loading, setLoading] = useState(false);
@@ -212,8 +216,7 @@ export default function AddOrder(){
 
     
     const navigate = useNavigate();
-    const addcarrier = () => {
-
+    const addOrder = () => {
       const alldata = {...data, 
         "revenue_items"  : revenueItems || [],
         "shipping_details" : shippingDetails || []
@@ -243,10 +246,10 @@ export default function AddOrder(){
         return false;
       }
 
-      // if(alldata.revenue_currency === '') {
-      //   toast.error('Please select a revenue currency');
-      //   return false;
-      // }
+      if(alldata.revenue_currency === '') {
+        toast.error('Please select a revenue currency');
+        return false;
+      }
 
       if(alldata.revenue_items.length === 0) {
         toast.error('Please add at least one revenue item');
@@ -257,8 +260,6 @@ export default function AddOrder(){
         toast.error('Please add at least one shipping detail');
         return false;
       }
-
-      
       setLoading(true);
       const resp = Api.post(`/order/add`, alldata);
       resp.then((res) => {
@@ -275,6 +276,38 @@ export default function AddOrder(){
       });
     }
 
+
+    const [distance, setDistance] = useState(0);
+
+const getDistance = () => {
+  if (shippingDetails && shippingDetails.length > 0) {
+    let totalDistance = 0; // Temporary variable to calculate total distance
+    const distancePromises = shippingDetails.map((item) => {
+      if (item.pickupLocation && item.deliveryLocation) {
+        return Api.post("/getdistance", {
+          start: item.pickupLocation,
+          end: item.deliveryLocation,
+        })
+          .then((res) => {
+            console.log("API response distance:", res.data.data);
+            totalDistance += parseInt(res.data.data, 10); // Increment total distance
+          })
+          .catch((err) => {
+            console.error("Error fetching distance:", err);
+          });
+      }
+      return Promise.resolve(); // Return resolved promise for items without locations
+    });
+
+    // Wait for all promises to complete
+    Promise.all(distancePromises).then(() => {
+      console.log("Total distance:", totalDistance);
+      setDistance(totalDistance); // Update the state with the final total distance
+    });
+  }
+};
+
+   
   return (
     <AuthLayout>
       <div>
@@ -490,12 +523,15 @@ export default function AddOrder(){
           <div>
             <div className="flex justify-between mt-12 mb-4 items-center">
               <p className="text-gray-400 heading xl text-xl">Revenue Items</p>
-              <button
-                className="btn text-black font-bold"
-                onClick={addNewItem}
-              >
-                + Add New
-              </button>
+              <div className='flex items-center'>
+                <select onChange={chooseAmountCurrency} className='currency-drop bg-gray-800 text-white px-2 py-[5px] rounded-[10px]'>
+                  <option value={"cad"} >CAD</option>
+                  <option value={"gbp"} >BGP</option>
+                  <option value={"usd"} >USD</option>
+                  <option value={"inr"} >INR</option>
+                </select>
+                <button className="btn ms-3 text-black font-bold" onClick={addNewItem}> + Add New </button>
+              </div>
             </div>
             <div className="border rounded-[20px] bg-dark border-gray-900 p-6">
               {revenueItems.map((item, index) => (
@@ -560,8 +596,7 @@ export default function AddOrder(){
                         name="value"
                         type="text"
                         placeholder="Value"
-                        className="input-sm"
-                        value={item.value}
+                        className="input-sm disabled" 
                         onChange={(e) =>
                           handlerevanue(index, "value", e.target.value)
                         }
@@ -575,6 +610,13 @@ export default function AddOrder(){
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          <div className='flex justify-end py-2'>
+            <div className='text-right'>
+              {distance > 0 ? <p className='text-white mb-2'>Total Distance : {distance/1000}KM</p> : ''}
+              <button className='text-main' onClick={getDistance} >Calculate Distance</button>
             </div>
           </div>
 
@@ -597,7 +639,7 @@ export default function AddOrder(){
                     <button onClick={closePopup} className="btn md mt-6 px-[50px] main-btn text-black font-bold">ADD</button>
                   </div>
               </Popup>
-            <button onClick={addcarrier} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
+            <button onClick={addOrder} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
           </div>
 
       </div>

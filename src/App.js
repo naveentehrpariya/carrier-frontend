@@ -9,6 +9,10 @@ import Carriers from './pages/dashboard/carrier/Carriers';
 import Customers from './pages/dashboard/customer/Customers';
 import Orders from './pages/dashboard/order/Orders';
 import AddOrder from './pages/dashboard/order/AddOrder';
+import EmployeesLists from './pages/dashboard/employees/EmployeesLists';
+import AccountOrders from './pages/dashboard/accounts/AccountOrders';
+
+
 
 function App() {
   return (
@@ -24,6 +28,8 @@ function App() {
                     <Route path="/order/add" element={<AddOrder /> } />
                     <Route path="/customers" element={<Customers /> } />
                     <Route path="/carriers" element={<Carriers /> } />
+                    <Route path="/employees" element={<EmployeesLists /> } />
+                    <Route path="/accounts/orders" element={<AccountOrders /> } />
                     <Route path="*" element={<Error404 />} /> 
                   </Routes>
                 </div>
