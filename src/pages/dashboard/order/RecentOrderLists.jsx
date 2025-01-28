@@ -72,7 +72,7 @@ export default function RecentOrdersLists() {
                               </td>
                                  
                               <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                                 <p>Carrier Amount : <Currency amount={c.carrier_amount} currency='usd' /></p>
+                                 <p>Carrier Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
                                  <p><Badge status={c.carrier_payment_status} /> | {c.carrier_payment_method}</p>
                               </td>
                               
