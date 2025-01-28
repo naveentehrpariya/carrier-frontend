@@ -594,9 +594,9 @@ const getDistance = () => {
                       <input
                         required
                         name="value"
-                        type="text"
+                        type="text"  value={item.value}
                         placeholder="Value"
-                        className="input-sm disabled" 
+                        className="input-sm" 
                         onChange={(e) =>
                           handlerevanue(index, "value", e.target.value)
                         }
