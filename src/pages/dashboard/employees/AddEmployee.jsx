@@ -3,15 +3,22 @@ import Popup from '../../common/Popup'
 import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
+import countries from './../../common/Countries';
 
 export default function AddEmployee({fetchLists}){
 
+
+  console.log("countries",countries)
   const commisions = Array.from({ length: 100 }, (_, index) => (index + 1) * 5);
+  const [staffType, setStaffType] = useState(1);
   const [data, setData] = useState({
       name: "",
       email: "",
       password: "",
-      role: "",
+      country: "",
+      phone: "",
+      address: "",
+      role: staffType,
       staff_commision: "",
     });
     const [action, setaction] = useState();
@@ -22,7 +29,11 @@ export default function AddEmployee({fetchLists}){
     }
     const [loading, setLoading] = useState(false);
 
-    const add_customer = () => {
+    const addEmployee = () => {
+      if(data.email === "" || data.password === "" || data.name === "" || data.role === "" || data.staff_commision === "" || data.phone === "" || data.country === "" || data.address === ""){
+        toast.error("Please fill all the fields");
+        return false;
+      }
       setLoading(true);
       const resp = Api.post(`/user/create_user`, {...data, generateAutoPassword: data.password ? 0 : 1});
       resp.then((res) => {
@@ -54,23 +65,48 @@ export default function AddEmployee({fetchLists}){
             </div>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Email</label>
-               <input required name='email' onChange={handleinput} type={'email'} placeholder={"Phone email address"} className="input-sm" />
+               <input required name='email' onChange={handleinput} type={'email'} placeholder={"Email address"} className="input-sm" />
             </div>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Staff Commission</label>
-               <select  onChange={handleinput} name='phone' className="input-sm" >
+               <select  onChange={handleinput} name='staff_commision' className="input-sm" >
+                <option selected disabled className='text-black'>Choose Commision</option>
                   {commisions && commisions.map((c, i)=>{
-                    return <option className='text-black'>{c}% Commision</option>
+                    return <option value={c} className='text-black'>{c}% Commision</option>
                   })}
                </select>
             </div>
             <div className='input-item'>
+               <label className="mt-4 mb-0 block text-sm text-gray-400">Country</label>
+               <select onChange={handleinput} name='country' className="input-sm" >
+                <option selected disabled className='text-black'>Choose Country</option>
+                  {countries && countries.map((c, i)=>{
+                    return <option value={c.label} className='text-black'>{c.label}</option>
+                  })}
+               </select>
+            </div> 
+
+            <div className='input-item'>
+               <label className="mt-4 mb-0 block text-sm text-gray-400">Phone</label>
+               <input required name='phone' onChange={handleinput} type={'phone'} placeholder={"Phone Number"} className="input-sm" />
+            </div>
+            <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Password</label>
-               <input required name='password' onChange={handleinput} type={'password'} placeholder={"Enter password"} className="input-sm" />
+               <input required name='password' onChange={handleinput} type={'text'} placeholder={"Enter password"} className="input-sm" />
             </div>
          </div>
+          <div className='input-item mb-4 '>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
+              <input required name='address' onChange={handleinput} type={'address'} placeholder={"Enter address"} className="input-sm" />
+          </div>
+
+          <label className=" mb-2 block text-sm text-gray-400 text-center mt-6">Staff Type</label>
+         <div className='flex justify-center'>
+              <button className={`mx-2 ${staffType === 1 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(1)} >Staff</button>
+              <button className={`mx-2 ${staffType === 2 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(2)} >Accountant</button>
+         </div>
          <div className='flex justify-center items-center'>
-            <button  onClick={add_customer} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Creating..." : "Create Account"}</button>
+            <button  onClick={addEmployee} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Creating..." : "Create Account"}</button>
          </div>
       </Popup>
     </div>
