@@ -51,11 +51,14 @@ export default function Loading({fixed, dark}) {
          }
        }
        `}</style>
-      <div className="loader">
-      <li className="ball"></li>
-      <li className="ball"></li>
-      <li className="ball"></li>
-      </div>
+       <div>
+        <div className="loader">
+          <li className="ball"></li>
+          <li className="ball"></li>
+          <li className="ball"></li>
+        </div>
+        <p className='text-center mt-8 text-gray-500 uppercase text-md'>Loading...</p>
+       </div>
     </div>
   )
 }
