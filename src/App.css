@@ -71,3 +71,6 @@ body{background:var(--dark);font-family:'productsans';}
 .css-t3ipsp-control:hover {
   border-color: transparent !important;
 }
+.recent-orders th  {
+  background: #1a1a1a;
+}

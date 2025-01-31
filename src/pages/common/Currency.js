@@ -10,7 +10,7 @@ export default function Currency ({amount, currency}){
         maximumFractionDigits: 2,
       }).format(amount);
       setfinalamount(formattedValue)
-  },[])
+  },[amount, amount])
   return finalamount
 };
  
