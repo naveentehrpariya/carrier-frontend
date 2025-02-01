@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import Popup from '../../common/Popup';
 import GetLocation from '../../common/GetLocation';
 import Currency from '../../common/Currency';
+import DeliveryLocation from '../../common/DeliveryLocation';
 
 
 const revenueItemOptions = [
@@ -42,11 +43,14 @@ export default function AddOrder(){
 
     const getPickupLocation = (index, value) => { 
         handleInputChange(index, "pickupLocation", value);
-        getDistance();
+        console.log("pickupLocation",value)
     }
     const getDeliveryLocation = (index, value) => { 
         handleInputChange(index, "deliveryLocation", value);
-        getDistance();
+        setTimeout(() => {
+          getDistance();
+        },1000);
+        console.log("deliveryLocation",value)
     }
     
     const [shippingDetails, setShippingDetails] = useState([
@@ -64,6 +68,7 @@ export default function AddOrder(){
         deliveryDate: "",
       },
     ]);
+    console.log("shippingDetails",shippingDetails)
 
     const handleInputChange = (index, field, value) => {
       const updatedDetails = [...shippingDetails];
@@ -104,7 +109,6 @@ export default function AddOrder(){
       const updatedItems = [...revenueItems];
       updatedItems[index][field] = value;
       setRevenueItems(updatedItems);
-      getDistance();
     };
 
     const addNewItem = () => {
@@ -200,9 +204,13 @@ export default function AddOrder(){
       },1000);
     }
     
+
+    const [revCurrency, setRevCurrency] = useState('cad');
     const chooseAmountCurrency = (e) => { 
       setData({ ...data, revenue_currency: e.target.value});
+      setRevCurrency(e.target.value);
     } 
+    
     const {Errors} = useContext(UserContext);
     const [loading, setLoading] = useState(false);
     const handleinput = (e) => {
@@ -217,6 +225,10 @@ export default function AddOrder(){
         "shipping_details" : shippingDetails || []
       }
 
+      if(distance < 1) {
+        toast.error('Please enter correct shipping details.');
+        return false;
+      }
       if(alldata.customer === '') {
         toast.error('Please select a customer');
         return false;
@@ -271,12 +283,11 @@ export default function AddOrder(){
       });
     }
 
-
     const [distance, setDistance] = useState(0);
-
     const getDistance = () => {
+      console.log("distance calculate called");
       if (shippingDetails && shippingDetails.length > 0) {
-        let totalDistance = 0; // Temporary variable to calculate total distance
+        let totalDistance = 0;
         const distancePromises = shippingDetails.map((item) => {
           if (item.pickupLocation && item.deliveryLocation) {
             return Api.post("/getdistance", {
@@ -293,18 +304,14 @@ export default function AddOrder(){
           }
           return Promise.resolve(); // Return resolved promise for items without locations
         });
-
-        // Wait for all promises to complete
         Promise.all(distancePromises).then(() => {
           console.log("Total distance:", totalDistance);
-          setDistance(totalDistance); // Update the state with the final total distance
+          setDistance(totalDistance);
         });
       }
     };
 
-
     const [grossRevanue, setGrossRevenue] = useState(0);
-    console.log("grossRevanue",grossRevanue)
     useEffect(() => {
       const items = revenueItems || [];
       let grossAmount = 0;
@@ -455,8 +462,8 @@ export default function AddOrder(){
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">
                       Delivery Location
-                    </label>
-                    <GetLocation placeholder={"Enter delivery location"} index={index} onchange={getDeliveryLocation} />
+                    </label> 
+                      <GetLocation placeholder={"Enter delivery location"} index={index} onchange={getDeliveryLocation} />
                   </div>
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">
@@ -513,7 +520,7 @@ export default function AddOrder(){
               <div className='flex items-center'>
                 <select onChange={chooseAmountCurrency} className='currency-drop bg-gray-800 text-white px-2 py-[5px] rounded-[10px]'>
                   <option value={"cad"} >CAD</option>
-                  <option value={"gbp"} >BGP</option>
+                  <option value={"gbp"} >GBP</option>
                   <option value={"usd"} >USD</option>
                   <option value={"inr"} >INR</option>
                 </select>
@@ -603,10 +610,9 @@ export default function AddOrder(){
           <div className='flex justify-end py-2'>
             <div className='text-right'>
             <p className='text-white mb-2'>
-              Total Amount :  <Currency amount={grossRevanue} currency={data.revenue_currency || 'cad'} /> 
+              Total Amount :  <Currency amount={grossRevanue} currency={revCurrency || 'cad'} /> 
             </p> 
               {distance > 0 ? <p className='text-white mb-2'>Total Distance : {distance/1000}KM</p> : ''}
-         
             </div>
           </div>
 
