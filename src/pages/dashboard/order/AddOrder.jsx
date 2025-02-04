@@ -50,7 +50,7 @@ export default function AddOrder(){
         setTimeout(() => {
           getDistance();
         },1000);
-        console.log("deliveryLocation",value)
+        console.log("deliveryLocation",value);
     }
     
     const [shippingDetails, setShippingDetails] = useState([
