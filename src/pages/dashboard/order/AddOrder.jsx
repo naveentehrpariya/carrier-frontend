@@ -420,9 +420,7 @@ export default function AddOrder(){
                     <input
                       required
                       name="pickupReferenceNo"
-                      onChange={(e) =>
-                        handleInputChange(index, "pickupReferenceNo", e.target.value)
-                      }
+                      onChange={(e) => handleInputChange(index, "pickupReferenceNo", e.target.value) }
                       type={"text"}
                       placeholder={"Pickup Reference No."}
                       className="input-sm"
