@@ -8,6 +8,9 @@ import Badge from '../../common/Badge';
 import Currency from '../../common/Currency';
 import UpdatePaymentStatus from './UpdatePaymentStatus';
 import UpdateOrderStatus from './UpdateOrderStatus';
+import Loading from '../../common/Loading';
+import AddNotes from './AddNotes';
+import Dropdown from '../../common/Dropdown';
 export default function AccountOrders() {
 
 
@@ -39,11 +42,10 @@ export default function AccountOrders() {
   return (
       <AuthLayout> 
          <div className='flex justify-between items-center'>
-            <h2 className='text-white text-2xl'>Orders Lists</h2>
+            <h2 className='text-white text-2xl'>Account Orders Lists</h2>
             <AddEmployee fetchLists={fetchLists} />
          </div>
-
-         {loading ? <p>Loading..</p>
+         {loading ? <Loading />
          :
          <div className='recent-orders overflow-hidden mt-6 border border-gray-900 rounded-[30px]'>
             <table className='w-full p-2' cellPadding={'20'}>
@@ -54,6 +56,7 @@ export default function AccountOrders() {
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer Payment</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Amount/Profit</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier Payment</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                </tr>
                {lists && lists.map((c, index) => {
                   return <tr key={`carriew-${index}`}>
@@ -73,11 +76,8 @@ export default function AccountOrders() {
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p className='mt-1'>Payment Status : <Badge status={c.payment_status} /></p>
                         {c.payment_status === 'paid' && <p className='mt-1'>Payment method : {c.payment_method}</p>}
-                        {/* {c.payment_status_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.payment_status_date || ""} /></p> : ''} */}
                         <UpdatePaymentStatus paymentType={1}  id={c.id} type={1} fetchLists={fetchLists} />
                      </td>
-                                              
-                                             
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p>Amount : <Currency amount={c.gross_amount} currency={c.revenue_currency || 'usd'} /></p>
                         <p>Profit : <Currency amount={c.profit} currency={c.revenue_currency || 'usd'} /> </p>
@@ -87,9 +87,18 @@ export default function AccountOrders() {
                         <p className='mt-1'>Carrier Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
                         {c.carrier_payment_status === 'paid' && <p className='mt-1'>Payment method : {c.carrier_payment_method}</p>}
                         {/* {c.carrier_payment_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''} */}
-                        <UpdatePaymentStatus paymentType={2}  id={c.id} type={2} fetchLists={fetchLists} />
+                        <div className='flex items-center'>
+                           <UpdatePaymentStatus paymentType={2}  id={c.id} type={2} fetchLists={fetchLists} />
+                           <div className='px-3 text-gray-500'>|</div>
+                           <AddNotes note={c.notes} id={c.id} type={2} fetchLists={fetchLists} />
+                        </div>
                      </td> 
-                     
+                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
+                        <Dropdown>
+                           
+                        </Dropdown>
+                     </td> 
+
                   </tr>
                })}
             </table>

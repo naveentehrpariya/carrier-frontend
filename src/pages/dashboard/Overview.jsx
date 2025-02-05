@@ -36,12 +36,12 @@ export default function Overview() {
                   <div className='bg-[#D278D5] h-[3px] w-[40px]'></div>
                      <div className='cals mt-3 flex items-center justify-between'>
                         <h2 className='font-bold text-white text-2xl'>{item.data}</h2>
-                        <svg width="50" height="40" viewBox="0 0 50 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        {/* <svg width="50" height="40" viewBox="0 0 50 40" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <rect x="0.5" y="0.5" width="49" height="39" rx="19.5" stroke="white" stroke-opacity="0.2"/>
                         <g opacity="0.7">
                         <path d="M22.5 25L27.5 20L22.5 15" stroke="white" stroke-width="1.66667" stroke-linecap="round" stroke-linejoin="round"/>
                         </g>
-                        </svg>
+                        </svg> */}
                      </div>
                </div>
                </>
