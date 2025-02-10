@@ -84,7 +84,7 @@ export default function Orders() {
                           
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                               <p className='mb-2'>
-                                 <Link href={`/order/detail/${c._id}`} className=' bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]' to="/">View Details</Link>
+                                 <Link href={`/order/detail/${c._id}`} className=' bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]'  >View Details</Link>
                               </p>
                               <p><TimeFormat date={c.createdAt || "--"} /></p>
                            </td>

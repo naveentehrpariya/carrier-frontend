@@ -11,6 +11,7 @@ import UpdateOrderStatus from './UpdateOrderStatus';
 import Loading from '../../common/Loading';
 import AddNotes from './AddNotes';
 import Dropdown from '../../common/Dropdown';
+import { Link } from 'react-router-dom';
 export default function AccountOrders() {
 
 
@@ -61,7 +62,7 @@ export default function AccountOrders() {
                {lists && lists.map((c, index) => {
                   return <tr key={`carriew-${index}`}>
                      <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
-                        <p>Order No. {c.customer_order_no}</p>
+                        <Link href={`/order/detail/${c._id}`} className='text-main font-bold'>Order No. {c.customer_order_no}</Link>
                         <p className='my-1'>Order Status : <Badge status={c.order_status} /></p>
                         <p><TimeFormat date={c.createdAt || "--"} /> </p>
                      </td> 
