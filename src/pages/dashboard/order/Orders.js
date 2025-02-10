@@ -81,12 +81,14 @@ export default function Orders() {
                               {c.carrier_payment_status === 'paid' && <p className='mt-1'>Payment method : {c.carrier_payment_method}</p>}
                               {c.carrier_payment_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''}
                            </td>
-                           
                           
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                              <p className='mb-2'><Link className='disabled bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]' to="/">View Details</Link></p>
+                              <p className='mb-2'>
+                                 <Link href={`/order/detail/${c._id}`} className=' bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]' to="/">View Details</Link>
+                              </p>
                               <p><TimeFormat date={c.createdAt || "--"} /></p>
                            </td>
+
                         </tr>
                      })}
                      

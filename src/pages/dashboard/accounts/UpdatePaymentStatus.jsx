@@ -4,7 +4,7 @@ import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
 import toast from 'react-hot-toast';
 
-export default function UpdatePaymentStatus({id, fetchLists, paymentType}) {
+export default function UpdatePaymentStatus({id, fetchLists, paymentType, text}) {
    const statuses = [
       {
          name: "pending"
@@ -65,7 +65,7 @@ export default function UpdatePaymentStatus({id, fetchLists, paymentType}) {
 
   return (
     <>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses="text-sm mt-1 text-main" btntext={"Update Status"} >
+      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700" btntext={text || "Update Status"} >
          <h2 className='text-white font-bold'>Update Payment Status</h2>
          {/* <div>
             <label className="mt-4 block text-sm mb-2  text-gray-400">Choose Payment Type</label>

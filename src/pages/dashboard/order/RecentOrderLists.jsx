@@ -77,7 +77,7 @@ export default function RecentOrdersLists() {
                               </td>
                               
                               <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                                 <p className='mb-2'><Link className='disabled bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]' to="/">View Details</Link></p>
+                                 <p className='mb-2'><Link  to={`/order/detail/${c._id}`} className=' bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]' >View Details</Link></p>
                                  <p><TimeFormat date={c.createdAt || "--"} /></p>
                               </td>
                            </tr>

@@ -62,7 +62,7 @@ export default function AccountOrders() {
                   return <tr key={`carriew-${index}`}>
                      <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
                         <p>Order No. {c.customer_order_no}</p>
-                        <UpdateOrderStatus  text={<><p className='my-1'>Order Status : <Badge status={c.order_status} /></p></>}  id={c.id} fetchLists={fetchLists} />
+                        <p className='my-1'>Order Status : <Badge status={c.order_status} /></p>
                         <p><TimeFormat date={c.createdAt || "--"} /> </p>
                      </td> 
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
@@ -76,7 +76,7 @@ export default function AccountOrders() {
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p className='mt-1'>Payment Status : <Badge status={c.payment_status} /></p>
                         {c.payment_status === 'paid' && <p className='mt-1'>Payment method : {c.payment_method}</p>}
-                        <UpdatePaymentStatus paymentType={1}  id={c.id} type={1} fetchLists={fetchLists} />
+                        
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p>Amount : <Currency amount={c.gross_amount} currency={c.revenue_currency || 'usd'} /></p>
@@ -87,15 +87,21 @@ export default function AccountOrders() {
                         <p className='mt-1'>Carrier Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
                         {c.carrier_payment_status === 'paid' && <p className='mt-1'>Payment method : {c.carrier_payment_method}</p>}
                         {/* {c.carrier_payment_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''} */}
-                        <div className='flex items-center'>
-                           <UpdatePaymentStatus paymentType={2}  id={c.id} type={2} fetchLists={fetchLists} />
-                           <div className='px-3 text-gray-500'>|</div>
-                           <AddNotes note={c.notes} id={c.id} type={2} fetchLists={fetchLists} />
-                        </div>
                      </td> 
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <Dropdown>
-                           
+                           <li className='list-none text-sm'>
+                              <UpdatePaymentStatus text="Update Payment Status" paymentType={2}  id={c.id} type={2} fetchLists={fetchLists} />
+                           </li>
+                           <li className='list-none text-sm'>
+                              <AddNotes note={c.notes} id={c.id} type={2} fetchLists={fetchLists} />
+                           </li>
+                           <li className='list-none text-sm'>
+                              <UpdatePaymentStatus text="Update Carrier Payment Status" paymentType={1}  id={c.id} type={1} fetchLists={fetchLists} />
+                           </li>
+                           <li className='list-none text-sm'>
+                              <UpdateOrderStatus  text={<>Update Order Status </>}  id={c.id} fetchLists={fetchLists} />
+                           </li>
                         </Dropdown>
                      </td> 
 

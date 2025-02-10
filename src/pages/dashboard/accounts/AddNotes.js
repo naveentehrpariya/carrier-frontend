@@ -36,7 +36,7 @@ export default function AddNotes({id, fetchLists, note}) {
 
   return (
     <>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses="text-sm mt-1 text-main" btntext={notes ? "View Note" : "Add Note"} >
+      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700" btntext={notes ? "View Note" : "Add Note"} >
          <h2 className='text-white font-bold'>Add Note</h2>
          
          <div className='txtarea'>
