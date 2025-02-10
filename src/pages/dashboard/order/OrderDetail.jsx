@@ -216,7 +216,6 @@ export default function OrderDetail() {
                            </ul>
                         </>
                      })}
-                      
                </div>
             }
             <div className='flex justify-end'>
