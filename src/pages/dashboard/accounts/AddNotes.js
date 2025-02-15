@@ -4,7 +4,7 @@ import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
 import toast from 'react-hot-toast';
 
-export default function AddNotes({id, fetchLists, note}) {
+export default function AddNotes({id, fetchLists, note, text, classes}) {
    
    const {Errors} = useContext(UserContext);
    const [action, setaction] = useState();
@@ -36,9 +36,8 @@ export default function AddNotes({id, fetchLists, note}) {
 
   return (
     <>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700" btntext={notes ? "View Note" : "Add Note"} >
+      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={classes ? classes  :  "p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700"} btntext={text ? text : <>{notes ? "View Note" : "Add Note"}</>} >
          <h2 className='text-white font-bold'>Add Note</h2>
-         
          <div className='txtarea'>
             <textarea className='input' rows={6} placeholder='Add Note here ...' defaultValue={notes} onChange={(e) => setNotes(e.target.value)}></textarea>
          </div>             

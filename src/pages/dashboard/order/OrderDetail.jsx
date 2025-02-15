@@ -220,6 +220,7 @@ export default function OrderDetail() {
             }
             <div className='flex justify-end'>
                <div>
+                  <h2 className='font-bold text-black text-xl'>Carrier Fee : <Currency amount={order?.carrier_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
                   <h2 className='font-bold text-black text-xl'>Total : <Currency amount={order?.gross_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
                </div>
             </div>

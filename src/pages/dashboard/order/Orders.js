@@ -8,6 +8,8 @@ import Nocontent from '../../common/NoContent';
 import Badge from '../../common/Badge';
 import Currency from '../../common/Currency';
 import Loading from '../../common/Loading';
+import AddNotes from '../accounts/AddNotes';
+import OrderView from './OrderView';
 export default function Orders() {
 
    const [loading, setLoading] = useState(true);
@@ -35,7 +37,6 @@ export default function Orders() {
       fetchLists();
    }, []);
 
-
   return (
       <AuthLayout> 
          <div className='flex justify-between items-center'>
@@ -55,6 +56,7 @@ export default function Orders() {
                         <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer Payment</th>
                         <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier Payment</th>
                         <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Created Date</th>
+                        <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Documents</th>
                      </tr>
                      {lists && lists.map((c, index) => {
                         return <tr key={`carriew-${index}`}>
@@ -84,11 +86,13 @@ export default function Orders() {
                           
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                               <p className='mb-2'>
-                                 <Link href={`/order/detail/${c._id}`} className=' bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]'  >View Details</Link>
+                                 <Link to={`/order/detail/${c._id}`} className=' bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]'  >View Details</Link>
                               </p>
                               <p><TimeFormat date={c.createdAt || "--"} /></p>
                            </td>
-
+                           <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
+                              <OrderView order={c} fetchLists={fetchLists} />
+                           </td>
                         </tr>
                      })}
                      

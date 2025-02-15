@@ -284,6 +284,7 @@ export default function AddOrder(){
     }
 
     const [distance, setDistance] = useState(0);
+    const [distanceMsg, setDistanceMsg] = useState('');
     const getDistance = () => {
       console.log("distance calculate called");
       if (shippingDetails && shippingDetails.length > 0) {
@@ -293,16 +294,21 @@ export default function AddOrder(){
             return Api.post("/getdistance", {
               start: item.pickupLocation,
               end: item.deliveryLocation,
+            }).then((res) => {
+              console.log("API response distance:", res.data.data);
+              totalDistance += parseInt(res.data.data, 10);
+              if(res.data.status === true) {
+                setDistanceMsg(res.data.message);
+              } else { 
+                setDistanceMsg('');
+              }
             })
-              .then((res) => {
-                console.log("API response distance:", res.data.data);
-                totalDistance += parseInt(res.data.data, 10); // Increment total distance
-              })
-              .catch((err) => {
-                console.error("Error fetching distance:", err);
-              });
+            .catch((err) => {
+              console.error("Error fetching distance:", err);
+              setDistanceMsg('Unable to calculate distance between all shipping locations. Please check all the locations correctly.');
+            });
           }
-          return Promise.resolve(); // Return resolved promise for items without locations
+          return Promise.resolve();
         });
         Promise.all(distancePromises).then(() => {
           console.log("Total distance:", totalDistance);
@@ -321,16 +327,13 @@ export default function AddOrder(){
       setGrossRevenue(grossAmount);
     }, [revenueItems]);
 
-   
   return (
     <AuthLayout>
       <div>
          
          <h2 className='text-white heading xl text-3xl pt-4 '>Add New Order</h2>
           <p className='text-gray-400 heading xl text-lg mt-6'>Customer Details</p>
-          
           <div className='grid grid-cols-3 gap-5'>
-            
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Company Name</label>
                 <input name='company_name' disabled type={'text'} placeholder='Capital Logistics' className="input-sm" />
@@ -511,6 +514,7 @@ export default function AddOrder(){
               </>
             ))}
           </div>
+          {distanceMsg ? <p className='pb-2 text-yellow-600'>{distanceMsg}</p> : ''}
           
           <div>
             <div className="flex justify-between mt-12 mb-4 items-center">
@@ -579,18 +583,22 @@ export default function AddOrder(){
                         onChange={(e) =>
                           handlerevanue(index, "rate", e.target.value)
                         }
+                        onBlur={(e) => handlerevanue(index, "value", item.rate*(distance/1000))}
                       />
                     </div>
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Value</label>
-                      <input
-                        required
-                        name="value" disabled
-                        type="text" value={item.rate*(distance/1000)}
-                        placeholder="Value"
-                        className="input-sm" 
-                        onChange={(e) => handlerevanue(index, "value", e.target.value)}
-                      />
+                      <div className='relative'>
+                        <div className='absolute text-white top-[27px] left-4'>
+                        <Currency amount={item.rate*(distance/1000)} currency={revCurrency || 'cad'} />
+                        </div>
+                        <input
+                          required
+                          name="value" disabled
+                          type="text"  
+                          className="input-sm" 
+                        />
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center">

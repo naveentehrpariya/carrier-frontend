@@ -12,6 +12,7 @@ import Loading from '../../common/Loading';
 import AddNotes from './AddNotes';
 import Dropdown from '../../common/Dropdown';
 import { Link } from 'react-router-dom';
+import OrderView from '../order/OrderView';
 export default function AccountOrders() {
 
 
@@ -57,12 +58,13 @@ export default function AccountOrders() {
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer Payment</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Amount/Profit</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier Payment</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>View Order</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                </tr>
                {lists && lists.map((c, index) => {
                   return <tr key={`carriew-${index}`}>
                      <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
-                        <Link href={`/order/detail/${c._id}`} className='text-main font-bold'>Order No. {c.customer_order_no}</Link>
+                        <p className='text-white font-bold'>Order No. {c.customer_order_no}</p>
                         <p className='my-1'>Order Status : <Badge status={c.order_status} /></p>
                         <p><TimeFormat date={c.createdAt || "--"} /> </p>
                      </td> 
@@ -90,6 +92,9 @@ export default function AccountOrders() {
                         {/* {c.carrier_payment_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''} */}
                      </td> 
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
+                          <OrderView order={c} fetchLists={fetchLists} />
+                     </td>
+                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <Dropdown>
                            <li className='list-none text-sm'>
                               <UpdatePaymentStatus text="Update Payment Status" paymentType={2}  id={c.id} type={2} fetchLists={fetchLists} />
@@ -102,6 +107,9 @@ export default function AccountOrders() {
                            </li>
                            <li className='list-none text-sm'>
                               <UpdateOrderStatus  text={<>Update Order Status </>}  id={c.id} fetchLists={fetchLists} />
+                           </li>
+                           <li className='list-none text-sm'>
+                              <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${c._id}`}>Download Invoice</Link>
                            </li>
                         </Dropdown>
                      </td> 
