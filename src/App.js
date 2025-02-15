@@ -11,6 +11,7 @@ import Orders from './pages/dashboard/order/Orders';
 import AddOrder from './pages/dashboard/order/AddOrder';
 import EmployeesLists from './pages/dashboard/employees/EmployeesLists';
 import AccountOrders from './pages/dashboard/accounts/AccountOrders';
+import OrderDetail from './pages/dashboard/order/OrderDetail';
 
 
 
@@ -25,6 +26,7 @@ function App() {
                     <Route path="/" element={<Login /> } />
                     <Route path="/home" element={<Overview /> } />
                     <Route path="/orders" element={<Orders /> } />
+                    <Route path="/order/detail/:id" element={<OrderDetail /> } />
                     <Route path="/order/add" element={<AddOrder /> } />
                     <Route path="/customers" element={<Customers /> } />
                     <Route path="/carriers" element={<Carriers /> } />

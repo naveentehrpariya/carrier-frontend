@@ -41,7 +41,6 @@ body{background:var(--dark);font-family:'productsans';}
 .input-sm {
   @apply input px-[20px] py-[15px] rounded-[15px]
 }
-
 .box{@apply rounded-[30px] bg-dark1}
 }
 .disabled{opacity:0.5;pointer-events:none;cursor:none;}
@@ -70,4 +69,11 @@ body{background:var(--dark);font-family:'productsans';}
 }
 .css-t3ipsp-control:hover {
   border-color: transparent !important;
+}
+.recent-orders th  {
+  background: #1a1a1a;
+} 
+
+.boltable strong { 
+  color: #000;
 }

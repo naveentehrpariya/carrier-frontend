@@ -4,6 +4,7 @@ import AddCarrier from './AddCarrier';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import TimeFormat from '../../common/TimeFormat';
+import Loading from '../../common/Loading';
 export default function Carriers() {
 
 
@@ -39,7 +40,7 @@ export default function Carriers() {
             <AddCarrier fetchLists={fetchLists} />
          </div>
 
-         {loading ? <p>Loading..</p>
+         {loading ? <Loading />
          :
          <div className='recent-orders overflow-hidden mt-6 border border-gray-900 rounded-[30px]'>
             <table className='w-full p-2' cellPadding={'20'}>

@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 import Nocontent from '../../common/NoContent';
 import Badge from '../../common/Badge';
 import Currency from '../../common/Currency';
+import Loading from '../../common/Loading';
 export default function Orders() {
 
    const [loading, setLoading] = useState(true);
@@ -26,6 +27,7 @@ export default function Orders() {
          setLoading(false);
       }).catch((err) => {
          setLoading(false);
+         Errors(err);
       });
    }
 
@@ -41,7 +43,7 @@ export default function Orders() {
             <Link to="/order/add" className={"btn md text-black font-bold"} >Add New Order</Link>
          </div>
 
-         {loading ? <p className='text-center py-12 px-12 text-center w-full text-gray-400'>Loading ...</p>
+         {loading ? <Loading />
             :
             <>
             {lists && lists.length > 0 ? 
@@ -68,18 +70,25 @@ export default function Orders() {
                            </td>
 
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                              <p><Badge status={c.payment_status} /> | {c.payment_method}</p>
+                              <p className='mt-1'>Payment Status : <Badge status={c.payment_status} /></p>
+                              {c.payment_status === 'paid' && <p className='mt-1'>Payment method : {c.payment_method}</p>}
+                              {c.payment_status_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.payment_status_date || ""} /></p> : ''}
                            </td>
-                            
+                         
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                              <p>Carrier Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
-                              <p><Badge status={c.carrier_payment_status} /> | {c.carrier_payment_method}</p>
+                              <p className='mt-1'>Payment Status : <Badge status={c.carrier_payment_status} /></p>
+                              <p className='mt-1'>Carrier Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
+                              {c.carrier_payment_status === 'paid' && <p className='mt-1'>Payment method : {c.carrier_payment_method}</p>}
+                              {c.carrier_payment_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''}
                            </td>
                           
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                              <p className='mb-2'><Link className='disabled bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]' to="/">View Details</Link></p>
+                              <p className='mb-2'>
+                                 <Link href={`/order/detail/${c._id}`} className=' bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]'  >View Details</Link>
+                              </p>
                               <p><TimeFormat date={c.createdAt || "--"} /></p>
                            </td>
+
                         </tr>
                      })}
                      

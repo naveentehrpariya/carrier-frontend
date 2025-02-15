@@ -6,6 +6,7 @@ import TimeCounter from "../pages/common/TimeCounter";
 import {Helmet} from "react-helmet";
 import Sidebar from "./Sidebar";
 import { TbUserSquareRounded } from "react-icons/tb";
+import GoogleScript from "../pages/common/GoogleScript";
 
 
 export default function AuthLayout({children, heading}) {
@@ -36,6 +37,8 @@ export default function AuthLayout({children, heading}) {
          <title>{heading ? `${heading} | ` : '' } Capital Logistics </title>
          <link rel="canonical" href={window.location.href || "https://runstream.co"} />
       </Helmet>
+
+     
       <div className="auth-wrap flex justify-between max-lg:flex-wrap">
         <main className="main-wrap">
           <header className="fixed top-6 lg:top-0 z-10 bg-dark border-b border-gray-900 px-6 md:px-7 py-4 xl:py-6 flex items-center w-full justify-between">

@@ -6,6 +6,12 @@ import TimeFormat from '../../common/TimeFormat';
 import AddEmployee from '../employees/AddEmployee';
 import Badge from '../../common/Badge';
 import Currency from '../../common/Currency';
+import UpdatePaymentStatus from './UpdatePaymentStatus';
+import UpdateOrderStatus from './UpdateOrderStatus';
+import Loading from '../../common/Loading';
+import AddNotes from './AddNotes';
+import Dropdown from '../../common/Dropdown';
+import { Link } from 'react-router-dom';
 export default function AccountOrders() {
 
 
@@ -37,51 +43,69 @@ export default function AccountOrders() {
   return (
       <AuthLayout> 
          <div className='flex justify-between items-center'>
-            <h2 className='text-white text-2xl'>Employees</h2>
+            <h2 className='text-white text-2xl'>Account Orders Lists</h2>
             <AddEmployee fetchLists={fetchLists} />
          </div>
-
-         {loading ? <p>Loading..</p>
+         {loading ? <Loading />
          :
          <div className='recent-orders overflow-hidden mt-6 border border-gray-900 rounded-[30px]'>
             <table className='w-full p-2' cellPadding={'20'}>
                <tr>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Order No.</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Staff</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer Payment</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Amount/Profit</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier Payment</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Added By</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                </tr>
                {lists && lists.map((c, index) => {
                   return <tr key={`carriew-${index}`}>
                      <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
-                        <p>{c.customer_order_no}</p>
-                     </td>
+                        <Link href={`/order/detail/${c._id}`} className='text-main font-bold'>Order No. {c.customer_order_no}</Link>
+                        <p className='my-1'>Order Status : <Badge status={c.order_status} /></p>
+                        <p><TimeFormat date={c.createdAt || "--"} /> </p>
+                     </td> 
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p>{c?.customer.name}</p>
                         <p>{c.customer.phone}</p>
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        <p>{c?.carrier.name}</p>
-                        <p>{c.carrier.email}</p>
+                        <p>Staff : {c.created_by.name}</p>
+                        <p>Commision : <Currency amount={c.commission} currency={c.revenue_currency || 'usd'} /> ({c.created_by.staff_commision || 0})%</p>
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        <p><Badge status={c.payment_status} /> | {c.payment_method}</p>
+                        <p className='mt-1'>Payment Status : <Badge status={c.payment_status} /></p>
+                        {c.payment_status === 'paid' && <p className='mt-1'>Payment method : {c.payment_method}</p>}
+                        
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p>Amount : <Currency amount={c.gross_amount} currency={c.revenue_currency || 'usd'} /></p>
                         <p>Profit : <Currency amount={c.profit} currency={c.revenue_currency || 'usd'} /> </p>
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        <p>Carrier Amount :<Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /> </p>
-                        <p><Badge status={c.carrier_payment_status} /> | {c.carrier_payment_method}</p>
-                     </td>
+                        <p className='mt-1'>Payment Status : <Badge status={c.carrier_payment_status} /></p>
+                        <p className='mt-1'>Carrier Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
+                        {c.carrier_payment_status === 'paid' && <p className='mt-1'>Payment method : {c.carrier_payment_method}</p>}
+                        {/* {c.carrier_payment_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''} */}
+                     </td> 
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        <p>Created By {c.created_by.name || "--"}</p>
-                        <p><TimeFormat date={c.createdAt || "--"} /> </p>
-                     </td>
+                        <Dropdown>
+                           <li className='list-none text-sm'>
+                              <UpdatePaymentStatus text="Update Payment Status" paymentType={2}  id={c.id} type={2} fetchLists={fetchLists} />
+                           </li>
+                           <li className='list-none text-sm'>
+                              <AddNotes note={c.notes} id={c.id} type={2} fetchLists={fetchLists} />
+                           </li>
+                           <li className='list-none text-sm'>
+                              <UpdatePaymentStatus text="Update Carrier Payment Status" paymentType={1}  id={c.id} type={1} fetchLists={fetchLists} />
+                           </li>
+                           <li className='list-none text-sm'>
+                              <UpdateOrderStatus  text={<>Update Order Status </>}  id={c.id} fetchLists={fetchLists} />
+                           </li>
+                        </Dropdown>
+                     </td> 
+
                   </tr>
                })}
             </table>
