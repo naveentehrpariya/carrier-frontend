@@ -597,9 +597,7 @@ const getDistance = () => {
                         type="text"  value={item.value}
                         placeholder="Value"
                         className="input-sm" 
-                        onChange={(e) =>
-                          handlerevanue(index, "value", e.target.value)
-                        }
+                        onChange={(e) => handlerevanue(index, "value", e.target.value)}
                       />
                     </div>
                   </div>
