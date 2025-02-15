@@ -9,7 +9,6 @@ export default function Loading({fixed, dark}) {
          display: flex;
          justify-content: space-evenly;
        }
-       
        .ball {
          list-style: none;
          width:25px;
