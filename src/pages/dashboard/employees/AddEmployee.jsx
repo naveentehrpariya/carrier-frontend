@@ -5,38 +5,44 @@ import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import countries from './../../common/Countries';
 
-export default function AddEmployee({fetchLists}){
+export default function AddEmployee({fetchLists, item, text, classes}){
 
-
-  console.log("countries",countries)
-  const commisions = Array.from({ length: 100 }, (_, index) => (index + 1) * 5);
-  const [staffType, setStaffType] = useState(1);
-  const [data, setData] = useState({
-      name: "",
-      email: "",
+    const commisions = Array.from({ length: 100 }, (_, index) => (index + 1) * 5);
+    const [staffType, setStaffType] = useState(item?.role);
+    console.log("staffType",staffType)
+    const [data, setData] = useState({
+      name: item?.name || "",
+      email: item?.email || "",
       password: "",
-      country: "",
-      phone: "",
-      address: "",
-      role: staffType,
-      staff_commision: "",
+      country: item?.country || "",
+      phone: item?.phone || "",
+      address: item?.address || "",
+      staff_commision: item?.staff_commision || "",
     });
+
     const [action, setaction] = useState();
     const {Errors} = useContext(UserContext);
 
     const handleinput = (e) => {
       setData({ ...data, [e.target.name]: e.target.value});
     }
+    
     const [loading, setLoading] = useState(false);
-
     const addEmployee = () => {
-      if(data.email === "" || data.password === "" || data.name === "" || data.role === "" || data.staff_commision === "" || data.phone === "" || data.country === "" || data.address === ""){
-        toast.error("Please fill all the fields");
-        return false;
+      if(!item){
+        if(data.email === "" || data.password === "" || data.name === "" || data.role === "" || data.staff_commision === "" || data.phone === "" || data.country === "" || data.address === ""){
+          toast.error("Please fill all the fields");
+          return false;
+        }
       }
       setLoading(true);
-      const resp = Api.post(`/user/create_user`, {...data, generateAutoPassword: data.password ? 0 : 1});
-      resp.then((res) => {
+      let addEditStaff;
+      if(item){
+        addEditStaff = Api.post(`/user/edit_user/${item._id}`, {...data, role:staffType});
+      } else { 
+        addEditStaff = Api.post(`/user/create_user`, {...data, role:staffType || 1, generateAutoPassword: data.password ? 0 : 1});
+      }
+      addEditStaff.then((res) => {
         setLoading(false);
         if (res.data.status === true) {
           toast.success(res.data.message);
@@ -56,20 +62,20 @@ export default function AddEmployee({fetchLists}){
 
   return (
     <div>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses="" btntext={"Add New Employee"} >
+      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={classes} btntext={text||"Add New Employee"} >
          <h2 className='text-white font-bold'>Add New Employee</h2>
          <div className='grid grid-cols-2 gap-4'>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Name</label>
-               <input required name='name' onChange={handleinput} type={'text'} placeholder={"Name"} className="input-sm" />
+               <input defaultValue={item?.name} required name='name' onChange={handleinput} type={'text'} placeholder={"Name"} className="input-sm" />
             </div>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Email</label>
-               <input required name='email' onChange={handleinput} type={'email'} placeholder={"Email address"} className="input-sm" />
+               <input defaultValue={item?.email} required name='email' onChange={handleinput} type={'email'} placeholder={"Email address"} className="input-sm" />
             </div>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Staff Commission</label>
-               <select  onChange={handleinput} name='staff_commision' className="input-sm" >
+               <select  defaultValue={item?.staff_commision} onChange={handleinput} name='staff_commision' className="input-sm" >
                 <option selected disabled className='text-black'>Choose Commision</option>
                   {commisions && commisions.map((c, i)=>{
                     return <option value={c} className='text-black'>{c}% Commision</option>
@@ -78,7 +84,7 @@ export default function AddEmployee({fetchLists}){
             </div>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Country</label>
-               <select onChange={handleinput} name='country' className="input-sm" >
+               <select defaultValue={item?.country} onChange={handleinput} name='country' className="input-sm" >
                 <option selected disabled className='text-black'>Choose Country</option>
                   {countries && countries.map((c, i)=>{
                     return <option value={c.label} className='text-black'>{c.label}</option>
@@ -86,18 +92,22 @@ export default function AddEmployee({fetchLists}){
                </select>
             </div> 
 
+         </div>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Phone</label>
-               <input required name='phone' onChange={handleinput} type={'phone'} placeholder={"Phone Number"} className="input-sm" />
+               <input defaultValue={item?.phone} required name='phone' onChange={handleinput} type={'phone'} placeholder={"Phone Number"} className="input-sm" />
             </div>
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Password</label>
-               <input required name='password' onChange={handleinput} type={'text'} placeholder={"Enter password"} className="input-sm" />
-            </div>
-         </div>
+            {item ? "" :
+              <>
+                <div className='input-item'>
+                  <label className="mt-4 mb-0 block text-sm text-gray-400">Password</label>
+                  <input required name='password' onChange={handleinput} type={'text'} placeholder={"Enter password"} className="input-sm" />
+                </div>
+              </>
+            }
           <div className='input-item mb-4 '>
               <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
-              <input required name='address' onChange={handleinput} type={'address'} placeholder={"Enter address"} className="input-sm" />
+              <input defaultValue={item?.address} required name='address' onChange={handleinput} type={'address'} placeholder={"Enter address"} className="input-sm" />
           </div>
 
           <label className=" mb-2 block text-sm text-gray-400 text-center mt-6">Staff Type</label>

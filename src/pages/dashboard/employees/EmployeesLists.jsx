@@ -52,6 +52,7 @@ export default function EmployeesLists() {
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Employee Address</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Created Date</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                </tr>
                {lists && lists.map((c, index) => {
                   return <tr key={`carriew-${index}`}>
@@ -60,6 +61,7 @@ export default function EmployeesLists() {
                         <p className='whitespace-nowrap'>{c.name} </p>
                         <button className={` ${c.role == '2' ? "bg-main text-white" : "bg-blue-600 text-white"} text-[10px]  p-[1px] px-[10px] rounded-[20px] mt-2 `}>{c.role == '2' ? "Accountant" : "Staff"}</button>
                      </td>
+                     
                      <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
                         <p>Email : {c.email || ""}</p>
                         <p>ID : {c.corporateID}</p>
@@ -78,6 +80,9 @@ export default function EmployeesLists() {
                         {/* <p>{c.created_by.name || "--"}</p> */}
                         <p><TimeFormat date={c.createdAt || "--"} /> </p>
 
+                     </td>
+                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
+                           <AddEmployee text="Edit" classes="text-main" item={c} fetchLists={fetchLists} />
                      </td>
                   </tr>
                })}

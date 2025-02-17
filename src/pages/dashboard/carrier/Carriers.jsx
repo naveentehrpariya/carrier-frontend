@@ -5,6 +5,7 @@ import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import TimeFormat from '../../common/TimeFormat';
 import Loading from '../../common/Loading';
+import RemoveCarrier from './RemoveCarrier';
 export default function Carriers() {
 
 
@@ -49,6 +50,7 @@ export default function Carriers() {
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone/Email</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Location</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Added By</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                </tr>
                {lists && lists.map((c, index) => {
                   return <tr key={`carriew-${index}`}>
@@ -67,7 +69,10 @@ export default function Carriers() {
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p>{c.created_by.name || "--"}</p>
                         <p><TimeFormat date={c.createdAt || "--"} /> </p>
-
+                     </td>
+                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
+                        <AddCarrier classes="text-main" text={"Update Carrier"} item={c} fetchLists={fetchLists} />
+                        <RemoveCarrier classes="text-red-600 mt-2" text={"Remove Carrier"} item={c} fetchLists={fetchLists} />
                      </td>
                   </tr>
                })}

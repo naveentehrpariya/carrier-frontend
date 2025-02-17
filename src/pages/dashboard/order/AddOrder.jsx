@@ -198,10 +198,10 @@ export default function AddOrder(){
     }
 
     const closePopup = () => { 
-      setCloseCarrierPopup(false);
+      setCloseCarrierPopup("close");
       setTimeout(() => {
         setCloseCarrierPopup();
-      },1000);
+      },2000);
     }
     
 
@@ -620,7 +620,7 @@ export default function AddOrder(){
             </div>
           </div>
 
-          <div className='flex justify-between items-center'>
+          <div className='flex justify-end items-center'>
               <Popup action={closeCarrierPopup} size="md:max-w-xl" space='p-8' bg="bg-black" btnclasses="" btntext={"Assign Carrier"} >
                   <h2 className='text-white text-2xl font-bold'>Assign Carrier</h2>
                   <div className=''>
@@ -636,10 +636,10 @@ export default function AddOrder(){
                     </div>
                   </div>
                   <div className='flex justify-center items-center'>
-                    <button onClick={closePopup} className="btn md mt-6 px-[50px] main-btn text-black font-bold">ADD</button>
+                    <button onClick={(closePopup)} className="btn -sm md mt-6 px-[50px] text-sm main-btn text-black font-bold">Assign Carrier</button>
                   </div>
               </Popup>
-            <button onClick={addOrder} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
+            <button onClick={addOrder}  className={`btn md   ${data.carrier == '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? "Logging in..." : "Submit Order"}</button>
           </div>
 
       </div>

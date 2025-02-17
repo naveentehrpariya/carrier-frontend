@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import Nocontent from '../../common/NoContent';
 import Badge from '../../common/Badge';
 import Currency from '../../common/Currency';
+import OrderView from './OrderView';
 export default function RecentOrdersLists() {
 
    const [loading, setLoading] = useState(true);
@@ -53,10 +54,11 @@ export default function RecentOrdersLists() {
                            <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer Payment</th>
                            <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier Payment</th>
                            <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Created Date</th>
+                           <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Documents</th>
                         </tr>
                         {lists && lists.map((c, index) => {
                            return <tr key={`carriew-${index}`}>
-   
+
                               <td className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>
                                  <p className='whitespace-nowrap'>Order No. : {c.customer_order_no || "--"}</p>
                                  <p>{c.company_name || "--"}</p>
@@ -66,25 +68,32 @@ export default function RecentOrdersLists() {
                                  <p>Customer : {c.customer?.name || "--"}</p>
                                  <p className='mt-1'>Carrier : {c.carrier?.name || "--"}</p>
                               </td>
-   
+
                               <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                                 <p><Badge status={c.payment_status} /> | {c.payment_method}</p>
-                              </td>
-                                 
-                              <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                                 <p>Carrier Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
-                                 <p><Badge status={c.carrier_payment_status} /> | {c.carrier_payment_method}</p>
+                                 <p className='mt-1'>Payment Status : <Badge status={c.payment_status} /></p>
+                                 {c.payment_status === 'paid' && <p className='mt-1'>Payment method : {c.payment_method}</p>}
+                                 {c.payment_status_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.payment_status_date || ""} /></p> : ''}
                               </td>
                               
                               <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                                 <p className='mb-2'><Link  to={`/order/detail/${c._id}`} className=' bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]' >View Details</Link></p>
+                                 <p className='mt-1'>Payment Status : <Badge status={c.carrier_payment_status} /></p>
+                                 <p className='mt-1'>Carrier Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
+                                 {c.carrier_payment_status === 'paid' && <p className='mt-1'>Payment method : {c.carrier_payment_method}</p>}
+                                 {c.carrier_payment_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''}
+                              </td>
+                              
+                              <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
+                                 <p className='mb-2'>
+                                    <Link to={`/order/detail/${c._id}`} className=' bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]'  >View Details</Link>
+                                 </p>
                                  <p><TimeFormat date={c.createdAt || "--"} /></p>
+                              </td>
+                              <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
+                                 <OrderView order={c} fetchLists={fetchLists} />
                               </td>
                            </tr>
                         })}
-                        
                      </table>
-                  
                   </div>
                   : 
                   <Nocontent text="No orders found" />

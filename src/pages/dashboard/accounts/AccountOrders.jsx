@@ -97,13 +97,13 @@ export default function AccountOrders() {
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <Dropdown>
                            <li className='list-none text-sm'>
-                              <UpdatePaymentStatus text="Update Payment Status" paymentType={2}  id={c.id} type={2} fetchLists={fetchLists} />
+                              <UpdatePaymentStatus text="Update Carrier Payment Status" paymentType={2}  id={c.id} type={2} fetchLists={fetchLists} />
                            </li>
                            <li className='list-none text-sm'>
                               <AddNotes note={c.notes} id={c.id} type={2} fetchLists={fetchLists} />
                            </li>
                            <li className='list-none text-sm'>
-                              <UpdatePaymentStatus text="Update Carrier Payment Status" paymentType={1}  id={c.id} type={1} fetchLists={fetchLists} />
+                              <UpdatePaymentStatus text="Update Payment Status" paymentType={1}  id={c.id} type={1} fetchLists={fetchLists} />
                            </li>
                            <li className='list-none text-sm'>
                               <UpdateOrderStatus  text={<>Update Order Status </>}  id={c.id} fetchLists={fetchLists} />
