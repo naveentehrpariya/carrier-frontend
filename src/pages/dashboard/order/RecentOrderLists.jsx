@@ -9,6 +9,7 @@ import Nocontent from '../../common/NoContent';
 import Badge from '../../common/Badge';
 import Currency from '../../common/Currency';
 import OrderView from './OrderView';
+
 export default function RecentOrdersLists() {
 
    const [loading, setLoading] = useState(true);
@@ -42,7 +43,7 @@ export default function RecentOrdersLists() {
             <h2 className='text-white text-2xl'>Recent Orders</h2>
          </div>
 
-         {loading ? <p className='text-center py-12 px-12 text-center w-full text-gray-400'>Loading ...</p>
+         {loading ? <Loading />
             :
             <>
                {lists && lists.length > 0 ? 

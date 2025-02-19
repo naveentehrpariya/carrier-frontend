@@ -10,6 +10,7 @@ import Currency from '../../common/Currency';
 import Loading from '../../common/Loading';
 import AddNotes from '../accounts/AddNotes';
 import OrderView from './OrderView';
+
 export default function Orders() {
 
    const [loading, setLoading] = useState(true);
