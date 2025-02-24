@@ -1,7 +1,7 @@
 import axios from "axios";
 import React, { useEffect, useRef, useState } from "react";
 
-export default function GetLocation({ index, onchange, placeholder }) {
+export default function GetLocation({ index, onchange, placeholder, getDistance }) {
   const googlemap = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   const inputRef = useRef(null);
   const [isSuggestionSelected, setIsSuggestionSelected] = useState(false); // Track if a suggestion was selected
@@ -10,27 +10,23 @@ export default function GetLocation({ index, onchange, placeholder }) {
   const [suggestions, setSuggestions] = useState([]);
 
   const getSuggestions = (place) => {
-    if (!place) return; // Prevent unnecessary API calls for empty input
-
+    if (!place) return;
     axios
       .get(`https://photon.komoot.io/api/?q=${place}`)
       .then((res) => {
         console.log("res", res.data);
         setSuggestions(res.data.results || res.data.features || []);
-      })
-      .catch((err) => {
+      }).catch((err) => {
         console.error("err", err);
       });
   };
 
   useEffect(() => {
     if (!inputText || isSuggestionSelected) return; // Avoid API call if a suggestion was selected
-
     const timer = setTimeout(() => {
       setTyping(false);
       getSuggestions(inputText);
     }, 2000);
-
     return () => clearTimeout(timer);
   }, [inputText]);
 
@@ -38,21 +34,28 @@ export default function GetLocation({ index, onchange, placeholder }) {
     setIsSuggestionSelected(false); // Reset flag when typing
     setTyping(true);
     setInputText(e.target.value);
+    onchange && onchange(index, e.target.value);
   };
 
   const selectAddress = (e) => {
     setIsSuggestionSelected(true); // Set flag to prevent API call
     onchange && onchange(index, e);
     setInputText(e);
-    setSuggestions([]); // Clear suggestions after selection
+    setSuggestions([]);
   };
+
+  const distanceCal = () => { 
+    setTimeout(() => {
+      getDistance && getDistance();
+    },3000);
+  }
 
   return (
     <div className="relative">
       <input
         ref={inputRef}
         type="text"
-        name="location"
+        name="location" onBlur={distanceCal}
         value={inputText}
         onChange={handleInput}
         className="input-sm"

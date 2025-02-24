@@ -63,8 +63,9 @@ export default function Orders() {
                         return <tr key={`carriew-${index}`}>
 
                            <td className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>
-                              <p className='whitespace-nowrap'>Order No. : {c.customer_order_no || "--"}</p>
+                              <p className='whitespace-nowrap'>Order No  : {c.customer_order_no || "--"}</p>
                               <p>{c.company_name || "--"}</p>
+                              <p className='my-1'>Order Status : <Badge title={true} status={c.order_status} /></p>
                            </td>
                           
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
@@ -73,23 +74,23 @@ export default function Orders() {
                            </td>
 
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                              <p className='mt-1'>Payment Status : <Badge status={c.payment_status} /></p>
+                              <p className='mt-1'>Payment Status : <Badge title={true} status={c.payment_status} /></p>
                               {c.payment_status === 'paid' && <p className='mt-1'>Payment method : {c.payment_method}</p>}
-                              {c.payment_status_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.payment_status_date || ""} /></p> : ''}
+                              {c.payment_status_date ? <p className='text-[13px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.payment_status_date || ""} /></p> : ''}
                            </td>
                          
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                              <p className='mt-1'>Payment Status : <Badge status={c.carrier_payment_status} /></p>
+                              <p className='mt-1'>Payment Status : <Badge title={true} status={c.carrier_payment_status} /></p>
                               <p className='mt-1'>Carrier Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
                               {c.carrier_payment_status === 'paid' && <p className='mt-1'>Payment method : {c.carrier_payment_method}</p>}
-                              {c.carrier_payment_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''}
+                              {c.carrier_payment_date ? <p className='text-[13px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''}
                            </td>
                           
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                               <p className='mb-2'>
-                                 <Link to={`/order/detail/${c._id}`} className=' bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]'  >View Details</Link>
+                                 <Link to={`/order/detail/${c._id}`} className=' text-main uppercase text-[14px] m-auto d-table    rounded-[20px]'  >View Details</Link>
                               </p>
-                              <p><TimeFormat date={c.createdAt || "--"} /></p>
+                              <p className='text-[13px] text-gray-400 mt-1'><TimeFormat date={c.createdAt || "--"} /></p>
                            </td>
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                               <OrderView order={c} fetchLists={fetchLists} />

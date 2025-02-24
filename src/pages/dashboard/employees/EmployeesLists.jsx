@@ -6,6 +6,9 @@ import AddCustomer from './AddEmployee';
 import TimeFormat from '../../common/TimeFormat';
 import AddEmployee from './AddEmployee';
 import Loading from '../../common/Loading';
+import Dropdown from '../../common/Dropdown';
+import SuspandAccount from './SuspandAccount';
+import Badge from '../../common/Badge';
 export default function EmployeesLists() {
 
 
@@ -47,10 +50,10 @@ export default function EmployeesLists() {
             <table className='w-full p-2' cellPadding={'20'}>
                <tr>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Name</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Email/Corporate ID</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Corporate ID</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Staff Commision</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Employee Address</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone/Email</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Created Date</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                </tr>
@@ -63,8 +66,9 @@ export default function EmployeesLists() {
                      </td>
                      
                      <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
-                        <p>Email : {c.email || ""}</p>
                         <p>ID : {c.corporateID}</p>
+                        <p className='whitespace-nowrap'>Account Status : <Badge title={true} status={c.status} /></p>
+                        
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p>{c.staff_commision ? `${c.staff_commision}%` : "N/A"}</p>
@@ -74,6 +78,7 @@ export default function EmployeesLists() {
                         <p>{c.address ? `Address : ${c.address}` : "N/A"}</p>
                      </td>
                      <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
+                        <p>Email : {c.email || ""}</p>
                         <p>{c.phone ? `${c.phone}` : "N/A"}</p>
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
@@ -82,8 +87,17 @@ export default function EmployeesLists() {
 
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <AddEmployee text="Edit" classes="text-main" item={c} fetchLists={fetchLists} />
+                           <Dropdown>
+                              <li className='list-none text-sm'>
+                                 <AddEmployee text="Edit" classes="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block" item={c} fetchLists={fetchLists} />
+                              </li>
+                              <li className='list-none text-sm'>
+                                 <SuspandAccount text="Change Account Status" item={c} fetchLists={fetchLists} />
+                              </li>
+                           </Dropdown>
                      </td>
+ 
+
                   </tr>
                })}
             </table>

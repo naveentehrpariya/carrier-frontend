@@ -45,6 +45,12 @@ export default function Badge({status,classes, text, title}){
          }
          return "bg-red-600";
       }
+      if (status === "inactive") {
+         if(title){
+            return "text-red-600";
+         }
+         return "bg-red-600";
+      }
       if (status === "canceled") {
          if(title){
             return "text-gray-600";

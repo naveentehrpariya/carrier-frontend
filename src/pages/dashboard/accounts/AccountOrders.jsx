@@ -65,7 +65,7 @@ export default function AccountOrders() {
                   return <tr key={`carriew-${index}`}>
                      <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
                         <p className='text-white font-bold'>Order No. {c.customer_order_no}</p>
-                        <p className='my-1'>Order Status : <Badge status={c.order_status} /></p>
+                        <p className='my-1'>Order Status : <Badge title={true} status={c.order_status} /></p>
                         <p><TimeFormat date={c.createdAt || "--"} /> </p>
                      </td> 
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
@@ -77,7 +77,7 @@ export default function AccountOrders() {
                         <p>Commision : <Currency amount={c.commission} currency={c.revenue_currency || 'usd'} /> ({c.created_by.staff_commision || 0})%</p>
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        <p className='mt-1'>Payment Status : <Badge status={c.payment_status} /></p>
+                        <p className='mt-1'>Payment Status : <Badge title={true} status={c.payment_status} /></p>
                         {c.payment_status === 'paid' && <p className='mt-1'>Payment method : {c.payment_method}</p>}
                         
                      </td>
@@ -86,7 +86,7 @@ export default function AccountOrders() {
                         <p>Profit : <Currency amount={c.profit} currency={c.revenue_currency || 'usd'} /> </p>
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        <p className='mt-1'>Payment Status : <Badge status={c.carrier_payment_status} /></p>
+                        <p className='mt-1'>Payment Status : <Badge title={true} status={c.carrier_payment_status} /></p>
                         <p className='mt-1'>Carrier Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
                         {c.carrier_payment_status === 'paid' && <p className='mt-1'>Payment method : {c.carrier_payment_method}</p>}
                         {/* {c.carrier_payment_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''} */}
