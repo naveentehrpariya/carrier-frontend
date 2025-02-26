@@ -180,7 +180,9 @@ export default function AddOrder(){
       "carrier_payment_status" : "pending",
       "carrier_payment_method" : "none",
       "revenue_currency" : 'cad',
-      "order_status" : "added"
+      "order_status" : "added",
+      "totalDistance": 0,
+      "total_amount": 0
     });
 
     const [customersListing, setCustomersListing] = useState([]);
@@ -428,7 +430,15 @@ export default function AddOrder(){
                 <div className="grid grid-cols-4 gap-4">
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Pickup Location</label>
-                    <GetLocation placeholder={"Enter Pickup Location"} index={index} onchange={getPickupLocation} />
+                    <input
+                      required
+                      name="pickupLocation" 
+                      onChange={(e) => handleInputChange(index, "pickupLocation", e.target.value)}
+                      type={"text"} 
+                      placeholder={"Enter Pickup location"} 
+                      className="input-sm"
+                    />
+                    {/* <GetLocation placeholder={"Enter Pickup Location"} index={index} onchange={getPickupLocation} /> */}
                   </div>
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">
@@ -478,7 +488,16 @@ export default function AddOrder(){
                     <label className="mb-0 block text-sm text-gray-400">
                       Delivery Location
                     </label> 
-                      <GetLocation getDistance={getDistance} placeholder={"Enter delivery location"} index={index} onchange={getDeliveryLocation} />
+                    <input
+                      required
+                      name="deliveryLocation"
+                      onChange={(e) =>
+                        handleInputChange(index, "deliveryLocation", e.target.value)
+                      }
+                      type={"text"}
+                      placeholder={"Enter delivery location"}
+                      className="input-sm"
+                    />
                   </div>
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">
@@ -529,19 +548,6 @@ export default function AddOrder(){
             ))}
           </div>
 
-          {distanceMsg ? <>
-            <p className='pb-2 text-yellow-600'>{distanceMsg} Update distance manually.</p> 
-            <div className="items-center">
-              <div className='flex items-center'>
-                <input onChange={(e)=>setDistance(e.target.value)}
-                required type={"number"} placeholder={"Enter total distance manually..."}
-                className="input-sm" />
-              </div>
-            </div>
-          </> 
-          : ''}
-          
-
           <div>
             <div className="flex justify-between mt-12 mb-4 items-center">
               <p className="text-gray-400 heading xl text-xl">Revenue Items</p>
@@ -558,7 +564,7 @@ export default function AddOrder(){
             <div className="border rounded-[20px] bg-dark border-gray-900 p-6">
               {revenueItems.map((item, index) => (
                 <div key={index} className="rev-items flex justify-between items-center mb-4">
-                  <div className="grid grid-cols-4 w-full gap-5">
+                  <div className="grid grid-cols-3 w-full gap-5">
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Revenue Item</label>
                       <Select
@@ -569,12 +575,7 @@ export default function AddOrder(){
                         }
                         options={revenueItemOptions}
                         value={
-                          item.revenue_item
-                            ? {
-                                label: item.revenue_item,
-                                value: item.revenue_item,
-                              }
-                            : null
+                          item.revenue_item ? { label: item.revenue_item, value: item.revenue_item} : null
                         }
                       />
                     </div>
@@ -599,20 +600,22 @@ export default function AddOrder(){
                     </div>
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Rate</label>
-                      <input
-                        required
-                        name="rate"
-                        type="number"
-                        placeholder="Rate"
-                        className="input-sm"
-                        value={item.rate}
-                        onChange={(e) =>
-                          handlerevanue(index, "rate", e.target.value)
-                        }
-                        onBlur={(e) => handlerevanue(index, "value", item.rate*(distance))}
-                      />
+                      <div className='relative'>
+                      <div className='absolute text-white top-[26px] left-4'>
+                          <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'cad'} />
+                      </div>
+                          <input
+                            required
+                            name="rate"
+                            type="number"
+                            placeholder="Rate"
+                            className="input-sm ps-[50px]"
+                            onChange={(e) => handlerevanue(index, "rate", e.target.value)}
+                          />
+                      </div>
                     </div>
-                    <div className="input-item">
+
+                    {/* <div className="input-item">
                       <label className="block text-sm text-gray-400">Value</label>
                       <div className='relative'>
                         <div className='absolute text-white top-[27px] left-4'>
@@ -625,7 +628,10 @@ export default function AddOrder(){
                           className="input-sm" 
                         />
                       </div>
-                    </div>
+                    </div> */}
+
+
+
                   </div>
                   <div className="flex items-center">
                     <button  className="btn bg-red-700 mt-[20px] ms-3 text-white"
@@ -636,11 +642,25 @@ export default function AddOrder(){
               ))}
             </div>
           </div>
+       
+          <p className='pb-2 text-yellow-600'>{distanceMsg} Update distance manually.</p> 
+          <div className="items-center">
+            <div className='flex items-center'>
+              <input onChange={(e) =>setData({ ...data, totalDistance: e.target.value})} 
+              required type={"number"} placeholder={"Enter total distance manually..."} className="input-sm" />
+            </div>
+          </div>
+
+          <div className='flex items-center'>
+            <input onChange={(e) => setData({ ...data, total_amount: e.target.value}) } 
+            required type={"number"} placeholder={"Order Amount"}
+            className="input-sm" />
+          </div>
 
           <div className='flex justify-end py-2'>
             <div className='text-right'>
             <p className='text-white mb-2'> 
-              Total Amount :  <Currency amount={grossRevanue} currency={revCurrency || 'cad'} /> 
+              Total Amount :  <Currency amount={data.total_amount} currency={revCurrency || 'cad'} /> 
             </p> 
               {distance > 0 ? <p className='text-white mb-2'>Total Distance : {distance}KM</p> : ''}
             </div>

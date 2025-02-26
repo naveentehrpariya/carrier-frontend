@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import countries from './../../common/Countries';
+import EmployeesLists from './EmployeesLists';
 
 export default function AddEmployee({fetchLists, item, text, classes}){
 
@@ -112,7 +113,7 @@ export default function AddEmployee({fetchLists, item, text, classes}){
 
           <label className=" mb-2 block text-sm text-gray-400 text-center mt-6">Staff Type</label>
          <div className='flex justify-center'>
-              <button className={`mx-2 ${staffType === 1 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(1)} >Staff</button>
+              <button className={`mx-2 ${staffType === 1 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(1)} >Employee</button>
               <button className={`mx-2 ${staffType === 2 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(2)} >Accountant</button>
          </div>
          <div className='flex justify-center items-center'>

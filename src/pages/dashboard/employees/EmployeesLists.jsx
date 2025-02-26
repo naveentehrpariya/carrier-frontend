@@ -51,8 +51,8 @@ export default function EmployeesLists() {
                <tr>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Name</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Corporate ID</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Staff Commision</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Employee Address</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Commision</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Address</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone/Email</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Created Date</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
@@ -62,7 +62,7 @@ export default function EmployeesLists() {
 
                      <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
                         <p className='whitespace-nowrap'>{c.name} </p>
-                        <button className={` ${c.role == '2' ? "bg-main text-white" : "bg-blue-600 text-white"} text-[10px]  p-[1px] px-[10px] rounded-[20px] mt-2 `}>{c.role == '2' ? "Accountant" : "Staff"}</button>
+                        <button className={` ${c.role == '2' ? "bg-main text-white" : "bg-blue-600 text-white"} text-[10px]  p-[1px] px-[10px] rounded-[20px] mt-2 `}>{c.role == '2' ? "Accountant" : "Employee"}</button>
                      </td>
                      
                      <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
