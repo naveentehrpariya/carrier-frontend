@@ -135,25 +135,29 @@ export default function OrderDetail() {
                      <li className=''><strong>Order # :</strong> <p>{order?.customer_order_no}</p> </li>
                      <li className=''><strong>Order Created Date :</strong> <p><TimeFormat date={order?.createdAt} /></p> </li>
                      <li className=''><strong>Order Status :</strong> <p><Badge title={true} status={order?.order_status} /></p> </li>
-                     <li className=''><strong>Customer Email # :</strong> <p>{order?.customer?.email}</p> </li>
+                     <li className=''><strong>Total Distance :</strong> <p>{order.totalDistance}KM</p> </li>
                   </ul>
                </div>
 
                <div className='orderFill p-3 border-t border-gray-300 mt-3 pt-4 flex justify-between'>
                   <div className='customerDetails'>
                      <p className='font-bold text-black mb-2'>Customer Details</p>
-                     <ul className=''>
+                     {/* <ul className=''>
                         <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Customer Name:</strong> <p>{order?.customer?.name}</p> </li>
                         <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Customer ID:</strong> <p>{order?.customer?.customerID}</p> </li>
                         <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Customer Phone :</strong> <p>{order?.customer?.phone}</p> </li>
                         <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Customer Email :</strong> <p>{order?.customer?.email}</p> </li>
+                     </ul> */}
+                     <ul className=''>
+                        <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Customer Name:</strong> <p>Capital Logistics</p> </li>
+                        <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Customer Phone :</strong> <p>+45 454524545</p> </li>
+                        <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Customer Email :</strong> <p>info@cpaitallogistics.com</p> </li>
                      </ul>
                   </div>
                   <div className='customerDetails'>
                      <p className='font-bold text-black mb-2'>Carrier Details</p>
                      <ul className=''>
                         <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Carrier Name:</strong> <p>{order?.carrier?.name}</p> </li>
-                        <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Carrier ID:</strong> <p>{order?.carrier?.carrierID}</p> </li>
                         <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Carrier Phone :</strong> <p>{order?.carrier?.phone}</p> </li>
                         <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Carrier Email :</strong> <p>{order?.carrier?.email}</p> </li>
                      </ul>
@@ -161,10 +165,10 @@ export default function OrderDetail() {
                   <div className='customerDetails'>
                      <p className='font-bold text-black mb-2'>Payment Status</p>
                      <ul className=''>
-                        <li className=' flex items-center'><strong className='text-sm !text-gray-700'>Customer Payment Status:</strong> <p><Badge title={true} status={order?.payment_status} /></p> </li>
-                        <li className=' flex items-center capitalize'><strong className='text-sm me-1 !text-gray-700'>Customer Payment method:</strong> <p>{order?.payment_method || "none"}</p> </li>
-                        <li className=' flex items-center'><strong className='text-sm !text-gray-700'>Carrier Payment Status:</strong> <p><Badge title={true} status={order?.carrier_payment_status} /></p> </li>
-                        <li className=' flex items-center capitalize'><strong className='text-sm me-1 !text-gray-700'>Carrier Payment Method:</strong> <p>{order?.carrier_payment_method}</p> </li>
+                        {/* <li className=' flex items-center'><strong className='text-sm !text-gray-700'>Customer Payment Status:</strong> <p><Badge title={true} status={order?.payment_status} /></p> </li>
+                        <li className=' flex items-center capitalize'><strong className='text-sm me-1 !text-gray-700'>Customer Payment method:</strong> <p>{order?.payment_method || "none"}</p> </li> */}
+                        <li className=' flex items-center'><strong className='text-sm !text-gray-700'>Payment Status:</strong> <p><Badge title={true} status={order?.carrier_payment_status} /></p> </li>
+                        <li className=' flex items-center capitalize'><strong className='text-sm me-1 !text-gray-700'>Payment Method:</strong> <p>{order?.carrier_payment_method}</p> </li>
                      </ul>
                   </div>
                </div>
@@ -174,11 +178,9 @@ export default function OrderDetail() {
                      <div className='orderFill p-3 border-t border-gray-300 mt-3 pt-4'>
                         <ul className='grid grid-cols-6 gap-2'>
                            <li className=''><strong>Shipment No.:</strong> <p>#{index+1}</p> </li>
-                           <li className=''><strong>Order # :</strong> <p>#{order?.customer_order_no}</p> </li>
                            <li className='capitalize '><strong>Commudity :</strong> <p>{s?.community}</p> </li>
                            <li className='capitalize '><strong>Equipments :</strong> <p>{s?.equipment?.value}</p> </li>
                            <li className=''><strong>Weight :</strong> <p>{s?.weight || 'N/A'} {s?.weight_unit || ''}</p> </li>
-                           <li className=''><strong>Total Distance :</strong> <p>200 KM</p> </li>
                         </ul>
                         
                         <p className='font-bold text-black pt-4 '>Shipment Pickup Details</p>
@@ -212,11 +214,10 @@ export default function OrderDetail() {
                      <p className='font-bold text-black text-xl mb-2'>Revenue Items</p>
                         {order && order.revenue_items && order.revenue_items.map((r, index) => {
                            return <>
-                              <ul className='flex justify-between mb-4 '>
+                              <ul className='flex justify-between mb-4  '>
                                  <li className=''><strong>Revenue Item:</strong> <p>{r.revenue_item}</p> </li>
                                  <li className=''><strong>Rate method </strong  > <p className='capitalize'>{r.rate_method}</p> </li>
-                                 <li className=''><strong>Rate </strong> <p className='capitalize'>{r.rate}</p> </li>
-                                 <li className=''><strong>Value </strong> <p><Currency amount={r?.value || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
+                                 <li className=''><strong>Rate </strong> <p><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
                               </ul>
                            </>
                         })}
@@ -224,8 +225,8 @@ export default function OrderDetail() {
                }
                <div className='flex justify-end'>
                   <div>
-                     <h2 className='font-bold text-black text-xl text-right'>Carrier Fee : <Currency amount={order?.carrier_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
-                     <h2 className='font-bold text-black text-xl text-right'>Total : <Currency amount={order?.gross_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
+                     {/* <h2 className='font-bold text-black text-xl text-right'>Total : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2> */}
+                     <h2 className='font-bold text-black text-xl text-right'>Total : <Currency amount={order?.carrier_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
                   </div>
                </div>
             </div>

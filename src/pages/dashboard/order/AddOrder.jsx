@@ -185,6 +185,8 @@ export default function AddOrder(){
       "total_amount": 0
     });
 
+    
+
     const [customersListing, setCustomersListing] = useState([]);
     const [carriersListing, setCarrierListings] = useState([]);
 
@@ -433,7 +435,7 @@ export default function AddOrder(){
                     <input
                       required
                       name="pickupLocation" 
-                      onChange={(e) => handleInputChange(index, "pickupLocation", e.target.value)}
+                      onChange={(e)=>getPickupLocation(index, e.target.value)}
                       type={"text"} 
                       placeholder={"Enter Pickup location"} 
                       className="input-sm"
@@ -489,14 +491,9 @@ export default function AddOrder(){
                       Delivery Location
                     </label> 
                     <input
-                      required
-                      name="deliveryLocation"
-                      onChange={(e) =>
-                        handleInputChange(index, "deliveryLocation", e.target.value)
-                      }
-                      type={"text"}
-                      placeholder={"Enter delivery location"}
-                      className="input-sm"
+                      required name="deliveryLocation"
+                      onChange={(e) => getDeliveryLocation(index, e.target.value)  
+                      } type={"text"} placeholder={"Enter delivery location"} className="input-sm"
                     />
                   </div>
                   <div className="input-item">
@@ -601,9 +598,9 @@ export default function AddOrder(){
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Rate</label>
                       <div className='relative'>
-                      <div className='absolute text-white top-[26px] left-4'>
-                          <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'cad'} />
-                      </div>
+                        <div className='absolute text-white top-[26px] left-4'>
+                            <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'cad'} />
+                        </div>
                           <input
                             required
                             name="rate"
@@ -643,48 +640,71 @@ export default function AddOrder(){
             </div>
           </div>
        
-          <p className='pb-2 text-yellow-600'>{distanceMsg} Update distance manually.</p> 
+          {/* <p className='pb-2 text-yellow-600'>{distanceMsg} Update distance manually.</p> 
           <div className="items-center">
             <div className='flex items-center'>
               <input onChange={(e) =>setData({ ...data, totalDistance: e.target.value})} 
               required type={"number"} placeholder={"Enter total distance manually..."} className="input-sm" />
             </div>
-          </div>
+          </div> */}
 
-          <div className='flex items-center'>
-            <input onChange={(e) => setData({ ...data, total_amount: e.target.value}) } 
-            required type={"number"} placeholder={"Order Amount"}
-            className="input-sm" />
-          </div>
+          <div className='grid grid-cols-2 gap-3 mb-8 mt-6'>
+            <div className=''>
+              <p className='text-white '> Total Distance (KM) </p>
+              <div className='relative'>
+                <div className='absolute text-white top-[26px] left-4'>
+                    KM
+                </div>
+                <input onChange={(e) =>setData({ ...data, totalDistance: e.target.value})} 
+                required type={"number"} placeholder={"Enter total distance manually..."} className="input-sm ps-[50px]" />
+                {distanceMsg ? <p className='text-yellow-600 text-sm mb-2'>({distanceMsg}. Please update address or manually update total distance)</p>  : ""}
+              </div>
+            </div>
 
-          <div className='flex justify-end py-2'>
-            <div className='text-right'>
-            <p className='text-white mb-2'> 
-              Total Amount :  <Currency amount={data.total_amount} currency={revCurrency || 'cad'} /> 
-            </p> 
-              {distance > 0 ? <p className='text-white mb-2'>Total Distance : {distance}KM</p> : ''}
+            <div className=''>
+              <div className='text-start'>
+                <p className='text-white '>  Total Amount </p> 
+                <div className='relative'>
+                  <div className='absolute text-white top-[26px] left-4'>
+                      <Currency onlySymbol={true}  currency={revCurrency || 'cad'} />
+                  </div>
+                  <input onChange={(e) => setData({ ...data, total_amount: e.target.value}) } 
+                  required type={"number"} placeholder={"Order Amount"}
+                  className="input-sm ps-[50px]" />
+                </div>
+              </div>
             </div>
           </div>
 
+        {data?.carrier_amount ? <div className='flex justify-end my-6 '>
+            <div>
+              <p className='text-white'>Sell Amount : <span className='text-gray-400'>
+                <Currency  amount={data.carrier_amount} currency={revCurrency || 'cad'} /> </span> 
+              </p>
+            </div>
+        </div> : ''}
+
+          
+
           <div className='flex justify-end items-center'>
-              <Popup action={closeCarrierPopup} size="md:max-w-xl" space='p-8' bg="bg-black" btnclasses="" btntext={"Assign Carrier"} >
-                  <h2 className='text-white text-2xl font-bold'>Assign Carrier</h2>
-                  <div className=''>
-                    <div className='input-item'>
-                      <label className="mt-4 mb-0 block text-sm text-gray-400">Choose Carrier</label>
-                      <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
-                        onChange={chooseCarrier}
-                        options={carriersListing} />
-                    </div>
-                    <div className='input-item'>
-                        <label className="mt-4 mb-0 block text-sm text-gray-400">Amount</label>
-                        <input required onChange={handleinput} name='carrier_amount' type={'number'} placeholder={"Enter carrier amount"} className="input-sm" />
-                    </div>
+            <Popup action={closeCarrierPopup} size="md:max-w-xl" space='p-8' bg="bg-black" btnclasses="" btntext={"Assign Carrier"} >
+                <h2 className='text-white text-2xl font-bold'>Assign Carrier</h2>
+                <div className=''>
+                  <div className='input-item'>
+                    <label className="mt-4 mb-0 block text-sm text-gray-400">Choose Carrier</label>
+                    <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
+                      onChange={chooseCarrier}
+                      options={carriersListing} />
                   </div>
-                  <div className='flex justify-center items-center'>
-                    <button onClick={(closePopup)} className="btn -sm md mt-6 px-[50px] text-sm main-btn text-black font-bold">Assign Carrier</button>
+                  <div className='input-item'>
+                      <label className="mt-4 mb-0 block text-sm text-gray-400">Amount</label>
+                      <input required onChange={handleinput} name='carrier_amount' type={'number'} placeholder={"Enter carrier amount"} className="input-sm" />
                   </div>
-              </Popup>
+                </div>
+                <div className='flex justify-center items-center'>
+                  <button onClick={(closePopup)} className="btn -sm md mt-6 px-[50px] text-sm main-btn text-black font-bold">Assign Carrier</button>
+                </div>
+            </Popup>
             <button onClick={addOrder}  className={`btn md   ${data.carrier == '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? "Logging in..." : "Submit Order"}</button>
           </div>
 

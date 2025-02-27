@@ -54,10 +54,9 @@ export default function AccountOrders() {
                <tr>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Order No.</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Staff</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer Payment</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Amount/Profit</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier Payment</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Employee</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Amount/Profit</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>View Order</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                </tr>
@@ -68,29 +67,29 @@ export default function AccountOrders() {
                         <p className='my-1'>Order Status : <Badge title={true} status={c.order_status} /></p>
                         <p><TimeFormat date={c.createdAt || "--"} /> </p>
                      </td> 
+                    
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p>{c?.customer.name}</p>
                         <p>{c.customer.phone}</p>
+                        <p className='mt-1'>Payment Status : <Badge title={true} status={c.payment_status} /></p>
+                        {c.payment_status === 'paid' && <p className='mt-1'>Payment method : {c.payment_method}</p>}
                      </td>
+                     
+                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
+                        <p className='mt-1'>Carrier : {c.carrier?.name}</p>
+                        <p className='mt-1'>Payment Status : <Badge title={true} status={c.carrier_payment_status} /></p>
+                        <p className='mt-1'>Sell Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
+                        {c.carrier_payment_status === 'paid' && <p className='mt-1'>Payment method : {c.carrier_payment_method}</p>}
+                     </td> 
+                     
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p>Staff : {c.created_by.name}</p>
                         <p>Commision : <Currency amount={c.commission} currency={c.revenue_currency || 'usd'} /> ({c.created_by.staff_commision || 0})%</p>
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        <p className='mt-1'>Payment Status : <Badge title={true} status={c.payment_status} /></p>
-                        {c.payment_status === 'paid' && <p className='mt-1'>Payment method : {c.payment_method}</p>}
-                        
-                     </td>
-                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        <p>Amount : <Currency amount={c.gross_amount} currency={c.revenue_currency || 'usd'} /></p>
+                        <p>Amount : <Currency amount={c.total_amount} currency={c.revenue_currency || 'usd'} /></p>
                         <p>Profit : <Currency amount={c.profit} currency={c.revenue_currency || 'usd'} /> </p>
                      </td>
-                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        <p className='mt-1'>Payment Status : <Badge title={true} status={c.carrier_payment_status} /></p>
-                        <p className='mt-1'>Carrier Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
-                        {c.carrier_payment_status === 'paid' && <p className='mt-1'>Payment method : {c.carrier_payment_method}</p>}
-                        {/* {c.carrier_payment_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''} */}
-                     </td> 
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                           <OrderView order={c} fetchLists={fetchLists} />
                      </td>

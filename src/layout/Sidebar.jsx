@@ -14,15 +14,9 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 
 export default function Sidebar() {
 
-
-
   const location = useLocation();
- 
- 
-
-
-
   const {user}  = useContext(UserContext);
+  
   const logout = () => { 
     localStorage && localStorage.removeItem("token");
     window.location.href = "/login";
@@ -33,14 +27,11 @@ export default function Sidebar() {
       <h2 className='mb-3 text-sm uppercase text-gray-400'>Main Menu</h2>
       <ul>
 
-        {user?.role == 1 ? 
           <li>
             <Link className={`${location.pathname == '/home' || location.pathname == '/' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/home'} ><MdOutlineSpaceDashboard className='me-2' size={'1.4rem'} /> Dashboard 
           </Link>
           </li> 
-        : ""}
-
-        {user?.role == 1 ? 
+        {user?.is_admin == 1 || user?.role == 1 ? 
         <>
           <li>
             <Link className={`${location.pathname == '/orders' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/orders'} ><FiBox className='me-2' size={'1.4rem'} /> Orders 
@@ -57,14 +48,13 @@ export default function Sidebar() {
         </>
         : "" } 
 
-
         {user?.is_admin == 1  ?
           <li>
-            <Link className={`${location.pathname == '/employees' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/employees'} ><FaUsers className='me-2' size={'1.4rem'} /> Staff 
+            <Link className={`${location.pathname == '/employees' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/employees'} ><FaUsers className='me-2' size={'1.4rem'} /> Employees 
           </Link>
           </li>
           : ''
-         }
+        }
 
         {user?.is_admin == 1 || user?.role == 2 ?
           <li>
@@ -72,7 +62,6 @@ export default function Sidebar() {
           </Link>
           </li> 
         : "" }
-
       </ul>
       
       <h2 className='mt-8 mb-3 text-sm uppercase text-gray-400'>Other Menu</h2>

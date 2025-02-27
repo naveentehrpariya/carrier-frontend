@@ -4,13 +4,11 @@ import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import countries from './../../common/Countries';
-import EmployeesLists from './EmployeesLists';
 
 export default function AddEmployee({fetchLists, item, text, classes}){
 
     const commisions = Array.from({ length: 100 }, (_, index) => (index + 1) * 5);
     const [staffType, setStaffType] = useState(item?.role);
-    console.log("staffType",staffType)
     const [data, setData] = useState({
       name: item?.name || "",
       email: item?.email || "",

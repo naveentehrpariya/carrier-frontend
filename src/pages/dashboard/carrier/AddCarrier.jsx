@@ -3,6 +3,7 @@ import Popup from '../../common/Popup'
 import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
+import countries from './../../common/Countries';
 
 export default function AddCarrier({item, fetchLists, classes, text}){
 
@@ -11,6 +12,10 @@ export default function AddCarrier({item, fetchLists, classes, text}){
       email:  item?.email || "",
       name:   item?.name || "",
       location: item?.location || "",
+      country: item?.country || "",
+      state: item?.state || "",
+      city: item?.city || "",
+      zipcode: item?.zipcode || "",
     });
 
     const [action, setaction] = useState();
@@ -25,9 +30,9 @@ export default function AddCarrier({item, fetchLists, classes, text}){
       setLoading(true);
       let carrierIstance;
       if(item){
-        carrierIstance = Api.post(`/carriers/update/${item._id}`, data);
+        carrierIstance = Api.post(`/carriers/update/${item._id}`, {...data, carrierID:item.carrierID});
       } else { 
-        carrierIstance = Api.post(`/carriers/add`, data);
+        carrierIstance = Api.post(`/carriers/add`, {...data});
       }
       carrierIstance.then((res) => {
         setLoading(false);
@@ -68,6 +73,32 @@ export default function AddCarrier({item, fetchLists, classes, text}){
                <label className="mt-4 mb-0 block text-sm text-gray-400">Location</label>
                <input defaultValue={item?.location} required name='location' onChange={handleinput} type={'text'} placeholder={"Enter location"} className="input-sm" />
             </div>
+
+            <div className='input-item'>
+               <label className="mt-4 mb-0 block text-sm text-gray-400">Country</label>
+               <select defaultValue={item?.country} onChange={handleinput} name='country' className="input-sm" >
+                <option selected disabled className='text-black'>Choose Country</option>
+                  {countries && countries.map((c, i)=>{
+                    return <option value={c.label} className='text-black'>{c.label}</option>
+                  })}
+               </select>
+            </div> 
+
+            <div className='input-item'>
+               <label className="mt-4 mb-0 block text-sm text-gray-400">State</label>
+               <input defaultValue={item?.state} required name='state' onChange={handleinput} type={'state'} placeholder={"State"} className="input-sm" />
+            </div>
+
+            <div className='input-item'>
+               <label className="mt-4 mb-0 block text-sm text-gray-400">City</label>
+               <input defaultValue={item?.city}  name='city' onChange={handleinput} type={'city'} placeholder={"City"} className="input-sm" />
+            </div>
+
+            <div className='input-item'>
+               <label className="mt-4 mb-0 block text-sm text-gray-400">Zipcode</label>
+               <input defaultValue={item?.zipcode} name='zipcode' onChange={handleinput} type={'zipcode'} placeholder={"Zipcode"} className="input-sm" />
+            </div>
+
          </div>
         <div className='flex justify-center'>
         <button  onClick={addcarrier} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : <>{item ? "Update Carrier" : "Add Carrier"}</>}</button>
