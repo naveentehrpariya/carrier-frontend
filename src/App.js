@@ -12,6 +12,7 @@ import AddOrder from './pages/dashboard/order/AddOrder';
 import EmployeesLists from './pages/dashboard/employees/EmployeesLists';
 import AccountOrders from './pages/dashboard/accounts/AccountOrders';
 import OrderDetail from './pages/dashboard/order/OrderDetail';
+import CustomerInvoice from './pages/dashboard/order/CustomerInvoice';
 
 
 
@@ -27,6 +28,7 @@ function App() {
                     <Route path="/home" element={<Overview /> } />
                     <Route path="/orders" element={<Orders /> } />
                     <Route path="/order/detail/:id" element={<OrderDetail /> } />
+                    <Route path="/order/customer/invoice/:id" element={<CustomerInvoice /> } />
                     <Route path="/order/add" element={<AddOrder /> } />
                     <Route path="/customers" element={<Customers /> } />
                     <Route path="/carriers" element={<Carriers /> } />

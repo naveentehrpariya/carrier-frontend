@@ -253,7 +253,6 @@ export default function AddOrder(){
         setCloseCarrierPopup();
       },2000);
     }
-    
 
     const [revCurrency, setRevCurrency] = useState('cad');
     const chooseAmountCurrency = (e) => { 

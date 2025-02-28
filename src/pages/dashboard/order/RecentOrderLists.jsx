@@ -54,15 +54,15 @@ export default function RecentOrdersLists() {
                            <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer / Carrier </th>
                            <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer Payment</th>
                            <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier Payment</th>
-                           <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Created Date</th>
                            <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Documents</th>
                         </tr>
                         {lists && lists.map((c, index) => {
                            return <tr key={`carriew-${index}`}>
 
-                              <td className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>
-                                 <p className='whitespace-nowrap'>Order No. : {c.customer_order_no || "--"}</p>
-                                 <p>{c.company_name || "--"}</p>
+                              <td className='text-sm text-start   border-b border-gray-900'>
+                                 <p className='whitespace-nowrap uppercase text-gray-200'>Order No. : {c.customer_order_no || "--"}</p>
+                                 <p className='uppercase text-gray-200'>{c.company_name || "--"}</p>
+                                 <p className='text-gray-400'><TimeFormat date={c.createdAt || "--"} /></p>
                               </td>
                               
                               <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
@@ -83,12 +83,7 @@ export default function RecentOrdersLists() {
                                  {c.carrier_payment_date ? <p className='text-[12px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''}
                               </td>
                               
-                              <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                                 <p className='mb-2'>
-                                    <Link to={`/order/detail/${c._id}`} className=' bg-blue-800 text-[12px] m-auto d-table !text-white p-2 px-3 rounded-[20px]'  >View Details</Link>
-                                 </p>
-                                 <p><TimeFormat date={c.createdAt || "--"} /></p>
-                              </td>
+                               
                               <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                                  <OrderView order={c} fetchLists={fetchLists} />
                               </td>

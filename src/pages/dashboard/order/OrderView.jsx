@@ -161,6 +161,8 @@ export default function OrderView({order, fetchLists}){
                <AddNotes text={"Edit Note"} classes="text-main" note={order.notes} id={order.id} fetchLists={fetchLists} />
             </div>
             <p className='my-2'>{order.notes}</p>
+            <p className='my-2 mt-4'><p className='!text-gray-400'>Customer Payment Notes :</p> {order?.customer_payment_notes}</p>
+            <p className='my-2 mt-4'> <p className='!text-gray-400'>Carrier Payment Notes :</p> {order?.carrier_payment_notes}</p>
 
             <div className='flex justify-between mt-6 border-t border-gray-700 pt-6 pb-6'>
                <p className=' text-gray-500 text-xl' >Documents</p>

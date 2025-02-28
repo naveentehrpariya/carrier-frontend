@@ -114,8 +114,8 @@ export default function OrderDetail() {
          <button className='bg-main px-4 py-2 rounded-xl text-sm' onClick={downloadPDF} >{downloadingPdf ? "Downloading..." : "Download PDF"}</button>
       </div>
       {loading ? <Loading /> : 
-         <div  className='boltable  bg-white rounded-xl p-6'>
-            <div ref={pdfRef} className='max-w-[1200px] text-gray-700 m-auto'>
+         <div  className='boltable  bg-white rounded-xl p-6  ' >
+            <div ref={pdfRef} className='w-[1200px] text-gray-700 m-auto'>
                <div className='bol-header p-3 flex justify-between items-center '>
                   <div width="50%">
                      <h2 className='font-bold text-2xl text-black'>{order?.carrier?.name}</h2>
