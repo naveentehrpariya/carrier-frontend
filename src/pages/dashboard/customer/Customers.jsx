@@ -6,6 +6,7 @@ import TimeFormat from '../../common/TimeFormat';
 import AddCustomer from './AddCustomer';
 import Loading from '../../common/Loading';
 import Nocontent from '../../common/NoContent';
+import RemoveCustomer from './RemoveCustomer';
 export default function Customers() {
 
 
@@ -50,6 +51,7 @@ export default function Customers() {
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone/Email</th>
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Address</th>
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Added By</th>
+                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                   </tr>
                   {lists && lists.map((c, index) => {
                      return <tr key={`carriew-${index}`}>
@@ -67,11 +69,13 @@ export default function Customers() {
                            <p className='max-w-[300px]'>{c.address || "--"}</p>
                            <p>{c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}</p>
                         </td>
-
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <p>{c.created_by.name || "--"}</p>
                            <p><TimeFormat date={c.createdAt || "--"} /> </p>
-   
+                        </td>
+                        <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
+                           <AddCustomer classes="text-main" text={"Update Customer"} item={c} fetchLists={fetchLists} />
+                           <RemoveCustomer classes="text-red-600 mt-2" text={"Remove Customer"} item={c} fetchLists={fetchLists} />
                         </td>
                      </tr>
                   })}

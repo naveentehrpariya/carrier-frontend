@@ -185,23 +185,23 @@ export default function OrderDetail() {
                         
                         <p className='font-bold text-black pt-4 '>Shipment Pickup Details</p>
                         <ul className='flex flex-wrap w-full'>
-                           <li className='w-full max-w-[100%] pb-[7px]'><strong className='text-black text-sm'>Pickup Location :</strong> <p>{s?.pickupLocation}</p> </li>
+                           <li className='w-full max-w-[100%] pb-[7px] flex flex-wrap items-center'><strong className='text-black text-sm'>Pickup Location :</strong> <p>{s?.pickupLocation}</p> </li>
                         </ul>
                         <ul className='grid grid-cols-4 w-full'>
                            <li className='w-full pb-[7px]'><strong className='text-black text-sm'>Pickup Reference No. :</strong> <p>{s?.pickupReferenceNo}</p> </li>
                            <li className='w-full pb-[7px]'><strong className='text-black text-sm'>Pickup Appointement : </strong> <p>{s?.pickupAppointment ? "Yes" : "No"}</p> </li>
                            <li className='w-full pb-[7px]'><strong className='text-black text-sm'>Pickup Date :</strong> 
-                           <p><TimeFormat date={s?.pickupDate} /></p> </li>
+                           <p><TimeFormat time={false} date={s?.pickupDate} /></p> </li>
                         </ul>
                         <p className='font-bold text-black pt-4 '>Shipment Delivery Details</p>
                         <ul className='flex flex-wrap w-full'>
-                           <li className='w-full max-w-[100%] pb-[7px]'><strong className='text-black text-sm'>Delivery Location :</strong> <p>{s?.deliveryLocation}</p> </li>
+                           <li className='w-full max-w-[100%] pb-[7px] flex flex-wrap items-center'><strong className='text-black text-sm'>Delivery Location :</strong> <p>{s?.deliveryLocation}</p> </li>
                         </ul>
                         <ul className='grid grid-cols-4 w-full'>
                            <li className='w-full pb-[7px]'><strong className='text-black text-sm'>Delivery Reference No. :</strong> <p>{s?.deliveryReferenceNo}</p> </li>
                            <li className='w-full pb-[7px]'><strong className='text-black text-sm'>Delivery Appointement : </strong> <p>{s?.deliveryAppointment?.value ? "Yes": "No"}</p> </li>
                            <li className='w-full pb-[7px]'><strong className='text-black text-sm'>Delivery Date :</strong> 
-                           <p><TimeFormat date={s?.deliveryDate} /></p> </li>
+                           <p><TimeFormat time={false} date={s?.deliveryDate} /></p> </li>
                         </ul>
                            
                            
@@ -215,9 +215,9 @@ export default function OrderDetail() {
                         {order && order.revenue_items && order.revenue_items.map((r, index) => {
                            return <>
                               <ul className='flex justify-between mb-4  '>
-                                 <li className=''><strong>Revenue Item:</strong> <p>{r.revenue_item}</p> </li>
-                                 <li className=''><strong>Rate method </strong  > <p className='capitalize'>{r.rate_method}</p> </li>
-                                 <li className=''><strong>Rate </strong> <p><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
+                                 <li className='flex items-center w-[32%]'><strong>Revenue Item:</strong> <p className='ps-2'>{r.revenue_item}</p> </li>
+                                 <li className='flex items-center w-[32%]'><strong>Rate method </strong  > <p className='capitalize ps-2'>{r.rate_method}</p> </li>
+                                 <li className='flex items-center w-[32%]'><strong>Rate </strong> <p className='ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
                               </ul>
                            </>
                         })}

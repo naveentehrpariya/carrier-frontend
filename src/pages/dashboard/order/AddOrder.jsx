@@ -199,7 +199,7 @@ export default function AddOrder(){
             lists.forEach(element => {
               arr.push({
                 _id: element._id,
-                label: `${element.name} (${element.email})`,
+                label: `${element.name} - ${element.state}, ${element.country} (${element.email})  `,
                 value: element._id,
                 customerID: element.customerID
               })
@@ -221,7 +221,7 @@ export default function AddOrder(){
             lists.forEach(e => {
               arr.push({
                 _id: e._id,
-                label: `${e.name} (${e.email})`,
+                label: `${e.name} - ${e.state}, ${e.country}  (${e.email})`,
                 value: e._id,
                 carrierID: e.carrierID
               })
@@ -266,7 +266,6 @@ export default function AddOrder(){
     const handleinput = (e) => {
       setData({ ...data, [e.target.name]: e.target.value});
     }
-
     
     const navigate = useNavigate();
     const addOrder = () => {
@@ -332,23 +331,10 @@ export default function AddOrder(){
         Errors(err);
       });
     }
-
-    
-
-    // useEffect(() => {
-    //   const items = revenueItems || [];
-    //   let grossAmount = 0;
-    //   items.forEach(item => {
-    //   console.log("item",item);
-    //       grossAmount += Number(item.rate)*distance;
-    //   });
-    //   setGrossRevenue(grossAmount);
-    // }, [revenueItems]);
-
+   
   return (
     <AuthLayout>
       <div>
-         
          <h2 className='text-white heading xl text-3xl pt-4 '>Add New Order</h2>
           <p className='text-gray-400 heading xl text-lg mt-6'>Customer Details</p>
           <div className='grid grid-cols-3 gap-5'>
@@ -360,14 +346,12 @@ export default function AddOrder(){
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Order No.</label>
                 <input required name='customer_order_no' onChange={handleinput} type={'number'} placeholder={"Order Number"} className="input-sm" />
             </div>
-
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Customer</label>
                 <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
                 onChange={chooseCustomer}
                 options={customersListing} />
             </div>
-
           </div>
 
           <div>
