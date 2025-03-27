@@ -108,6 +108,8 @@ export default function OrderDetail() {
       fetchOrder();
    }, []);
 
+   console.log("order",order);
+
    return <AuthLayout>
       <div className='flex justify-between items-center'>
          <h1 className='text-xl font-bold text-white mb-6 mt-4'>Order Detail #{order?.customer_order_no}</h1>
@@ -118,7 +120,7 @@ export default function OrderDetail() {
             <div ref={pdfRef} className='w-[1200px] text-gray-700 m-auto'>
                <div className='bol-header p-3 flex justify-between items-center '>
                   <div width="50%">
-                     <h2 className='font-bold text-2xl text-black'>{order?.carrier?.name}</h2>
+                     <h2 className='font-bold text-2xl text-black capitalize'>{order?.carrier?.name}</h2>
                      <p ><strong className='text-black'>CARRIR ID #: {order?.carrier?.carrierID}</strong></p>
                      <p ><strong className='uppercase'>{order?.carrier?.location}</strong></p>
                   </div>

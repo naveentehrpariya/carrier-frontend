@@ -3,7 +3,6 @@ const APP_URL = "https://carrier-backend-drab.vercel.app/";
 // const APP_URL = "http://localhost:8080";
 
 const host = window.location.host;
-console.log("const host = window.location.host;", window.location.host)
 function getToken(){
   const data = localStorage && localStorage.getItem('token');
   return data; 
