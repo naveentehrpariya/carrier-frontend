@@ -29,11 +29,10 @@ export default function OrderDetail() {
    //     elementWithMargin.style.margin = '20px';
    //   }
  
-   //   const buttons = input.querySelectorAll('button');
-   //   buttons.forEach(button => {
-   //     button.style.backgroundColor = 'transparent';
-   //     button.style.border = "none";
-   //   });
+     const buttons = input.querySelectorAll('#revanue');
+     buttons.forEach(button => {
+      button.style.display = 'none';
+     });
  
    //   const match_score = input.querySelectorAll('.match_score');
    //   match_score.forEach(button => {
@@ -70,10 +69,9 @@ export default function OrderDetail() {
       //  input.style.backgroundColor = 'black'; // Reset to original (or '')
        input.style.padding = '10px';        // Reset to original (or '')
  
-      //  buttons.forEach(button => {
-      //    button.style.backgroundColor = '';
-      //    button.style.border = "";
-      //  });
+       buttons.forEach(button => {
+         button.style.display = 'block';
+       });
    
       //  match_score.forEach(button => {
       //    button.style.backgroundColor = '';
@@ -128,7 +126,7 @@ export default function OrderDetail() {
                      <div className='flex justify-center w-full'>
                      <Logotext />
                      </div>
-                     <h3 className='uppercase font-bold text-xl text-center text-black'>Order Dispatch Sheet</h3>
+                     <h3 className='uppercase font-bold text-xl text-center text-black'>Rate confirmation</h3>
                   </div>
                </div>
 
@@ -136,7 +134,7 @@ export default function OrderDetail() {
                   <ul className='grid grid-cols-4 gap-2'>
                      <li className=''><strong>Order # :</strong> <p>{order?.customer_order_no}</p> </li>
                      <li className=''><strong>Order Created Date :</strong> <p><TimeFormat date={order?.createdAt} /></p> </li>
-                     <li className=''><strong>Order Status :</strong> <p><Badge title={true} status={order?.order_status} /></p> </li>
+                     {/* <li className=''><strong>Order Status :</strong> <p><Badge title={true} status={order?.order_status} /></p> </li> */}
                      <li className=''><strong>Total Distance :</strong> <p>{order.totalDistance}KM</p> </li>
                   </ul>
                </div>
@@ -165,13 +163,11 @@ export default function OrderDetail() {
                      </ul>
                   </div>
                   <div className='customerDetails'>
-                     <p className='font-bold text-black mb-2'>Payment Status</p>
+                     {/* <p className='font-bold text-black mb-2'>Payment Status</p>
                      <ul className=''>
-                        {/* <li className=' flex items-center'><strong className='text-sm !text-gray-700'>Customer Payment Status:</strong> <p><Badge title={true} status={order?.payment_status} /></p> </li>
-                        <li className=' flex items-center capitalize'><strong className='text-sm me-1 !text-gray-700'>Customer Payment method:</strong> <p>{order?.payment_method || "none"}</p> </li> */}
                         <li className=' flex items-center'><strong className='text-sm !text-gray-700'>Payment Status:</strong> <p><Badge title={true} status={order?.carrier_payment_status} /></p> </li>
                         <li className=' flex items-center capitalize'><strong className='text-sm me-1 !text-gray-700'>Payment Method:</strong> <p>{order?.carrier_payment_method}</p> </li>
-                     </ul>
+                     </ul> */}
                   </div>
                </div>
 
@@ -212,17 +208,17 @@ export default function OrderDetail() {
                })}
 
                {order && order.revenue_items &&
-                  <div className='orderFill p-3 border-t border-gray-300 mt-3 pt-4'>
+                  <div id='revanue' className='orderFill p-3 border-t border-gray-300 mt-3 pt-4'>
                      <p className='font-bold text-black text-xl mb-2'>Revenue Items</p>
-                        {order && order.revenue_items && order.revenue_items.map((r, index) => {
-                           return <>
-                              <ul className='flex justify-between mb-4  '>
-                                 <li className='flex items-center w-[32%]'><strong>Revenue Item:</strong> <p className='ps-2'>{r.revenue_item}</p> </li>
-                                 <li className='flex items-center w-[32%]'><strong>Rate method </strong  > <p className='capitalize ps-2'>{r.rate_method}</p> </li>
-                                 <li className='flex items-center w-[32%]'><strong>Rate </strong> <p className='ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
-                              </ul>
-                           </>
-                        })}
+                     {order && order.revenue_items && order.revenue_items.map((r, index) => {
+                        return <>
+                           <ul className='flex justify-between mb-4  '>
+                              <li className='flex items-center w-[32%]'><strong>Revenue Item:</strong> <p className='ps-2'>{r.revenue_item}</p> </li>
+                              <li className='flex items-center w-[32%]'><strong>Rate method </strong  > <p className='capitalize ps-2'>{r.rate_method}</p> </li>
+                              <li className='flex items-center w-[32%]'><strong>Rate </strong> <p className='ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
+                           </ul>
+                        </>
+                     })}
                   </div>
                }
                <div className='flex justify-end'>

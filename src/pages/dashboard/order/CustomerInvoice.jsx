@@ -141,7 +141,7 @@ export default function CustomerInvoice() {
                      <ul className=''>
                         <li className=' flex'><strong className='text-sm me-2 text-black'>Invoice #:</strong> <p>8979</p> </li>
                         <li className=' flex'><strong className='text-sm me-2 text-black'>Invoice Date :</strong> <p><TimeFormat time={false} date={Date.now()} /></p> </li>
-                        <li className=' flex'><strong className='text-sm me-2 text-black'>Amount :</strong> <p><Currency amount={order?.carrier_amount || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
+                        <li className=' flex'><strong className='text-sm me-2 text-black'>Amount :</strong> <p><Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
                      </ul>
                   </div>
                </div>
@@ -173,7 +173,7 @@ export default function CustomerInvoice() {
                      <li className=' flex'><strong className='text-sm me-2 text-black'>Order Number #:</strong> <p>{order.customer_order_no}</p> </li>
                      <li className=' flex'><strong className='text-sm me-2 text-black'>Order Status :</strong> <p>
                         <Badge title={true} status={order?.order_status} /> </p> </li>
-                     <li className=' flex'><strong className='text-sm me-2 text-black'>Amount :</strong> <p><Currency amount={order?.carrier_amount || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
+                     <li className=' flex'><strong className='text-sm me-2 text-black'>Amount :</strong> <p><Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
                   </ul>
                   {/* <ul className='w-full'>
                      <li className=' flex'><strong className='text-sm me-2 text-black'>Order Number #:</strong> <p>{order.customer_order_no}</p> </li>
@@ -193,7 +193,7 @@ export default function CustomerInvoice() {
                            <th align='left' className='text-black'>Charges</th>
                            <th align='left ' className='text-black'>Amount</th>
                         </tr>
-                           {order && order.revenue_items &&
+                           {/* {order && order.revenue_items &&
                               <>
                                     {order && order.revenue_items && order.revenue_items.map((r, index) => {
                                        return <>
@@ -204,10 +204,10 @@ export default function CustomerInvoice() {
                                        </>
                                     })}
                               </>
-                           }
+                           } */}
                         <tr>
                            <td><strong className='text-sm text-black text-xl'>Total</strong></td>
-                           <td className='font-bold text-black'><Currency amount={order?.carrier_amount || 0} currency={order?.revenue_currency || 'cad'} /></td>
+                           <td className='font-bold text-black'><Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></td>
                         </tr>
                      </table>
                   </ul>

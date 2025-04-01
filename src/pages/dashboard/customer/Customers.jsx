@@ -9,10 +9,9 @@ import Nocontent from '../../common/NoContent';
 import RemoveCustomer from './RemoveCustomer';
 export default function Customers() {
 
-
+  const {user}  = useContext(UserContext);
    const [loading, setLoading] = useState(true);
    const [lists, setLists] = useState([]);
-   const {Errors} = useContext(UserContext);
 
    const fetchLists = () => {
       setLoading(true);
@@ -34,12 +33,11 @@ export default function Customers() {
       fetchLists();
    }, []);
 
-
   return (
       <AuthLayout> 
          <div className='flex justify-between items-center'>
             <h2 className='text-white text-2xl'>Customers</h2>
-            <AddCustomer fetchLists={fetchLists} />
+            {user?.is_admin === 1 ? <AddCustomer fetchLists={fetchLists} /> : ''}
          </div>
          {loading ? <Loading /> :
          <>

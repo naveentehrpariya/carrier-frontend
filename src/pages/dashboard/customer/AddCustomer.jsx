@@ -56,6 +56,7 @@ export default function AddCustomer({item, fetchLists, classes, text}){
     <div>
       <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={classes} btntext={text || "Add New Customer"} >
          <h2 className='text-white font-bold'>Add New Customer</h2>
+          
          <div className='grid grid-cols-2 gap-3'>
 
             <div className='input-item'>
@@ -64,12 +65,34 @@ export default function AddCustomer({item, fetchLists, classes, text}){
             </div>
 
             <div className='input-item'>
+               <label className="mt-4 mb-0 block text-sm text-gray-400">MC Code</label>
+               <input  defaultValue={item?.phone} name='phone' onChange={handleinput} type={'number'} placeholder={"Phone Number"} className="input-sm" />
+            </div>
+
+            <div className='input-item mt-2'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Email</label>
+              <input  defaultValue={item?.email} name='email' onChange={handleinput} type={'email'} placeholder={"Email address"} className="input-sm" />
+            </div>
+
+            <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Phone</label>
                <input  defaultValue={item?.phone} name='phone' onChange={handleinput} type={'number'} placeholder={"Phone Number"} className="input-sm" />
             </div>
 
-            
+            <div className='input-item mt-2'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Alternative Email</label>
+              <input  defaultValue={item?.email} name='email' onChange={handleinput} type={'email'} placeholder={"Email address"} className="input-sm" />
+            </div>
 
+            <div className='input-item'>
+               <label className="mt-4 mb-0 block text-sm text-gray-400">Alternative Phone</label>
+               <input  defaultValue={item?.phone} name='phone' onChange={handleinput} type={'number'} placeholder={"Phone Number"} className="input-sm" />
+            </div>
+
+            <div className='input-item'>
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
+                <textarea defaultValue={item?.address} row='4' name='address' onChange={handleinput}   placeholder={"Address"} className="input-sm" />
+            </div>
 
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Country</label>
@@ -80,6 +103,8 @@ export default function AddCustomer({item, fetchLists, classes, text}){
                   })}
                </select>
             </div> 
+        
+
 
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">State</label>
@@ -97,14 +122,6 @@ export default function AddCustomer({item, fetchLists, classes, text}){
             </div>
 
          </div>
-          <div className='input-item mt-2'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Email</label>
-              <input  defaultValue={item?.email} name='email' onChange={handleinput} type={'email'} placeholder={"Email address"} className="input-sm" />
-          </div>
-          <div className='input-item'>
-            <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
-            <textarea defaultValue={item?.address} row='4' name='address' onChange={handleinput}   placeholder={"Address"} className="input-sm" />
-        </div>
 
          <div className='flex justify-center items-center'>
             <button  onClick={add_customer} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Updating..." : "Submit"}</button>

@@ -336,15 +336,15 @@ export default function AddOrder(){
       <div>
          <h2 className='text-white heading xl text-3xl pt-4 '>Add New Order</h2>
           <p className='text-gray-400 heading xl text-lg mt-6'>Customer Details</p>
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-5'>
+          <div className='grid grid-cols-1 sm:grid-cols-3 gap-5'>
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Company Name</label>
                 <input name='company_name' disabled type={'text'} placeholder='Capital Logistics' className="input-sm" />
             </div>
-            {/* <div className='input-item'>
-                <label className="mt-4 mb-0 block text-sm text-gray-400">Order No. (Auto Generate)</label>
-                <input required name='customer_order_no' onChange={handleinput} type={'number'} placeholder={"Order Number"} className="input-sm disabled" />
-            </div> */}
+            <div className='input-item'>
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Order No.</label>
+                <input required name='customer_order_no' onChange={handleinput} type={'number'} placeholder={"Order Number"} className="input-sm" />
+            </div>
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Customer</label>
                 <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}

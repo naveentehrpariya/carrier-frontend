@@ -12,7 +12,7 @@ export default function Carriers() {
 
    const [loading, setLoading] = useState(true);
    const [lists, setLists] = useState([]);
-   const {Errors} = useContext(UserContext);
+   const {user}  = useContext(UserContext);
 
    const fetchLists = () => {
       setLoading(true);
@@ -39,7 +39,7 @@ export default function Carriers() {
       <AuthLayout> 
          <div className='flex justify-between items-center'>
             <h2 className='text-white text-2xl'>Carriers</h2>
-            <AddCarrier fetchLists={fetchLists} />
+            {user?.is_admin === 1 ? <AddCarrier fetchLists={fetchLists} /> : '' }
          </div>
 
          {loading ? <Loading />
