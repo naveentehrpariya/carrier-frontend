@@ -45,10 +45,11 @@ export default function Customers() {
             <div className='recent-orders overflow-hidden mt-6 border border-gray-900 rounded-[30px]'>
                <table className='w-full p-2' cellPadding={'20'}>
                   <tr>
-                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier</th>
-                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone/Email</th>
+                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer</th>
+                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Email</th>
+                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone</th>
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Address</th>
-                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Added By</th>
+                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Assigned To</th>
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                   </tr>
                   {lists && lists.map((c, index) => {
@@ -56,24 +57,28 @@ export default function Customers() {
    
                         <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
                            <p>{c.name}</p>
-                           <p>{c.customerID}</p>
+                           <p>MC{c.mc_code}</p>
                         </td>
    
                         <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
+                           <p>{c.email || "--"}</p>
+                           <p className=''>{c.secondary_email || ""}</p>
+                        </td>
+                        <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
                            <p>{c.phone || "--"}</p>
-                           <p className=''>{c.email || ""}</p>
+                           <p className=''>{c.secondary_phone || ""}</p>
                         </td>
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <p className='max-w-[300px]'>{c.address || "--"}</p>
                            <p>{c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}</p>
                         </td>
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <p>{c.created_by.name || "--"}</p>
+                           <p>{c.assigned_to.name || ""}({c.assigned_to.phone || ""})</p>
                            <p><TimeFormat date={c.createdAt || "--"} /> </p>
                         </td>
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <AddCustomer classes="text-main" text={"Update Customer"} item={c} fetchLists={fetchLists} />
-                           <RemoveCustomer classes="text-red-600 mt-2" text={"Remove Customer"} item={c} fetchLists={fetchLists} />
+                           <AddCustomer classes="text-main" text={"Update"} item={c} fetchLists={fetchLists} />
+                           <RemoveCustomer classes="text-red-600 mt-2" text={"Remove"} item={c} fetchLists={fetchLists} />
                         </td>
                      </tr>
                   })}

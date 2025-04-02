@@ -16,6 +16,9 @@ export default function AddCarrier({item, fetchLists, classes, text}){
       state: item?.state || "",
       city: item?.city || "",
       zipcode: item?.zipcode || "",
+      mc_code: item?.mc_code || "",
+      secondary_email: item?.secondary_email || "",
+      secondary_phone: item?.secondary_phone || "",
     });
 
     const [action, setaction] = useState();
@@ -62,17 +65,35 @@ export default function AddCarrier({item, fetchLists, classes, text}){
                <input defaultValue={item?.name} required name='name' onChange={handleinput} type={'text'} placeholder={"Name"} className="input-sm" />
             </div>
             <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Phone</label>
-               <input defaultValue={item?.phone} required name='phone' onChange={handleinput} type={'number'} placeholder={"Phone Number"} className="input-sm" />
+               <label className="mt-4 mb-0 block text-sm text-gray-400">MC Code</label>
+               <input defaultValue={item?.mc_code} required name='mc_code' onChange={handleinput} type={'number'} placeholder={"MC code"} className="input-sm" />
             </div>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Email</label>
                <input defaultValue={item?.email} required name='email' onChange={handleinput} type={'text'} placeholder={"Enter email .."} className="input-sm" />
             </div>
             <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Location</label>
-               <input defaultValue={item?.location} required name='location' onChange={handleinput} type={'text'} placeholder={"Enter location"} className="input-sm" />
+               <label className="mt-4 mb-0 block text-sm text-gray-400">Secondary Email</label>
+               <input defaultValue={item?.secondary_email} required name='secondary_email' onChange={handleinput} type={'text'} placeholder={"Enter secondary email .."} className="input-sm" />
             </div>
+            <div className='input-item'>
+               <label className="mt-4 mb-0 block text-sm text-gray-400">Phone</label>
+               <input defaultValue={item?.phone} required name='phone' onChange={handleinput} type={'number'} placeholder={"Phone Number"} className="input-sm" />
+            </div>
+            <div className='input-item'>
+               <label className="mt-4 mb-0 block text-sm text-gray-400"> Secondary Phone</label>
+               <input defaultValue={item?.secondary_phone} required name='secondary_phone' onChange={handleinput} type={'number'} placeholder={"Secondary Phone"} className="input-sm" />
+            </div>
+            </div>
+
+            <div className='grid grid-cols-1 gap-5'>
+              <div className='input-item'>
+                <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
+                <input defaultValue={item?.location} required name='location' onChange={handleinput} type={'text'} placeholder={"Enter location"} className="input-sm" />
+              </div>
+            </div>
+            
+            <div className='grid grid-cols-2 gap-5'>
 
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Country</label>

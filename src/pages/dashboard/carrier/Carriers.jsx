@@ -50,8 +50,9 @@ export default function Carriers() {
                <table className='w-full p-2' cellPadding={'20'}>
                   <tr>
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier</th>
-                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone/Email</th>
-                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Location</th>
+                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Email</th>
+                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone</th>
+                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Address</th>
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Added By</th>
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                   </tr>
@@ -60,25 +61,31 @@ export default function Carriers() {
 
                         <td className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>
                            <p>{c.name}</p>
-                           <p>{c.carrierID}</p>
+                           <p>MC{c.mc_code}</p>
                         </td>
 
                         <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
-                           <p>{c.phone || "--"}</p>
-                           <p>{c.email || "--"}</p>
+                           <p>{c.email || ""}</p>
+                           <p>{c.secondary_email || ""}</p>
+                        </td>
+                        <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
+                           <p>{c.phone || ""}</p>
+                           <p>{c.secondary_phone || ""}</p>
                         </td>
                         
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <p>{c.location || "--"}</p>
                            <p>{c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}</p>
-                           </td>
+                        </td>
+
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <p>{c.created_by.name || "--"}</p>
                            <p><TimeFormat date={c.createdAt || "--"} /> </p>
                         </td>
+
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <AddCarrier classes="text-main" text={"Update Carrier"} item={c} fetchLists={fetchLists} />
-                           <RemoveCarrier classes="text-red-600 mt-2" text={"Remove Carrier"} item={c} fetchLists={fetchLists} />
+                           <AddCarrier classes="text-main" text={"Update"} item={c} fetchLists={fetchLists} />
+                           <RemoveCarrier classes="text-red-600 mt-2" text={"Remove"} item={c} fetchLists={fetchLists} />
                         </td>
                      </tr>
                   })}

@@ -188,7 +188,6 @@ export default function AddOrder(){
     
 
     const [customersListing, setCustomersListing] = useState([]);
-    const [carriersListing, setCarrierListings] = useState([]);
 
     const fetchcustomers = () => {
         const resp = Api.get(`/customer/listings`);
@@ -199,9 +198,9 @@ export default function AddOrder(){
             lists.forEach(element => {
               arr.push({
                 _id: element._id,
-                label: `${element.name} - ${element.state}, ${element.country} (${element.email})  `,
+                label: `${element.name} - (MC${element.mc_code})  `,
                 value: element._id,
-                customerID: element.customerID
+                mc_code: element.mc_code
               })
             });
             setCustomersListing(arr);
@@ -212,6 +211,7 @@ export default function AddOrder(){
           setCustomersListing([]);
         });
     }
+    const [carriersListing, setCarrierListings] = useState([]);
     const fetchcarriers = () => {
         const resp = Api.get(`/carriers/listings`);
         resp.then((res) => {
