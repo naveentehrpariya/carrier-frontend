@@ -110,7 +110,7 @@ export default function OrderDetail() {
 
    return <AuthLayout>
       <div className='flex justify-between items-center'>
-         <h1 className='text-xl font-bold text-white mb-6 mt-4'>Order Detail #{order?.customer_order_no}</h1>
+         <h1 className='text-xl font-bold text-white mb-6 mt-4'>Customer Order #{order?.customer_order_no}</h1>
          <button className='bg-main px-4 py-2 rounded-xl text-sm' onClick={downloadPDF} >{downloadingPdf ? "Downloading..." : "Download PDF"}</button>
       </div>
       {loading ? <Loading /> : 
@@ -120,7 +120,7 @@ export default function OrderDetail() {
                   <div width="50%">
                      <h2 className='font-bold text-2xl text-black capitalize'>{order?.carrier?.name}</h2>
                      <p ><strong className='text-black'>CARRIR ID #: {order?.carrier?.carrierID}</strong></p>
-                     <p ><strong className='uppercase'>{order?.carrier?.location}</strong></p>
+                     <p ><strong className='uppercase'>{order?.carrier?.location}  ({order?.carrier?.country}, {order?.carrier?.zipcode}) </strong></p>
                   </div>
                   <div className='d-flex justify-center'>
                      <div className='flex justify-center w-full'>
@@ -132,10 +132,10 @@ export default function OrderDetail() {
 
                <div className='p-3 border-t border-gray-300 mt-3 pt-4'>
                   <ul className='grid grid-cols-4 gap-2'>
-                     <li className=''><strong>Order # :</strong> <p>{order?.customer_order_no}</p> </li>
+                     <li className=''><strong>Order # :</strong> <p>{order?.serial_no}</p> </li>
                      <li className=''><strong>Order Created Date :</strong> <p><TimeFormat date={order?.createdAt} /></p> </li>
                      {/* <li className=''><strong>Order Status :</strong> <p><Badge title={true} status={order?.order_status} /></p> </li> */}
-                     <li className=''><strong>Total Distance :</strong> <p>{order.totalDistance}KM</p> </li>
+                     <li className=''><strong>Total Distance :</strong> <p>{order.totalDistance} Miles</p> </li>
                   </ul>
                </div>
 
@@ -157,7 +157,7 @@ export default function OrderDetail() {
                   <div className='customerDetails'>
                      <p className='font-bold text-black mb-2'>Carrier Details</p>
                      <ul className=''>
-                        <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Carrier Name:</strong> <p>{order?.carrier?.name}</p> </li>
+                        <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Carrier Name:</strong> <p>{order?.carrier?.name}(MC{order?.carrier?.mc_code})</p> </li>
                         <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Carrier Phone :</strong> <p>{order?.carrier?.phone}</p> </li>
                         <li className=' flex'><strong className='text-sm me-2 !text-gray-700'>Carrier Email :</strong> <p>{order?.carrier?.email}</p> </li>
                      </ul>
@@ -208,7 +208,7 @@ export default function OrderDetail() {
                })}
 
                {order && order.revenue_items &&
-                  <div id='revanue' className='orderFill p-3 border-t border-gray-300 mt-3 pt-4'>
+                  <div id='revanue' className='hidden orderFill p-3 border-t border-gray-300 mt-3 pt-4'>
                      <p className='font-bold text-black text-xl mb-2'>Revenue Items</p>
                      {order && order.revenue_items && order.revenue_items.map((r, index) => {
                         return <>
@@ -221,7 +221,7 @@ export default function OrderDetail() {
                      })}
                   </div>
                }
-               <div className='flex justify-end'>
+               <div className='flex justify-start p-3'>
                   <div>
                      {/* <h2 className='font-bold text-black text-xl text-right'>Total : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2> */}
                      <h2 className='font-bold text-black text-xl text-right'>Total : <Currency amount={order?.carrier_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>

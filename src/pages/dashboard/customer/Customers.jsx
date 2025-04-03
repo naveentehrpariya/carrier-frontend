@@ -54,27 +54,27 @@ export default function Customers() {
                   </tr>
                   {lists && lists.map((c, index) => {
                      return <tr key={`carriew-${index}`}>
-   
-                        <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
-                           <p>{c.name}</p>
-                           <p>MC{c.mc_code}</p>
-                        </td>
-   
-                        <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
-                           <p>{c.email || "--"}</p>
-                           <p className=''>{c.secondary_email || ""}</p>
+                        <td className='text-sm text-start  capitalize border-b border-gray-900'>
+                           <p className='text-white font-bold'>{c?.name || ''}</p>
+                           <p className='text-gray-400'>MC{c?.mc_code || ''}</p>
                         </td>
                         <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
-                           <p>{c.phone || "--"}</p>
-                           <p className=''>{c.secondary_phone || ""}</p>
+                           <p>{c?.email || "--"}</p>
+                           <p className=''>{c?.secondary_email || ""}</p>
+                        </td>
+                        <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
+                           <p>{c?.phone || "--"}</p>
+                           <p className=''>{c?.secondary_phone || ""}</p>
                         </td>
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <p className='max-w-[300px]'>{c.address || "--"}</p>
-                           <p>{c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}</p>
+                           <div class='has-tooltip line-clamp-1 max-w-[200px]'>
+                              <span class='tooltip rounded shadow-xl p-2 bg-gray-100 text-black -mt-8'>{c?.address || ""} {c?.city || ""} {c?.state || ""} {c?.country || ""} {c?.zipcode || ""}</span>
+                              {c?.address || ""} {c?.city || ""} {c?.state || ""} {c?.country || ""} {c?.zipcode || ""}
+                           </div>
                         </td>
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <p>{c.assigned_to.name || ""}({c.assigned_to.phone || ""})</p>
-                           <p><TimeFormat date={c.createdAt || "--"} /> </p>
+                           <p className='whitespace-nowrap'>{c?.assigned_to?.name || ""}({c?.assigned_to?.phone || ""})</p>
+                           <p><TimeFormat date={c?.createdAt || "--"} /> </p>
                         </td>
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <AddCustomer classes="text-main" text={"Update"} item={c} fetchLists={fetchLists} />

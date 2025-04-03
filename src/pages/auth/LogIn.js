@@ -61,18 +61,17 @@ export default function Login() {
 
     return (
       <>
+      <form onSubmit={handleLogin} >
         {inputFields.map((field, index) => (
           <>
           <label className="mt-4 mb-0 block">{field.label}</label>
           <input required key={index} name={field.name} onChange={handleinput} type={field.type} placeholder={field.label} className="input" />
           </>
         ))}
-
         <div className="mt-2">
-        <button  onClick={handleLogin} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
+          <button type="submit" onClick={handleLogin} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
         </div>
-        
-        
+        </form>
       </>
     );
     }
@@ -92,9 +91,12 @@ export default function Login() {
               <h2 className="font-bold mb-1 text-[24px] mt-6   text-white">Welcome to Capital Logistics </h2>
               <p className="text-gray-500">Enter your credentials to login to your account </p>
               <div className='bg-[#D278D5] h-[3px] w-[100px] mt-2'></div>
+              
               <main className="mt-8" >
-                <LoginForm />
+                
+                  <LoginForm />
               </main> 
+
             </div>
           </div>
         </div>

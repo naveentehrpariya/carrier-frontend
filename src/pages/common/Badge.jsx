@@ -1,6 +1,6 @@
 import React from 'react'
 
-export default function Badge({status,classes, text, title}){
+export default function Badge({status,classes, text, title, title2}){
 
    function color(status) {
       if (status === "pending") {

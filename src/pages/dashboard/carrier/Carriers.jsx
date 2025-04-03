@@ -59,9 +59,9 @@ export default function Carriers() {
                   {lists && lists.map((c, index) => {
                      return <tr key={`carriew-${index}`}>
 
-                        <td className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>
-                           <p>{c.name}</p>
-                           <p>MC{c.mc_code}</p>
+                        <td className='text-sm text-start  uppercase border-b border-gray-900'>
+                           <p className='text-white font-bold'>{c.name}</p>
+                           <p className='text-gray-400'>MC{c.mc_code}</p>
                         </td>
 
                         <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
@@ -74,8 +74,10 @@ export default function Carriers() {
                         </td>
                         
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <p>{c.location || "--"}</p>
-                           <p>{c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}</p>
+                           <div class='has-tooltip line-clamp-1 max-w-[160px]'>
+                              <span class='tooltip rounded shadow-xl p-2 bg-gray-100 text-black -mt-8 '>{c.location || "--"} {c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}</span>
+                              {c.location || "--"} {c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}
+                           </div>
                         </td>
 
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>

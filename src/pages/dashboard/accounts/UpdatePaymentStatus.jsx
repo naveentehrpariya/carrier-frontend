@@ -24,25 +24,26 @@ export default function UpdatePaymentStatus({id, item, fetchLists, paymentType, 
    ];
    const methods = [
       {
-         name: "cash"
+         name: "Cheque"
       },
       {
-         name: "card"
+         name: "Online"
       },
       {
-         name: "cheque"
+         name: "Others"
       } 
    ];
+
    const {Errors} = useContext(UserContext);
    const [type, setType] = useState(paymentType);
-   const [method, setmethod] = useState(pmethod || 'cash');
+   const [method, setmethod] = useState(pmethod || 'Cheque');
    const [status, setStatus] = useState( pstatus || 'pending');
    const [notes, setNotes] = useState( pnotes || '');
    const [action, setaction] = useState();
-     
    const [loading, setLoading] = useState(false);
+
    const updateStatus = () => {
-   setLoading(true);
+      setLoading(true);
       const resp = Api.post(`/account/order/update/${id}/${type === 1 ? 'customer' : 'carrier'}`, {
          status, method, notes 
       });
@@ -77,7 +78,7 @@ export default function UpdatePaymentStatus({id, item, fetchLists, paymentType, 
          </div> */}
          <div className='grid sm:grid-cols-2 gap-4'>
             <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Payment Status</label>
+               <label className="mt-4 mb-0 block text-sm text-gray-400">Payment Status {pmethod}</label>
                <select defaultValue={status}  onChange={(e)=>setStatus(e.target.value)} name='payment_status' className="input-sm" >
                <option selected disabled className='text-black'>Choose Payment Status</option>
                   {statuses && statuses.map((c, i)=>{

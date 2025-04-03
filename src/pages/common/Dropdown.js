@@ -5,12 +5,12 @@ import { HiDotsVertical } from 'react-icons/hi';
 export default function Dropdown({ children }) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef(null);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const [dropdownPosition, setDropdownPosition] = useState({ bottom: 0, left: 0 });
 
   useEffect(() => {
     if (open && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      setDropdownPosition({ top: rect.bottom + window.scrollY, left: rect.right + window.scrollX - 224 }); // Adjust width as needed
+      setDropdownPosition({ bottom: rect.bottom - window.scrollY, left: rect.right + window.scrollX - 224 }); // Adjust width as needed
     }
   }, [open]);
 
@@ -33,7 +33,7 @@ export default function Dropdown({ children }) {
               aria-orientation="vertical"
               style={{
                 position: 'absolute',
-                top: `${dropdownPosition.top}px`,
+                bottom: `${dropdownPosition.bottom}px`,
                 left: `${dropdownPosition.left}px`,
               }}
             >

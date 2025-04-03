@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { BsFiletypeDoc } from "react-icons/bs";
 
-export default function OrderView({order, fetchLists}){ 
+export default function OrderView({order, fetchLists, btnclasses}){ 
 
    const [open, setOpen] = useState(false);
    const {Errors} = useContext(UserContext);
@@ -152,7 +152,7 @@ export default function OrderView({order, fetchLists}){
    }
 
    return <div className='orderSider'>
-         <button onClick={(e)=>setOpen(true)} className='bg-gray-800 px-3 py-2 text-[12px] rounded-xl'>View Order</button>
+         <button onClick={(e)=>setOpen(true)} className={btnclasses}>View All Notes</button>
          <div className={`sider ${open ? 'open visible' : 'close hidden'} w-full h-screen overflow-auto fixed top-0 right-0 bg-dark1 p-8 z-10 max-w-[500px]`}>
             <button className='absolute top-6 right-6 text-3xl text-white' onClick={(e)=>setOpen(false)} >&times;</button>
             <h2 className='text-white text-2xl'>Details</h2>
@@ -161,8 +161,8 @@ export default function OrderView({order, fetchLists}){
                <AddNotes text={"Edit Note"} classes="text-main" note={order.notes} id={order.id} fetchLists={fetchLists} />
             </div>
             <p className='my-2'>{order.notes}</p>
-            <p className='my-2 mt-4'><p className='!text-gray-400'>Customer Payment Notes :</p> {order?.customer_payment_notes}</p>
-            <p className='my-2 mt-4'> <p className='!text-gray-400'>Carrier Payment Notes :</p> {order?.carrier_payment_notes}</p>
+            {order?.customer_payment_notes ?<p className='my-2 mt-4'><p className='!text-gray-400'>Customer Payment Notes :</p> {order?.customer_payment_notes}</p> :''}
+            {order?.carrier_payment_notes ? <p className='my-2 mt-4'> <p className='!text-gray-400'>Carrier Payment Notes :</p> {order?.carrier_payment_notes}</p> :'' }
 
             <div className='flex justify-between mt-6 border-t border-gray-700 pt-6 pb-6'>
                <p className=' text-gray-500 text-xl' >Documents</p>

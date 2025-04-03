@@ -118,8 +118,8 @@ export default function CustomerInvoice() {
                <div className='bol-header p-3 ps-0 flex justify-between items-center '>
                   <div width="50%">
                      <h2 className='font-bold text-2xl text-black capitalize'>{order?.customer?.name}</h2>
-                     <p ><strong className='text-black'>CARRIR ID #: {order?.customer?.customerID}</strong></p>
-                     <p ><strong className='uppercase'>{order?.carrier?.location}</strong></p>
+                     <p ><strong className='text-black'>MC CODE : MC{order?.customer?.mc_code}</strong></p>
+                     <p ><strong className='uppercase'>{order?.carrier?.location}, {order?.carrier?.state} ({order?.carrier?.country})</strong></p>
                   </div>
                   <div className='d-flex justify-center'>
                      <div className='flex justify-center w-full'>
@@ -139,14 +139,12 @@ export default function CustomerInvoice() {
                   </div>
                   <div className='p-3 border border-gray-300 mt-3 pt-4 w-full '>
                      <ul className=''>
-                        <li className=' flex'><strong className='text-sm me-2 text-black'>Invoice #:</strong> <p>8979</p> </li>
+                        <li className=' flex'><strong className='text-sm me-2 text-black'>Invoice #:</strong> <p>{Date.now()}</p> </li>
                         <li className=' flex'><strong className='text-sm me-2 text-black'>Invoice Date :</strong> <p><TimeFormat time={false} date={Date.now()} /></p> </li>
                         <li className=' flex'><strong className='text-sm me-2 text-black'>Amount :</strong> <p><Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
                      </ul>
                   </div>
                </div>
-
-              
 
                {order && order.shipping_details && order.shipping_details.map((s, index) => {
                   return <>
@@ -155,13 +153,13 @@ export default function CustomerInvoice() {
                            <ul className='flex flex-wrap w-full'>
                               <li className='w-full max-w-[100%] pb-[7px] flex flex-wrap items-center'><strong className='text-black text-sm'>Pickup Location :</strong> <p>{s?.pickupLocation}</p> </li>
                            </ul>
-                           <p className='w-full pb-[7px]'><strong className='text-black text-sm'>Pickup Date :</strong> 
-                           <p><TimeFormat time={false} date={s?.pickupDate} /></p> </p>
+                           <p className='w-full pb-[7px]'><strong className='text-black text-sm'>Pickup Date : </strong>  
+                           <TimeFormat time={false} date={s?.pickupDate} /> </p>
                      </div>
                      <div className='p-3 border border-gray-300 mt-3 pt-4 w-full '>
                            <p className='w-full max-w-[100%] pb-[7px] flex flex-wrap items-center'><strong className='text-black text-sm'>Delivery Location :</strong> <p>{s?.deliveryLocation}</p> </p>
                            <p className='w-full pb-[7px]'><strong className='text-black text-sm'>Delivery Date :</strong> 
-                           <p><TimeFormat time={false} date={s?.deliveryDate} /></p> </p>
+                            <TimeFormat time={false} date={s?.deliveryDate} /> </p>
                      </div>
                   </div>
                   </>

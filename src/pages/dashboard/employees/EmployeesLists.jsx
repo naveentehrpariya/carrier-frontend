@@ -51,41 +51,35 @@ export default function EmployeesLists() {
                <tr>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Name</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Corporate ID</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Commision</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Address</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone/Email</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Created Date</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                </tr>
                {lists && lists.map((c, index) => {
                   return <tr key={`carriew-${index}`}>
 
                      <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
-                        <p className='whitespace-nowrap'>{c.name} </p>
+                        <p className='whitespace-nowrap'>{c.name} <Badge title={true} status={c.status} /> </p>
+                        <p className='whitespace-nowrap'><TimeFormat date={c.createdAt || "--"} /> </p>
                         <button className={` ${c.role == '2' ? "bg-main text-white" : "bg-blue-600 text-white"} text-[10px]  p-[1px] px-[10px] rounded-[20px] mt-2 `}>{c.role == '2' ? "Accountant" : "Employee"}</button>
                      </td>
                      
                      <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
                         <p>ID : {c.corporateID}</p>
-                        <p className='whitespace-nowrap'>Account Status : <Badge title={true} status={c.status} /></p>
-                        
+                        <p className='whitespace-nowrap'>Commision : {c.staff_commision ? `${c.staff_commision}%` : "N/A"}</p>
                      </td>
-                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        <p>{c.staff_commision ? `${c.staff_commision}%` : "N/A"}</p>
+                    
+                     <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
+                        <div class='has-tooltip line-clamp-2 min-w-[100px] max-w-[150px]'>
+                              <span class='tooltip rounded shadow-xl p-2 bg-gray-100 text-black -mt-8 '>{c.country || ""} {c.address || ''}</span>
+                              {c.country || ""} {c.address || ''}
+                        </div>
                      </td>
                      <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
-                        <p>{c.country ? `Country : ${c.country}` : ""}</p>
-                        <p>{c.address ? `Address : ${c.address}` : "N/A"}</p>
-                     </td>
-                     <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
-                        <p>Email : {c.email || ""}</p>
+                        <p>{c.email || ""}</p>
                         <p>{c.phone ? `${c.phone}` : "N/A"}</p>
                      </td>
-                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                        {/* <p>{c.created_by.name || "--"}</p> */}
-                        <p><TimeFormat date={c.createdAt || "--"} /> </p>
-
-                     </td>
+                      
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <Dropdown>
                               <li className='list-none text-sm'>

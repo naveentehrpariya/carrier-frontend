@@ -23,7 +23,7 @@ export default function Sidebar() {
   }
 
   return (
-    <div className='sticky top-0 pt-[110px] p-8 bg-dark border-r max-h-[100vh] overflow-auto pb-22 w-full max-w-[300px] border-gray-900'>
+    <div className='sticky top-0 pt-[110px] p-8 bg-dark border-r max-h-[100vh] overflow-auto pb-22 w-full max-w-[300px]  min-w-[300px] border-gray-900'>
       <h2 className='mb-3 text-sm uppercase text-gray-400'>Main Menu</h2>
       <ul>
 

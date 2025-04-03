@@ -39,45 +39,44 @@ const weightUnits = [
 export default function AddOrder(){
     const [closeCarrierPopup, setCloseCarrierPopup] = useState();
     const [distance, setDistance] = useState(0);
-    const [distanceMsg, setDistanceMsg] = useState('');
 
-    const getDistance = () => {
-      if (shippingDetails && shippingDetails.length > 0) {
-        let totalDistance = 0;
-        const distancePromises = shippingDetails.map((item, index) => {
-          if (item.pickupLocation && item.deliveryLocation)  {
-            return Api.post("/getdistance", {
-              start: item.pickupLocation,
-              end: item.deliveryLocation,
-            }).then((res) => {
-              console.log("API response distance:", res.data.data);
-              totalDistance += parseInt(res.data.data, 10);
-              if(res.data.status === false) {
-                setDistanceMsg(res.data.message +'Shipping location '+(index+1));
-              } else { 
-                setDistanceMsg(false)
-              }
-            })
-            .catch((err) => {
-              console.error("Error fetching distance:", err);
-              setDistanceMsg('Unable to calculate distance between all shipping locations. Please check all the locations correctly.');
-            });
-          }
-          return Promise.resolve();
-        });
-        Promise.all(distancePromises).then(() => {
-          console.log("Total distance:", totalDistance);
-          setDistance(totalDistance);
-        });
-      }
-    };
+    // const getDistance = () => {
+    //   if (shippingDetails && shippingDetails.length > 0) {
+    //     let totalDistance = 0;
+    //     const distancePromises = shippingDetails.map((item, index) => {
+    //       if (item.pickupLocation && item.deliveryLocation)  {
+    //         return Api.post("/getdistance", {
+    //           start: item.pickupLocation,
+    //           end: item.deliveryLocation,
+    //         }).then((res) => {
+    //           console.log("API response distance:", res.data.data);
+    //           totalDistance += parseInt(res.data.data, 10);
+    //           if(res.data.status === false) {
+    //             setDistanceMsg(res.data.message +'Shipping location '+(index+1));
+    //           } else { 
+    //             setDistanceMsg(false)
+    //           }
+    //         })
+    //         .catch((err) => {
+    //           console.error("Error fetching distance:", err);
+    //           setDistanceMsg('Unable to calculate distance between all shipping locations. Please check all the locations correctly.');
+    //         });
+    //       }
+    //       return Promise.resolve();
+    //     });
+    //     Promise.all(distancePromises).then(() => {
+    //       console.log("Total distance:", totalDistance);
+    //       setDistance(totalDistance);
+    //     });
+    //   }
+    // };
 
 
     const getPickupLocation = (index, value) => { 
         handleInputChange(index, "pickupLocation", value);
         console.log("packup value",value)
         setTimeout(() => {
-          getDistance();
+          // getDistance();
         },1000);
     }
     
@@ -85,7 +84,7 @@ export default function AddOrder(){
         handleInputChange(index, "deliveryLocation", value);
         console.log("deliveryLocation value",value)
         setTimeout(() => {
-          getDistance();
+          // getDistance();
         },1000);
         console.log("deliveryLocation",value);
     }
@@ -221,7 +220,7 @@ export default function AddOrder(){
             lists.forEach(e => {
               arr.push({
                 _id: e._id,
-                label: `${e.name} - ${e.state}, ${e.country}  (${e.email})`,
+                label: `${e.name} | ${e.country}(${e.mc_code})`,
                 value: e._id,
                 carrierID: e.carrierID
               })
@@ -300,17 +299,14 @@ export default function AddOrder(){
         toast.error('Please enter an order amount');
         return false;
       }
-
       if(alldata.revenue_currency === '') {
         toast.error('Please select a revenue currency');
         return false;
       }
-
       if(alldata.revenue_items.length === 0) {
         toast.error('Please add at least one revenue item');
         return false;
       }
-
       if(alldata.shipping_details.length === 0) {
         toast.error('Please add at least one shipping detail');
         return false;
@@ -366,7 +362,6 @@ export default function AddOrder(){
               <div key={index}
                 className="border mt-2 rounded-[20px] bg-dark border-gray-900 p-6 mb-6">
                 <p className="text-gray-400 heading xl text-xl mb-4">Shipment {index+1}</p>
-
                 <div className="grid grid-cols-4 gap-4 pb-8 border-b border-gray-800 mb-8">
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Community</label>
@@ -538,10 +533,10 @@ export default function AddOrder(){
                   <option value={"usd"} >USD</option>
                   <option value={"inr"} >INR</option>
                 </select>
-                <button className="btn ms-3 text-black font-bold" onClick={addNewItem}> + Add New </button>
+                {/* <button className="btn ms-3 text-black font-bold" onClick={addNewItem}> + Add New </button> */}
               </div>
             </div>
-            <div className="border rounded-[20px] bg-dark border-gray-900 p-6">
+            <div className="borders rounded-[20px] mb-12 sbg-dark sborder-gray-900 p-6s">
               {revenueItems.map((item, index) => (
                 <div key={index} className="rev-items flex justify-between items-center mb-4">
                   <div className="grid grid-cols-3 w-full gap-5">
@@ -633,14 +628,14 @@ export default function AddOrder(){
 
           <div className='grid grid-cols-2 gap-3 mb-8 mt-6'>
             <div className=''>
-              <p className='text-white '> Total Distance (KM) </p>
+              <p className='text-white '> Total Distance (Miles) </p>
               <div className='relative'>
                 <div className='absolute text-white top-[26px] left-4'>
-                    KM
+                    Miles
                 </div>
                 <input onChange={(e) =>setData({ ...data, totalDistance: e.target.value})} 
-                required type={"number"} placeholder={"Enter total distance manually..."} className="input-sm ps-[50px]" />
-                {distanceMsg ? <p className='text-yellow-600 text-sm mb-2'>({distanceMsg}. Please update address or manually update total distance)</p>  : ""}
+                required type={"number"} placeholder={"Enter total distance..."} className="input-sm ps-[60px]" />
+                {/* {distanceMsg ? <p className='text-yellow-600 text-sm mb-2'>({distanceMsg}. Please update address or manually update total distance)</p>  : ""} */}
               </div>
             </div>
 

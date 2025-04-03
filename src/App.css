@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+.tooltip {
+  @apply invisible absolute;
+}
+
+.has-tooltip:hover .tooltip {
+  @apply visible z-50;
+}
+
 body{
   --main:#A093F7;
   --main-fade:rgba(255,91,91,1);
