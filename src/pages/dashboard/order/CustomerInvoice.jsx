@@ -132,7 +132,7 @@ export default function CustomerInvoice() {
                <div className='flex w-full'>
                   <div className='p-3 border border-gray-300 mt-3 pt-4 w-full '>
                      <h2 className='font-bold text-black'>Bill To</h2>
-                     <p>Cross Miles Carrier</p>
+                     <p>Capital Logistics</p>
                      <p>Brampton, ON, L6W3E7, Canada</p>
                      <p>dispatch@crossmilescarrier.com</p>
                      <p>PH : (416) 728-4797</p>

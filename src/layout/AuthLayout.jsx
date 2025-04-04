@@ -34,7 +34,7 @@ export default function AuthLayout({children, heading}) {
     <>
       <Helmet>
          <meta charSet="utf-8" />
-         <title>{heading ? `${heading} | ` : '' } Cross Miles Carrier </title>
+         <title>{heading ? `${heading} | ` : '' } Capital Logistics </title>
          <link rel="canonical" href={window.location.href || "https://runstream.co"} />
       </Helmet>
 

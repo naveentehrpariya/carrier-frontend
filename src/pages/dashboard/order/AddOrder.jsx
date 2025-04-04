@@ -38,32 +38,29 @@ const weightUnits = [
 
 export default function AddOrder(){
 
-    const [item, setItem] = useState(null)
-    const { id } = useParams();
-    const fetchOrder = () => {
-      setLoading(true);
-      const resp = Api.get(`/order/detail/${id}`);
-      resp.then((res) => {
-        setLoading(false);
-        if (res.data.status) {
-            const odr = res.data.order;
-            setItem(res.data.order);
-        } else {
-            setItem(null);
-        }
-      }).catch((err) => {
-        setLoading(false);
-        Errors(err);
-      });
-    }
 
-    useEffect(() => {
-      fetchOrder();
-    },[]);
 
-    useEffect(() => {
-        setShippingDetails(item?.shipping_details || []);
-    }, [item]);
+    // const [exits, setExists] = useState(null)
+    // const { id } = useParams();
+    // const fetchOrder = () => {
+    //   setLoading(true);
+    //   const resp = Api.get(`/order/detail/${id}`);
+    //   resp.then((res) => {
+    //     setLoading(false);
+    //     if (res.data.status) {
+    //         setExists(res.data.order);
+    //     } else {
+    //         setExists(null);
+    //     }
+    //   }).catch((err) => {
+    //     setLoading(false);
+    //     Errors(err);
+    //   });
+    // }
+
+    // useEffect(() => {
+    //     fetchOrder();
+    // }, []);
 
 
     const [closeCarrierPopup, setCloseCarrierPopup] = useState();
@@ -112,8 +109,6 @@ export default function AddOrder(){
     const getDeliveryLocation = (index, value) => { 
         handleInputChange(index, "deliveryLocation", value);
     }
-
-
     
     const [shippingDetails, setShippingDetails] = useState([
       {
@@ -195,19 +190,19 @@ export default function AddOrder(){
     };
     
     const [data, setData] = useState({
-      "company_name" : "Cross Miles Carrier",
-      "customer_order_no": item?.customer_order_no || '',
-      "customer" : item?.customer?._id || '',
-      "carrier" : item?.carrier?._id || '',
-      "carrier_amount" : item?.carrier_amount || 0,
-      "payment_status" :  item?.payment_status || "pending",
-      "payment_method" : item?.payment_method || "none",
-      "carrier_payment_status" : item?.carrier_payment_status || "pending",
-      "carrier_payment_method" : item?.carrier_payment_method || "none",
-      "revenue_currency" : item?.revenue_currency || 'cad',
-      "order_status" : item?.order_status || "added",
-      "totalDistance": item?.totalDistance ||  0,
-      "total_amount":  item?.total_amount || 0,
+      "company_name" : "Capital Logistics",
+      "customer_order_no": '',
+      "customer" :'',
+      "carrier" : '',
+      "carrier_amount" : 0,
+      "payment_status" : "pending",
+      "payment_method" : "none",
+      "carrier_payment_status" : "pending",
+      "carrier_payment_method" : "none",
+      "revenue_currency" : 'cad',
+      "order_status" : "added",
+      "totalDistance": 0,
+      "total_amount": 0
     });
     const [customersListing, setCustomersListing] = useState([]);
     const fetchcustomers = () => {
@@ -357,15 +352,15 @@ export default function AddOrder(){
           <div className='grid grid-cols-1 sm:grid-cols-3 gap-5'>
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Company Name</label>
-                <input name='company_name' disabled type={'text'} placeholder='Cross Miles Carrier' className="input-sm" />
+                <input name='company_name' disabled type={'text'} placeholder='Capital Logistics' className="input-sm" />
             </div>
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Order No.</label>
-                <input defaultValue={item?.customer_order_no || ''} required name='customer_order_no' onChange={handleinput} type={'number'} placeholder={"Order Number"} className="input-sm" />
+                <input required name='customer_order_no' onChange={handleinput} type={'number'} placeholder={"Order Number"} className="input-sm" />
             </div>
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Customer</label>
-                <Select defaultValue={customersListing && customersListing.find(e => e._id === item?.customer?._id) || null} classNamePrefix="react-select input"  placeholder={'Choose Customer'}
+                <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
                 onChange={chooseCustomer}
                 options={customersListing} />
             </div>
@@ -379,7 +374,6 @@ export default function AddOrder(){
                 onClick={addNewShippingBlock}> + Add New
               </button>
             </div>
-
             {shippingDetails.map((detail, index) => (
               <>
               <div key={index}
@@ -389,7 +383,7 @@ export default function AddOrder(){
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Community</label>
                     <input
-                      required defaultValue={detail.community || ''}
+                      required
                       name="community"
                       onChange={(e) =>handleInputChange(index, "community", e.target.value)}
                       type={"text"}
@@ -399,7 +393,7 @@ export default function AddOrder(){
                   </div>
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Equipment</label>
-                    <Select defaultValue={detail.equipment || null}
+                    <Select
                       classNamePrefix="react-select input"
                       placeholder={"Equipment"}
                       onChange={(selected) =>handleInputChange(index, "equipment", selected)}
@@ -408,7 +402,7 @@ export default function AddOrder(){
                   </div>
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Weight Unit</label>
-                    <Select defaultValue={detail.weight_init || null}
+                    <Select
                       classNamePrefix="react-select input"
                       placeholder={"Weight Unit"}
                       onChange={(selected) =>
@@ -419,7 +413,7 @@ export default function AddOrder(){
                   </div>
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Weight</label>
-                    <input defaultValue={detail.weight || ''}
+                    <input
                       required name="weight"
                       onChange={(e) =>
                         handleInputChange(index, "weight", e.target.value)
@@ -434,7 +428,7 @@ export default function AddOrder(){
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Pickup Location</label>
                     <input
-                      required defaultValue={detail.pickupLocation || ''}
+                      required
                       name="pickupLocation" 
                       onChange={(e)=>getPickupLocation(index, e.target.value)}
                       type={"text"} 
@@ -448,7 +442,7 @@ export default function AddOrder(){
                       Pickup Reference No.
                     </label>
                     <input
-                      required defaultValue={detail.pickupReferenceNo || ''}
+                      required
                       name="pickupReferenceNo"
                       onChange={(e) => handleInputChange(index, "pickupReferenceNo", e.target.value) }
                       type={"text"}
@@ -460,7 +454,7 @@ export default function AddOrder(){
                     <label className="mb-0 block text-sm text-gray-400">
                       Pickup Appointment
                     </label>
-                    <Select defaultValue={detail.pickupAppointment || null}
+                    <Select
                       classNamePrefix="react-select input"
                       placeholder={"Choose Appointment"}
                       onChange={(selected) =>
@@ -474,7 +468,7 @@ export default function AddOrder(){
                       Pickup Date
                     </label>
                     <input
-                      required defaultValue={detail.pickupDate || ''}
+                      required
                       name="pickupDate"
                       onChange={(e) =>
                         handleInputChange(index, "pickupDate", e.target.value)
@@ -491,7 +485,7 @@ export default function AddOrder(){
                     <label className="mb-0 block text-sm text-gray-400">
                       Delivery Location
                     </label> 
-                    <input defaultValue={detail.deliveryLocation || ''}
+                    <input
                       required name="deliveryLocation"
                       onChange={(e) => getDeliveryLocation(index, e.target.value)  
                       } type={"text"} placeholder={"Enter delivery location"} className="input-sm"
@@ -501,7 +495,7 @@ export default function AddOrder(){
                     <label className="mb-0 block text-sm text-gray-400">
                       Pickup Reference No.
                     </label>
-                    <input defaultValue={detail.deliveryReferenceNo || ''}
+                    <input
                       required
                       name="deliveryReferenceNo"
                       onChange={(e) =>
@@ -516,7 +510,7 @@ export default function AddOrder(){
                     <label className="mb-0 block text-sm text-gray-400">
                       Delivery Appointment
                     </label>
-                    <Select defaultValue={detail.deliveryAppointment || null}
+                    <Select
                       classNamePrefix="react-select input"
                       placeholder={"Choose Appointment"}
                       onChange={(selected) =>
@@ -530,7 +524,7 @@ export default function AddOrder(){
                       Delivery Date
                     </label>
                     <input
-                      required defaultValue={detail.deliveryDate || ''}
+                      required
                       name="deliveryDate"
                       onChange={(e) =>
                         handleInputChange(index, "deliveryDate", e.target.value)
@@ -550,7 +544,7 @@ export default function AddOrder(){
             <div className="flex justify-between mt-12 mb-4 items-center">
               <p className="text-gray-400 heading xl text-xl">Revenue Items</p>
               <div className='flex items-center'>
-                <select defaultValue={item?.revanue_currency || 'cad' } onChange={chooseAmountCurrency} className='currency-drop bg-gray-800 text-white px-2 py-[5px] rounded-[10px]'>
+                <select onChange={chooseAmountCurrency} className='currency-drop bg-gray-800 text-white px-2 py-[5px] rounded-[10px]'>
                   <option value={"cad"} >CAD</option>
                   <option value={"gbp"} >GBP</option>
                   <option value={"usd"} >USD</option>
@@ -560,12 +554,12 @@ export default function AddOrder(){
               </div>
             </div>
             <div className="borders rounded-[20px] mb-12 sbg-dark sborder-gray-900 p-6s">
-              {revenueItems.map((r, index) => (
+              {revenueItems.map((item, index) => (
                 <div key={index} className="rev-items flex justify-between items-center mb-4">
                   <div className="grid grid-cols-3 w-full gap-5">
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Revenue Item</label>
-                      <Select defaultValue={item?.revenue_item || null}
+                      <Select
                         classNamePrefix="react-select input"
                         placeholder="Revenue Items"
                         onChange={(option) =>
@@ -573,13 +567,13 @@ export default function AddOrder(){
                         }
                         options={revenueItemOptions}
                         value={
-                          r.revenue_item ? { label: r.revenue_item, value: r.revenue_item} : null
+                          item.revenue_item ? { label: item.revenue_item, value: item.revenue_item} : null
                         }
                       />
                     </div>
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Rate Method</label>
-                      <Select defaultValue={item?.rate_method || null}
+                      <Select
                         classNamePrefix="react-select input"
                         placeholder="Choose Rate"
                         onChange={(option) =>
@@ -587,10 +581,10 @@ export default function AddOrder(){
                         }
                         options={rateMethodOptions}
                         value={
-                          r.rate_method
+                          item.rate_method
                             ? {
-                                label: r.rate_method,
-                                value: r.rate_method,
+                                label: item.rate_method,
+                                value: item.rate_method,
                               }
                             : null
                         }
@@ -600,11 +594,11 @@ export default function AddOrder(){
                       <label className="block text-sm text-gray-400">Rate</label>
                       <div className='relative'>
                         <div className='absolute text-white top-[26px] left-4'>
-                            <Currency onlySymbol={true} amount={r.rate*(distance)} currency={revCurrency || 'cad'} />
+                            <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'cad'} />
                         </div>
                           <input
                             required
-                            name="rate" defaultValue={item?.total_amount || ''}
+                            name="rate"
                             type="number"
                             placeholder="Rate"
                             className="input-sm ps-[50px]"
@@ -660,7 +654,7 @@ export default function AddOrder(){
                 <div className='absolute text-white top-[26px] left-4'>
                     Miles
                 </div>
-                <input value={item?.total_distance} onChange={(e) =>setData({ ...data, totalDistance: e.target.value})} 
+                <input onChange={(e) =>setData({ ...data, totalDistance: e.target.value})} 
                 required type={"number"} placeholder={"Enter total distance..."} className="input-sm ps-[60px]" />
                 {/* {distanceMsg ? <p className='text-yellow-600 text-sm mb-2'>({distanceMsg}. Please update address or manually update total distance)</p>  : ""} */}
               </div>
@@ -673,7 +667,7 @@ export default function AddOrder(){
                   <div className='absolute text-white top-[26px] left-4'>
                       <Currency onlySymbol={true}  currency={revCurrency || 'cad'} />
                   </div>
-                  <input defaultValue={item?.total_amount} value={data.total_amount} onChange={(e) => setData({ ...data, total_amount: e.target.value}) } 
+                  <input value={data.total_amount} onChange={(e) => setData({ ...data, total_amount: e.target.value}) } 
                   required type={"number"} placeholder={"Order Amount"}
                   className="input-sm ps-[50px] disabled" />
                 </div>
@@ -703,7 +697,7 @@ export default function AddOrder(){
                   </div>
                   <div className='input-item'>
                       <label className="mt-4 mb-0 block text-sm text-gray-400">Amount</label>
-                      <input value={item?.carrier_amount} required onChange={handleinput} name='carrier_amount' type={'number'} placeholder={"Enter carrier amount"} className="input-sm" />
+                      <input required onChange={handleinput} name='carrier_amount' type={'number'} placeholder={"Enter carrier amount"} className="input-sm" />
                   </div>
                 </div>
                 <div className='flex justify-center items-center'>
