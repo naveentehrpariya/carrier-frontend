@@ -90,23 +90,23 @@ export default function Orders() {
                            </td>
 
                            <td className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>
-                              <p className='whitespace-nowrap'>Order No  : {c.customer_order_no || "--"}</p>
-                              <p className='my-1 whitespace-nowrap'>Status : <Badge title={true} status={c.order_status} /></p>
-                              <p className='my-1 whitespace-nowrap'>Total Distance : {c.totalDistance} Miles</p>
+                              <p className='whitespace-nowrap'>Order No  : {c?.customer_order_no || "--"}</p>
+                              <p className='my-1 whitespace-nowrap'>Status : <Badge title={true} status={c?.order_status} /></p>
+                              <p className='my-1 whitespace-nowrap'>Total Distance : {c?.totalDistance} Miles</p>
                            </td>
                           
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                              <p>Customer : {c.customer?.name || "--"}(MC{c.customer?.mc_code || "--"})</p>
-                              <p className='mt-1 whitespace-nowrap'>Payment  : <Badge title={true} status={c.payment_status} text={`${c.payment_status === 'paid' ? `via ${c.payment_method}` :''}`} /></p>
-                              <p className='mt-1 whitespace-nowrap'>Order Amount : <Currency amount={c.total_amount} currency={c.revenue_currency || 'usd'} /></p>
-                              {c.payment_status_date ? <p className='text-[13px] text-gray-400 mt-1'>Payment at <TimeFormat date={c.payment_status_date || ""} /></p> : ''}
+                              <p>Customer : {c?.customer?.name || "--"}(MC{c?.customer?.mc_code || "--"})</p>
+                              <p className='mt-1 whitespace-nowrap'>Payment  : <Badge title={true} status={c?.payment_status} text={`${c?.payment_status === 'paid' ? `via ${c?.payment_method}` :''}`} /></p>
+                              <p className='mt-1 whitespace-nowrap'>Order Amount : <Currency amount={c?.total_amount} currency={c?.revenue_currency || 'usd'} /></p>
+                              {c?.payment_status_date ? <p className='text-[13px] text-gray-400 mt-1'>Payment at <TimeFormat date={c?.payment_status_date || ""} /></p> : ''}
                            </td>
                          
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                              <p className='mt-1'>Carrier :  {c.carrier?.name || "--"}(MC{c.carrier?.mc_code || "--"})</p>
-                              <p className='mt-1 whitespace-nowrap'>Payment : <Badge title={true} status={c.carrier_payment_status} text={`${c.carrier_payment_status === 'paid' ? `via ${c.carrier_payment_method}` :''}`} /></p>
-                              <p className='mt-1 whitespace-nowrap'>Sell Amount : <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></p>
-                              {c.carrier_payment_date ? <p className='text-[13px] text-gray-400 mt-1'>Updated at <TimeFormat date={c.carrier_payment_date || ""} /></p> : ''}
+                              <p className='mt-1'>Carrier :  {c.carrier?.name || "--"}(MC{c?.carrier?.mc_code || "--"})</p>
+                              <p className='mt-1 whitespace-nowrap'>Payment : <Badge title={true} status={c?.carrier_payment_status} text={`${c?.carrier_payment_status === 'paid' ? `via ${c?.carrier_payment_method}` :''}`} /></p>
+                              <p className='mt-1 whitespace-nowrap'>Sell Amount : <Currency amount={c?.carrier_amount} currency={c?.revenue_currency || 'usd'} /></p>
+                              {c?.carrier_payment_date ? <p className='text-[13px] text-gray-400 mt-1'>Updated at <TimeFormat date={c?.carrier_payment_date || ""} /></p> : ''}
                            </td>
                           
                             

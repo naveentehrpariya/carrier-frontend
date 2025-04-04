@@ -58,27 +58,27 @@ export default function ViewOrder() {
                   <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
                      <p className='font-bold text-gray-400 text-xl mb-2'>Customer Details</p>
                      <ul className=''>
-                        <li className=' flex'><strong className=' me-2 !text-gray-400'>Customer Name:</strong> <p>Capital Logistics</p> </li>
-                        <li className=' flex'><strong className=' me-2 !text-gray-400'>Customer Phone :</strong> <p>+45 454524545</p> </li>
-                        <li className=' flex'><strong className=' me-2 !text-gray-400'>Customer Email :</strong> <p>info@cpaitallogistics.com</p> </li>
-                        <li className=' flex items-center'><strong className=' !text-gray-400'>Payment Status:</strong> <p className='ps-2'><Badge title={true} status={order?.payment_status} /></p> </li>
+                        <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Name:</strong>{order?.customer?.name} (MC{order?.customer?.mc_code}) </p> </li>
+                        <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Phone :</strong>{order?.customer?.phone } {order?.customer?.phone ? `,${order?.customer?.secondary_phone}` :'' } </p> </li>
+                        <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Email :</strong> {order?.customer?.email } {order?.customer?.email ? `,${order?.customer?.secondary_email}` :'' }</p> </li>
+                        <li className='flex items-center'><p className=''><strong className=' !text-gray-400'>Payment Status:</strong> <Badge title={true} status={order?.payment_status} text={`${order?.payment_status === 'paid' ? `via ${order?.payment_method}` :''}`} /></p> </li>
                      </ul>
                   </div>
                   <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
                      <p className='font-bold text-gray-400 text-xl mb-2'>Carrier Details</p>
                      <ul className=''>
-                        <li className=' flex'><strong className=' me-2 !text-gray-400'>Carrier Name:</strong> <p>{order?.carrier?.name}</p> </li>
-                        <li className=' flex'> <p> <strong className=' me-2 !text-gray-400'>Carrier Phone :</strong> {order?.carrier?.phone}, {order?.carrier?.secondary_phone}</p> </li>
-                        <li className=' flex'> <p className='break-all'><strong className=' me-2 !text-gray-400 '>Carrier Email :</strong> {order?.carrier?.email}, {order?.carrier?.secondary_email}</p> </li>
-                        <li className=' flex items-center'><strong className=' !text-gray-400'>Payment Status:</strong> <p className='ps-2'><Badge title={true} status={order?.carrier_payment_status} /></p> </li>
+                        <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Carrier Name:</strong> <p>{order?.carrier?.name} (MC{order?.carrier?.mc_code})</p> </li>
+                        <li className=' flex mb-2'> <p> <strong className=' me-2 !text-gray-400'>Carrier Phone :</strong> {order?.carrier?.phone}, {order?.carrier?.secondary_phone}</p> </li>
+                        <li className=' flex mb-2'> <p className='break-all'><strong className=' me-2 !text-gray-400 '>Carrier Email :</strong> {order?.carrier?.email}, {order?.carrier?.secondary_email}</p> </li>
+                        <li className=' flex items-center'><strong className=' !text-gray-400'>Payment Status:</strong> <p className='ps-2'><Badge title={true} status={order?.carrier_payment_status} text={`${order?.carrier_payment_status === 'paid' ? `via ${order?.carrier_payment_method}` :''}`} /></p> </li>
                     </ul>
                   </div>
                   <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
                      <p className='font-bold text-gray-400 text-xl mb-2'>Staff Details</p>
                      <ul className=''>
-                        <li className=' flex items-center'><strong className=' !text-gray-400'>Staff Name:</strong> <p className='ps-2'>{order?.created_by?.name} ({order?.created_by?.email})</p> </li>
-                        <li className=' flex items-center capitalize'><strong className=' me-1 !text-gray-400'>Email: </strong> <p>{order?.created_by?.email}</p> </li>
-                        <li className=' flex items-center capitalize'><strong className=' me-1 !text-gray-400'>Phone: </strong> <p>{order?.created_by?.phone}</p> </li>
+                        <li className=' flex items-center mb-2'><strong className=' !text-gray-400'>Staff Name:</strong> <p className='ps-2'>{order?.created_by?.name}</p> </li>
+                        <li className=' flex items-center mb-2'><strong className=' me-1 !text-gray-400'>Email: </strong> <p>{order?.created_by?.email}</p> </li>
+                        <li className=' flex items-center mb-2 '><strong className=' me-1 !text-gray-400'>Phone: </strong> <p>{order?.created_by?.phone}</p> </li>
                         <li className=' flex items-center capitalize'> <p> <strong className=' me-1 !text-gray-400'>Address : </strong> {order?.created_by?.address}</p> </li>
                      </ul>
                   </div>
@@ -91,7 +91,7 @@ export default function ViewOrder() {
                            <li className=''><strong className='text-gray-400'>Shipment No.:</strong> <p>#{index+1}</p> </li>
                            <li className='capitalize '><strong className='text-gray-400'>Commudity :</strong> <p>{s?.community}</p> </li>
                            <li className='capitalize '><strong className='text-gray-400'>Equipments :</strong> <p>{s?.equipment?.value}</p> </li>
-                           <li className=''><strong className='text-gray-400'>Weight :</strong> <p>{s?.weight || 'N/A'} {s?.weight_unit || ''}</p> </li>
+                           <li className=''><strong className='text-gray-400'>Weight :</strong> <p>{s?.weight || 'N/A'} {s?.weight_unit || s?.weight_init || ''}</p> </li>
                         </ul>
 
                         <div className='block'>
