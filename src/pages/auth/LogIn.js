@@ -88,7 +88,7 @@ export default function Login() {
               <Link to="/" className="self-center  text-3xl font-mono font-bold  text-red-500 drunk lowercase">
                 <Logotext />
               </Link>
-              <h2 className="font-bold mb-1 text-[24px] mt-6   text-white">Welcome to Capital Logistics </h2>
+              <h2 className="font-bold mb-1 text-[24px] mt-6   text-white">Welcome to Cross Miles Carrier </h2>
               <p className="text-gray-500">Enter your credentials to login to your account </p>
               <div className='bg-[#D278D5] h-[3px] w-[100px] mt-2'></div>
               

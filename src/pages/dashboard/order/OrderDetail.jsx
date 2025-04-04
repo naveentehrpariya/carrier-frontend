@@ -149,7 +149,7 @@ export default function OrderDetail() {
                         <li className=' flex'><strong className='text-normal test me-2 !text-gray-700'>Customer Email :</strong> <p>{order?.customer?.email}</p> </li>
                      </ul> */}
                      <ul className=''>
-                        <li className=' flex'><strong className='text-normal test me-2 !text-gray-700'>Customer Name:</strong> <p>Capital Logistics</p> </li>
+                        <li className=' flex'><strong className='text-normal test me-2 !text-gray-700'>Customer Name:</strong> <p>Cross Miles Carrier</p> </li>
                         <li className=' flex'><strong className='text-normal test me-2 !text-gray-700'>Customer Phone :</strong> <p>+45 454524545</p> </li>
                         <li className=' flex'><strong className='text-normal test me-2 !text-gray-700'>Customer Email :</strong> <p>info@cpaitallogistics.com</p> </li>
                      </ul>

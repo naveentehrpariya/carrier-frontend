@@ -58,7 +58,7 @@ export default function ViewOrder() {
                   <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
                      <p className='font-bold text-gray-400 text-xl mb-2'>Customer Details</p>
                      <ul className=''>
-                        <li className=' flex'><strong className=' me-2 !text-gray-400'>Customer Name:</strong> <p>Capital Logistics</p> </li>
+                        <li className=' flex'><strong className=' me-2 !text-gray-400'>Customer Name:</strong> <p>Cross Miles Carrier</p> </li>
                         <li className=' flex'><strong className=' me-2 !text-gray-400'>Customer Phone :</strong> <p>+45 454524545</p> </li>
                         <li className=' flex'><strong className=' me-2 !text-gray-400'>Customer Email :</strong> <p>info@cpaitallogistics.com</p> </li>
                         <li className=' flex items-center'><strong className=' !text-gray-400'>Payment Status:</strong> <p className='ps-2'><Badge title={true} status={order?.payment_status} /></p> </li>

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import AuthLayout from '../../../layout/AuthLayout';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
@@ -20,9 +20,9 @@ export default function Orders() {
    const [lists, setLists] = useState([]);
    const {Errors, user} = useContext(UserContext);
 
-   const fetchLists = () => {
+   const fetchLists = (value) => {
       setLoading(true);
-      const resp = Api.get(`/order/listings`);
+      const resp = Api.get(`/order/listings?${value ?`search=${value}` : ''}`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
@@ -39,16 +39,33 @@ export default function Orders() {
 
    useEffect(() => {
       fetchLists();
-   }, []);
+   },[]);
+
+   const debounceRef = useRef(null);
+   const [searching, setSearching] = useState(false);
+   const handleInputChange = (e) => {
+      const value = e.target.value;
+      const wordCount = value &&value.length;
+      if (wordCount > 1) {
+         setSearching(true);
+         fetchLists(value);
+      }
+      if (e.target.value === '') {
+         fetchLists();
+      }
+   };
 
   return (
       <AuthLayout> 
          <div className='flex justify-between items-center'>
             <h2 className='text-white text-2xl'>Orders</h2>
             <div>
+               <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search order' className='text-white min-w-[250px] bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px] me-4 focus:shadow-0 focus:outline-0' />
                <Link to="/order/add" className={"btn md text-black font-bold"} >+ New Order</Link>
             </div>
          </div>
+
+         {searching ? <p>Searching...</p> : ''}
 
          {loading ? <Loading />
             :

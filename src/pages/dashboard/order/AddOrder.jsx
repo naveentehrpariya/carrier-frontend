@@ -195,7 +195,7 @@ export default function AddOrder(){
     };
     
     const [data, setData] = useState({
-      "company_name" : "Capital Logistics",
+      "company_name" : "Cross Miles Carrier",
       "customer_order_no": item?.customer_order_no || '',
       "customer" : item?.customer?._id || '',
       "carrier" : item?.carrier?._id || '',
@@ -357,7 +357,7 @@ export default function AddOrder(){
           <div className='grid grid-cols-1 sm:grid-cols-3 gap-5'>
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Company Name</label>
-                <input name='company_name' disabled type={'text'} placeholder='Capital Logistics' className="input-sm" />
+                <input name='company_name' disabled type={'text'} placeholder='Cross Miles Carrier' className="input-sm" />
             </div>
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Order No.</label>
