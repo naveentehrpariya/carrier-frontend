@@ -61,7 +61,7 @@ export default function Orders() {
                         <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Order</th>
                         <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer Details </th>
                         <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier Details</th>
-                        <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Documents</th>
+                        <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Docs</th>
                      </tr>
                      {lists && lists.map((c, index) => {
                         return <tr key={`carriew-${index}`}>

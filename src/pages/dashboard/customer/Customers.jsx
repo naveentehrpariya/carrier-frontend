@@ -50,7 +50,7 @@ export default function Customers() {
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone</th>
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Address</th>
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Assigned To</th>
-                     <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
+                     {user?.is_admin === 1 ? <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th> : ''}
                   </tr>
                   {lists && lists.map((c, index) => {
                      return <tr key={`carriew-${index}`}>
@@ -76,10 +76,11 @@ export default function Customers() {
                            <p className='whitespace-nowrap'>{c?.assigned_to?.name || ""}({c?.assigned_to?.phone || ""})</p>
                            <p><TimeFormat date={c?.createdAt || "--"} /> </p>
                         </td>
+                        {user?.is_admin === 1 ?
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <AddCustomer classes="text-main" text={"Update"} item={c} fetchLists={fetchLists} />
                            <RemoveCustomer classes="text-red-600 mt-2" text={"Remove"} item={c} fetchLists={fetchLists} />
-                        </td>
+                        </td> : '' }
                      </tr>
                   })}
                </table>

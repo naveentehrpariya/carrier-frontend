@@ -119,11 +119,11 @@ export default function CustomerInvoice() {
                   <div width="50%">
                      <h2 className='font-bold text-2xl text-black capitalize'>{order?.customer?.name}</h2>
                      <p ><strong className='text-black'>MC CODE : MC{order?.customer?.mc_code}</strong></p>
-                     <p ><strong className='uppercase'>{order?.carrier?.location}, {order?.carrier?.state} ({order?.carrier?.country})</strong></p>
+                     <p className='max-w-[400px] capitalize' ><p className='capitalize'>{order?.carrier?.location}, {order?.carrier?.state} ({order?.carrier?.country})</p></p>
                   </div>
                   <div className='d-flex justify-center'>
                      <div className='flex justify-center w-full'>
-                     <Logotext />
+                     <Logotext black="true" />
                      </div>
                      <h3 className='uppercase font-bold text-xl text-center text-black'>INVOICE</h3>
                   </div>
@@ -139,6 +139,7 @@ export default function CustomerInvoice() {
                   </div>
                   <div className='p-3 border border-gray-300 mt-3 pt-4 w-full '>
                      <ul className=''>
+                        <li className=' flex'><strong className='text-sm me-2 text-black'>Customer Order Number :</strong> <p className='font-bold'>#{order.customer_order_no}</p> </li>
                         <li className=' flex'><strong className='text-sm me-2 text-black'>Invoice #:</strong> <p>{Date.now()}</p> </li>
                         <li className=' flex'><strong className='text-sm me-2 text-black'>Invoice Date :</strong> <p><TimeFormat time={false} date={Date.now()} /></p> </li>
                         <li className=' flex'><strong className='text-sm me-2 text-black'>Amount :</strong> <p><Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
@@ -168,7 +169,8 @@ export default function CustomerInvoice() {
 
                <div className='p-3 border border-gray-300 mt-3 pt-4 w-full flex   '>
                   <ul className='w-full grid grid-cols-3'>
-                     <li className=' flex'><strong className='text-sm me-2 text-black'>Order Number #:</strong> <p>{order.customer_order_no}</p> </li>
+                     <li className=' flex'><strong className='text-sm me-2 text-black'>Order :</strong> <p>CMC{order.serial_no}</p> </li>
+                     {/* <li className=' flex'><strong className='text-sm me-2 text-black'>Order Number #:</strong> <p>{order.customer_order_no}</p> </li> */}
                      <li className=' flex'><strong className='text-sm me-2 text-black'>Order Status :</strong> <p>
                         <Badge title={true} status={order?.order_status} /> </p> </li>
                      <li className=' flex'><strong className='text-sm me-2 text-black'>Amount :</strong> <p><Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
@@ -182,7 +184,7 @@ export default function CustomerInvoice() {
                </div>
 
 
-               <div className='p-3  mt-3 pt-4 w-full flex  border border-gray-300 '>
+               <div className='p3  mt-3 pt-4 w-full flex  sborder sborder-gray-300 '>
                   <ul className='w-full'>
                   </ul>
                   <ul className='w-full border border-gray-300 p-3'>

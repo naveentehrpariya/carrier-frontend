@@ -98,7 +98,7 @@ export default function ViewOrder() {
                            <div>
                               <p className='font-bold text-gray-400 pt-4 mb-2 text-xl'>Shipment Pickup Details</p>
                               <ul className='grid grid-cols-4 gap-4'>
-                                 <li className='flex pb-[7px]'><strong className=' '>Pickup Location :</strong> <p className='ps-2'>{s?.pickupLocation}</p> </li>
+                                 <li className='flex pb-[7px]'> <p ><strong className='pe-2' >Pickup Location :</strong>{s?.pickupLocation}</p> </li>
                                  <li className='flex pb-[7px]'><strong className=' '>Pickup Reference No. :</strong> <p className='ps-2'>{s?.pickupReferenceNo}</p> </li>
                                  <li className='flex pb-[7px]'><strong className=' '>Pickup Appointement : </strong> <p className='ps-2'>{s?.pickupAppointment ? "Yes" : "No"}</p> </li>
                                  <li className='flex pb-[7px]'><strong className=' '>Pickup Date :</strong> 
@@ -108,7 +108,7 @@ export default function ViewOrder() {
                            <div>
                               <p className='font-bold text-gray-400 pt-4 mb-2 text-xl'>Shipment Delivery Details</p>
                               <ul className='grid grid-cols-4 gap-4'>
-                                 <li className='flex pb-[7px]'><strong className=' '>Delivery Location :</strong> <p className='ps-2' >{s?.deliveryLocation}</p> </li>
+                                 <li className='flex pb-[7px]'> <p  ><strong className='pe-2'>Delivery Location :</strong>{s?.deliveryLocation}</p> </li>
                                  <li className='flex pb-[7px]'><strong className=' '>Delivery Reference No. :</strong> <p className='ps-2' >{s?.deliveryReferenceNo}</p> </li>
                                  <li className='flex pb-[7px]'><strong className=' '>Delivery Appointement : </strong> <p className='ps-2' >{s?.deliveryAppointment?.value ? "Yes": "No"}</p> </li>
                                  <li className='flex pb-[7px]'><strong className=' '>Delivery Date :</strong> 

@@ -29,7 +29,7 @@ function App() {
                     <Route path="/home" element={<Overview /> } />
                     <Route path="/orders" element={<Orders /> } />
                     <Route path="/order/detail/:id" element={<OrderDetail /> } />
-                    {/* <Route path="/edit/order/:id" element={<AddOrder isEdit={true} /> } /> */}
+                    <Route path="/edit/order/:id" element={<AddOrder isEdit={true} /> } />
                     <Route path="/view/order/:id" element={<ViewOrder /> } />
                     <Route path="/order/customer/invoice/:id" element={<CustomerInvoice /> } />
                     <Route path="/order/add" element={<AddOrder /> } />
