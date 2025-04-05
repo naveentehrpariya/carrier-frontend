@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import AuthLayout from '../../../layout/AuthLayout';
 import AddCarrier from './AddCarrier';
 import Api from '../../../api/Api';
@@ -14,9 +14,9 @@ export default function Carriers() {
    const [lists, setLists] = useState([]);
    const {user}  = useContext(UserContext);
 
-   const fetchLists = () => {
+   const fetchLists = (search) => {
       setLoading(true);
-      const resp = Api.get(`/carriers/listings`);
+      const resp = Api.get(`/carriers/listings?${search ?`search=${search}` : ''}`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
@@ -34,12 +34,27 @@ export default function Carriers() {
       fetchLists();
    }, []);
 
+   const debounceRef = useRef(null);
+   const handleInputChange = (e) => {
+      const value = e.target.value;
+      const wordCount = value && value.length;
+      if (wordCount > 1) {
+         fetchLists(value);
+      }
+      if (e.target.value === '') {
+         fetchLists();
+      }
+   };
 
   return (
       <AuthLayout> 
          <div className='flex justify-between items-center'>
             <h2 className='text-white text-2xl'>Carriers</h2>
-            {user?.is_admin === 1 ? <AddCarrier fetchLists={fetchLists} /> : '' }
+            <div className='flex items-center'>
+               <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search by name or code' className='text-white min-w-[250px] bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
+               {user?.role === 3 ? <div className='ms-4'></div> : ''}
+               {user?.role === 3 ? <AddCarrier fetchLists={fetchLists} /> : '' }
+            </div>
          </div>
 
          {loading ? <Loading />

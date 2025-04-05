@@ -57,7 +57,7 @@ export default function AddCarrier({item, fetchLists, classes, text}){
 
   return (
     <div>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={classes} btntext={text || "Add New Carrier"} >
+      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={classes}  btntext={text || "Add New Carrier"} >
          <h2 className='text-white font-bold'>{item ? "Update" : "Add New"} Carrier</h2>
          <div className='grid grid-cols-2 gap-5'>
             <div className='input-item'>

@@ -59,13 +59,12 @@ export default function Orders() {
       <AuthLayout> 
          <div className='flex justify-between items-center'>
             <h2 className='text-white text-2xl'>Orders</h2>
-            <div>
-               <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search order' className='text-white min-w-[250px] bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px] me-4 focus:shadow-0 focus:outline-0' />
+            <div className='flex items-center'>
+               <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search order' className='text-white min-w-[250px] bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
+               {user?.role !== 2 ? <div className='ms-4'></div> : ''}
                <Link to="/order/add" className={"btn md text-black font-bold"} >+ New Order</Link>
             </div>
          </div>
-
-         {searching ? <p>Searching...</p> : ''}
 
          {loading ? <Loading />
             :

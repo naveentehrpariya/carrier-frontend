@@ -119,7 +119,7 @@ export default function OrderDetail() {
                <div className='bol-header flex justify-between items-center mb-6'>
                   <div width="50%">
                      <h2 className='font-bold text-3xl text-black capitalize'>{order?.carrier?.name}</h2>
-                     <p ><strong className='text-black'>CARRIR ID #: {order?.carrier?.carrierID}</strong></p>
+                     <p ><strong className='text-black'>CARRIR CODE : MC{order?.carrier?.mc_code}</strong></p>
                      <p ><p className='capitalize max-w-[400px]'>{order?.carrier?.location}  ({order?.carrier?.country}, {order?.carrier?.zipcode}) </p></p>
                   </div>
                   <div className='d-flex justify-center'>
