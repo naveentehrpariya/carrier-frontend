@@ -1,9 +1,8 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
 import AuthLayout from '../../../layout/AuthLayout';
 import TimeFormat from '../../common/TimeFormat';
-import AddEmployee from '../employees/AddEmployee';
 import Badge from '../../common/Badge';
 import Currency from '../../common/Currency';
 import UpdatePaymentStatus from './UpdatePaymentStatus';
@@ -15,14 +14,13 @@ import { Link } from 'react-router-dom';
 import OrderView from '../order/OrderView';
 export default function AccountOrders() {
 
-
    const [loading, setLoading] = useState(true);
    const [lists, setLists] = useState([]);
    const {Errors} = useContext(UserContext);
 
-   const fetchLists = () => {
+   const fetchLists = (search) => {
       setLoading(true);
-      const resp = Api.get(`/account/order/listings`);
+      const resp = Api.get(`/account/order/listings?${search ?`search=${search}` : ''}`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
@@ -40,12 +38,26 @@ export default function AccountOrders() {
       fetchLists();
    }, []);
 
+   const debounceRef = useRef(null);
+   const handleInputChange = (e) => {
+      const value = e.target.value;
+      const wordCount = value && value.length;
+      if (wordCount > 1) {
+         fetchLists(value);
+      }
+      if (e.target.value === '') {
+         fetchLists();
+      }
+   };
+
 
   return (
       <AuthLayout> 
          <div className='flex justify-between items-center'>
             <h2 className='text-white text-2xl'>Account Orders Lists</h2>
-            {/* <AddEmployee fetchLists={fetchLists} /> */}
+            <div className='flex items-center'>
+               <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search by order no' className='text-white min-w-[250px] bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
+            </div>
          </div>
          {loading ? <Loading />
          :

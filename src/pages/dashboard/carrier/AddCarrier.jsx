@@ -27,8 +27,8 @@ export default function AddCarrier({item, fetchLists, classes, text}){
     const handleinput = (e) => {
       setData({ ...data, [e.target.name]: e.target.value});
     }
+    
     const [loading, setLoading] = useState(false);
-
     const addcarrier = () => {
       setLoading(true);
       let carrierIstance;
