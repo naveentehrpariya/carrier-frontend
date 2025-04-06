@@ -45,7 +45,6 @@ export default function Carriers() {
          fetchLists();
       }
    };
-
   return (
       <AuthLayout> 
          <div className='flex justify-between items-center'>
