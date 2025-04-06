@@ -52,7 +52,6 @@ export default function Customers() {
             <div className='flex items-center'>
                <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search by name or code' className='text-white min-w-[250px] bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
                {user?.role === 3 ? <div className='ms-4'></div> : ''}
-               {user?.role === 3 ? <AddCustomer fetchLists={fetchLists} /> : ''}
             </div>
          </div>
          {loading ? <Loading /> :
