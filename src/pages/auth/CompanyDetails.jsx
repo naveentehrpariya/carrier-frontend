@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import toast from 'react-hot-toast';
 import { UserContext } from '../../context/AuthProvider';
 import Api from '../../api/Api';
@@ -15,6 +15,17 @@ export default function CompanyDetails({ fetchLists, classes, text}){
       name:   company?.name || "",
       address: company?.address || "",
     });
+
+    useEffect(() => {
+      if (company) {
+        setData({
+          phone: company?.phone || "",
+          email:  company?.email || "",
+          name:   company?.name || "",
+          address: company?.address || "",
+        });
+      }
+    }, [company]);
 
 
   
