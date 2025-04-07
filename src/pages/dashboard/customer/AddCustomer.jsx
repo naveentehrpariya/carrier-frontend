@@ -9,7 +9,7 @@ import Select from 'react-select'
 export default function AddCustomer({item, fetchLists, classes, text}){
 
     const [data, setData] = useState({
-      mc_code:  item?.mc_code || "",
+      // mc_code:  item?.mc_code || "",
       phone: item?.phone || "",
       email:  item?.email || "",
       secondary_phone: item?.secondary_phone || "",
@@ -105,17 +105,17 @@ export default function AddCustomer({item, fetchLists, classes, text}){
               options={staffLists} />
           </div>
 
+          <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Name</label>
+              <input defaultValue={item?.name}   name='name' onChange={handleinput} type={'text'} placeholder={"Name"} className="input-sm" />
+          </div>
          <div className='grid grid-cols-2 gap-3'>
 
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Name</label>
-               <input defaultValue={item?.name}   name='name' onChange={handleinput} type={'text'} placeholder={"Name"} className="input-sm" />
-            </div>
 
-            <div className='input-item'>
+            {/* <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">MC Code</label>
                <input  defaultValue={item?.mc_code} name='mc_code' onChange={handleinput} type={'number'} placeholder={"MC Code"} className="input-sm" />
-            </div>
+            </div> */}
 
             <div className='input-item mt-2'>
               <label className="mt-4 mb-0 block text-sm text-gray-400">Email</label>

@@ -34,14 +34,14 @@ export default function AuthLayout({children, heading}) {
     <>
       <Helmet>
          <meta charSet="utf-8" />
-         <title>{heading ? `${heading} | ` : '' } Capital Logistics </title>
+         <title>{heading ? `${heading} | ` : '' } Cross Miles Carrier </title>
          <link rel="canonical" href={window.location.href || "https://runstream.co"} />
       </Helmet>
 
      
       <div className="auth-wrap flex justify-between max-lg:flex-wrap">
         <main className="main-wrap">
-          <header className="fixed top-6 lg:top-0 z-10 bg-dark border-b border-gray-900 px-6 md:px-7 py-4 xl:py-6 flex items-center w-full justify-between">
+          <header className="fixed top-6 lg:top-0 z-10 bg-dark border-b border-gray-800 px-6 md:px-7 py-4 xl:py-6 flex items-center w-full justify-between">
             <Logo /> 
             <div className="flex gap-5 items-center">
             <TbUserSquareRounded color="#fff" className='me-2' size={'2rem'} /> 
@@ -61,7 +61,7 @@ export default function AuthLayout({children, heading}) {
                 </div>
               : ''}
             </>} toggle={toggle} />
-            <div className="content p-6 md:p-8  !pt-[110px] w-full" >
+            <div className="content p-6 md:p-8  !pt-[150px] w-full" >
                 {children} 
             </div>
           </div>

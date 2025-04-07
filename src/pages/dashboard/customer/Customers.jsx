@@ -52,6 +52,7 @@ export default function Customers() {
             <div className='flex items-center'>
                <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search by name or code' className='text-white min-w-[250px] bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
                {user?.role === 3 ? <div className='ms-4'></div> : ''}
+               {user?.role === 3  ? <AddCustomer fetchLists={fetchLists} /> : ''}
             </div>
          </div>
          {loading ? <Loading /> :
@@ -71,7 +72,7 @@ export default function Customers() {
                      return <tr key={`carriew-${index}`}>
                         <td className='text-sm text-start  capitalize border-b border-gray-900'>
                            <p className='text-white font-bold'>{c?.name || ''}</p>
-                           <p className='text-gray-400'>MC{c?.mc_code || ''}</p>
+                           <p className='text-gray-400'>Reference No. {c?.customerCode || ''}</p>
                         </td>
                         <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
                            <p>{c?.email || "--"}</p>

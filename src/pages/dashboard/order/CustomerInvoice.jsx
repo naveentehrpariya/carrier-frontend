@@ -14,7 +14,7 @@ import Loading from './../../common/Loading';
 export default function CustomerInvoice() {
    const [loading, setLoading] = useState(true);
    const [order, setOrder] = useState([]);
-   const {Errors} = useContext(UserContext);
+   const {Errors, company} = useContext(UserContext);
    const { id } = useParams();
    const [downloadingPdf, setDownloadingPdf] = useState(false);
    const pdfRef = useRef();
@@ -117,10 +117,14 @@ export default function CustomerInvoice() {
             <div ref={pdfRef} className='max-w-[800px] text-gray-700 m-auto'>
                <div className='bol-header p-3 ps-0 flex justify-between items-center '>
                   <div width="50%">
-                     <h2 className='font-bold text-2xl text-black capitalize'>{order?.customer?.name}</h2>
-                     <p ><strong className='text-black'>MC CODE : MC{order?.customer?.mc_code}</strong></p>
-                     <p className='max-w-[400px] capitalize' ><p className='capitalize'>{order?.carrier?.location}, {order?.carrier?.state} ({order?.carrier?.country})</p></p>
+                     <div className='max-w-[400px]'>
+                        <h2 className='font-bold text-2xl text-black capitalize'>{company?.name || "Cross Miles Carrier"}</h2>
+                        <p className='capitalize' ><strong className='text-black'>{company?.address|| ''}</strong></p>
+                        <p>{company?.email}</p>
+                        <p>PH : {company?.phone}</p>
+                     </div>
                   </div>
+                   
                   <div className='d-flex justify-center'>
                      <div className='flex justify-center w-full'>
                      <Logotext black="true" />
@@ -131,11 +135,12 @@ export default function CustomerInvoice() {
 
                <div className='flex w-full'>
                   <div className='p-3 border border-gray-300 mt-3 pt-4 w-full '>
-                     <h2 className='font-bold text-black'>Bill To</h2>
-                     <p>Capital Logistics</p>
-                     <p>Brampton, ON, L6W3E7, Canada</p>
-                     <p>dispatch@crossmilescarrier.com</p>
-                     <p>PH : (416) 728-4797</p>
+                     <p className='font-bold text-black'>Bill To</p>
+                     <p className=' text-black capitalize'>{order?.customer?.name}</p>
+                     <p >Reference No. : {order?.customer?.customerCode}</p>
+                     <p >Email : {order?.customer?.email}</p>
+                     <p >Phone : {order?.customer?.phone}</p>
+                     <p className='max-w-[400px] capitalize' ><p className='capitalize'>{order?.carrier?.location}, {order?.carrier?.state} ({order?.carrier?.country})</p></p>
                   </div>
                   <div className='p-3 border border-gray-300 mt-3 pt-4 w-full '>
                      <ul className=''>

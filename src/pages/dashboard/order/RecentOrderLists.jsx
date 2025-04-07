@@ -72,7 +72,7 @@ export default function RecentOrdersLists() {
                               </td>
                               
                               <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                                 <p>Customer : {c.customer?.name || "--"}(MC{c.customer?.mc_code || "--"})</p>
+                                 <p>Customer : {c.customer?.name || "--"}({c.customer?.customerCode || "--"})</p>
                                  <p className='mt-1 whitespace-nowrap'>Payment  : <Badge title={true} status={c.payment_status} text={`${c.payment_status === 'paid' ? `via ${c.payment_method}` :''}`} /></p>
                                  <p className='mt-1 whitespace-nowrap'>Order Amount : <Currency amount={c.total_amount} currency={c.revenue_currency || 'usd'} /></p>
                                  {c.payment_status_date ? <p className='text-[13px] text-gray-400 mt-1'>Payment at <TimeFormat date={c.payment_status_date || ""} /></p> : ''}

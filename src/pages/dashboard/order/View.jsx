@@ -58,7 +58,7 @@ export default function ViewOrder() {
                   <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
                      <p className='font-bold text-gray-400 text-xl mb-2'>Customer Details</p>
                      <ul className=''>
-                        <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Name:</strong>{order?.customer?.name} (MC{order?.customer?.mc_code}) </p> </li>
+                        <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Name:</strong>{order?.customer?.name} ({order?.customer?.customerCode}) </p> </li>
                         <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Phone :</strong>{order?.customer?.phone } {order?.customer?.phone ? `,${order?.customer?.secondary_phone}` :'' } </p> </li>
                         <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Email :</strong> {order?.customer?.email } {order?.customer?.email ? `,${order?.customer?.secondary_email}` :'' }</p> </li>
                         <li className='flex items-center'><p className=''><strong className=' !text-gray-400'>Payment Status:</strong> <Badge title={true} status={order?.payment_status} text={`${order?.payment_status === 'paid' ? `via ${order?.payment_method}` :''}`} /></p> </li>

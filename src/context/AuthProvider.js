@@ -9,6 +9,7 @@ export default function UserContextProvider(props) {
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
+  const [company, setcompany] = useState(null);
   const [admin, setAdmin] = useState(null);
 
   const login = (user) => {
@@ -40,7 +41,7 @@ export default function UserContextProvider(props) {
     Errors,
     isAuthenticated, setIsAuthenticated,
     user, setUser,
-    login,
+    login, company, setcompany,
     logout,admin, setAdmin
   };
 

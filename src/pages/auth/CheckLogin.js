@@ -5,7 +5,7 @@ import { UserContext } from '../../context/AuthProvider';
 import Api from '../../api/Api';
 export default function CheckLogin({redirect, takeaction}) {
 
-  const { Errors, setIsAuthenticated, setUser} = useContext(UserContext);
+  const { Errors, setcompany,setIsAuthenticated, setUser} = useContext(UserContext);
   const navigate = useNavigate();
 
   function check_login(e) {
@@ -17,6 +17,7 @@ export default function CheckLogin({redirect, takeaction}) {
           }  
           setIsAuthenticated(true);
           setUser(res.data.user);
+          setcompany(res.data.company);
          if(redirect){
              navigate('/home');
          }

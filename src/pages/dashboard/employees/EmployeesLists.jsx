@@ -70,7 +70,7 @@ export default function EmployeesLists() {
                      </td>
                     
                      <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
-                        <div class='has-tooltip line-clamp-2 min-w-[100px] max-w-[150px]'>
+                        <div class='has-tooltip line-clamp-2 min-w-[100px] max-w-[300px]'>
                               <span class='tooltip rounded shadow-xl p-2 bg-gray-100 text-black -mt-8 '>{c.country || ""} {c.address || ''}</span>
                               {c.country || ""} {c.address || ''}
                         </div>

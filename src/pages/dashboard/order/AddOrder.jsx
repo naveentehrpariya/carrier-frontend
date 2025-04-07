@@ -25,10 +25,13 @@ const appointmentOptions = [
 ];
 
 const equipmentOptions = [
-  { value: "Container", label: "Container" },
-  { value: 'Dry Container',  label: "Dry Container" },
-  { value: 'Packets',  label: "Packets" },
+  { value: 'Drive Van',  label: "Drive Van" },
+  { value: 'Refer',  label: "Refer" },
+  { value: 'Flatbed',  label: "Flatbed" },
+  { value: "Container", label: "Container" }
 ];
+
+
 const weightUnits = [
   { value: "kg", label: "Kg" },
   { value: 'g',  label: "Grams" },
@@ -190,7 +193,7 @@ export default function AddOrder(){
     };
     
     const [data, setData] = useState({
-      "company_name" : "Capital Logistics",
+      "company_name" : "Cross Miles Carrier",
       "customer_order_no": '',
       "customer" :'',
       "carrier" : '',
@@ -352,7 +355,7 @@ export default function AddOrder(){
           <div className='grid grid-cols-1 sm:grid-cols-3 gap-5'>
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Company Name</label>
-                <input name='company_name' disabled type={'text'} placeholder='Capital Logistics' className="input-sm" />
+                <input name='company_name' disabled type={'text'} placeholder='Cross Miles Carrier' className="input-sm" />
             </div>
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Order No.</label>
@@ -381,7 +384,7 @@ export default function AddOrder(){
                 <p className="text-gray-400 heading xl text-xl mb-4">Shipment {index+1}</p>
                 <div className="grid grid-cols-4 gap-4 pb-8 border-b border-gray-800 mb-8">
                   <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">Community</label>
+                    <label className="mb-0 block text-sm text-gray-400">Commodity</label>
                     <input
                       required
                       name="community"
@@ -487,13 +490,12 @@ export default function AddOrder(){
                     </label> 
                     <input
                       required name="deliveryLocation"
-                      onChange={(e) => getDeliveryLocation(index, e.target.value)  
-                      } type={"text"} placeholder={"Enter delivery location"} className="input-sm"
+                      onChange={(e) => getDeliveryLocation(index, e.target.value)} type={"text"} placeholder={"Enter delivery location"} className="input-sm"
                     />
                   </div>
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">
-                      Pickup Reference No.
+                    Delivery Reference No.
                     </label>
                     <input
                       required

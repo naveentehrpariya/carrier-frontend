@@ -14,6 +14,7 @@ import AccountOrders from './pages/dashboard/accounts/AccountOrders';
 import OrderDetail from './pages/dashboard/order/OrderDetail';
 import CustomerInvoice from './pages/dashboard/order/CustomerInvoice';
 import ViewOrder from './pages/dashboard/order/View';
+import CompanyDetails from './pages/auth/CompanyDetails';
 
 
 
@@ -37,6 +38,7 @@ function App() {
                     <Route path="/carriers" element={<Carriers /> } />
                     <Route path="/employees" element={<EmployeesLists /> } />
                     <Route path="/accounts/orders" element={<AccountOrders /> } />
+                    <Route path="/company/details" element={<CompanyDetails /> } />
                     <Route path="*" element={<Error404 />} /> 
                   </Routes>
                 </div>

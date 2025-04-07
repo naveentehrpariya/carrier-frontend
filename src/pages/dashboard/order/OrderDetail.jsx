@@ -15,7 +15,7 @@ export default function OrderDetail() {
    
    const [loading, setLoading] = useState(true);
    const [order, setOrder] = useState([]);
-   const {Errors} = useContext(UserContext);
+   const {Errors, company} = useContext(UserContext);
    const { id } = useParams();
    const [downloadingPdf, setDownloadingPdf] = useState(false);
    const pdfRef = useRef();
@@ -83,8 +83,6 @@ export default function OrderDetail() {
      });
    };
 
-
-
    const fetchOrder = () => {
       setLoading(true);
       const resp = Api.get(`/order/detail/${id}`);
@@ -118,9 +116,8 @@ export default function OrderDetail() {
             <div ref={pdfRef} className='w-[1000px] text-gray-700 m-auto'>
                <div className='bol-header flex justify-between items-center mb-6'>
                   <div width="50%">
-                     <h2 className='font-bold text-3xl text-black capitalize'>{order?.carrier?.name}</h2>
-                     <p ><strong className='text-black'>CARRIR CODE : MC{order?.carrier?.mc_code}</strong></p>
-                     <p ><p className='capitalize max-w-[400px]'>{order?.carrier?.location}  ({order?.carrier?.country}, {order?.carrier?.zipcode}) </p></p>
+                     <h2 className='font-bold text-4xl text-black capitalize'>Cross Miles Carrier</h2>
+                     
                   </div>
                   <div className='d-flex justify-center'>
                      <div className='flex justify-center w-full'>
@@ -143,9 +140,10 @@ export default function OrderDetail() {
                   <div className='customerDetails border border-gray-400 border-r-0 p-4 w-full'>
                      <p className='font-bold text-lg text-black mb-2'>Customer Details</p>
                      <ul className=''>
-                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Name:</strong> <p>Cross Miles Carrier</p> </li>
-                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Phone :</strong> <p>+45 454524545</p> </li>
-                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Email :</strong> <p>info@capitallogistics.com</p> </li>
+                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Name:</strong> <p>{company?.name}</p> </li>
+                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Phone :</strong> <p>+{company?.phone}</p> </li>
+                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Email :</strong> <p>{company?.email}</p> </li>
+                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Address :</strong><p className='capitalize' >{company?.address}</p></li>
                      </ul>
                   </div>
                   <div className='customerDetails border border-gray-400 p-4 w-full'>
