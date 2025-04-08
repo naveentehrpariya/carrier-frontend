@@ -8,6 +8,7 @@ import Loading from '../../common/Loading';
 import Dropdown from '../../common/Dropdown';
 import SuspandAccount from './SuspandAccount';
 import Badge from '../../common/Badge';
+import ChangePassword from './ChangePassword';
 export default function EmployeesLists() {
 
 
@@ -86,6 +87,9 @@ export default function EmployeesLists() {
                               </li>
                               <li className='list-none text-sm'>
                                  <SuspandAccount text="Change Account Status" item={c} fetchLists={fetchLists} />
+                              </li>
+                              <li className='list-none text-sm'>
+                                 <ChangePassword text="Change Password" item={c} fetchLists={fetchLists} />
                               </li>
                            </Dropdown>
                      </td>

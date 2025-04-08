@@ -116,14 +116,14 @@ export default function OrderDetail() {
             <div ref={pdfRef} className='w-[1000px] text-gray-700 m-auto'>
                <div className='bol-header flex justify-between items-center mb-6'>
                   <div width="50%">
-                     <h2 className='font-bold text-4xl text-black capitalize'>Cross Miles Carrier</h2>
-                     
+                     <h2 className='font-bold text-3xl text-black capitalize'>Cross Miles Carrier</h2>
+                     <p className='flex mb-2'><p className='capitalize' >{company?.address}</p></p>
                   </div>
                   <div className='d-flex justify-center'>
                      <div className='flex justify-center w-full'>
                      <Logotext black={true} />
                      </div>
-                     <h3 className='uppercase mt-4 font-bold text-xl text-center text-black'>Rate confirmation</h3>
+                     <h3 className='uppercase mt-1 font-bold text-lg text-center text-black'>Rate confirmation</h3>
                   </div>
                </div>
 
