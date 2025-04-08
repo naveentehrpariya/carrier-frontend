@@ -9,7 +9,7 @@ function getToken(){
 }
 
 let Api = axios.create({
-  baseURL: host == 'localhost:3000' ? "http://localhost:8080" : APP_URL,
+  baseURL: host === 'localhost:3000' ? "http://localhost:8080" : APP_URL,
   headers: {
     'Accept': 'application/json',
     'Authorization': `Bearer ${getToken()}`,

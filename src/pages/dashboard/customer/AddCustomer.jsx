@@ -100,7 +100,7 @@ export default function AddCustomer({item, fetchLists, classes, text}){
 
          <div className='input-item'>
             <label className="mt-4 mb-0 block text-sm text-gray-400">Assigned To</label>
-            <Select defaultValue={staffLists && staffLists.find(e => e.value === item?.assigned_to?._id) || null} classNamePrefix="react-select input"  placeholder={'Choose Staff'}
+            <Select defaultValue={(staffLists && staffLists.find(e => e.value === item?.assigned_to?._id)) || null} classNamePrefix="react-select input"  placeholder={'Choose Staff'}
               onChange={chooseStaff}
               options={staffLists} />
           </div>

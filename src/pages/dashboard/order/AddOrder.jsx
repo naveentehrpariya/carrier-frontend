@@ -1,12 +1,12 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import AuthLayout from '../../../layout/AuthLayout';
 import Select from 'react-select'
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import Popup from '../../common/Popup';
-import GetLocation from '../../common/GetLocation';
+// import GetLocation from '../../common/GetLocation';
 import Currency from '../../common/Currency';
 
 const revenueItemOptions = [
@@ -165,7 +165,7 @@ export default function AddOrder(){
       },
     ]);
 
-    const [grossRevanue, setGrossRevenue] = useState(0);
+    // const [grossRevanue, setGrossRevenue] = useState(0);
     const handlerevanue = (index, field, value) => {
       const updatedItems = [...revenueItems];
       updatedItems[index][field] = value;
@@ -177,16 +177,16 @@ export default function AddOrder(){
         console.log("distance sads",distance);
             grossAmount += Number(item.value);
         });
-        setGrossRevenue(grossAmount);
+        // setGrossRevenue(grossAmount);
 
     };
 
-    const addNewItem = () => {
-      setRevenueItems([
-        ...revenueItems,
-        { revenue_item: "", rate_method: "", rate: "", value: "" },
-      ]);
-    };
+    // const addNewItem = () => {
+    //   setRevenueItems([
+    //     ...revenueItems,
+    //     { revenue_item: "", rate_method: "", rate: "", value: "" },
+    //   ]);
+    // };
     const removeItem = (index) => {
       const updatedItems = revenueItems.filter((_, i) => i !== index);
       setRevenueItems(updatedItems);
@@ -706,7 +706,7 @@ export default function AddOrder(){
                   <button onClick={(closePopup)} className="btn -sm md mt-6 px-[50px] text-sm main-btn text-black font-bold">Assign Carrier</button>
                 </div>
             </Popup>
-            <button onClick={addOrder}  className={`btn md   ${data.carrier == '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? "Logging in..." : "Submit Order"}</button>
+            <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? "Logging in..." : "Submit Order"}</button>
           </div>
 
       </div>
