@@ -57,12 +57,12 @@ export default function Orders() {
 
   return (
       <AuthLayout> 
-         <div className='flex justify-between items-center'>
-            <h2 className='text-white text-2xl'>Orders</h2>
-            <div className='flex items-center'>
-               <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search order' className='text-white min-w-[250px] bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
+         <div className='md:flex justify-between items-center'>
+            <h2 className='text-white text-2xl mb-4 md:mb-0'>Orders</h2>
+            <div className='sm:flex items-center justify-between md:justify-end'>
+               <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search order' className='text-white min-w-[250px] w-full md:w-auto bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
                {user?.role !== 2 ? <div className='ms-4'></div> : ''}
-               <Link to="/order/add" className={"btn md text-black font-bold"} >+ New Order</Link>
+               <Link to="/order/add" className={"btn md text-black font-bold w-full md:w-auto block md:flex mt-3 md:mt-0"} >+ New Order</Link>
             </div>
          </div>
 
@@ -70,13 +70,13 @@ export default function Orders() {
             :
             <>
             {lists && lists.length > 0 ? 
-               <div className='recent-orders overflow-hidden mt-6 border border-gray-900 rounded-[30px]'>
+               <div className='recent-orders overflow-x-auto mt-6 border border-gray-900 rounded-[30px]'>
                   <table className='w-full p-2' cellPadding={'20'}>
                      <tr>
-                        <th className='text-sm text-start text-gray-400 uppercase whitespace-nowrap border-b border-gray-900'>Sr. No</th>
-                        <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Order</th>
-                        <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer Details </th>
-                        <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier Details</th>
+                        <th className='text-sm text-start text-gray-400 min-w-[190px] xl:min-w-[auto] uppercase whitespace-nowrap border-b border-gray-900'>Sr. No</th>
+                        <th className='text-sm text-start text-gray-400  min-w-[190px] xl:min-w-[auto] uppercase border-b border-gray-900'>Order</th>
+                        <th className='text-sm text-start text-gray-400 uppercase min-w-[270px] xl:min-w-[auto] border-b border-gray-900'>Customer Details </th>
+                        <th className='text-sm text-start text-gray-400 uppercase min-w-[270px] xl:min-w-[auto] border-b border-gray-900'>Carrier Details</th>
                         <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Docs</th>
                      </tr>
                      {lists && lists.map((c, index) => {

@@ -68,8 +68,8 @@ export default function Login() {
           <input required key={index} name={field.name} onChange={handleinput} type={field.type} placeholder={field.label} className="input" />
           </>
         ))}
-        <div className="mt-2">
-          <button type="submit" onClick={handleLogin} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
+        <div className="mt-2 flex justify-center lg:justify-start">
+          <button type="submit" onClick={handleLogin} className="btn md mt-6 px-[50px] w-full lg:w-auto main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
         </div>
         </form>
       </>
@@ -79,24 +79,23 @@ export default function Login() {
     return (
       <>
         <CheckLogin takeaction={true}  redirect={true} />
-        <div className="h-[100vh] overflow-hidden flex justify-center items-center" >
-          <div className="side-image w-full max-w-[50%] ">
+        <div className="h-[100vh] overflow-hidden lg:flex justify-center items-center" >
+          <div className="side-image w-full hidden lg:block lg:max-w-[50%] ">
             <img src={loginbg} className="img-fluid block m-3 rounded-[30px]" alt="loginimage" />
           </div>
-          <div className="w-full max-w-[50%]">
-            <div className="w-full px-5   text-slate-500">
-              <Link to="/" className="self-center  text-3xl font-mono font-bold  text-red-500 drunk lowercase">
-                <Logotext />
-              </Link>
-              <h2 className="font-bold mb-1 text-[24px] mt-6   text-white">Welcome to Cross Miles Carrier </h2>
-              <p className="text-gray-500">Enter your credentials to login to your account </p>
-              <div className='bg-[#D278D5] h-[3px] w-[100px] mt-2'></div>
-              
+          <div className="w-full h-screen flex overflow-auto lg:block items-center lg:items-auto lg:h-auto lg:max-w-[50%]">
+            <div className="w-full py-8 max-w-[390px] lg:max-w-[600px] m-auto  lg:py-0 px-8 lg:px-5   text-slate-500">
+              <div className="flex items-center justify-center lg:justify-start">
+                <Link to="/" className="text-3xl font-mono font-bold  text-red-500 drunk lowercase">
+                  <Logotext />
+                </Link>
+              </div>
+              <h2 className="font-bold mb-1 text-[24px] mt-6 text-center lg:text-start text-white px-12 lg:px-0">Welcome to Cross Miles Carrier </h2>
+              <p className="text-gray-500 hidden lg:block lg:text-start mb-2 ">Enter your credentials to login to your account </p>
+              <div className='bg-[#D278D5] m-auto lg:m-0 h-[3px] w-[100px] mt-4'></div>
               <main className="mt-8" >
-                
                   <LoginForm />
               </main> 
-
             </div>
           </div>
         </div>

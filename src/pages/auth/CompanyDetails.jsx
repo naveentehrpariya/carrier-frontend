@@ -69,7 +69,7 @@ export default function CompanyDetails({ fetchLists, classes, text}){
                </div>
                <div className='input-item'>
                   <label className="mt-4 mb-0 block text-sm text-gray-400">Phone</label>
-                  <input defaultValue={company?.phone} required name='phone' onChange={handleinput} type={'number'} placeholder={"Phone Number"} className="input-sm" />
+                  <input defaultValue={company?.phone} required name='phone' onChange={handleinput} type={'text'} placeholder={"Phone Number"} className="input-sm" />
                </div>
             </div>
             <div className='grid grid-cols-1 gap-5'>

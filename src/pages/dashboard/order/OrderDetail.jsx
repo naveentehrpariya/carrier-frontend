@@ -141,7 +141,7 @@ export default function OrderDetail() {
                      <p className='font-bold text-lg text-black mb-2'>Customer Details</p>
                      <ul className=''>
                         <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Name:</strong> <p>{company?.name}</p> </li>
-                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Phone :</strong> <p>+{company?.phone}</p> </li>
+                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Phone :</strong> <p>{company?.phone}</p> </li>
                         <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Email :</strong> <p>{company?.email}</p> </li>
                         <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Address :</strong><p className='capitalize' >{company?.address}</p></li>
                      </ul>

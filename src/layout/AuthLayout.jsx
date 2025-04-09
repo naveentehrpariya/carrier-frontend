@@ -70,7 +70,7 @@ export default function AuthLayout({children, heading}) {
                 </div>
               : ''}
             </>} toggle={toggle} />
-            <div className="content md:max-h-[100vh] overflow-auto w-[calc(100%-300px)] p-6 md:p-8  !pt-[150px] w-full" >
+            <div className="content md:max-h-[100vh] overflow-y-auto lg:w-[calc(100%-300px)] p-6 md:p-8 !pt-[120px]   lg:!pt-[150px] w-full" >
                 {children} 
             </div>
           </div>
