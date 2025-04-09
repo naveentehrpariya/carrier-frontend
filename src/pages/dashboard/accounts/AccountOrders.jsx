@@ -51,22 +51,22 @@ export default function AccountOrders() {
 
   return (
       <AuthLayout> 
-         <div className='flex justify-between items-center'>
+         <div className='md:flex justify-between items-center'>
             <h2 className='text-white text-2xl'>Account Orders Lists</h2>
-            <div className='flex items-center'>
-               <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search by order no' className='text-white min-w-[250px] bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
+            <div className='flex items-center w-full md:w-auto mt-3 lg:mt-0'>
+               <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search by order no' className='text-white min-w-[250px] bg-dark1 border w-full md:w-auto border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
             </div>
          </div>
          {loading ? <Loading />
          :
-         <div className='recent-orders overflow-hidden mt-6 border border-gray-900 rounded-[30px]'>
+         <div className='recent-orders overflow-x-auto mt-6 border border-gray-900 rounded-[30px]'>
             <table className='w-full p-2' cellPadding={'20'}>
                <tr>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Order No.</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900 min-w-[220px] md:min-w-[auto]'>Order No.</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Customer</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Carrier Payment</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Employee</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Amount/Profit</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900 min-w-[240px] md:min-w-[auto]'>Employee</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900 min-w-[220px] md:min-w-[auto]'>Amount/Profit</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                </tr>
 

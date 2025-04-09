@@ -19,7 +19,7 @@ export default function Popup({btnclasses, btntext, size, children, space, actio
    <>
    <button className={btnclasses || "btn text-black font-bold"} onClick={() => setOpen(true)}>{btntext || "open"}</button>
     <Transition.Root show={open} as={Fragment}>
-      <Dialog className="relative z-10 " initialFocus={cancelButtonRef} onClose={setOpen}>
+      <Dialog className="relative z-[9999999999999] " initialFocus={cancelButtonRef} onClose={setOpen}>
         <Transition.Child
           as={Fragment}
           enter="ease-out duration-300"

@@ -46,7 +46,7 @@ export default function EmployeesLists() {
 
          {loading ? <Loading />
          :
-         <div className='recent-orders overflow-hidden mt-6 border border-gray-900 rounded-[30px]'>
+         <div className='recent-orders overflow-x-auto mt-6 border border-gray-900 rounded-[30px]'>
             <table className='w-full p-2' cellPadding={'20'}>
                <tr>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Name</th>

@@ -57,8 +57,8 @@ export default function CompanyDetails({ fetchLists, classes, text}){
    <AuthLayout>
       <div className='flex justify-center items-center w-full'>
          <div className='max-w-[900px] w-full'>
-            <h2 className='text-white font-bold text-3xl'>Company Details</h2>
-            <div className='grid grid-cols-3 gap-5 mt-3'>
+            <h2 className='text-white font-bold text-xl md:text-3xl'>Company Details</h2>
+            <div className='grid grid-cols-1 md:grid-cols-3 gap-1 md:gap-5 mt-3'>
                <div className='input-item'>
                   <label className="mt-4 mb-0 block text-sm text-gray-400">Name</label>
                   <input defaultValue={company?.name} required name='name' onChange={handleinput} type={'text'} placeholder={"Name"} className="input-sm" />
