@@ -31,8 +31,7 @@ export default function Overview() {
          <div className='total-leads mt-4 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3'>
             {lists && lists.map((item, index) => {
                return <>
-               <div className='lead border border-gray-900 rounded-[30px] p-[20px]'>
-                     
+               <div className='lead border border-gray-900 rounded-[30px] p-[15px] md:p-[20px]'>
                      <div className='cals flex items-center justify-between'>
                         <h2 className='font-bold text-white text-4xl mb-2'>{item.data}</h2>
                         {/* <svg width="50" height="40" viewBox="0 0 50 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -42,7 +41,7 @@ export default function Overview() {
                         </g>
                         </svg> */}
                      </div>
-                     <h2 className='text-gray-300 mb-1 text-xl'>{item.title}</h2>
+                     <h2 className='text-gray-300 mb-1 text-normal md:text-xl'>{item.title}</h2>
                      <div className='bg-[#D278D5] h-[3px] w-[40px]'></div>
                </div>
                </>

@@ -9,6 +9,7 @@ import { FaUsers } from "react-icons/fa";
 import { MdOutlineLogout } from "react-icons/md";
 import { UserContext } from '../context/AuthProvider';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { TbListDetails } from "react-icons/tb";
 
 export default function Sidebar() {
 
@@ -24,11 +25,11 @@ export default function Sidebar() {
     <div id='sidebar' className='mobilesidebar sticky top-0 pt-[140px] p-8 bg-dark border-r max-h-[100vh] overflow-auto pb-22 w-full max-w-[300px]  min-w-[300px] border-gray-800'>
       <h2 className='mb-3 text-sm uppercase text-gray-400'>Main Menu</h2>
       <ul>
-
-          <li>
-            <Link className={`${location.pathname === '/home' || location.pathname === '/' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/home'} ><MdOutlineSpaceDashboard className='me-2' size={'1.4rem'} /> Dashboard 
+        <li>
+          <Link className={`${location.pathname === '/home' || location.pathname === '/' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/home'} ><MdOutlineSpaceDashboard className='me-2' size={'1.4rem'} /> Dashboard 
           </Link>
-          </li> 
+        </li> 
+
         {user?.is_admin === 1 || user?.role === 1 ? 
         <>
           <li>
@@ -63,28 +64,20 @@ export default function Sidebar() {
 
         {user?.role === 3 ?
           <li>
-            <Link className={`${location.pathname === '/company/details' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/company/details'} ><VscGraphLine className='me-2' size={'1.4rem'} /> Company Details 
+            <Link className={`${location.pathname === '/company/details' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/company/details'} ><TbListDetails className='me-2' size={'1.4rem'} /> Company Details 
           </Link>
           </li> 
         : "" }
         
       </ul>
       
-      <h2 className='mt-8 mb-3 text-sm uppercase text-gray-400'>Other Menu</h2>
+      {/* <h2 className='mt-8 mb-3 text-sm uppercase text-gray-400'>Other Menu</h2>
       <ul>
-        {/* <li>
-            <Link className='disabled text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/dashboard'} ><IoSettingsOutline className='me-2' size={'1.4rem'} /> Settings 
-          </Link>
-        </li> */}
-        {/* <li>
-            <Link className='disabled text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' to={'/dashboard'} ><BiSupport className='me-2' size={'1.4rem'} /> Help 
-          </Link>
-        </li> */}
         <li>
           <button className='text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' onClick={logout} ><MdOutlineLogout className='me-2' size={'1.4rem'} /> Logout 
           </button>
         </li>
-      </ul>
+      </ul> */}
     </div>
   )
 }

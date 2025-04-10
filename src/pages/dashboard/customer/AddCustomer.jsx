@@ -63,10 +63,11 @@ export default function AddCustomer({item, fetchLists, classes, text}){
       setData({ ...data, assigned_to: e.value});
     }
     const add_customer = () => {
-      if(data.assigned_to == null){
+      if(data.assigned_to == null || data.assigned_to === ''){
         toast.error("Please select a staff member.");
         return false
       }
+     
       setLoading(true);
       let customerInstance;
       if(item){

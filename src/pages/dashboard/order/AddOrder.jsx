@@ -161,7 +161,7 @@ export default function AddOrder(){
         revenue_item: "",
         rate_method: "",
         rate: "",
-        value: "",
+        // value: "",
       },
     ]);
 
@@ -191,21 +191,25 @@ export default function AddOrder(){
       const updatedItems = revenueItems.filter((_, i) => i !== index);
       setRevenueItems(updatedItems);
     };
+    const removeItemShipItem = (index) => {
+      const updatedItems = shippingDetails.filter((_, i) => i !== index);
+      setShippingDetails(updatedItems);
+    };
     
     const [data, setData] = useState({
       "company_name" : "Cross Miles Carrier",
-      "customer_order_no": '',
-      "customer" :'',
-      "carrier" : '',
-      "carrier_amount" : 0,
+      "customer_order_no": null,
+      "customer" :null,
+      "carrier" : null,
+      "carrier_amount" : null,
       "payment_status" : "pending",
       "payment_method" : "none",
       "carrier_payment_status" : "pending",
       "carrier_payment_method" : "none",
       "revenue_currency" : 'cad',
       "order_status" : "added",
-      "totalDistance": 0,
-      "total_amount": 0
+      "totalDistance": null,
+      "total_amount": null
     });
     const [customersListing, setCustomersListing] = useState([]);
     const fetchcustomers = () => {
@@ -217,9 +221,9 @@ export default function AddOrder(){
             lists.forEach(element => {
               arr.push({
                 _id: element._id,
-                label: `${element.name} - (MC${element.mc_code})  `,
+                label: `${element.name} (Ref: ${element.customerCode})  `,
                 value: element._id,
-                mc_code: element.mc_code
+                mc_code: element.customerCode
               })
             });
             setCustomersListing(arr);
@@ -292,45 +296,35 @@ export default function AddOrder(){
         "shipping_details" : shippingDetails || []
       }
 
-      // if(distance < 1) {
-      //   toast.error('Please enter correct shipping details.');
-      //   return false;
-      // }
-      if(alldata.customer === '') {
-        toast.error('Please select a customer');
+      if(alldata.customer_order_no === '' || alldata.customer_order_no === null) {
+        toast.error('Please enter order no of this order.');
         return false;
       }
 
-      if(alldata.carrier === '') {
-        toast.error('Please select a carrier');
-        return false;
+      function isObjectValid(obj) {
+        return Object.values(obj).every(value => value !== null && value !== '' && value !== undefined);
       }
+
+      if(alldata.shipping_details && alldata.shipping_details[0]) {
+        const isall = isObjectValid(alldata.shipping_details && alldata.shipping_details[0]);
+        if(!isall) {
+          toast.error('Please enter shipping details of this order.');
+          return false;
+        }
+      }
+      if(alldata.revenue_items && alldata.revenue_items[0]) {
+        const isall = isObjectValid(alldata.revenue_items && alldata.revenue_items[0]);
+        if(!isall) {
+          toast.error('Please enter correct revenue details of this order.');
+          return false;
+        }
+      }
+      
       if(alldata.carrier_amount === '') {
         toast.error('Carrier amount is required');
         return false;
       }
-
-      // if(alldata.customer_order_no === '') {
-      //   toast.error('Please enter a customer order number');
-      //   return false;
-      // }
-
-      if(alldata.order_amount === '') {
-        toast.error('Please enter an order amount');
-        return false;
-      }
-      if(alldata.revenue_currency === '') {
-        toast.error('Please select a revenue currency');
-        return false;
-      }
-      if(alldata.revenue_items.length === 0) {
-        toast.error('Please add at least one revenue item');
-        return false;
-      }
-      if(alldata.shipping_details.length === 0) {
-        toast.error('Please add at least one shipping detail');
-        return false;
-      }
+    
       setLoading(true);
       const resp = Api.post(`/order/add`, alldata);
       resp.then((res) => {
@@ -381,7 +375,15 @@ export default function AddOrder(){
               <>
               <div key={index}
                 className="border mt-2 rounded-[20px] bg-dark border-gray-900 p-6 mb-6">
-                <p className="text-gray-400 heading xl text-xl mb-4">Shipment {index+1}</p>
+                
+                <div className='flex mb-4 justify-between'>
+                  <p className="text-gray-400 heading xl text-xl ">Shipment {index+1}
+                  </p>
+                  {index  ?<button  className="!text-red-500 !font-sm !font-normal !ms-3"
+                  onClick={() => removeItemShipItem(index)} >Remove
+                  </button> : ''}
+                </div>
+                  
                 <div className="grid grid-cols-4 gap-4 pb-8 border-b border-gray-800 mb-8">
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Commodity</label>
@@ -631,11 +633,11 @@ export default function AddOrder(){
 
 
                   </div>
-                  <div className="flex items-center">
+                  {/* <div className="flex items-center">
                     <button  className="btn bg-red-700 mt-[20px] ms-3 text-white"
                     onClick={() => removeItem(index)} >Remove
                     </button>
-                  </div>
+                  </div> */}
                 </div>
               ))}
             </div>
