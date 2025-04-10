@@ -32,11 +32,11 @@ export default function Overview() {
             {lists && lists.map((item, index) => {
                return <>
                <div className='lead border border-gray-900 rounded-[30px] p-[15px] md:p-[20px]'>
-                     <div className='cals flex items-center justify-between'>
-                        <h2 className='font-bold text-white text-4xl mb-2'>{item.data}</h2>
-                     </div>
-                     <h2 className='text-gray-300 mb-1 text-normal md:text-xl'>{item.title}</h2>
-                     <div className='bg-[#D278D5] h-[3px] w-[40px]'></div>
+                  <div className='cals flex items-center justify-between'>
+                     <h2 className='font-bold text-white text-4xl mb-2'>{item.data}</h2>
+                  </div>
+                  <h2 className='text-gray-300 mb-1 text-normal md:text-xl'>{item.title}</h2>
+                  <div className='bg-[#D278D5] h-[3px] w-[40px]'></div>
                </div>
                </>
             })}
