@@ -37,6 +37,17 @@ export default function AuthLayout({children, heading}) {
     setToggle(!toggle);
   }
 
+  const roleChecker = () =>{
+    if(user?.role == 1){
+      return 'Employee'
+    }
+    else if(user?.role == 2){
+      return 'Accountant'
+    }
+    else if(user?.role == 3){
+      return  'Adminstrator'
+    }
+  }
   return (
     <>
       <Helmet>
@@ -53,7 +64,10 @@ export default function AuthLayout({children, heading}) {
             <div className="flex gap-2 items-center">
               
               {/* <div onClick={showSidebar} className="hem-menu"><CiMenuFries /></div> */}
-              
+              <div className="text-right me-4">
+                <div className="capitalize text-white">Hello, {user?.name}</div>
+                <div className="capitalize text-sm text-gray-400">{roleChecker()}</div>
+              </div>
               <button onClick={logout} ><TbLogout color="#fff" className='me-2' size={'2rem'} /></button>
               
               <button onClick={showSidebar} className="sidebar-toggle text-base leading-6 whitespace-nowrap text-neutral-400">

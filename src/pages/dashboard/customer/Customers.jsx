@@ -7,6 +7,7 @@ import AddCustomer from './AddCustomer';
 import Loading from '../../common/Loading';
 import Nocontent from '../../common/NoContent';
 import RemoveCustomer from './RemoveCustomer';
+import { Link } from 'react-router-dom';
 export default function Customers() {
 
   const {user}  = useContext(UserContext);
@@ -71,7 +72,8 @@ export default function Customers() {
                   {lists && lists.map((c, index) => {
                      return <tr key={`carriew-${index}`}>
                         <td className='text-sm text-start  capitalize border-b border-gray-900'>
-                           <p className='text-white font-bold'>{c?.name || ''}</p>
+                           {/* <Link to={`/customer/detail/${c?.id}`} className='text-main font-bold'>{c?.name || ''}</Link> */}
+                           <p   className='text-white font-bold'>{c?.name || ''}</p>
                            <p className='text-gray-400'>Reference No. {c?.customerCode || ''}</p>
                         </td>
                         <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
