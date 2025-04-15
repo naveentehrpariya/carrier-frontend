@@ -153,9 +153,12 @@ export default function OrderView({order, fetchLists, btnclasses}){
 
    return <div className='orderSider'>
          <button onClick={(e)=>setOpen(true)} className={btnclasses}>View All Notes</button>
-         <div className={`sider ${open ? 'open visible' : 'close hidden'} w-full h-screen overflow-auto fixed top-0 right-0 bg-dark1 p-8 z-10 max-w-[500px]`}>
-            <button className='absolute top-6 right-6 text-3xl text-white' onClick={(e)=>setOpen(false)} >&times;</button>
-            <h2 className='text-white text-2xl'>Details</h2>
+         <div className={`sider ${open ? 'open visible' : 'close hidden'} w-full h-screen overflow-auto fixed top-0 right-0 bg-dark1 p-8 z-[9999] pt-[130px] max-w-[500px]`}>
+            
+            <div className='flex justify-between items-center'>
+               <h2 className='text-white text-2xl'>Details</h2>
+               <button className='text-3xl text-white mb-3' onClick={(e)=>setOpen(false)} >&times;</button>
+            </div>
             <div className="flex mt-6 justify-between items-center">
                <p className=' text-gray-500 text-xl'>Notes</p>
                <AddNotes text={"Edit Note"} classes="text-main" note={order.notes} id={order.id} fetchLists={fetchLists} />

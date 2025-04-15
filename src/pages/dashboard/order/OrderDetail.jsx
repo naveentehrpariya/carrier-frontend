@@ -10,6 +10,7 @@ import Currency from '../../common/Currency';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import Loading from './../../common/Loading';
+import html2pdf from 'html2pdf.js';
 
 export default function OrderDetail() {
    
@@ -19,69 +20,46 @@ export default function OrderDetail() {
    const { id } = useParams();
    const [downloadingPdf, setDownloadingPdf] = useState(false);
    const pdfRef = useRef();
+   const input = pdfRef.current;
    const downloadPDF = () => {
       setDownloadingPdf(true);
-     const input = pdfRef.current;
-   //   input.style.backgroundColor = 'black';
-     input.style.padding = '40px';
-   //   const elementWithMargin = input.querySelector('.element-with-margin');
-   //   if (elementWithMargin) {
-   //     elementWithMargin.style.margin = '20px';
-   //   }
- 
-     const buttons = input.querySelectorAll('#revanue');
-     buttons.forEach(button => {
-      button.style.display = 'none';
-     });
- 
-   //   const match_score = input.querySelectorAll('.match_score');
-   //   match_score.forEach(button => {
-   //     button.style.setProperty("background-color", "transparent", "important");
-   //     button.style.border = "none";
-   //   });
- 
-     html2canvas(input, {
-       useCORS: true,
-       allowTaint: true,
-       logging: true,
-       scale: 1
-     }).then((canvas) => {
-       const imgData = canvas.toDataURL("image/png");
-       const pdf = new jsPDF("p", "mm", "a4");
-       const pageWidth = pdf.internal.pageSize.getWidth();
-       const pageHeight = pdf.internal.pageSize.getHeight();
-       const canvasAspectRatio = canvas.width / canvas.height;
-       const pageAspectRatio = pageWidth / pageHeight;
- 
-       let imgWidth = pageWidth;
-       let imgHeight = pageWidth / canvasAspectRatio;
-       if (imgHeight > pageHeight) {
-         imgHeight = pageHeight;
-         imgWidth = pageHeight * canvasAspectRatio;
-       }
- 
-       const xPos = (pageWidth - imgWidth) / 2; // Center horizontally
-       const yPos = 0; // Center vertically
- 
- 
-       pdf.addImage(imgData, "PNG", xPos, yPos, imgWidth, imgHeight);
-       pdf.save("download.pdf");
-      //  input.style.backgroundColor = 'black'; // Reset to original (or '')
-       input.style.padding = '10px';        // Reset to original (or '')
- 
-       buttons.forEach(button => {
-         button.style.display = 'block';
-       });
-   
-      //  match_score.forEach(button => {
-      //    button.style.backgroundColor = '';
-      //    button.style.border = "none";
-      //  });
-      setDownloadingPdf(false);
-     }).catch(error => {
-       console.error("Error capturing canvas or generating PDF:", error);
-     });
-   };
+    
+      // Scroll to top to ensure all content is rendered
+      window.scrollTo(0, 0);
+    
+      // Hide elements not needed in PDF
+      const buttons = document.querySelectorAll('#revanue');
+      buttons.forEach(button => {
+        button.style.display = 'none';
+      });
+    
+      const element = pdfRef.current;
+      if (!element) {
+        console.error("Element with ID 'content' not found.");
+        setDownloadingPdf(false);
+        return;
+      }
+    
+      const opt = {
+        margin:       10,
+        filename:     'download.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 5 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+      };
+    
+      html2pdf().set(opt).from(element).save().then(() => {
+        // Restore hidden elements after PDF generation
+        buttons.forEach(button => {
+          button.style.display = 'block';
+        });
+        setDownloadingPdf(false);
+      }).catch(error => {
+        console.error("Error generating PDF:", error);
+        setDownloadingPdf(false);
+      });
+    };
 
    const fetchOrder = () => {
       setLoading(true);
@@ -104,7 +82,6 @@ export default function OrderDetail() {
       fetchOrder();
    }, []);
 
-   console.log("order",order);
 
    return <AuthLayout>
       <div className='flex justify-between items-center'>
@@ -113,7 +90,7 @@ export default function OrderDetail() {
       </div>
       {loading ? <Loading /> : 
          <div  className='boltable bg-white rounded-xl p-6  ' >
-            <div ref={pdfRef} className='w-[1000px] text-gray-700 m-auto'>
+            <div ref={pdfRef} className='max-w-[794px] m-auto text-gray-700 m-auto text-sm'>
                <div className='bol-header flex justify-between items-center mb-6'>
                   <div width="50%">
                      <h2 className='font-bold text-3xl text-black capitalize'>Cross Miles Carrier</h2>
@@ -128,11 +105,11 @@ export default function OrderDetail() {
                </div>
 
                <div className='p-3 border border-gray-400 mt-8'>
-                  <ul className='grid grid-cols-4 gap-2'>
-                     <li className=''><strong className='text-lg'>Order # :</strong> <p>CMC{order?.serial_no}</p> </li>
-                     <li className=''><strong className='text-lg'>Order Created Date :</strong> <p><TimeFormat date={order?.createdAt} /></p> </li>
+                  <ul className='grid grid-cols-3 gap-2'>
+                     <li className=''><strong className=''>Order # :</strong> <p>CMC{order?.serial_no}</p> </li>
+                     <li className=''><strong className=''>Total Distance :</strong> <p>{order.totalDistance} Miles</p> </li>
+                     <li className=''><strong className=''>Order Created Date :</strong> <p><TimeFormat date={order?.createdAt} /></p> </li>
                      {/* <li className=''><strong>Order Status :</strong> <p><Badge title={true} status={order?.order_status} /></p> </li> */}
-                     <li className=''><strong className='text-lg'>Total Distance :</strong> <p>{order.totalDistance} Miles</p> </li>
                   </ul>
                </div>
 
@@ -140,10 +117,10 @@ export default function OrderDetail() {
                   <div className='customerDetails border border-gray-400 border-r-0 p-4 w-full'>
                      <p className='font-bold text-lg text-black mb-2'>Customer Details</p>
                      <ul className=''>
-                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Name:</strong> <p>{company?.name}</p> </li>
-                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Phone :</strong> <p>{company?.phone}</p> </li>
-                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Customer Email :</strong> <p>{company?.email}</p> </li>
-                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Address :</strong><p className='capitalize' >{company?.address}</p></li>
+                        <li className=' flex mb-2'><p><strong className='text-normal test me-2 !text-gray-700'>Customer Name:</strong> {company?.name}</p> </li>
+                        <li className=' flex mb-2'><p><strong className='text-normal test me-2 !text-gray-700'>Customer Phone :</strong>  {company?.phone}</p> </li>
+                        <li className=' flex mb-2'><p><strong className='text-normal test me-2 !text-gray-700'>Customer Email :</strong>  {company?.email}</p> </li>
+                        <li className=' flex mb-2'><p className='capitalize' ><strong className='text-normal test me-2 !text-gray-700'>Address :</strong>{company?.address}</p></li>
                      </ul>
                   </div>
                   <div className='customerDetails border border-gray-400 p-4 w-full'>
@@ -171,7 +148,7 @@ export default function OrderDetail() {
                            <li className='w-full max-w-[100%] pb-[7px] flex flex-wrap items-center'><strong className='text-black text-normal test'>Pickup Location :</strong> <p>{s?.pickupLocation}</p> </li>
                         </ul>
 
-                        <ul className='grid grid-cols-4 w-full'>
+                        <ul className='grid grid-cols-3 w-full'>
                            <li className='w-full pb-[7px] flex items-center'><strong className='text-black text-normal test'>Pickup Reference No : </strong> <p>{s?.pickupReferenceNo}</p> </li>
                            <li className='w-full pb-[7px] flex items-center'><strong className='text-black text-normal test'>Pickup Appointement : </strong> <p>{s?.pickupAppointment ? "Yes" : "No"}</p> </li>
                            <li className='w-full pb-[7px] flex items-center'><strong className='text-black text-normal test'>Pickup Date : </strong> 
@@ -183,7 +160,7 @@ export default function OrderDetail() {
                            <li className='w-full max-w-[100%] pb-[7px] flex flex-wrap items-center'><strong className='text-black text-normal test'>Delivery Location :</strong> <p>{s?.deliveryLocation}</p> </li>
                         </ul>
 
-                        <ul className='grid grid-cols-4 w-full'>
+                        <ul className='grid grid-cols-3 w-full'>
                            <li className='w-full pb-[7px] flex items-center'><strong className='text-black text-normal test'>Delivery Reference No : </strong> <p>{s?.deliveryReferenceNo}</p> </li>
                            <li className='w-full pb-[7px] flex items-center'><strong className='text-black text-normal test'>Delivery Appointement : </strong> <p>{s?.deliveryAppointment?.value ? "Yes": "No"}</p> </li>
                            <li className='w-full pb-[7px] flex items-center'><strong className='text-black text-normal test'>Delivery Date : </strong> 
@@ -193,6 +170,7 @@ export default function OrderDetail() {
                      </div>
                   </>
                })}
+                
 
                {order && order.revenue_items &&
                   <div id='revanue' className='hidden orderFill p-3 border-t border-gray-300 mt-3 pt-4'>

@@ -62,7 +62,6 @@ export default function AuthLayout({children, heading}) {
           <header className="fixed top-0 lg:top-0 z-[9998] bg-dark border-b border-gray-800 px-6 md:px-7 py-2 xl:py-4 flex items-center w-full justify-between">
             <Logo /> 
             <div className="flex gap-2 items-center">
-              
               {/* <div onClick={showSidebar} className="hem-menu"><CiMenuFries /></div> */}
               {/* <div className="text-right me-4">
                 <div className="capitalize text-white">Hello, {user?.name}</div>
