@@ -117,10 +117,10 @@ export default function OrderDetail() {
                   <div className='customerDetails border border-gray-400 border-r-0 p-4 w-full'>
                      <p className='font-bold text-lg text-black mb-2'>Customer Details</p>
                      <ul className=''>
-                        <li className=' flex mb-2'><p><strong className='text-normal test me-2 !text-gray-700'>Customer Name:</strong> {company?.name}</p> </li>
-                        <li className=' flex mb-2'><p><strong className='text-normal test me-2 !text-gray-700'>Customer Phone :</strong>  {company?.phone}</p> </li>
-                        <li className=' flex mb-2'><p><strong className='text-normal test me-2 !text-gray-700'>Customer Email :</strong>  {company?.email}</p> </li>
-                        <li className=' flex mb-2'><p className='capitalize' ><strong className='text-normal test me-2 !text-gray-700'>Address :</strong>{company?.address}</p></li>
+                        <li className='flex mb-2'><p><strong className='text-normal test me-2 !text-gray-700'>Customer Name:</strong> {company?.name}</p> </li>
+                        <li className='flex mb-2'><p><strong className='text-normal test me-2 !text-gray-700'>Customer Phone :</strong>  {company?.phone}</p> </li>
+                        <li className='flex mb-2'><p><strong className='text-normal test me-2 !text-gray-700'>Customer Email :</strong>  {company?.email}</p> </li>
+                        <li className='flex mb-2'><p className='capitalize' ><strong className='text-normal test me-2 !text-gray-700'>Address :</strong>{company?.address}</p></li>
                      </ul>
                   </div>
                   <div className='customerDetails border border-gray-400 p-4 w-full'>
