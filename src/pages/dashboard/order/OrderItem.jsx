@@ -52,11 +52,11 @@ export default function OrderItem({lists, fetchLists}) {
                         <p className='mt-1 whitespace-nowrap'>Sell Amount : <Currency amount={c?.carrier_amount} currency={c?.revenue_currency || 'usd'} /></p>
                         {c?.carrier_payment_date ? <p className='text-[13px] text-gray-400 mt-1'>Updated at <TimeFormat date={c?.carrier_payment_date || ""} /></p> : ''}
                      </td>
-                  
                      
                      {/* <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <OrderView order={c} fetchLists={fetchLists} />
                      </td> */}
+
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <Dropdown>
                               {user && user.is_admin === 1 ?

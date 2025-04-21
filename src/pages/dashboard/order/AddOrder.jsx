@@ -41,8 +41,6 @@ const weightUnits = [
 
 export default function AddOrder(){
 
-
-
     // const [exits, setExists] = useState(null)
     // const { id } = useParams();
     // const fetchOrder = () => {
@@ -118,24 +116,30 @@ export default function AddOrder(){
         community: null,
         equipment: null,
         weight: "",
-        pickupLocation: "",
-        pickupReferenceNo: "",
-        pickupAppointment: null,
-        pickupDate: "",
-        deliveryLocation: "",
-        deliveryReferenceNo: "",
-        deliveryAppointment: null,
-        deliveryDate: "",
+        pickup: [
+          {
+            location: "",
+            referenceNo: "",
+            appointment: 0,
+            date: "",
+          }
+        ],
+        delivery: [
+          {
+            location: "",
+            referenceNo: "",
+            appointment: 0,
+            date: "",
+          }
+        ],
       },
     ]);
-
-
+    
     const handleInputChange = (index, field, value) => {
       const updatedDetails = [...shippingDetails];
       updatedDetails[index][field] = value;
       setShippingDetails(updatedDetails);
     };
-
     const addNewShippingBlock = () => {
       setShippingDetails((prevDetails) => [
         ...prevDetails,
@@ -144,50 +148,99 @@ export default function AddOrder(){
           equipment: null,
           weight: "",
           weight_unit: "",
-          pickupLocation: "",
-          pickupReferenceNo: "",
-          pickupAppointment: null,
-          pickupDate: "",
-          deliveryLocation: "",
-          deliveryReferenceNo: "",
-          deliveryAppointment: null,
-          deliveryDate: "",
+          pickup: [
+            {
+              location: "",
+              referenceNo: "",
+              appointment: null,
+              date: "",
+            },
+          ],
+          delivery: [
+            {
+              location: "",
+              referenceNo: "",
+              appointment: null,
+              date: "",
+            },
+          ],
         },
       ]);
     };
+    
+    const addPickupLocation = (blockIndex) => {
+      const updatedDetails = [...shippingDetails];
+      updatedDetails[blockIndex].pickup.push({
+        location: "",
+        referenceNo: "",
+        appointment: null,
+        date: "",
+      });
+      setShippingDetails(updatedDetails);
+    };
+    
+    const addDeliveryLocation = (blockIndex) => {
+      const updatedDetails = [...shippingDetails];
+      updatedDetails[blockIndex].delivery.push({
+        location: "",
+        referenceNo: "",
+        appointment: null,
+        date: "",
+      });
+      setShippingDetails(updatedDetails);
+    };
 
+    const handleNestedInputChange = (blockIndex, type, locIndex, field, value) => {
+      const updatedDetails = [...shippingDetails];
+      updatedDetails[blockIndex][type][locIndex][field] = value;
+      setShippingDetails(updatedDetails);
+    };
+    
+
+    // Customer revenue items
     const [revenueItems, setRevenueItems] = useState([
       {
         revenue_item: "",
+        note: "",
         rate_method: "",
         rate: "",
-        // value: "",
+        value: "",
+      },
+    ]);
+    const addCustomerRev = () => {
+      setRevenueItems([
+        ...revenueItems,
+        { revenue_item: "", rate_method: "", rate: "", value: "" },
+      ]);
+    };
+    const handleCustomerRev = (index, field, value) => {
+      const updatedItems = [...revenueItems];
+      updatedItems[index][field] = value;
+      setRevenueItems(updatedItems);
+      // const items = updatedItems || [];
+      // console.log("items",items);
+      // let grossAmount = 0;
+      // items.forEach(item => {
+      //     grossAmount += Number(item.value);
+      // });
+    };
+
+    // Carrier revenue items
+    const [carrier_revenueItems, setCarrierRevenueItems] = useState([
+      {
+        item: "",
+        note: "",
+        rate_method: "",
+        rate: "",
+        value: "",
       },
     ]);
 
     // const [grossRevanue, setGrossRevenue] = useState(0);
-    const handlerevanue = (index, field, value) => {
-      const updatedItems = [...revenueItems];
-      updatedItems[index][field] = value;
-      setRevenueItems(updatedItems);
-        const items = updatedItems || [];
-        console.log("items",items);
-        let grossAmount = 0;
-        items.forEach(item => {
-        console.log("distance sads",distance);
-            grossAmount += Number(item.value);
-        });
-        // setGrossRevenue(grossAmount);
+    
 
-    };
-
-    // const addNewItem = () => {
-    //   setRevenueItems([
-    //     ...revenueItems,
-    //     { revenue_item: "", rate_method: "", rate: "", value: "" },
-    //   ]);
-    // };
-    const removeItem = (index) => {
+    
+    const removeCustomerRev = (index) => {
       const updatedItems = revenueItems.filter((_, i) => i !== index);
       setRevenueItems(updatedItems);
     };
@@ -211,6 +264,7 @@ export default function AddOrder(){
       "totalDistance": null,
       "total_amount": null
     });
+
     const [customersListing, setCustomersListing] = useState([]);
     const fetchcustomers = () => {
         const resp = Api.get(`/customer/listings`);
@@ -290,6 +344,11 @@ export default function AddOrder(){
     }
     
     const navigate = useNavigate();
+
+    useEffect(()=>{
+      console.log("shippingDetails",shippingDetails)
+    },[shippingDetails]);
+
     const addOrder = () => {
       const alldata = {...data, 
         "revenue_items"  : revenueItems || [],
@@ -344,17 +403,17 @@ export default function AddOrder(){
   return (
     <AuthLayout>
       <div>
-         <h2 className='text-white heading xl text-3xl pt-4 '>Add New Order</h2>
+         <h2 className='text-white heading xl text-2xl '>Add New Order</h2>
           <p className='text-gray-400 heading xl text-lg mt-6'>Customer Details</p>
-          <div className='grid grid-cols-1 sm:grid-cols-3 gap-5'>
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-5'>
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Company Name</label>
                 <input name='company_name' disabled type={'text'} placeholder='Cross Miles Carrier' className="input-sm" />
             </div>
-            <div className='input-item'>
+            {/* <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Order No.</label>
                 <input required name='customer_order_no' onChange={handleinput} type={'number'} placeholder={"Order Number"} className="input-sm" />
-            </div>
+            </div> */}
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Customer</label>
                 <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
@@ -429,124 +488,124 @@ export default function AddOrder(){
                   </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-4">
-                  <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">Pickup Location</label>
-                    <input
-                      required
-                      name="pickupLocation" 
-                      onChange={(e)=>getPickupLocation(index, e.target.value)}
-                      type={"text"} 
-                      placeholder={"Enter Pickup location"} 
-                      className="input-sm"
-                    />
-                    {/* <GetLocation placeholder={"Enter Pickup Location"} index={index} onchange={getPickupLocation} /> */}
-                  </div>
-                  <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">
-                      Pickup Reference No.
-                    </label>
-                    <input
-                      required
-                      name="pickupReferenceNo"
-                      onChange={(e) => handleInputChange(index, "pickupReferenceNo", e.target.value) }
-                      type={"text"}
-                      placeholder={"Pickup Reference No."}
-                      className="input-sm"
-                    />
-                  </div>
-                  <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">
-                      Pickup Appointment
-                    </label>
-                    <Select
-                      classNamePrefix="react-select input"
-                      placeholder={"Choose Appointment"}
-                      onChange={(selected) =>
-                        handleInputChange(index, "pickupAppointment", selected && selected.value)
-                      }
-                      options={appointmentOptions}
-                    />
-                  </div>
-                  <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">
-                      Pickup Date
-                    </label>
-                    <input
-                      required
-                      name="pickupDate"
-                      onChange={(e) =>
-                        handleInputChange(index, "pickupDate", e.target.value)
-                      }
-                      type={"date"}
-                      placeholder={"Enter Pickup Date"}
-                      className="input-sm"
-                    />
-                  </div>
-                </div>
+                {detail?.pickup && detail?.pickup.map((pickup, pickupIndex)=>{
+                  return <>
+                    <h2 className='text-white mb-3 mt-6 text-normal heading'>Pickup #{pickupIndex+1}</h2>
+                    <div className="grid grid-cols-4 gap-4 ">
+                      <div className="input-item">
+                        <label className="mb-0 block text-sm text-gray-400">Pickup Location</label>
+                        <input
+                          required
+                          onChange={(e)=>handleNestedInputChange(index, 'pickup', pickupIndex, 'location', e.target.value)}
+                          type={"text"} 
+                          placeholder={"Enter Pickup location"} 
+                          className="input-sm"
+                        />
+                        {/* <GetLocation placeholder={"Enter Pickup Location"} index={index} onchange={getPickupLocation} /> */}
+                      </div>
+                      <div className="input-item">
+                        <label className="mb-0 block text-sm text-gray-400">
+                          Pickup Reference No.
+                        </label>
+                        <input
+                          required
+                          onChange={(e)=>handleNestedInputChange(index, 'pickup', pickupIndex, 'referenceNo', e.target.value)}
+                          type={"text"}
+                          placeholder={"Pickup Reference No."}
+                          className="input-sm"
+                        />
+                      </div>
+                      <div className="input-item">
+                        <label className="mb-0 block text-sm text-gray-400">
+                          Pickup Appointment
+                        </label>
+                        <Select
+                          classNamePrefix="react-select input"
+                          placeholder={"Choose Appointment"}
+                          onChange={(selected) => handleNestedInputChange(index, 'pickup', pickupIndex, 'appointment', selected && selected.value)}
+                          options={appointmentOptions}
+                        />
+                      </div>
+                      <div className="input-item">
+                        <label className="mb-0 block text-sm text-gray-400">
+                          Pickup Date
+                        </label>
+                        <input
+                          required
+                          onChange={(e) => handleNestedInputChange(index, 'pickup', pickupIndex, 'date', e.target.value)}
+                          type={"date"}
+                          placeholder={"Enter Pickup Date"}
+                          className="input-sm"
+                        />
+                      </div>
+                    </div>
+                  </>
+                })}
+                <button onClick={()=>addPickupLocation(index)} className='text-main mb-4 mt-2  ' >+ Add Pickup Stop</button>
+                <div className='border-t border-gray-700 my-4'></div>
+                {detail?.delivery && detail?.delivery.map((delivery, deliveryIndex)=>{
+                  return <>
+                    <h2 className='text-white mb-3 mt-6 text-normal heading'>Delivery #{deliveryIndex+1}</h2>
+                    <div className="grid grid-cols-4 gap-4 ">
+                      <div className="input-item">
+                        <label className="mb-0 block text-sm text-gray-400">Delivery Location</label>
+                        <input
+                          required
+                          onChange={(e)=>handleNestedInputChange(index, 'delivery', deliveryIndex, 'location', e.target.value)}
+                          type={"text"} 
+                          placeholder={"Enter Delivery location"} 
+                          className="input-sm"
+                        />
+                        {/* <GetLocation placeholder={"Enter Delivery Location"} index={index} onchange={getDeliveryLocation} /> */}
+                      </div>
+                      <div className="input-item">
+                        <label className="mb-0 block text-sm text-gray-400">
+                          Delivery Reference No.
+                        </label>
+                        <input
+                          required
+                          onChange={(e)=>handleNestedInputChange(index, 'delivery', deliveryIndex, 'referenceNo', e.target.value)}
+                          type={"text"}
+                          placeholder={"Delivery Reference No."}
+                          className="input-sm"
+                        />
+                      </div>
+                      <div className="input-item">
+                        <label className="mb-0 block text-sm text-gray-400">
+                          Delivery Appointment
+                        </label>
+                        <Select
+                          classNamePrefix="react-select input"
+                          placeholder={"Choose Appointment"}
+                          onChange={(selected) => handleNestedInputChange(index, 'delivery', deliveryIndex, 'appointment', selected && selected.value)}
+                          options={appointmentOptions}
+                        />
+                      </div>
+                      <div className="input-item">
+                        <label className="mb-0 block text-sm text-gray-400">
+                          Delivery Date
+                        </label>
+                        <input
+                          required
+                          onChange={(e) => handleNestedInputChange(index, 'delivery', deliveryIndex, 'date', e.target.value)}
+                          type={"date"}
+                          placeholder={"Enter Delivery Date"}
+                          className="input-sm"
+                        />
+                      </div>
+                    </div>
+                  </>
+                })}
+                <button onClick={()=>addDeliveryLocation(index)} className='text-main mt-2' >+ Add Delivery Stop</button>
 
-                <div className="border-t border-gray-800 pt-8 mt-8 grid grid-cols-4 gap-4">
-                  <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">
-                      Delivery Location
-                    </label> 
-                    <input
-                      required name="deliveryLocation"
-                      onChange={(e) => getDeliveryLocation(index, e.target.value)} type={"text"} placeholder={"Enter delivery location"} className="input-sm"
-                    />
-                  </div>
-                  <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">
-                    Delivery Reference No.
-                    </label>
-                    <input
-                      required
-                      name="deliveryReferenceNo"
-                      onChange={(e) =>
-                        handleInputChange(index, "deliveryReferenceNo", e.target.value)
-                      }
-                      type={"text"}
-                      placeholder={"delivery Reference No."}
-                      className="input-sm"
-                    />
-                  </div>
-                  <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">
-                      Delivery Appointment
-                    </label>
-                    <Select
-                      classNamePrefix="react-select input"
-                      placeholder={"Choose Appointment"}
-                      onChange={(selected) =>
-                        handleInputChange(index, "deliveryAppointment", selected)
-                      }
-                      options={appointmentOptions}
-                    />
-                  </div>
-                  <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">
-                      Delivery Date
-                    </label>
-                    <input
-                      required
-                      name="deliveryDate"
-                      onChange={(e) =>
-                        handleInputChange(index, "deliveryDate", e.target.value)
-                      }
-                      type={"date"}
-                      placeholder={"Enter delivery Date"}
-                      className="input-sm"
-                    />
-                  </div>
-                </div>
               </div>
               </>
             ))}
           </div>
 
-          <div>
+          <div className='customer'>
             <div className="flex justify-between mt-12 mb-4 items-center">
-              <p className="text-gray-400 heading xl text-xl">Revenue Items</p>
+              <p className="text-gray-400 heading xl text-xl">Customer Revenue Items</p>
               <div className='flex items-center'>
                 <select onChange={chooseAmountCurrency} className='currency-drop bg-gray-800 text-white px-2 py-[5px] rounded-[10px]'>
                   <option value={"cad"} >CAD</option>
@@ -554,20 +613,19 @@ export default function AddOrder(){
                   <option value={"usd"} >USD</option>
                   <option value={"inr"} >INR</option>
                 </select>
-                {/* <button className="btn ms-3 text-black font-bold" onClick={addNewItem}> + Add New </button> */}
               </div>
             </div>
             <div className="borders rounded-[20px] mb-12 sbg-dark sborder-gray-900 p-6s">
               {revenueItems.map((item, index) => (
                 <div key={index} className="rev-items flex justify-between items-center mb-4">
-                  <div className="grid grid-cols-3 w-full gap-5">
+                  <div className="grid grid-cols-4 w-full gap-5">
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Revenue Item</label>
                       <Select
                         classNamePrefix="react-select input"
                         placeholder="Revenue Items"
                         onChange={(option) =>
-                          handlerevanue(index, "revenue_item", option.value)
+                          handleCustomerRev(index, "revenue_item", option.value)
                         }
                         options={revenueItemOptions}
                         value={
@@ -581,7 +639,7 @@ export default function AddOrder(){
                         classNamePrefix="react-select input"
                         placeholder="Choose Rate"
                         onChange={(option) =>
-                          handlerevanue(index, "rate_method", option.value)
+                          handleCustomerRev(index, "rate_method", option.value)
                         }
                         options={rateMethodOptions}
                         value={
@@ -606,16 +664,15 @@ export default function AddOrder(){
                             type="number"
                             placeholder="Rate"
                             className="input-sm ps-[50px]"
-                            // onChange={(e) => handlerevanue(index, "rate", e.target.value)}
+                            // onChange={(e) => handleCustomerRev(index, "rate", e.target.value)}
                             onChange={(e) => {
-                              handlerevanue(index, "rate", e.target.value)
+                              handleCustomerRev(index, "rate", e.target.value)
                               setData({ ...data, total_amount: e.target.value})
                             }}
                           />
                       </div>
                     </div>
-
-                    {/* <div className="input-item">
+                    <div className="input-item">
                       <label className="block text-sm text-gray-400">Value</label>
                       <div className='relative'>
                         <div className='absolute text-white top-[27px] left-4'>
@@ -628,19 +685,106 @@ export default function AddOrder(){
                           className="input-sm" 
                         />
                       </div>
-                    </div> */}
-
-
-
+                    </div>
                   </div>
-                  {/* <div className="flex items-center">
+                  <div className="flex items-center">
                     <button  className="btn bg-red-700 mt-[20px] ms-3 text-white"
-                    onClick={() => removeItem(index)} >Remove
+                    onClick={() => removeCustomerRev(index)} >Remove
                     </button>
-                  </div> */}
+                  </div>
+                </div>
+              ))}
+              <button className="text-main ms-3 text-black font-bold" onClick={addCustomerRev}> + Add More </button>
+            </div>
+          </div>
+
+          <h2 className='heading text-xl text-white pt-12 border-t border-gray-700 mt-16 mb-4'>Carrier Details</h2>
+
+          <div className='customer'>
+            <div className="flex justify-between  mb-4 items-center">
+              <p className="text-gray-400 heading text-lg">Revenue Items</p>
+            </div>
+            <div className="borders rounded-[20px] sbg-dark sborder-gray-900 p-6s">
+              {revenueItems.map((item, index) => (
+                <div key={index} className="rev-items flex justify-between items-center mb-4">
+                  <div className="grid grid-cols-4 w-full gap-5">
+                    <div className="input-item">
+                      <label className="block text-sm text-gray-400">Revenue Item</label>
+                      <Select
+                        classNamePrefix="react-select input"
+                        placeholder="Revenue Items"
+                        onChange={(option) =>
+                          handleCustomerRev(index, "revenue_item", option.value)
+                        }
+                        options={revenueItemOptions}
+                        value={
+                          item.revenue_item ? { label: item.revenue_item, value: item.revenue_item} : null
+                        }
+                      />
+                    </div>
+                    <div className="input-item">
+                      <label className="block text-sm text-gray-400">Rate Method</label>
+                      <Select
+                        classNamePrefix="react-select input"
+                        placeholder="Choose Rate"
+                        onChange={(option) =>
+                          handleCustomerRev(index, "rate_method", option.value)
+                        }
+                        options={rateMethodOptions}
+                        value={
+                          item.rate_method
+                            ? {
+                                label: item.rate_method,
+                                value: item.rate_method,
+                              }
+                            : null
+                        }
+                      />
+                    </div>
+                    <div className="input-item">
+                      <label className="block text-sm text-gray-400">Rate</label>
+                      <div className='relative'>
+                        <div className='absolute text-white top-[26px] left-4'>
+                            <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'cad'} />
+                        </div>
+                          <input
+                            required
+                            name="rate"
+                            type="number"
+                            placeholder="Rate"
+                            className="input-sm ps-[50px]"
+                            // onChange={(e) => handleCustomerRev(index, "rate", e.target.value)}
+                            onChange={(e) => {
+                              handleCustomerRev(index, "rate", e.target.value)
+                              setData({ ...data, total_amount: e.target.value})
+                            }}
+                          />
+                      </div>
+                    </div>
+                    <div className="input-item">
+                      <label className="block text-sm text-gray-400">Value</label>
+                      <div className='relative'>
+                        <div className='absolute text-white top-[27px] left-4'>
+                        <Currency amount={item.rate*(distance)} currency={revCurrency || 'cad'} />
+                        </div>
+                        <input
+                          required
+                          name="value" disabled
+                          type="text"  
+                          className="input-sm" 
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <button  className="btn bg-red-700 mt-[20px] ms-3 text-white"
+                    onClick={() => removeCustomerRev(index)} >Remove
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
+            <button className="text-main ms-3 text-black font-bold" onClick={addCustomerRev}> + Add More </button>
           </div>
        
           {/* <p className='pb-2 text-yellow-600'>{distanceMsg} Update distance manually.</p> 

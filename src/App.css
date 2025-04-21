@@ -28,11 +28,13 @@ body{
 .darkpopup .close{color:#fff;}
 body{background:var(--dark);font-family:'productsans';}
 .bg-main-fade{background:var(--main-fade);}
+
 .bg-main{background:var(--main);}
 .bg-dark{background:var(--dark);}
 .bg-dark1{background:var(--dark1);}
 .bg-dark2{background:var(--dark2);}
 .bg-dark3{background:var(--dark3);}
+
 .text-main{color:var(--main);}
 .font-mona{font-family:'monasans','sans-serif';}
 .font-mona-i{font-family:'monasans-italic','sans-serif';}
@@ -49,9 +51,7 @@ body{background:var(--dark);font-family:'productsans';}
 .normal-heading{@apply text-white text-[24px] font-bold}
 .para{@apply text-white text-[24px] font-bold}
 .input{@apply bg-dark2 justify-center  border-gray-700 border items-start px-[25px] py-[21px] mt-2.5 w-full whitespace-nowrap text-white rounded-[20px] bg-black max-w-full }
-.input-sm {
-  @apply input px-[20px] py-[15px] rounded-[15px]
-}
+.input-sm {@apply input px-[20px] py-[15px] rounded-[15px]}
 .box{@apply rounded-[30px] bg-dark1}
 }
 .disabled{opacity:0.5;pointer-events:none;cursor:none;}
