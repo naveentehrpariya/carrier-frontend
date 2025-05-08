@@ -72,8 +72,7 @@ export default function Customers() {
                   {lists && lists.map((c, index) => {
                      return <tr key={`carriew-${index}`}>
                         <td className='text-sm text-start  capitalize border-b border-gray-900'>
-                           {/* <Link to={`/customer/detail/${c?.id}`} className='text-main font-bold'>{c?.name || ''}</Link> */}
-                           <p   className='text-white font-bold'>{c?.name || ''}</p>
+                           <Link to={`/customer/detail/${c?.id}`} className='text-main font-bold'>{c?.name || ''}</Link>
                            <p className='text-gray-400'>Reference No. {c?.customerCode || ''}</p>
                         </td>
                         <td className='text-sm text-start text-gray-200  border-b border-gray-900'>

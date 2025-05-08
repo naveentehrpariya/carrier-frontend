@@ -9,6 +9,8 @@ import UpdateOrderStatus from '../accounts/UpdateOrderStatus'
 import OrderView from './OrderView'
 import UpdatePaymentStatus from '../accounts/UpdatePaymentStatus'
 import AddNotes from '../accounts/AddNotes';
+import { FaLock } from "react-icons/fa";
+import { FaLockOpen } from "react-icons/fa6";
 
 export default function OrderItem({lists, fetchLists}) {
    const {Errors, user} = useContext(UserContext);
@@ -26,13 +28,11 @@ export default function OrderItem({lists, fetchLists}) {
                </tr>
                {lists && lists.map((c, index) => {
                   return <tr key={`carriew-${index}`}>
-
                      <td className='text-sm text-start text-gray-300 uppercase border-b border-gray-900'>
-                        <Link to={`/view/order/${c._id}`} className=' text-main uppercase text-[14px] m-auto d-table    rounded-[20px]'  >CMC{c.serial_no || "--"}</Link>
+                        <Link to={`/view/order/${c._id}`} className=' text-main  flex uppercase text-[14px] m-auto d-table  rounded-[20px]'  > {c.lock ? <FaLock className='me-1' /> : <FaLockOpen className='me-1' />} CMC{c.serial_no || "--"}</Link>
                         <p className='text-gray-500'>Created by : {c.created_by?.name || "--"}</p>
                         <p className='text-gray-500 text-[12px]'><TimeFormat date={c.createdAt || "--"} /></p>
                      </td>
-
                      <td className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>
                         <p className='my-1 whitespace-nowrap'>Status : <Badge title={true} status={c?.order_status} /></p>
                         <p className='my-1 whitespace-nowrap'>Total Distance :  {c?.totalDistance || "00"} Miles</p>

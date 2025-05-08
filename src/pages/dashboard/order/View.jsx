@@ -7,6 +7,8 @@ import TimeFormat from '../../common/TimeFormat';
 import Currency from '../../common/Currency';
 import Loading from './../../common/Loading';
 import Badge from '../../common/Badge';
+import { FaLock } from "react-icons/fa";
+import { FaLockOpen } from "react-icons/fa6";
 
 export default function ViewOrder() {
    
@@ -47,7 +49,7 @@ export default function ViewOrder() {
             <div  className='text-white m-auto'>
                <div className='py-3 mt-3 pt-4'>
                   <ul className='grid grid-cols-4 gap-2'>
-                     <li className=''><strong className='text-gray-400'> Order No. # :</strong> <p>CMC{order?.serial_no}</p> </li>
+                     <li className=''><strong className='text-gray-400 '> Order No. # :</strong> <p className='flex mt-1'>{order?.lock ? <FaLock className='me-1' /> : <FaLockOpen className='me-1' />} CMC{order?.serial_no}</p> </li>
                      <li className=''><strong className='text-gray-400'>Order Created Date :</strong> <p><TimeFormat date={order?.createdAt} /></p> </li>
                      <li className=''><strong className='text-gray-400'>Order Status :</strong> <p><Badge title={true} status={order?.order_status} /></p> </li>
                      <li className=''><strong className='text-gray-400'>Total Distance :</strong> <p>{order.totalDistance || "00"} Miles</p> </li>
@@ -139,9 +141,9 @@ export default function ViewOrder() {
                         return <>
                            <ul className='flex justify-between mb-4  '>
                               <li className='flex items-center w-[32%]'><strong>Revenue Item:</strong> <p className='ps-2'>{r.revenue_item}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Rate </strong  > <p className='capitalize ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /> * {r.quantity}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Note </strong> <p className='ps-2'>{r?.note}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Sub Total </strong> <p className='ps-2'><Currency amount={r?.rate*r.quantity || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
+                              <li className='flex items-center w-[32%]'><strong>Rate : </strong  > <p className='capitalize ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /> * {r.quantity}</p> </li>
+                              <li className='flex items-center w-[32%]'><strong>Note/Comment : </strong> <p className='ps-2'>{r?.note}</p> </li>
+                              <li className='flex items-center w-[32%]'><strong>Sub Total : </strong> <p className='ps-2'><Currency amount={r?.rate*r.quantity || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
                            </ul>
                         </>
                      })}
@@ -156,9 +158,9 @@ export default function ViewOrder() {
                         return <>
                            <ul className='flex justify-between mb-4  '>
                               <li className='flex items-center w-[32%]'><strong>Revenue Item:</strong> <p className='ps-2'>{r.revenue_item}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Rate </strong  > <p className='capitalize ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /> * {r.quantity}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Note </strong> <p className='ps-2'>{r?.note}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Sub Total </strong> <p className='ps-2'><Currency amount={r?.rate*r.quantity || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
+                              <li className='flex items-center w-[32%]'><strong>Rate  :   </strong  > <p className='capitalize ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /> * {r.quantity}</p> </li>
+                              <li className='flex items-center w-[32%]'><strong>Note/Comment :   </strong> <p className='ps-2'>{r?.note}</p> </li>
+                              <li className='flex items-center w-[32%]'><strong>Sub Total :   </strong> <p className='ps-2'><Currency amount={r?.rate*r.quantity || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
                            </ul>
                         </>
                      })}

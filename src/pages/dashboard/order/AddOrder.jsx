@@ -695,7 +695,7 @@ export default function AddOrder(){
                     </div>
 
                     <div className="input-item">
-                      <label className="block text-sm text-gray-400">Note</label>
+                      <label className="block text-sm text-gray-400">Note/Comment</label>
                       <div className='relative'>
                           <input
                             required
@@ -795,7 +795,7 @@ export default function AddOrder(){
                     </div>
 
                     <div className="input-item">
-                      <label className="block text-sm text-gray-400">Note</label>
+                      <label className="block text-sm text-gray-400">Note/Comment</label>
                       <div className='relative'>
                           <input
                             required

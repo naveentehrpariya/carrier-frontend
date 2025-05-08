@@ -193,7 +193,7 @@ export default function OrderPDF() {
                         return <>
                            <ul className='flex justify-between mb-4  '>
                               <li className='flex items-center w-[32%]'><strong>Item :</strong> <p className='ps-2'>{r?.revenue_item}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Notes : </strong  > <p className='capitalize ps-2'>{r?.note}</p> </li>
+                              <li className='flex items-center w-[32%]'><strong>Note/Comment : </strong  > <p className='capitalize ps-2'>{r?.note}</p> </li>
                               <li className='flex items-center w-[32%]'><strong>Rate : </strong  > <p className='capitalize ps-2'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</p> </li>
                               <li className='flex items-center whitespace-nowrap'><strong>Sub Total : </strong> <p className='ps-2'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
                            </ul>
