@@ -48,11 +48,17 @@ export default function Sidebar() {
         : "" } 
 
         {user?.is_admin === 1  ?
+        <>
           <li>
-            <Link className={`${location.pathname === '/employees' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/employees'} ><FaUsers className='me-2' size={'1.4rem'} /> Employees 
-          </Link>
+            <Link className={`${location.pathname === '/employees' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/employees'} ><FaUsers className='me-2' size={'1.4rem'} />Employees 
+            </Link>
           </li>
-          : ''
+          <li>
+            <Link className={`${location.pathname === '/commodity-and-equipments' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/commodity-and-equipments'} ><FaUsers className='me-2' size={'1.4rem'} />Commodity & Equipments 
+            </Link>
+          </li>
+        </>
+        : ''
         }
 
         {user?.is_admin === 1 || user?.role === 2 ?

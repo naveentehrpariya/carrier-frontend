@@ -12,6 +12,7 @@ export default function AddEmployee({fetchLists, item, text, classes}){
     const [data, setData] = useState({
       name: item?.name || "",
       email: item?.email || "",
+      position: item?.position || "",
       password: "",
       country: item?.country || "",
       phone: item?.phone || "",
@@ -107,6 +108,10 @@ export default function AddEmployee({fetchLists, item, text, classes}){
           <div className='input-item mb-4 '>
               <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
               <input defaultValue={item?.address} required name='address' onChange={handleinput} type={'address'} placeholder={"Enter address"} className="input-sm" />
+          </div>
+          <div className='input-item mb-4 '>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Position</label>
+              <input defaultValue={item?.position} required name='position' onChange={handleinput} type={'position'} placeholder={"eg. Senior Manger"} className="input-sm" />
           </div>
 
           <label className=" mb-2 block text-sm text-gray-400 text-center mt-6">Staff Type</label>

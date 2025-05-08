@@ -38,14 +38,14 @@ export default function AuthLayout({children, heading}) {
   }
 
   const roleChecker = () =>{
-    if(user?.role == 1){
-      return 'Employee'
+    if(user?.role === 1){
+      return user?.position ||'Employee'
     }
-    else if(user?.role == 2){
-      return 'Accountant'
+    else if(user?.role === 2){
+      return user?.position ||'Accountant'
     }
-    else if(user?.role == 3){
-      return  'Adminstrator'
+    else if(user?.role === 3){
+      return user?.position ||'Adminstrator'
     }
   }
   return (
@@ -63,10 +63,10 @@ export default function AuthLayout({children, heading}) {
             <Logo /> 
             <div className="flex gap-2 items-center">
               {/* <div onClick={showSidebar} className="hem-menu"><CiMenuFries /></div> */}
-              {/* <div className="text-right me-4">
+              <div className="text-right me-4">
                 <div className="capitalize text-white">Hello, {user?.name}</div>
                 <div className="capitalize text-sm text-gray-400">{roleChecker()}</div>
-              </div> */}
+              </div>
               <button onClick={logout} ><TbLogout color="#fff" className='me-2' size={'2rem'} /></button>
               
               <button onClick={showSidebar} className="sidebar-toggle text-base leading-6 whitespace-nowrap text-neutral-400">

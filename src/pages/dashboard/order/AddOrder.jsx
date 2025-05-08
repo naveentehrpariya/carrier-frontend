@@ -24,14 +24,6 @@ const appointmentOptions = [
   { value: 1,  label: "Appointment" },
 ];
 
-const equipmentOptions = [
-  { value: 'Drive Van',  label: "Drive Van" },
-  { value: 'Refer',  label: "Refer" },
-  { value: 'Flatbed',  label: "Flatbed" },
-  { value: "Container", label: "Container" }
-];
-
-
 const weightUnits = [
   { value: "kg", label: "Kg" },
   { value: 'g',  label: "Grams" },
@@ -59,9 +51,94 @@ export default function AddOrder(){
     //   });
     // }
 
-    // useEffect(() => {
-    //     fetchOrder();
-    // }, []);
+    const [communities, setCommunities] = useState([]);
+    const fetCommunities = () => {
+      setLoading(true);
+      const resp = Api.get(`/cummodityLists`);
+      resp.then((res) => {
+         setLoading(false);
+         if (res.data.status === true) {
+          setCommunities(res.data.list);
+         } else {
+          setCommunities([]);
+         }
+         setLoading(false);
+      }).catch((err) => {
+         setLoading(false);
+      });
+   }
+    const [equipmentOptions, setequipmentOptions] = useState([]);
+    const fetchequipmentOptions = () => {
+      setLoading(true);
+      const resp = Api.get(`/equipmentLists`);
+      resp.then((res) => {
+         setLoading(false);
+         if (res.data.status === true) {
+          setequipmentOptions(res.data.list);
+         } else {
+          setequipmentOptions([]);
+         }
+         setLoading(false);
+      }).catch((err) => {
+         setLoading(false);
+      });
+   }
+
+   const [customersListing, setCustomersListing] = useState([]);
+    const fetchcustomers = () => {
+        const resp = Api.get(`/customer/listings`);
+        resp.then((res) => {
+          if (res.data.status === true) {
+            const lists = res.data.customers || []; 
+            let arr = [];
+            lists.forEach(element => {
+              arr.push({
+                _id: element._id,
+                label: `${element.name} (Ref: ${element.customerCode})  `,
+                value: element._id,
+                mc_code: element.customerCode
+              })
+            });
+            setCustomersListing(arr);
+          } else {
+            setCustomersListing([]);
+          }
+        }).catch((err) => {
+          setCustomersListing([]);
+        });
+    }
+    const [carriersListing, setCarrierListings] = useState([]);
+    const fetchcarriers = () => {
+        const resp = Api.get(`/carriers/listings`);
+        resp.then((res) => {
+          if (res.data.status === true) {
+            const lists = res.data.carriers || []; 
+            let arr = [];
+            lists.forEach(e => {
+              arr.push({
+                _id: e._id,
+                label: `${e.name} | ${e.country}(${e.mc_code})`,
+                value: e._id,
+                carrierID: e.carrierID
+              })
+            });
+            setCarrierListings(arr);
+          } else {
+            setCarrierListings([]);
+          }
+        }).catch((err) => {
+          setCarrierListings([]);
+        });
+    }
+    useEffect(()=>{ 
+      fetchcustomers();
+      fetchcarriers();
+      fetCommunities();
+      fetchequipmentOptions();
+          // fetchOrder();
+    }, []);
+
+ 
 
 
     const [closeCarrierPopup, setCloseCarrierPopup] = useState();
@@ -100,7 +177,7 @@ export default function AddOrder(){
 
 
     const getPickupLocation = (index, value) => { 
-        handleInputChange(index, "pickupLocation", value);
+        handleShippingInputChange(index, "pickupLocation", value);
         console.log("packup value",value)
         setTimeout(() => {
           // getDistance();
@@ -108,9 +185,8 @@ export default function AddOrder(){
     }
     
     const getDeliveryLocation = (index, value) => { 
-        handleInputChange(index, "deliveryLocation", value);
+        handleShippingInputChange(index, "deliveryLocation", value);
     }
-    
     const [shippingDetails, setShippingDetails] = useState([
       {
         community: null,
@@ -135,7 +211,7 @@ export default function AddOrder(){
       },
     ]);
     
-    const handleInputChange = (index, field, value) => {
+    const handleShippingInputChange = (index, field, value) => {
       const updatedDetails = [...shippingDetails];
       updatedDetails[index][field] = value;
       setShippingDetails(updatedDetails);
@@ -189,31 +265,32 @@ export default function AddOrder(){
       });
       setShippingDetails(updatedDetails);
     };
-
+    const removeItemShipItem = (index) => {
+      const updatedItems = shippingDetails.filter((_, i) => i !== index);
+      setShippingDetails(updatedItems);
+    };
     const handleNestedInputChange = (blockIndex, type, locIndex, field, value) => {
       const updatedDetails = [...shippingDetails];
       updatedDetails[blockIndex][type][locIndex][field] = value;
       setShippingDetails(updatedDetails);
     };
-    
 
     // Customer revenue items
     const [revenueItems, setRevenueItems] = useState([
-      {
+    {
         revenue_item: "",
         note: "",
-        rate_method: "",
         rate: "",
-        value: "",
+        quantity: "",
       },
     ]);
-    const addCustomerRev = () => {
+    const addCustomerRevItems = () => {
       setRevenueItems([
         ...revenueItems,
-        { revenue_item: "", rate_method: "", rate: "", value: "" },
+        { revenue_item: "", note: "", rate: "", quantity: "" },
       ]);
     };
-    const handleCustomerRev = (index, field, value) => {
+    const handleCustomerRevInputChange = (index, field, value) => {
       const updatedItems = [...revenueItems];
       updatedItems[index][field] = value;
       setRevenueItems(updatedItems);
@@ -224,98 +301,53 @@ export default function AddOrder(){
       //     grossAmount += Number(item.value);
       // });
     };
-
-    // Carrier revenue items
-    const [carrier_revenueItems, setCarrierRevenueItems] = useState([
-      {
-        item: "",
-        note: "",
-        rate_method: "",
-        rate: "",
-        value: "",
-      },
-    ]);
-
-    // const [grossRevanue, setGrossRevenue] = useState(0);
-    
-
-    
-    const removeCustomerRev = (index) => {
+    const removeCustomeRevenueLine = (index) => {
       const updatedItems = revenueItems.filter((_, i) => i !== index);
       setRevenueItems(updatedItems);
     };
-    const removeItemShipItem = (index) => {
-      const updatedItems = shippingDetails.filter((_, i) => i !== index);
-      setShippingDetails(updatedItems);
+
+
+    // CARRIER Revenaue Items
+    const [carrierRevenueItems, setCarrierRevenueItems] = useState([{
+          revenue_item: "",
+          note: "",
+          rate: "",
+          quantity: "",
+        },
+    ]);
+    const addCarrierRevItems = () => {
+      setCarrierRevenueItems([
+        ...carrierRevenueItems,
+        { revenue_item: "", note: "", rate: "", quantity: "" },
+      ]);
     };
-    
+    const handleCarrierRevInputChange = (index, field, value) => {
+      const updatedItems = [...carrierRevenueItems];
+      updatedItems[index][field] = value;
+      setCarrierRevenueItems(updatedItems);
+    };
+    const removeCarrierRevenueLine = (index) => {
+      const updatedItems = carrierRevenueItems.filter((_, i) => i !== index);
+      setCarrierRevenueItems(updatedItems);
+    };
+
+
     const [data, setData] = useState({
       "company_name" : "Cross Miles Carrier",
-      "customer_order_no": null,
+      // "customer_order_no": null,
       "customer" :null,
+      'customer_payment_method' : '',
       "carrier" : null,
-      "carrier_amount" : null,
+      // "carrier_amount" : null,
       "payment_status" : "pending",
       "payment_method" : "none",
       "carrier_payment_status" : "pending",
-      "carrier_payment_method" : "none",
+      "carrier_payment_method" : "",
       "revenue_currency" : 'cad',
       "order_status" : "added",
       "totalDistance": null,
-      "total_amount": null
+      // "total_amount": null
     });
-
-    const [customersListing, setCustomersListing] = useState([]);
-    const fetchcustomers = () => {
-        const resp = Api.get(`/customer/listings`);
-        resp.then((res) => {
-          if (res.data.status === true) {
-            const lists = res.data.customers || []; 
-            let arr = [];
-            lists.forEach(element => {
-              arr.push({
-                _id: element._id,
-                label: `${element.name} (Ref: ${element.customerCode})  `,
-                value: element._id,
-                mc_code: element.customerCode
-              })
-            });
-            setCustomersListing(arr);
-          } else {
-            setCustomersListing([]);
-          }
-        }).catch((err) => {
-          setCustomersListing([]);
-        });
-    }
-    const [carriersListing, setCarrierListings] = useState([]);
-    const fetchcarriers = () => {
-        const resp = Api.get(`/carriers/listings`);
-        resp.then((res) => {
-          if (res.data.status === true) {
-            const lists = res.data.carriers || []; 
-            let arr = [];
-            lists.forEach(e => {
-              arr.push({
-                _id: e._id,
-                label: `${e.name} | ${e.country}(${e.mc_code})`,
-                value: e._id,
-                carrierID: e.carrierID
-              })
-            });
-            setCarrierListings(arr);
-          } else {
-            setCarrierListings([]);
-          }
-        }).catch((err) => {
-          setCarrierListings([]);
-        });
-    }
-
-    useEffect(()=>{ 
-      fetchcustomers();
-      fetchcarriers();
-    },[]);
 
     const chooseCustomer = (e) => { 
       setData({ ...data, customer: e.value});
@@ -346,19 +378,21 @@ export default function AddOrder(){
     const navigate = useNavigate();
 
     useEffect(()=>{
-      console.log("shippingDetails",shippingDetails)
+      console.log("shippingDetails",shippingDetails);
     },[shippingDetails]);
 
     const addOrder = () => {
       const alldata = {...data, 
         "revenue_items"  : revenueItems || [],
-        "shipping_details" : shippingDetails || []
+        "carrier_revenue_items"  : carrierRevenueItems || [],
+        "shipping_details" : shippingDetails || [],
+        "total_amount" : revenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
+        "carrier_amount" : carrierRevenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
       }
-
-      if(alldata.customer_order_no === '' || alldata.customer_order_no === null) {
-        toast.error('Please enter order no of this order.');
-        return false;
-      }
+      // if(alldata.customer_order_no === '' || alldata.customer_order_no === null) {
+      //   toast.error('Please enter order no of this order.');
+      //   return false;
+      // }
 
       function isObjectValid(obj) {
         return Object.values(obj).every(value => value !== null && value !== '' && value !== undefined);
@@ -374,7 +408,14 @@ export default function AddOrder(){
       if(alldata.revenue_items && alldata.revenue_items[0]) {
         const isall = isObjectValid(alldata.revenue_items && alldata.revenue_items[0]);
         if(!isall) {
-          toast.error('Please enter correct revenue details of this order.');
+          toast.error('Please enter correct customer revenue details of this order.');
+          return false;
+        }
+      }
+      if(alldata.carrier_revenue_items && alldata.carrier_revenue_items[0]) {
+        const isall = isObjectValid(alldata.carrier_revenue_items && alldata.carrier_revenue_items[0]);
+        if(!isall) {
+          toast.error('Please enter correct carrier revenue details of this order.');
           return false;
         }
       }
@@ -383,14 +424,20 @@ export default function AddOrder(){
         toast.error('Carrier amount is required');
         return false;
       }
-    
+
+      if(alldata.total_amount === '') {
+        toast.error('Total amount can not be empty.');
+        return false;
+      }
+
+
       setLoading(true);
       const resp = Api.post(`/order/add`, alldata);
       resp.then((res) => {
         setLoading(false);
         if (res.data.status === true) {
           toast.success(res.data.message);
-          navigate('/orders')
+          // navigate('/orders')
         } else {
           toast.error(res.data.message);
         }
@@ -404,23 +451,23 @@ export default function AddOrder(){
     <AuthLayout>
       <div>
          <h2 className='text-white heading xl text-2xl '>Add New Order</h2>
-          <p className='text-gray-400 heading xl text-lg mt-6'>Customer Details</p>
+          {/* <p className='text-gray-400 heading xl text-lg mt-6'>Customer Details</p>
           <div className='grid grid-cols-1 sm:grid-cols-2 gap-5'>
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Company Name</label>
                 <input name='company_name' disabled type={'text'} placeholder='Cross Miles Carrier' className="input-sm" />
             </div>
-            {/* <div className='input-item'>
+            <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Order No.</label>
                 <input required name='customer_order_no' onChange={handleinput} type={'number'} placeholder={"Order Number"} className="input-sm" />
-            </div> */}
+            </div>
             <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Customer</label>
                 <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
                 onChange={chooseCustomer}
                 options={customersListing} />
             </div>
-          </div>
+          </div> */}
 
           <div>
             <div className="flex justify-between mt-12 mb-4 items-center">
@@ -446,21 +493,26 @@ export default function AddOrder(){
                 <div className="grid grid-cols-4 gap-4 pb-8 border-b border-gray-800 mb-8">
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Commodity</label>
-                    <input
+                    {/* <input
                       required
                       name="community"
-                      onChange={(e) =>handleInputChange(index, "community", e.target.value)}
+                      onChange={(e) =>handleShippingInputChange(index, "community", e.target.value)}
                       type={"text"}
                       placeholder={"Enter Community"}
                       className="input-sm"
-                    />
+                    /> */}
+                    <Select
+                      classNamePrefix="react-select input"
+                      placeholder={"Enter Community"}
+                      onChange={(selected) =>handleShippingInputChange(index, "community", selected)}
+                      options={communities} />
                   </div>
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Equipment</label>
                     <Select
                       classNamePrefix="react-select input"
                       placeholder={"Equipment"}
-                      onChange={(selected) =>handleInputChange(index, "equipment", selected)}
+                      onChange={(selected) =>handleShippingInputChange(index, "equipment", selected)}
                       options={equipmentOptions}
                     />
                   </div>
@@ -470,7 +522,7 @@ export default function AddOrder(){
                       classNamePrefix="react-select input"
                       placeholder={"Weight Unit"}
                       onChange={(selected) =>
-                        handleInputChange(index, "weight_init", selected && selected.value)
+                        handleShippingInputChange(index, "weight_unit", selected && selected.value)
                       }
                       options={weightUnits}
                     />
@@ -480,7 +532,7 @@ export default function AddOrder(){
                     <input
                       required name="weight"
                       onChange={(e) =>
-                        handleInputChange(index, "weight", e.target.value)
+                        handleShippingInputChange(index, "weight", e.target.value)
                       }
                       type={"text"} placeholder={"Enter Weight"}
                       className="input-sm"
@@ -609,49 +661,55 @@ export default function AddOrder(){
               <div className='flex items-center'>
                 <select onChange={chooseAmountCurrency} className='currency-drop bg-gray-800 text-white px-2 py-[5px] rounded-[10px]'>
                   <option value={"cad"} >CAD</option>
-                  <option value={"gbp"} >GBP</option>
+                  {/* <option value={"gbp"} >GBP</option> */}
                   <option value={"usd"} >USD</option>
                   <option value={"inr"} >INR</option>
                 </select>
               </div>
             </div>
-            <div className="borders rounded-[20px] mb-12 sbg-dark sborder-gray-900 p-6s">
-              {revenueItems.map((item, index) => (
-                <div key={index} className="rev-items flex justify-between items-center mb-4">
-                  <div className="grid grid-cols-4 w-full gap-5">
+
+
+            <div className='input-item mb-3'>
+                <label className="mt-2 mb-0 block text-sm text-gray-400">Customer</label>
+                <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
+                onChange={chooseCustomer}
+                options={customersListing} />
+            </div>
+
+            <div className="borders rounded-[20px] sbg-dark sborder-gray-900 p-6s">
+              {revenueItems.map((item, index) => {
+                const total  = item.rate * item.quantity;
+                return <div key={index} className="rev-items flex justify-between items-center mb-4">
+                  <div className="grid grid-cols-5 w-full gap-3">
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Revenue Item</label>
                       <Select
                         classNamePrefix="react-select input"
                         placeholder="Revenue Items"
                         onChange={(option) =>
-                          handleCustomerRev(index, "revenue_item", option.value)
+                          handleCustomerRevInputChange(index, "revenue_item", option.value)
                         }
                         options={revenueItemOptions}
-                        value={
-                          item.revenue_item ? { label: item.revenue_item, value: item.revenue_item} : null
-                        }
+                        value={ item.revenue_item ? { label: item.revenue_item, value: item.revenue_item} : null }
                       />
                     </div>
+
                     <div className="input-item">
-                      <label className="block text-sm text-gray-400">Rate Method</label>
-                      <Select
-                        classNamePrefix="react-select input"
-                        placeholder="Choose Rate"
-                        onChange={(option) =>
-                          handleCustomerRev(index, "rate_method", option.value)
-                        }
-                        options={rateMethodOptions}
-                        value={
-                          item.rate_method
-                            ? {
-                                label: item.rate_method,
-                                value: item.rate_method,
-                              }
-                            : null
-                        }
-                      />
+                      <label className="block text-sm text-gray-400">Note</label>
+                      <div className='relative'>
+                          <input
+                            required
+                            name="rate"
+                            type="text"
+                            placeholder="Notes"
+                            className="input-sm"
+                            onChange={(e) => {
+                              handleCustomerRevInputChange(index, "note", e.target.value)
+                            }}
+                          />
+                      </div>
                     </div>
+
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Rate</label>
                       <div className='relative'>
@@ -664,83 +722,94 @@ export default function AddOrder(){
                             type="number"
                             placeholder="Rate"
                             className="input-sm ps-[50px]"
-                            // onChange={(e) => handleCustomerRev(index, "rate", e.target.value)}
+                            onChange={(e) => handleCustomerRevInputChange(index, "rate", e.target.value)}
+                          />
+                      </div>
+                    </div>
+
+                    <div className="input-item">
+                      <label className="block text-sm text-gray-400">Quantity</label>
+                      <div className='relative'>
+                          <input
+                            required
+                            name="quantity"
+                            type="text"
+                            placeholder="Quantity"
+                            className="input-sm"
                             onChange={(e) => {
-                              handleCustomerRev(index, "rate", e.target.value)
-                              setData({ ...data, total_amount: e.target.value})
+                              handleCustomerRevInputChange(index, "quantity", e.target.value)
                             }}
                           />
                       </div>
                     </div>
-                    <div className="input-item">
-                      <label className="block text-sm text-gray-400">Value</label>
-                      <div className='relative'>
-                        <div className='absolute text-white top-[27px] left-4'>
-                        <Currency amount={item.rate*(distance)} currency={revCurrency || 'cad'} />
-                        </div>
-                        <input
-                          required
-                          name="value" disabled
-                          type="text"  
-                          className="input-sm" 
-                        />
+
+                    <div className="input-item relative">
+                      <label className="block text-sm text-gray-400 mb-2">Total</label>
+                      <div className='border border-gray-500 p-4 rounded-xl relative'>
+                        <p className='text-white'> <Currency amount={total} currency={revCurrency || 'cad'} />
+                        </p>
+                        { index > 0 ?
+                        <button className="text-red-700  absolute top-[7px] right-4 text-3xl"
+                        onClick={()=>removeCustomeRevenueLine(index)} >&times;
+                        </button> : '' }
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center">
-                    <button  className="btn bg-red-700 mt-[20px] ms-3 text-white"
-                    onClick={() => removeCustomerRev(index)} >Remove
-                    </button>
-                  </div>
                 </div>
-              ))}
-              <button className="text-main ms-3 text-black font-bold" onClick={addCustomerRev}> + Add More </button>
+              })}
+              <div className='flex justify-between'>
+                  <button className="text-main ms-3 text-black font-bold" onClick={addCustomerRevItems}> + Add New Line </button>
+                  <h2 className='text-white'>Customer Total : <Currency amount={revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></h2>
+              </div>
             </div>
           </div>
 
-          <h2 className='heading text-xl text-white pt-12 border-t border-gray-700 mt-16 mb-4'>Carrier Details</h2>
 
+          {/* CARRIER DETAILS */}
+          <h2 className='heading text-xl text-gray-400 pt-12 border-t border-gray-800 mt-12 mb-6'>Carrier Details</h2>
           <div className='customer'>
-            <div className="flex justify-between  mb-4 items-center">
-              <p className="text-gray-400 heading text-lg">Revenue Items</p>
+
+            <div className='input-item mb-4'>
+              <label className="mt-2 mb-0 block text-sm text-gray-400">Choose Carrier</label>
+              <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
+                onChange={chooseCarrier}
+                options={carriersListing} />
             </div>
+
             <div className="borders rounded-[20px] sbg-dark sborder-gray-900 p-6s">
-              {revenueItems.map((item, index) => (
-                <div key={index} className="rev-items flex justify-between items-center mb-4">
-                  <div className="grid grid-cols-4 w-full gap-5">
+              {carrierRevenueItems.map((item, index) => {
+                const total  = item.rate * item.quantity;
+                return <div key={index} className="rev-items flex justify-between items-center mb-4">
+                  <div className="grid grid-cols-5 w-full gap-3">
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Revenue Item</label>
                       <Select
                         classNamePrefix="react-select input"
                         placeholder="Revenue Items"
                         onChange={(option) =>
-                          handleCustomerRev(index, "revenue_item", option.value)
+                          handleCarrierRevInputChange(index, "revenue_item", option.value)
                         }
                         options={revenueItemOptions}
-                        value={
-                          item.revenue_item ? { label: item.revenue_item, value: item.revenue_item} : null
-                        }
+                        value={ item.revenue_item ? { label: item.revenue_item, value: item.revenue_item} : null }
                       />
                     </div>
+
                     <div className="input-item">
-                      <label className="block text-sm text-gray-400">Rate Method</label>
-                      <Select
-                        classNamePrefix="react-select input"
-                        placeholder="Choose Rate"
-                        onChange={(option) =>
-                          handleCustomerRev(index, "rate_method", option.value)
-                        }
-                        options={rateMethodOptions}
-                        value={
-                          item.rate_method
-                            ? {
-                                label: item.rate_method,
-                                value: item.rate_method,
-                              }
-                            : null
-                        }
-                      />
+                      <label className="block text-sm text-gray-400">Note</label>
+                      <div className='relative'>
+                          <input
+                            required
+                            name="rate"
+                            type="text"
+                            placeholder="Notes"
+                            className="input-sm"
+                            onChange={(e) => {
+                              handleCarrierRevInputChange(index, "note", e.target.value)
+                            }}
+                          />
+                      </div>
                     </div>
+
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Rate</label>
                       <div className='relative'>
@@ -753,105 +822,70 @@ export default function AddOrder(){
                             type="number"
                             placeholder="Rate"
                             className="input-sm ps-[50px]"
-                            // onChange={(e) => handleCustomerRev(index, "rate", e.target.value)}
+                            onChange={(e) => handleCarrierRevInputChange(index, "rate", e.target.value)}
+                          />
+                      </div>
+                    </div>
+
+                    <div className="input-item">
+                      <label className="block text-sm text-gray-400">Quantity</label>
+                      <div className='relative'>
+                          <input
+                            required
+                            name="quantity"
+                            type="text"
+                            placeholder="Quantity"
+                            className="input-sm"
                             onChange={(e) => {
-                              handleCustomerRev(index, "rate", e.target.value)
-                              setData({ ...data, total_amount: e.target.value})
+                              handleCarrierRevInputChange(index, "quantity", e.target.value)
                             }}
                           />
                       </div>
                     </div>
-                    <div className="input-item">
-                      <label className="block text-sm text-gray-400">Value</label>
-                      <div className='relative'>
-                        <div className='absolute text-white top-[27px] left-4'>
-                        <Currency amount={item.rate*(distance)} currency={revCurrency || 'cad'} />
-                        </div>
-                        <input
-                          required
-                          name="value" disabled
-                          type="text"  
-                          className="input-sm" 
-                        />
+
+                    <div className="input-item relative">
+                      <label className="block text-sm text-gray-400 mb-2">Total</label>
+                      <div className='border border-gray-500 p-4 rounded-xl relative'>
+                        <p className='text-white'> <Currency amount={total} currency={revCurrency || 'cad'} />
+                        </p>
+                        { index > 0 ?
+                        <button className="text-red-700  absolute top-[7px] right-4 text-3xl"
+                        onClick={()=>removeCarrierRevenueLine} >&times;
+                        </button> : ""
+                        }
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center">
-                    <button  className="btn bg-red-700 mt-[20px] ms-3 text-white"
-                    onClick={() => removeCustomerRev(index)} >Remove
-                    </button>
-                  </div>
                 </div>
-              ))}
+              })}
+              <div className='flex justify-between'>
+                  <button className="text-main ms-3 text-black font-bold" onClick={addCarrierRevItems}> + Add New Line </button>
+                  <h2 className='text-white'>Carrier Total : <Currency amount={carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></h2>
+              </div>
             </div>
-            <button className="text-main ms-3 text-black font-bold" onClick={addCustomerRev}> + Add More </button>
           </div>
        
-          {/* <p className='pb-2 text-yellow-600'>{distanceMsg} Update distance manually.</p> 
-          <div className="items-center">
-            <div className='flex items-center'>
-              <input onChange={(e) =>setData({ ...data, totalDistance: e.target.value})} 
-              required type={"number"} placeholder={"Enter total distance manually..."} className="input-sm" />
-            </div>
-          </div> */}
-
-          <div className='grid grid-cols-2 gap-3 mb-8 mt-6'>
-            <div className=''>
-              <p className='text-white '> Total Distance (Miles) </p>
-              <div className='relative'>
-                <div className='absolute text-white top-[26px] left-4'>
-                    Miles
-                </div>
-                <input onChange={(e) =>setData({ ...data, totalDistance: e.target.value})} 
-                required type={"number"} placeholder={"Enter total distance..."} className="input-sm ps-[60px]" />
-                {/* {distanceMsg ? <p className='text-yellow-600 text-sm mb-2'>({distanceMsg}. Please update address or manually update total distance)</p>  : ""} */}
-              </div>
-            </div>
-
-            <div className=''>
-              <div className='text-start'>
-                <p className='text-white '>Total Amount </p> 
-                <div className='relative'>
-                  <div className='absolute text-white top-[26px] left-4'>
-                      <Currency onlySymbol={true}  currency={revCurrency || 'cad'} />
-                  </div>
-                  <input value={data.total_amount} onChange={(e) => setData({ ...data, total_amount: e.target.value}) } 
-                  required type={"number"} placeholder={"Order Amount"}
-                  className="input-sm ps-[50px] disabled" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-        {data?.carrier_amount ? <div className='flex justify-end my-6 '>
-            <div>
-              <p className='text-white'>Sell Amount : <span className='text-gray-400'>
-                <Currency  amount={data.carrier_amount} currency={revCurrency || 'cad'} /> </span> 
-              </p>
-            </div>
-        </div> : ''}
-
           
 
-          <div className='flex justify-end items-center'>
-            <Popup action={closeCarrierPopup} size="md:max-w-xl" space='p-8' bg="bg-black" btnclasses="" btntext={"Assign Carrier"} >
-                <h2 className='text-white text-2xl font-bold'>Assign Carrier</h2>
-                <div className=''>
-                  <div className='input-item'>
-                    <label className="mt-4 mb-0 block text-sm text-gray-400">Choose Carrier</label>
-                    <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
-                      onChange={chooseCarrier}
-                      options={carriersListing} />
-                  </div>
-                  <div className='input-item'>
-                      <label className="mt-4 mb-0 block text-sm text-gray-400">Amount</label>
-                      <input required onChange={handleinput} name='carrier_amount' type={'number'} placeholder={"Enter carrier amount"} className="input-sm" />
-                  </div>
+          {data?.carrier_amount ? 
+            <div className='flex justify-end my-6 '>
+                <div>
+                  <p className='text-white'>Sell Amount : <span className='text-gray-400'>
+                    <Currency amount={data.carrier_amount} currency={revCurrency || 'cad'} /> </span> 
+                  </p>
                 </div>
-                <div className='flex justify-center items-center'>
-                  <button onClick={(closePopup)} className="btn -sm md mt-6 px-[50px] text-sm main-btn text-black font-bold">Assign Carrier</button>
-                </div>
-            </Popup>
+            </div> 
+          : ''}
+
+          <div className='subtotals flex justify-ends my-6'>
+            <ul className='flex justify-between w-full bg-dark2 p-4 border border-gray-700 rounded-xl '>
+              <li className='flex justify-end '><p className='text-gray-400 me-4'>Customer Total : </p> <strong className='text-white'> <Currency amount={revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
+              <li className='flex justify-end '><p className='text-gray-400 me-4'>Carrier Total : </p> <strong className='text-white'>  <Currency amount={ carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
+              {/* <li className='flex justify-end '><p className='text-gray-400 me-4'>Total Distance : </p> <strong className='text-white'>  500Miles</strong></li> */}
+            </ul>
+          </div>
+
+          <div className='flex justify-end items-center mt-6'>
             <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? "Logging in..." : "Submit Order"}</button>
           </div>
 

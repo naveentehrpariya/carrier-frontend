@@ -81,7 +81,7 @@ export default function AccountOrders() {
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p className=' text-white  uppercase text-[14px] m-auto d-table  rounded-[20px]'  >Order No. {c.customer_order_no}</p>
                         <p>{c?.customer.name} ({c?.customer.customerCode}) </p>
-                        <p className='mt-1 whitespace-nowrap'>Payment : <Badge title={true} status={c.payment_status} text={`${c.payment_status === 'paid' ? `(${c.payment_method})` :''}`} /></p> 
+                        <p className='mt-1 whitespace-nowrap'>Payment : <Badge title={true} status={c.customer_payment_status} text={`${c.payment_status === 'paid' ? `(${c.payment_method})` :''}`} /></p> 
                      </td>
                      
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
@@ -106,7 +106,7 @@ export default function AccountOrders() {
                               <UpdatePaymentStatus pstatus={c.carrier_payment_status} pmethod={c.carrier_payment_method} pnotes={c.carrier_payment_notes} text="Update Carrier Payment" paymentType={2} id={c.id} type={2} fetchLists={fetchLists} />
                            </li>
                            <li className='list-none text-sm'>
-                              <UpdatePaymentStatus pstatus={c.payment_status} pmethod={c.payment_method} pnotes={c.customer_payment_notes} text="Update Customer Payment" paymentType={1} id={c.id} type={1} fetchLists={fetchLists} />
+                              <UpdatePaymentStatus pstatus={c.customer_payment_status} pmethod={c.payment_method} pnotes={c.customer_payment_notes} text="Update Customer Payment" paymentType={1} id={c.id} type={1} fetchLists={fetchLists} />
                            </li>
                            <li className='list-none text-sm'>
                               <AddNotes note={c.notes} id={c.id} type={2} fetchLists={fetchLists} />

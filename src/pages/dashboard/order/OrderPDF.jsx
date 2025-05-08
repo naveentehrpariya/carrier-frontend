@@ -4,15 +4,15 @@ import Api from '../../../api/Api';
 import { useParams } from 'react-router-dom';
 import AuthLayout from '../../../layout/AuthLayout';
 import Logotext from '../../common/Logotext';
-import Badge from './../../common/Badge';
+import Badge from '../../common/Badge';
 import TimeFormat from '../../common/TimeFormat';
 import Currency from '../../common/Currency';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
-import Loading from './../../common/Loading';
+import Loading from '../../common/Loading';
 import html2pdf from 'html2pdf.js';
 
-export default function OrderDetail() {
+export default function OrderPDF() {
    
    const [loading, setLoading] = useState(true);
    const [order, setOrder] = useState([]);
@@ -107,7 +107,7 @@ export default function OrderDetail() {
                <div className='p-3 border border-gray-400 mt-8'>
                   <ul className='grid grid-cols-3 gap-2'>
                      <li className=''><strong className=''>Order # :</strong> <p>CMC{order?.serial_no}</p> </li>
-                     <li className=''><strong className=''>Total Distance :</strong> <p>{order.totalDistance} Miles</p> </li>
+                     <li className=''><strong className=''>Total Distance :</strong> <p>{order.totalDistance || '0'} Miles</p> </li>
                      <li className=''><strong className=''>Order Created Date :</strong> <p><TimeFormat date={order?.createdAt} /></p> </li>
                      {/* <li className=''><strong>Order Status :</strong> <p><Badge title={true} status={order?.order_status} /></p> </li> */}
                   </ul>
@@ -129,6 +129,7 @@ export default function OrderDetail() {
                         <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Carrier Name:</strong> <p>{order?.carrier?.name}(MC{order?.carrier?.mc_code})</p> </li>
                         <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Carrier Phone :</strong> <p>{order?.carrier?.phone}{order?.carrier?.secondary_phone ? `, ${order?.carrier?.secondary_phone}` :''}</p> </li>
                         <li className=' flex mb-2'> <p> <strong className='text-normal test me-2 !text-gray-700'>Carrier Email :</strong> {order?.carrier?.email}{order?.carrier?.secondary_email ? `, ${order?.carrier?.secondary_email}` :''}</p> </li>
+                        <li className='flex mb-2'><p className='capitalize' ><strong className='text-normal test me-2 !text-gray-700'>Address :</strong>{order?.carrier?.location}</p></li>
                      </ul>
                   </div>
                </div>
@@ -138,49 +139,63 @@ export default function OrderDetail() {
                      <div className='orderFill p-3 border border-gray-400 mt-8 pt-4'>
                         <ul className='flex items-center justify-between pe-6'>
                            <li className='flex items-center'><strong>Shipment No : </strong> <p>#{index+1}</p> </li>
-                           <li className='flex items-center capitalize'><strong>Commudity : </strong> <p>{s?.community}</p> </li>
+                           <li className='flex items-center capitalize'><strong>Commudity : </strong> <p>{s?.community?.value}</p> </li>
                            <li className='flex items-center capitalize'><strong>Equipments : </strong> <p>{s?.equipment?.value}</p> </li>
-                           <li className='flex items-center'><strong>Weight : </strong> <p>{s?.weight || 'N/A'} {s?.weight_unit || s?.weight_init || ''}</p> </li>
+                           <li className='flex items-center'><strong>Weight : </strong> <p>{s?.weight || 'N/A'} {s?.weight_unit ||''}</p> </li>
                         </ul>
 
-                        <p className='font-bold text-lg text-black pt-4 '>Shipment Pickup Details</p>
-                        <ul className='flex flex-wrap w-full mt-2'>
-                           <li className='w-full max-w-[100%] pb-[7px] flex flex-wrap items-center'><strong className='text-black text-normal test'>Pickup Location :</strong> <p>{s?.pickupLocation}</p> </li>
-                        </ul>
+                        <p className='font-bold text-lg text-black pt-6 mb-2 '>Shipment Pickup Details</p>
+                        {s?.pickup && s?.pickup.length > 0 && s?.pickup.map((p, pindex) => {
+                           return <>
+                              <ul className='flex flex-wrap'>
+                                 <li className='mr-[30px] flex items-center'><strong className='text-black text-normal test'>Pickup No : </strong> <p className='ps-1'>#{pindex+1}</p> </li>
+                                 <li className='mr-[30px] flex items-center'><strong className='text-black text-normal test'>Pickup Reference No : </strong> <p className='ps-1'>{p?.referenceNo}</p> </li>
+                                 <li className='mr-[30px] flex items-center'><strong className='text-black text-normal test'>Pickup Appointement : </strong> <p className='ps-1'>{p?.appointment ? "Yes" : "No"}</p> </li>
+                                 <li className='mr-[30px] flex items-center'>
+                                    <strong className='text-black text-normal test'>Pickup Date : </strong> 
+                                    <p className='ps-1'><TimeFormat time={false} date={p?.date} /></p> 
+                                 </li>
+                                 <li className='w-full pb-[7px] flex items-center'>
+                                    <strong className='text-black text-normal test'>Pickup Location : </strong> 
+                                    <p className='ps-1'>{p?.location}</p> 
+                                 </li>
+                              </ul> 
+                             
+                           </>
+                        })}
 
-                        <ul className='grid grid-cols-3 w-full'>
-                           <li className='w-full pb-[7px] flex items-center'><strong className='text-black text-normal test'>Pickup Reference No : </strong> <p>{s?.pickupReferenceNo}</p> </li>
-                           <li className='w-full pb-[7px] flex items-center'><strong className='text-black text-normal test'>Pickup Appointement : </strong> <p>{s?.pickupAppointment ? "Yes" : "No"}</p> </li>
-                           <li className='w-full pb-[7px] flex items-center'><strong className='text-black text-normal test'>Pickup Date : </strong> 
-                           <p><TimeFormat time={false} date={s?.pickupDate} /></p> </li>
-                        </ul>
-
-                        <p className='font-bold text-lg text-black pt-4 '>Shipment Delivery Details</p>
-                        <ul className='flex flex-wrap w-full mt-2'>
-                           <li className='w-full max-w-[100%] pb-[7px] flex flex-wrap items-center'><strong className='text-black text-normal test'>Delivery Location :</strong> <p>{s?.deliveryLocation}</p> </li>
-                        </ul>
-
-                        <ul className='grid grid-cols-3 w-full'>
-                           <li className='w-full pb-[7px] flex items-center'><strong className='text-black text-normal test'>Delivery Reference No : </strong> <p>{s?.deliveryReferenceNo}</p> </li>
-                           <li className='w-full pb-[7px] flex items-center'><strong className='text-black text-normal test'>Delivery Appointement : </strong> <p>{s?.deliveryAppointment?.value ? "Yes": "No"}</p> </li>
-                           <li className='w-full pb-[7px] flex items-center'><strong className='text-black text-normal test'>Delivery Date : </strong> 
-                           <p><TimeFormat time={false} date={s?.deliveryDate} /></p> </li>
-                        </ul>
-
+                        <p className='font-bold text-lg text-black pt-6 mb-1 '>Shipment Delivery Details</p>
+                        {s?.delivery && s?.delivery.length > 0 && s?.delivery.map((p, pindex) => {
+                           return <>
+                              <ul className='flex flex-wrap'>
+                                 <li className='mr-[30px] flex items-center'><strong className='text-black text-normal test'>Delivery No : </strong> <p className='ps-1'>#{pindex+1}</p> </li>
+                                 <li className='mr-[30px] flex items-center'><strong className='text-black text-normal test'>Delivery Reference No : </strong> <p className='ps-1'>{p?.referenceNo}</p> </li>
+                                 <li className='mr-[30px] flex items-center'><strong className='text-black text-normal test'>Delivery Appointement : </strong> <p className='ps-1'>{p?.appointment ? "Yes" : "No"}</p> </li>
+                                 <li className='mr-[30px] flex items-center'>
+                                    <strong className='text-black text-normal test'>Delivery Date : </strong> 
+                                    <p className='ps-1'><TimeFormat time={false} date={p?.date} /></p> 
+                                 </li>
+                                 <li className='w-full pb-[7px] flex items-center'>
+                                    <strong className='text-black text-normal test'>Delivery Location : </strong> 
+                                    <p className='ps-1'>{p?.location}</p> 
+                                 </li>
+                              </ul> 
+                           </>
+                        })}
                      </div>
                   </>
                })}
-                
 
-               {order && order.revenue_items &&
-                  <div id='revanue' className='hidden orderFill p-3 border-t border-gray-300 mt-3 pt-4'>
+               {order && order.carrier_revenue_items &&
+                  <div id='revanue' className='orderFill py-3 mt-3 pt-4'>
                      <p className='font-bold text-black text-xl mb-2'>Revenue Items</p>
-                     {order && order.revenue_items && order.revenue_items.map((r, index) => {
+                     {order && order.carrier_revenue_items && order.carrier_revenue_items.map((r, index) => {
                         return <>
                            <ul className='flex justify-between mb-4  '>
-                              <li className='flex items-center w-[32%]'><strong>Revenue Item:</strong> <p className='ps-2'>{r.revenue_item}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Rate method </strong  > <p className='capitalize ps-2'>{r.rate_method}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Rate </strong> <p className='ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
+                              <li className='flex items-center w-[32%]'><strong>Item :</strong> <p className='ps-2'>{r?.revenue_item}</p> </li>
+                              <li className='flex items-center w-[32%]'><strong>Notes : </strong  > <p className='capitalize ps-2'>{r?.note}</p> </li>
+                              <li className='flex items-center w-[32%]'><strong>Rate : </strong  > <p className='capitalize ps-2'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</p> </li>
+                              <li className='flex items-center whitespace-nowrap'><strong>Sub Total : </strong> <p className='ps-2'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
                            </ul>
                         </>
                      })}
