@@ -6,13 +6,12 @@ import AuthLayout from '../../../layout/AuthLayout';
 import Select from 'react-select'
 import { useNavigate } from 'react-router-dom';
 import Popup from '../../common/Popup';
-// import GetLocation from '../../common/GetLocation';
 import Currency from '../../common/Currency';
 
-const revenueItemOptions = [
-  { label: "Freight Charge", value: "Freight Charge" },
-  { label: "Fuel Charge", value: "Fuel Charge" },
-];
+// const revenueItemOptions = [
+//   { label: "Freight Charge", value: "Freight Charge" },
+//   { label: "Fuel Charge", value: "Fuel Charge" },
+// ];
 
 const rateMethodOptions = [
   { label: "Flat", value: "flat" },
@@ -25,10 +24,8 @@ const appointmentOptions = [
 ];
 
 const weightUnits = [
-  { value: "kg", label: "Kg" },
-  { value: 'g',  label: "Grams" },
-  { value: 'tons',  label: "Tons" },
-  { value: 'pounds',  label: "pounds" },
+  { value: "KG", label: "KG" },
+  { value: 'LBS',  label: "LBS" },
 ];
 
 export default function AddOrder(){
@@ -51,6 +48,22 @@ export default function AddOrder(){
     //   });
     // }
 
+    const [revenueItemOptions, setRevenueItemOptions] = useState([]);
+    const fetchCharges = () => {
+      setLoading(true);
+      const resp = Api.get(`/chargesLists`);
+      resp.then((res) => {
+         setLoading(false);
+         if (res.data.status === true) {
+          setRevenueItemOptions(res.data.list);
+         } else {
+          setRevenueItemOptions([]);
+         }
+         setLoading(false);
+      }).catch((err) => {
+         setLoading(false);
+      });
+   }
     const [communities, setCommunities] = useState([]);
     const fetCommunities = () => {
       setLoading(true);
@@ -135,6 +148,7 @@ export default function AddOrder(){
       fetchcarriers();
       fetCommunities();
       fetchequipmentOptions();
+      fetchCharges();
           // fetchOrder();
     }, []);
 
@@ -437,7 +451,7 @@ export default function AddOrder(){
         setLoading(false);
         if (res.data.status === true) {
           toast.success(res.data.message);
-          // navigate('/orders')
+          navigate('/orders')
         } else {
           toast.error(res.data.message);
         }

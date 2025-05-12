@@ -80,16 +80,17 @@ export default function Carriers() {
                         </td>
 
                         <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
-                           <p>{c.email || ""}</p>
-                           <p>{c.secondary_email || ""}</p>
+                           <p>{c?.email ? <a href={`mailto:${c?.email}`}>{c?.email}</a>  : "--"}</p>
+                           <p>{c?.secondary_email ? <a href={`mailto:${c?.secondary_email}`}>{c?.secondary_email}</a>  : "--"}</p>
                         </td>
+
                         <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
-                           <p>{c.phone || ""}</p>
-                           <p>{c.secondary_phone || ""}</p>
+                           <p>{c?.phone ? <a href={`tel:${c?.phone}`}>{c?.phone}</a>  : "--"}</p>
+                           <p>{c?.secondary_phone ? <a href={`tel:${c?.secondary_phone}`}>{c?.secondary_phone}</a>  : "--"}</p>
                         </td>
-                        
+
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <div class='has-tooltip line-clamp-1 max-w-[160px]'>
+                           <div class='has-tooltip line-clamp-2 max-w-[200px]'>
                               <span class='tooltip rounded shadow-xl p-2 bg-gray-100 text-black -mt-8 '>{c.location || "--"} {c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}</span>
                               {c.location || "--"} {c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}
                            </div>
@@ -106,6 +107,7 @@ export default function Carriers() {
                               <RemoveCarrier classes="text-red-600 mt-2" text={"Remove"} item={c} fetchLists={fetchLists} />
                            </td> 
                         : "" }
+
                      </tr>
                   })}
                   

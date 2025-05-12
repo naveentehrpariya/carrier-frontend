@@ -36,7 +36,7 @@ export default function UpdatePaymentStatus({id, item, fetchLists, paymentType, 
 
    const {Errors} = useContext(UserContext);
    const [type, setType] = useState(paymentType);
-   const [method, setmethod] = useState(pmethod || 'Cheque');
+   const [method, setmethod] = useState(pmethod || 'cheque');
    const [status, setStatus] = useState( pstatus || 'pending');
    const [notes, setNotes] = useState( pnotes || '');
    const [action, setaction] = useState();
@@ -67,7 +67,7 @@ export default function UpdatePaymentStatus({id, item, fetchLists, paymentType, 
 
   return (
     <>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700" btntext={text || "Update Status"} >
+      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 whitespace-nowrap flex items-center`} btntext={text || "Update Status"} >
          <h2 className='text-white font-bold'>Update {type === 1 ? 'Customer' : 'Carrier'} Payment Status</h2>
          {/* <div>
             <label className="mt-4 block text-sm mb-2  text-gray-400">Choose Payment Type</label>

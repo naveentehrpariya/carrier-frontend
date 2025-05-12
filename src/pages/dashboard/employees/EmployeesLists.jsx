@@ -75,9 +75,10 @@ export default function EmployeesLists() {
                               {c.country || ""} {c.address || ''}
                         </div>
                      </td>
+                     
                      <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
-                        <p>{c.email || ""}</p>
-                        <p>{c.phone ? `${c.phone}` : "N/A"}</p>
+                        <p>{c?.phone ? <a href={`tel:${c?.phone}`}>{c?.phone}</a>  : ""}</p>
+                        <p>{c?.email ? <a href={`mailto:${c?.email}`}>{c?.email}</a>  : ""}</p>
                      </td>
                       
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>

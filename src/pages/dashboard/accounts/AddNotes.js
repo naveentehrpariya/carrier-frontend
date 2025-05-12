@@ -36,7 +36,7 @@ export default function AddNotes({id, fetchLists, note, text, classes}) {
 
   return (
     <>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={classes ? classes  :  "p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700"} btntext={text ? text : <>{notes ? "View Note" : "Add Note"}</>} >
+      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={classes ? classes  :  "p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 flex items-center"} btntext={text ? text : <>{notes ? "View Note" : "Add Note"}</>} >
          <h2 className='text-white font-bold'>Add Note</h2>
          <div className='txtarea'>
             <textarea className='input' rows={6} placeholder='Add Note here ...' defaultValue={notes} onChange={(e) => setNotes(e.target.value)}></textarea>

@@ -76,22 +76,22 @@ export default function Customers() {
                            <p className='text-gray-400'>Reference No. {c?.customerCode || ''}</p>
                         </td>
                         <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
-                           <p>{c?.email || "--"}</p>
-                           <p className=''>{c?.secondary_email || ""}</p>
+                           <p>{c?.email ? <a href={`mailto:${c?.email}`}>{c?.email}</a>  : "--"}</p>
+                           <p>{c?.secondary_email ? <a href={`mailto:${c?.secondary_email}`}>{c?.secondary_email}</a>  : "--"}</p>
                         </td>
                         <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
-                           <p>{c?.phone || "--"}</p>
-                           <p className=''>{c?.secondary_phone || ""}</p>
+                           <p>{c?.phone ? <a href={`tel:${c?.phone}`}>{c?.phone}</a>  : "--"}</p>
+                           <p>{c?.secondary_phone ? <a href={`tel:${c?.secondary_phone}`}>{c?.secondary_phone}</a> : "--"}</p>
                         </td>
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <div class='has-tooltip line-clamp-1 max-w-[200px]'>
+                           <div class='has-tooltip line-clamp-2  max-w-[250px]'>
                               <span class='tooltip rounded shadow-xl p-2 bg-gray-100 text-black -mt-8'>{c?.address || ""} {c?.city || ""} {c?.state || ""} {c?.country || ""} {c?.zipcode || ""}</span>
                               {c?.address || ""} {c?.city || ""} {c?.state || ""} {c?.country || ""} {c?.zipcode || ""}
                            </div>
                         </td>
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <p className='whitespace-nowrap'>{c?.assigned_to?.name || ""}({c?.assigned_to?.phone || ""})</p>
-                           <p><TimeFormat date={c?.createdAt || "--"} /> </p>
+                           <p className='whitespace-nowrap'>{c?.assigned_to?.name || ""}({c?.assigned_to?.position || c?.assigned_to?.phone || ""})</p>
+                           <p className='text-[13px] whitespace-nowrap'><TimeFormat date={c?.createdAt || "--"} /> </p>
                         </td>
                         {user?.is_admin === 1 ?
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>

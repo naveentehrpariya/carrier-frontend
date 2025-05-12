@@ -47,7 +47,7 @@ export default function UpdateOrderStatus({id, fetchLists, text}) {
 
   return (
     <>
-      <Popup action={action} size="md:max-w-xl" space='p-8' bg="bg-black" btnclasses="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700" btntext={text || "Update Status"} >
+      <Popup action={action} size="md:max-w-xl" space='p-8' bg="bg-black" btnclasses="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 flex items-center" btntext={text || "Update Status"} >
          <h2 className='text-white font-bold'>Update Order Status</h2>
          <div className='grid  gap-4'>
             <div className='input-item'>
