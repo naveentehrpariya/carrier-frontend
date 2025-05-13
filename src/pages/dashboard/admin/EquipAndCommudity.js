@@ -7,7 +7,7 @@ import ChargesItems from './ChargesItems';
 export default function EquipAndCommudity() {
   return (
       <AuthLayout> 
-          <Commodity />
+          {/* <Commodity /> */}
           <EquipmentLists />
           <ChargesItems />
       </AuthLayout>

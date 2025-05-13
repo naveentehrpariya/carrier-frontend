@@ -146,7 +146,7 @@ export default function AddOrder(){
     useEffect(()=>{ 
       fetchcustomers();
       fetchcarriers();
-      fetCommunities();
+      // fetCommunities();
       fetchequipmentOptions();
       fetchCharges();
           // fetchOrder();
@@ -203,23 +203,23 @@ export default function AddOrder(){
     }
     const [shippingDetails, setShippingDetails] = useState([
       {
-        community: null,
+        commodity: null,
         equipment: null,
         weight: "",
-        pickup: [
+        locations: [
           {
             location: "",
             referenceNo: "",
             appointment: 0,
             date: "",
-          }
-        ],
-        delivery: [
+            type: "pickup",
+          },
           {
             location: "",
             referenceNo: "",
             appointment: 0,
             date: "",
+            type: "delivery",
           }
         ],
       },
@@ -234,7 +234,7 @@ export default function AddOrder(){
       setShippingDetails((prevDetails) => [
         ...prevDetails,
         {
-          community: null,
+          commodity: null,
           equipment: null,
           weight: "",
           weight_unit: "",
@@ -257,28 +257,19 @@ export default function AddOrder(){
         },
       ]);
     };
-    
-    const addPickupLocation = (blockIndex) => {
+    const addStop = (blockIndex, tag) => {
       const updatedDetails = [...shippingDetails];
-      updatedDetails[blockIndex].pickup.push({
+      updatedDetails[blockIndex].locations.push({
         location: "",
         referenceNo: "",
         appointment: null,
         date: "",
+        type: tag,
       });
       setShippingDetails(updatedDetails);
     };
     
-    const addDeliveryLocation = (blockIndex) => {
-      const updatedDetails = [...shippingDetails];
-      updatedDetails[blockIndex].delivery.push({
-        location: "",
-        referenceNo: "",
-        appointment: null,
-        date: "",
-      });
-      setShippingDetails(updatedDetails);
-    };
+    
     const removeItemShipItem = (index) => {
       const updatedItems = shippingDetails.filter((_, i) => i !== index);
       setShippingDetails(updatedItems);
@@ -507,19 +498,14 @@ export default function AddOrder(){
                 <div className="grid grid-cols-4 gap-4 pb-8 border-b border-gray-800 mb-8">
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Commodity</label>
-                    {/* <input
+                    <input
                       required
-                      name="community"
-                      onChange={(e) =>handleShippingInputChange(index, "community", e.target.value)}
+                      name="commodity"
+                      onChange={(e) =>handleShippingInputChange(index, "commodity", e.target.value)}
                       type={"text"}
-                      placeholder={"Enter Community"}
+                      placeholder={"Enter Commodity"}
                       className="input-sm"
-                    /> */}
-                    <Select
-                      classNamePrefix="react-select input"
-                      placeholder={"Enter Community"}
-                      onChange={(selected) =>handleShippingInputChange(index, "community", selected)}
-                      options={communities} />
+                    />
                   </div>
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Equipment</label>
@@ -554,15 +540,17 @@ export default function AddOrder(){
                   </div>
                 </div>
 
-                {detail?.pickup && detail?.pickup.map((pickup, pickupIndex)=>{
+                {detail?.locations && detail?.locations.map((l, locationIndex)=>{
                   return <>
-                    <h2 className='text-white mb-3 mt-6 text-normal heading'>Pickup #{pickupIndex+1}</h2>
+                  {l.type == 'pickup' ?
+                  <div>
+                    <h2 className='text-white mb-3 mt-6 text-normal heading'>Pickup #{locationIndex+1}</h2>
                     <div className="grid grid-cols-4 gap-4 ">
                       <div className="input-item">
                         <label className="mb-0 block text-sm text-gray-400">Pickup Location</label>
                         <input
                           required
-                          onChange={(e)=>handleNestedInputChange(index, 'pickup', pickupIndex, 'location', e.target.value)}
+                          onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', e.target.value)}
                           type={"text"} 
                           placeholder={"Enter Pickup location"} 
                           className="input-sm"
@@ -575,7 +563,7 @@ export default function AddOrder(){
                         </label>
                         <input
                           required
-                          onChange={(e)=>handleNestedInputChange(index, 'pickup', pickupIndex, 'referenceNo', e.target.value)}
+                          onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'referenceNo', e.target.value)}
                           type={"text"}
                           placeholder={"Pickup Reference No."}
                           className="input-sm"
@@ -588,7 +576,7 @@ export default function AddOrder(){
                         <Select
                           classNamePrefix="react-select input"
                           placeholder={"Choose Appointment"}
-                          onChange={(selected) => handleNestedInputChange(index, 'pickup', pickupIndex, 'appointment', selected && selected.value)}
+                          onChange={(selected) => handleNestedInputChange(index, 'locations', locationIndex, 'appointment', selected && selected.value)}
                           options={appointmentOptions}
                         />
                       </div>
@@ -598,26 +586,23 @@ export default function AddOrder(){
                         </label>
                         <input
                           required
-                          onChange={(e) => handleNestedInputChange(index, 'pickup', pickupIndex, 'date', e.target.value)}
+                          onChange={(e) => handleNestedInputChange(index, 'locations', locationIndex, 'date', e.target.value)}
                           type={"date"}
                           placeholder={"Enter Pickup Date"}
                           className="input-sm"
                         />
                       </div>
                     </div>
-                  </>
-                })}
-                <button onClick={()=>addPickupLocation(index)} className='text-main mb-4 mt-2  ' >+ Add Pickup Stop</button>
-                <div className='border-t border-gray-700 my-4'></div>
-                {detail?.delivery && detail?.delivery.map((delivery, deliveryIndex)=>{
-                  return <>
-                    <h2 className='text-white mb-3 mt-6 text-normal heading'>Delivery #{deliveryIndex+1}</h2>
+                  </div>
+                  :
+                  <div>
+                    <h2 className='text-white mb-3 mt-6 text-normal heading'>Delivery #{locationIndex+1}</h2>
                     <div className="grid grid-cols-4 gap-4 ">
                       <div className="input-item">
                         <label className="mb-0 block text-sm text-gray-400">Delivery Location</label>
                         <input
                           required
-                          onChange={(e)=>handleNestedInputChange(index, 'delivery', deliveryIndex, 'location', e.target.value)}
+                          onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', e.target.value)}
                           type={"text"} 
                           placeholder={"Enter Delivery location"} 
                           className="input-sm"
@@ -630,7 +615,7 @@ export default function AddOrder(){
                         </label>
                         <input
                           required
-                          onChange={(e)=>handleNestedInputChange(index, 'delivery', deliveryIndex, 'referenceNo', e.target.value)}
+                          onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'referenceNo', e.target.value)}
                           type={"text"}
                           placeholder={"Delivery Reference No."}
                           className="input-sm"
@@ -643,7 +628,7 @@ export default function AddOrder(){
                         <Select
                           classNamePrefix="react-select input"
                           placeholder={"Choose Appointment"}
-                          onChange={(selected) => handleNestedInputChange(index, 'delivery', deliveryIndex, 'appointment', selected && selected.value)}
+                          onChange={(selected) => handleNestedInputChange(index, 'locations', locationIndex, 'appointment', selected && selected.value)}
                           options={appointmentOptions}
                         />
                       </div>
@@ -653,16 +638,22 @@ export default function AddOrder(){
                         </label>
                         <input
                           required
-                          onChange={(e) => handleNestedInputChange(index, 'delivery', deliveryIndex, 'date', e.target.value)}
+                          onChange={(e) => handleNestedInputChange(index, 'locations', locationIndex, 'date', e.target.value)}
                           type={"date"}
                           placeholder={"Enter Delivery Date"}
                           className="input-sm"
                         />
                       </div>
                     </div>
+                  </div>
+                  }
                   </>
                 })}
-                <button onClick={()=>addDeliveryLocation(index)} className='text-main mt-2' >+ Add Delivery Stop</button>
+                <div className='border-t border-gray-700 my-4'></div>
+                <div className='flex'>
+                  <button onClick={()=>addStop(index, 'pickup')} className='text-main  mt-2 me-8  ' >+ Add Pickup Stop</button>
+                  <button onClick={()=>addStop(index, 'delivery')} className='text-main  mt-2  ' >+ Add Delivery Stop</button>
+                </div>
 
               </div>
               </>

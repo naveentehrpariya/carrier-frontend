@@ -30,7 +30,7 @@ export default function CustomerDetail() {
 
   return (
       <AuthLayout> 
-         {/* <div id="profile" class="w-full mb-12">
+         <div id="profile" class="w-full mb-12">
             <div class=" text-center lg:text-left">
                <div class="block lg:hidden rounded-full shadow-xl mx-auto -mt-16 h-48 w-48 bg-cover bg-center" ></div>
                <h1 class="text-3xl text-white font-bold pt-8 lg:pt-0  capitalize">{customer?.name}</h1>
@@ -46,7 +46,7 @@ export default function CustomerDetail() {
                <p class="pt-2 text-white flex items-center justify-center lg:justify-start">
                   Assigned To : {customer?.assigned_to?.name}({customer?.assigned_to?.phone})</p>
             </div>
-         </div> */}
+         </div>
          <div className='text-file'>
             <CustomerOrders type='customer' customer={id} />
          </div>

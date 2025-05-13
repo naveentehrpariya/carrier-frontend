@@ -10,6 +10,7 @@ import { MdOutlineLogout } from "react-icons/md";
 import { UserContext } from '../context/AuthProvider';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { TbListDetails } from "react-icons/tb";
+import { MdOutlineDocumentScanner } from "react-icons/md";
 
 export default function Sidebar() {
 
@@ -54,7 +55,7 @@ export default function Sidebar() {
             </Link>
           </li>
           <li>
-            <Link className={`${location.pathname === '/commodity-and-equipments' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/commodity-and-equipments'} ><FaUsers className='me-2' size={'1.4rem'} />Commodity & Equipments 
+            <Link className={`${location.pathname === '/commodity-and-equipments' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/commodity-and-equipments'} ><MdOutlineDocumentScanner className='me-2' size={'1.4rem'} />Commodity & Equipments 
             </Link>
           </li>
         </>

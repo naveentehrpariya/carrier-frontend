@@ -92,7 +92,7 @@ export default function ViewOrder() {
                      <div className='orderFill bg-dark1 p-4 rounded-xl border border-gray-700 mt-4'>
                         <ul className='grid grid-cols-6 gap-2'>
                            <li className=''><strong className='text-gray-400'>Shipment No.:</strong> <p>#{index+1}</p> </li>
-                           <li className='capitalize '><strong className='text-gray-400'>Commudity :</strong> <p>{s?.community?.value}</p> </li>
+                           <li className='capitalize '><strong className='text-gray-400'>Commudity :</strong> <p>{s?.commodity?.value}</p> </li>
                            <li className='capitalize '><strong className='text-gray-400'>Equipments :</strong> <p>{s?.equipment?.value}</p> </li>
                            <li className=''><strong className='text-gray-400'>Weight :</strong> <p>{s?.weight || 'N/A'} {s?.weight_unit || s?.weight_unit || ''}</p> </li>
                         </ul>
