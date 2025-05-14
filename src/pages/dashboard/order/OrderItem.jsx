@@ -41,14 +41,14 @@ export default function OrderItem({lists, fetchLists}) {
                   
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p>Customer : {c?.customer?.name || "--"}({c?.customer?.customerCode || "--"})</p>
-                        <p className='mt-1 whitespace-nowrap'>Customer Payment  : <Badge title={true} status={c?.customer_payment_status} text={`${c?.payment_status === 'paid' ? `via ${c?.payment_method}` :''}`} /></p>
+                        <p className='mt-1 whitespace-nowrap  flex items-center' >Customer Payment  : <Badge approved={c?.customer_payment_approved_by_admin} date={c?.customer_payment_date || ""} title={true} status={c?.customer_payment_status} text={`${c?.customer_payment_status === 'paid' ? `via ${c?.customer_payment_method}` :''} `} /></p>
                         <p className='mt-1 whitespace-nowrap'>Order Amount : <Currency amount={c?.total_amount} currency={c?.revenue_currency || 'cad'} /></p>
                         {c?.payment_status_date ? <p className='text-[13px] text-gray-400 mt-1'>Payment at <TimeFormat date={c?.payment_status_date || ""} /></p> : ''}
                      </td>
                   
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                         <p className='mt-1'>Carrier :  {c.carrier?.name || "--"}(MC{c?.carrier?.mc_code || "--"})</p>
-                        <p className='mt-1 whitespace-nowrap'>Carrier Payment : <Badge title={true} status={c?.carrier_payment_status} text={`${c?.carrier_payment_status === 'paid' ? `via ${c?.carrier_payment_method}` :''}`} /></p>
+                        <p className='mt-1 whitespace-nowrap  flex items-center' >Carrier Payment  : <Badge approved={c?.carrier_payment_approved_by_admin} date={c?.carrier_payment_date || ""} title={true} status={c?.carrier_payment_status} text={`${c?.carrier_payment_status === 'paid' ? `via ${c?.carrier_payment_method}` :''} `} /></p>
                         <p className='mt-1 whitespace-nowrap'>Sell Amount : <Currency amount={c?.carrier_amount} currency={c?.revenue_currency || 'cad'} /></p>
                         {c?.carrier_payment_date ? <p className='text-[13px] text-gray-400 mt-1'>Updated at <TimeFormat date={c?.carrier_payment_date || ""} /></p> : ''}
                      </td>

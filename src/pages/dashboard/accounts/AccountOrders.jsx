@@ -16,6 +16,7 @@ import { FaLock } from "react-icons/fa";
 import { UserContext } from '../../../context/AuthProvider';
 import LockOrder from '../order/LockOrder';
 import Nocontent from '../../common/NoContent';
+import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
 
 export default function AccountOrders() {
 
@@ -82,20 +83,40 @@ export default function AccountOrders() {
                      {lists && lists.map((c, index) => {
                         return <tr key={`carriew-${index}`}>
                            <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
-                              <Link to={`/view/order/${c._id}`} className=' text-main uppercase text-[14px] m-auto flex items-center  rounded-[20px]'  > {c.lock ? <FaLock color='red' className='me-1' /> : <FaLockOpen className='me-1' />} CMC{c.serial_no}</Link>
-                              <p className='my-1 whitespace-nowrap'>Order Status : <Badge title={true} status={c.order_status} /></p>
+                              <Link to={`/view/order/${c._id}`} className=' text-main uppercase text-[14px] m-auto flex items-center  rounded-[20px]'  > {c.lock ? <FaLock color='red' className='me-1' /> : <FaLockOpen className='me-1' />} CMC{c.serial_no} (<Badge title={true} status={c.order_status} />)</Link>
                               <p><TimeFormat date={c.createdAt || "--"} /> </p>
                            </td> 
-                        
+
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                              <p className=' text-white  uppercase text-[14px] m-auto d-table  rounded-[20px]'  >Order No. {c.customer_order_no}</p>
                               <p>{c?.customer.name} ({c?.customer.customerCode}) </p>
-                              <p className='mt-1 whitespace-nowrap'>Payment : <Badge title={true} status={c.customer_payment_status} text={`${c.payment_status === 'paid' ? `(${c.payment_method})` :''}`} /></p> 
+                              <p className='mt-1 whitespace-nowrap'>Customer Payment : 
+                                 <UpdatePaymentStatus order={c} classes={`!p-0 ${c?.lock ? 'disabled-order' : ''}`}
+                                 pstatus={c.customer_payment_status} 
+                                 pmethod={c.payment_method} 
+                                 pnotes={c.customer_payment_notes} 
+                                 text={<><Badge approved={c?.customer_payment_approved_by_admin} date={c?.customer_payment_date || ""} title={true} status={c?.customer_payment_status} text={`${c?.customer_payment_status === 'paid' ? `via ${c?.customer_payment_method}` :''} `} /></>} 
+                                 paymentType={1} id={c.id} type={1} 
+                                 fetchLists={fetchLists} />
+                              </p> 
                            </td>
                            
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                               <p className='mt-1'>{c.carrier?.name} (MC{c.carrier?.mc_code})</p>
-                              <p className='mt-1 whitespace-nowrap'>Payment : <Badge title={true} status={c.carrier_payment_status} text={`${c.carrier_payment_status === 'paid' ? `(${c.carrier_payment_method})` :'' }`} /> </p>
+                              <p className='mt-1  whitespace-nowrap'>Carrier Payment : 
+                               <UpdatePaymentStatus order={c}  classes={`!p-0 ${c?.lock ? 'disabled-order' : ''}`}
+                                 pstatus={c.carrier_payment_status} 
+                                 pmethod={c.carrier_payment_method} 
+                                 pnotes={c.carrier_payment_notes} 
+                                 text={<>
+                                    <Badge approved={c?.carrier_payment_approved_by_admin} 
+                                    date={c?.carrier_payment_date || ""} 
+                                    title={true} status={c?.carrier_payment_status} 
+                                    text={`${c?.carrier_payment_status === 'paid' ? `via ${c?.carrier_payment_method}` :''} `} />
+                                 </> } 
+                                 paymentType={2}  id={c.id} type={2} 
+                                 fetchLists={fetchLists} 
+                               />
+                               </p>
                            </td> 
                            
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
@@ -110,40 +131,45 @@ export default function AccountOrders() {
                            </td>
       
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                              <Dropdown>
-                                 {(user && user.is_admin === 1) || (user && user.role === 2) ?
-                                    <>
-                                       <li className={`list-none text-sm  ${c.lock ? "disabled" : ""}`}>
-                                          <UpdatePaymentStatus pstatus={c.carrier_payment_status} pmethod={c.carrier_payment_method} pnotes={c.carrier_payment_notes} text={<>{c.lock ? <FaLock size={12} className='me-1' /> : ""} Update Carrier Payment</>} paymentType={2} id={c.id} type={2} fetchLists={fetchLists} />
-                                       </li>
-                                       {user && user.is_admin === 1 ?
-                                          <>
-                                             <li className='list-none text-sm'>
-                                                <LockOrder order={c} fetchLists={fetchLists} />
-                                             </li>
-                                          </>
-                                       : ''}
-                                       <li className={`list-none text-sm  ${c.lock ? "disabled" : ""}`}>
-                                          <UpdatePaymentStatus pstatus={c.customer_payment_status} pmethod={c.payment_method} pnotes={c.customer_payment_notes} text={<>{c.lock ? <FaLock size={12} className='me-1' /> : ""} Update Customer Payment</>} paymentType={1} id={c.id} type={1} fetchLists={fetchLists} />
-                                       </li>
-                                       <li className={`list-none text-sm  ${c.lock ? "disabled" : ""}`}>
-                                          <UpdateOrderStatus text={<>{c.lock ? <FaLock size={12} className='me-1' /> : ""} Update Order Status </>} id={c.id} fetchLists={fetchLists} />
-                                       </li>
-                                       <li className='list-none text-sm'>
-                                          <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${c._id}`}>Download Customer Invoice</Link>
-                                       </li>
-                                       <li className='list-none text-sm' >
-                                          <OrderView btnclasses={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block`} order={c} fetchLists={fetchLists} />
-                                       </li>
-                                    </> 
-                                 : '' }
-                                 <li className={`list-none text-sm  ${c.lock ? "disabled" : ""}`}>
-                                    <AddNotes  text={<>{c.lock ? <FaLock size={12} className='me-1' /> : ''} Add Note </>} note={c.notes} id={c.id} type={2} fetchLists={fetchLists} />
-                                 </li>
-                                 <li className='list-none text-sm'>
-                                    <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${c._id}`}>Download Carrier Sheet</Link>
-                                 </li>
-                              </Dropdown>
+                               <div className='flex items-center'>
+                                 <Dropdown>
+                                    {(user && user.is_admin === 1) || (user && user.role === 2) ?
+                                       <>
+                                          <li className={`list-none text-sm  ${c.lock ? "disabled" : ""}`}>
+                                             <UpdatePaymentStatus order={c} pstatus={c.carrier_payment_status} pmethod={c.carrier_payment_method} pnotes={c.carrier_payment_notes} text={<>{c.lock ? <FaLock size={12} className='me-1' /> : ""} Update Carrier Payment</>} paymentType={2} id={c.id} type={2} fetchLists={fetchLists} />
+                                          </li>
+                                          {user && user.is_admin === 1 ?
+                                             <>
+                                                <li className='list-none text-sm'>
+                                                   <LockOrder order={c} fetchLists={fetchLists} />
+                                                </li>
+                                             </>
+                                          : ''}
+                                          <li className={`list-none text-sm  ${c.lock ? "disabled" : ""}`}>
+                                             <UpdatePaymentStatus order={c} pstatus={c.customer_payment_status} pmethod={c.payment_method} pnotes={c.customer_payment_notes} text={<>{c.lock ? <FaLock size={12} className='me-1' /> : ""} Update Customer Payment</>} paymentType={1} id={c.id} type={1} fetchLists={fetchLists} />
+                                          </li>
+                                          <li className={`list-none text-sm  ${c.lock ? "disabled" : ""}`}>
+                                             <UpdateOrderStatus text={<>{c.lock ? <FaLock size={12} className='me-1' /> : ""} Update Order Status </>} id={c.id} fetchLists={fetchLists} />
+                                          </li>
+                                          <li className='list-none text-sm'>
+                                             <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${c._id}`}>Download Customer Invoice</Link>
+                                          </li>
+                                          <li className='list-none text-sm' >
+                                             <OrderView btnclasses={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block`} order={c} fetchLists={fetchLists} />
+                                          </li>
+                                       </> 
+                                    : '' }
+                                    <li className={`list-none text-sm  ${c.lock ? "disabled" : ""}`}>
+                                       <AddNotes  text={<>{c.lock ? <FaLock size={12} className='me-1' /> : ''} Add Note </>} note={c.notes} id={c.id} type={2} fetchLists={fetchLists} />
+                                    </li>
+                                    <li className='list-none text-sm'>
+                                       <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${c._id}`}>Download Carrier Sheet</Link>
+                                    </li>
+                                 </Dropdown>
+                                 <div className='ms-3'>
+                                    <OrderView text={<><TbLayoutSidebarLeftCollapse size={20} /></>}  order={c} fetchLists={fetchLists} />
+                                 </div>
+                               </div>
                            </td> 
       
                         </tr>

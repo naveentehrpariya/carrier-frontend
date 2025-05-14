@@ -278,7 +278,9 @@ export default function AddOrder(){
       const updatedDetails = [...shippingDetails];
       updatedDetails[blockIndex][type][locIndex][field] = value;
       setShippingDetails(updatedDetails);
+      
     };
+    console.log("updatedDetails", shippingDetails);
 
     // Customer revenue items
     const [revenueItems, setRevenueItems] = useState([
@@ -339,11 +341,9 @@ export default function AddOrder(){
 
     const [data, setData] = useState({
       "company_name" : "Cross Miles Carrier",
-      // "customer_order_no": null,
       "customer" :null,
       'customer_payment_method' : '',
       "carrier" : null,
-      // "carrier_amount" : null,
       "payment_status" : "pending",
       "payment_method" : "none",
       "carrier_payment_status" : "pending",
@@ -351,7 +351,6 @@ export default function AddOrder(){
       "revenue_currency" : 'cad',
       "order_status" : "added",
       "totalDistance": null,
-      // "total_amount": null
     });
 
     const chooseCustomer = (e) => { 
@@ -542,7 +541,7 @@ export default function AddOrder(){
 
                 {detail?.locations && detail?.locations.map((l, locationIndex)=>{
                   return <>
-                  {l.type == 'pickup' ?
+                  {l.type === 'pickup' ?
                   <div>
                     <h2 className='text-white mb-3 mt-6 text-normal heading'>Pickup #{locationIndex+1}</h2>
                     <div className="grid grid-cols-4 gap-4 ">

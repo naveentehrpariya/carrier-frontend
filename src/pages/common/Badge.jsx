@@ -1,6 +1,8 @@
 import React from 'react'
+import { FaCircleCheck } from "react-icons/fa6";
+import { CiWarning } from "react-icons/ci";
 
-export default function Badge({status,classes, text, title, title2}){
+export default function Badge({status,classes, text, title, title2, approved, date}){
 
    function color(status) {
       if (status === "pending") {
@@ -85,7 +87,11 @@ export default function Badge({status,classes, text, title, title2}){
    }
    
   return (
-    <button disabled className={`${classes}  uppercase  rounded-[30px]
-         text-center ${color(status)} ${title ? 'font-bold text-[13px] px-0 ms-1' : 'min-w-[60px] text-white text-[10px] px-2 py-[2px]'} `}>{status} {text}</button>
+    <div className={`${classes} inline-block uppercase rounded-[30px] flex items-center text-center hover:!bg-none 
+      ${color(status)} ${title ? 'font-bold text-[13px] px-0 ms-1' : 'min-w-[60px] text-white text-[10px] px-2 py-[2px]'} `}>
+         {status} 
+         {text} 
+         {date ? <>{approved ? <FaCircleCheck className='ms-1' color='green' size={12} /> : <CiWarning className='ms-1' color='yellow' size={15} />}</>: ''}
+      </div>
   )
 }

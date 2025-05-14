@@ -9,11 +9,13 @@ import Loading from './../../common/Loading';
 import Badge from '../../common/Badge';
 import { FaLock } from "react-icons/fa";
 import { FaLockOpen } from "react-icons/fa6";
+import { FaTruckMoving } from "react-icons/fa6";
 
 export default function ViewOrder() {
    
-   const [loading, setLoading] = useState(true);
    const [order, setOrder] = useState([]);
+   const [paymentLogs, setPaymentLogs] = useState([]);
+   const [loading, setLoading] = useState(true);
    const {Errors} = useContext(UserContext);
    const { id } = useParams();
    
@@ -24,6 +26,7 @@ export default function ViewOrder() {
          setLoading(false);
          if (res.data.status) {
             setOrder(res.data.order);
+            setPaymentLogs(res.data.paymentLogs);
          } else {
             setOrder(null);
          }
@@ -43,7 +46,7 @@ export default function ViewOrder() {
          <h1 className='text-2xl font-bold text-white mb-6 mt-4'> Order CMC{order?.serial_no}</h1>
          {/* <button className='bg-main px-4 py-2 rounded-xl'>Edit Order</button> */}
          <Link to={`/order/detail/${order?._id}`} className='bg-main px-4 py-2 rounded-xl'>Download PDF</Link>
-      </div>
+      </div> 
       {loading ? <Loading /> : 
          <div className='boltables' >
             <div  className='text-white m-auto'>
@@ -63,7 +66,7 @@ export default function ViewOrder() {
                         <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Name:</strong>{order?.customer?.name} ({order?.customer?.customerCode}) </p> </li>
                         <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Phone :</strong>{order?.customer?.phone } {order?.customer?.phone ? `,${order?.customer?.secondary_phone}` :'' } </p> </li>
                         <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Email :</strong> {order?.customer?.email } {order?.customer?.email ? `,${order?.customer?.secondary_email}` :'' }</p> </li>
-                        <li className='flex items-center'><p className=''><strong className=' !text-gray-400'>Payment Status:</strong> <Badge title={true} status={order?.customer_payment_status} text={`${order?.payment_status === 'paid' ? `via ${order?.payment_method}` :''}`} /></p> </li>
+                        <li className='flex items-center'><p className=''><strong className=' !text-gray-400'>Payment Status:</strong> <Badge approved={order?.customer_payment_approved_by_admin} date={order?.customer_payment_date || ""} title={true} status={order?.customer_payment_status} text={`${order?.customer_payment_status === 'paid' ? `via ${order?.customer_payment_method}` :''} `} /></p> </li>
                      </ul>
                   </div>
                   <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
@@ -72,7 +75,7 @@ export default function ViewOrder() {
                         <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Carrier Name:</strong> <p>{order?.carrier?.name} (MC{order?.carrier?.mc_code})</p> </li>
                         <li className=' flex mb-2'> <p> <strong className=' me-2 !text-gray-400'>Carrier Phone :</strong> {order?.carrier?.phone}, {order?.carrier?.secondary_phone}</p> </li>
                         <li className=' flex mb-2'> <p className='break-all'><strong className=' me-2 !text-gray-400 '>Carrier Email :</strong> {order?.carrier?.email}, {order?.carrier?.secondary_email}</p> </li>
-                        <li className=' flex items-center'><strong className=' !text-gray-400'>Payment Status:</strong> <p className='ps-2'><Badge title={true} status={order?.carrier_payment_status} text={`${order?.carrier_payment_status === 'paid' ? `via ${order?.carrier_payment_method}` :''}`} /></p> </li>
+                        <li className=' flex items-center'><strong className=' !text-gray-400'>Payment Status:</strong> <p className='ps-2'><Badge approved={order?.carrier_payment_approved_by_admin} date={order?.carrier_payment_date || ""} title={true} status={order?.carrier_payment_status} text={`${order?.carrier_payment_status === 'paid' ? `via ${order?.carrier_payment_method}` :''} `} /></p> </li>
                     </ul>
                   </div>
                   <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
@@ -99,35 +102,38 @@ export default function ViewOrder() {
 
                          <div className='block'>
                            <div className='mb-6 mt-2'>
-                              <p className='font-bold text-gray-400 pt-4 mb-2 text-xl'>Shipment Pickup Details</p>
-                              {s.pickup && s.pickup.length && s.pickup.map((p, i) => {
+                              {s.locations && s.locations.length && s.locations.map((p, i) => {
                                  return <>
-                                    <ul className='grid grid-cols-4 gap-4'>
-                                       <li className='flex pb-[7px]'> <p ><strong className='pe-2 text-gray-300' >Pickup Location :</strong> hjafhjajlf asjfbasjhf asjfbasjhfb fsajhfbasjhf{p?.location}</p> </li>
-                                       <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Reference No. :</strong> <p className='ps-2'>{p?.referenceNo}</p> </li>
-                                       <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Appointement : </strong> <p className='ps-2'>{p?.appointment ? "Yes" : "No"}</p> </li>
-                                       <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Date :</strong> 
-                                       <p className='ps-2' ><TimeFormat time={false} date={p?.date} /></p> </li>
-                                    </ul>
-                                 </>
+                                 <div className='flex mb-[45px] items-center'>
+                                    <div className='relative me-4 w-[70px] h-[70px]  min-w-[70px] min-h-[70px]  flex justify-center items-center bg-dark1 border border-gray-700 rounded-full'>
+                                       <FaTruckMoving size={25} />
+                                       {i > 0 ? <div className='absolute left-[20px] top-[-45px]'>
+                                          <p className='text-gray-400 m-0 p-0 ms-3'>|</p>
+                                          <p className='text-gray-400 m-0 p-0 ms-3'>|</p>
+                                       </div> : ''}
+                                    </div>
+                                    {p.type === 'pickup' ? 
+                                       <ul className='grid grid-cols-4 gap-4'>
+                                          <li className='flex pb-[7px]'> <p ><strong className='pe-2 text-gray-300' >Pickup Location :</strong>  {p?.location}</p> </li>
+                                          <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Reference No. :</strong> <p className='ps-2'>{p?.referenceNo}</p> </li>
+                                          <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Appointement : </strong> <p className='ps-2'>{p?.appointment ? "Yes" : "No"}</p> </li>
+                                          <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Date :</strong> 
+                                          <p className='ps-2' ><TimeFormat time={false} date={p?.date} /></p> </li>
+                                       </ul>
+                                       :
+                                       <ul className='grid grid-cols-4 gap-4'>
+                                          <li className='flex pb-[7px]'> <p ><strong className='pe-2 text-gray-300' >Delivery Location :</strong> {p?.location}</p> </li>
+                                          <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Reference No. :</strong> <p className='ps-2'>{p?.referenceNo}</p> </li>
+                                          <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Appointement : </strong> <p className='ps-2'>{p?.appointment ? "Yes" : "No"}</p> </li>
+                                          <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Date :</strong> 
+                                          <p className='ps-2' ><TimeFormat time={false} date={p?.date} /></p> </li>
+                                       </ul>
+                                    }
+                                 </div>
+                                 
+                                </>
                               })}
                            </div>
-
-                           <div className='mb-6 mt-2'>
-                              <p className='font-bold text-gray-400 pt-4 mb-2 text-xl'>Shipment Delivery Details</p>
-                              {s.delivery && s.delivery.length && s.delivery.map((p, i) => {
-                                 return <>
-                                    <ul className='grid grid-cols-4 gap-4'>
-                                       <li className='flex pb-[7px]'> <p ><strong className='pe-2 text-gray-300' >Delivery Location :</strong> hjafhjajlf asjfbasjhf asjfbasjhfb fsajhfbasjhf{p?.location}</p> </li>
-                                       <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Reference No. :</strong> <p className='ps-2'>{p?.referenceNo}</p> </li>
-                                       <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Appointement : </strong> <p className='ps-2'>{p?.appointment ? "Yes" : "No"}</p> </li>
-                                       <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Date :</strong> 
-                                       <p className='ps-2' ><TimeFormat time={false} date={p?.date} /></p> </li>
-                                    </ul>
-                                 </>
-                              })}
-                           </div>
-                           
                         </div> 
                      </div>
                   </>

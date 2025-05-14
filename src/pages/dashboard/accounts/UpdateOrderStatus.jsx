@@ -51,9 +51,9 @@ export default function UpdateOrderStatus({id, fetchLists, text}) {
          <h2 className='text-white font-bold'>Update Order Status</h2>
          <div className='grid  gap-4'>
             <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Payment Status</label>
-               <select  onChange={(e)=>setStatus(e.target.value)} name='payment_status' className="input-sm" >
-               <option selected disabled className='text-black'>Choose Payment Status</option>
+               <label className="mt-4 mb-0 block text-sm text-gray-400">Order Status</label>
+               <select  onChange={(e)=>setStatus(e.target.value)} name='payment_status' className="input-sm focus:outline-none capitalize" >
+               <option selected disabled className='text-black'>Choose Order Status</option>
                   {statuses && statuses.map((c, i)=>{
                      return <option value={c.name} className='text-black capitalize'>{c.name}</option>
                   })}
@@ -62,7 +62,7 @@ export default function UpdateOrderStatus({id, fetchLists, text}) {
             
          </div>
          <div className='flex justify-center items-center'>
-            <button  onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
+            <button  onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Updating..." : "Update"}</button>
          </div>
       </Popup>
     </>

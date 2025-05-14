@@ -98,3 +98,8 @@ body{background:var(--dark);font-family:'productsans';}
     display: block; transition: 0.5s; z-index: 9999999;
   }
 }
+.disabled-order {
+  opacity: 0.8;
+  pointer-events: none;
+  cursor: not-allowed;
+}

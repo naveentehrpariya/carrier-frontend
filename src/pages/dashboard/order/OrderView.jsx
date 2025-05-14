@@ -5,18 +5,20 @@ import { UserContext } from '../../../context/AuthProvider';
 import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { BsFiletypeDoc } from "react-icons/bs";
+import TimeFormat from '../../common/TimeFormat';
 
-export default function OrderView({order, fetchLists, btnclasses}){ 
+export default function OrderView({order, text, fetchLists, btnclasses}){ 
 
    const [open, setOpen] = useState(false);
-   const {Errors} = useContext(UserContext);
+   const {Errors, user} = useContext(UserContext);
    const [files, setFiles] = useState([]);
+   const [paymentLogs, setPaymentLogs] = useState([]);
    const fetchFiless = () => { 
       const resp = Api.get(`/order_docs/${order._id}`); 
       resp.then((res)=>{
          if(res.data.status){
-            console.log("res.data.files",res.data.files);
             setFiles(res.data.files);
+            setPaymentLogs(res.data.paymentLogs);
          } else {
             setFiles([]);
          }
@@ -152,7 +154,7 @@ export default function OrderView({order, fetchLists, btnclasses}){
    }
 
    return <div className='orderSider'>
-         <button onClick={(e)=>setOpen(true)} className={btnclasses}>View All Notes</button>
+         <button onClick={(e)=>setOpen(true)} className={btnclasses}>{text ? text : "View All Notes"}</button>
          <div className={`sider ${open ? 'open visible' : 'close hidden'} w-full h-screen overflow-auto fixed top-0 right-0 bg-dark1 p-8 z-[9999] pt-[130px] max-w-[500px]`}>
             
             <div className='flex justify-between items-center'>
@@ -160,18 +162,23 @@ export default function OrderView({order, fetchLists, btnclasses}){
                <button className='text-3xl text-white mb-3' onClick={(e)=>setOpen(false)} >&times;</button>
             </div>
             <div className="flex mt-6 justify-between items-center">
-               <p className=' text-gray-500 text-xl'>Notes</p>
+               <p className=' text-gray-100 text-xl'>Notes</p>
                <AddNotes text={"Edit Note"} classes="text-main" note={order.notes} id={order.id} fetchLists={fetchLists} />
             </div>
             <p className='my-2 text-white mb-4'>{order.notes}</p>
-            {order?.customer_payment_notes ?<p className='text-white my-2 mt-4'><p className='!text-gray-400'>Customer Payment Notes :</p> {order?.customer_payment_notes}</p> :''}
-            {order?.carrier_payment_notes ? <p className='text-white my-2 mt-4'> <p className='!text-gray-400'>Carrier Payment Notes :</p> {order?.carrier_payment_notes}</p> :'' }
+
+            {user?.role === 2 || user?.is_admin === 1 ?
+               <>
+                  {order?.customer_payment_notes ?<p className='text-white my-2 mt-4'><p className='!text-gray-400'>Customer Payment Notes :</p> {order?.customer_payment_notes}</p> :''}
+                  {order?.carrier_payment_notes ? <p className='text-white my-2 mt-4'> <p className='!text-gray-400'>Carrier Payment Notes :</p> {order?.carrier_payment_notes}</p> :'' }
+               </> 
+               : ""
+            }
 
             <div className='flex justify-between mt-6 border-t border-gray-700 pt-6 pb-6'>
-               <p className=' text-gray-500 text-xl' >Documents</p>
+               <p className=' text-gray-100 text-xl' >Documents</p>
                <UPLOAD update={fetchFiless} classes="text-main" />
             </div>
-
             <div className='grid grid-cols-2 gap-2'>
                {files && files.map((f, i)=>{
                   const size = f.size / 1024 / 1024;
@@ -182,6 +189,30 @@ export default function OrderView({order, fetchLists, btnclasses}){
                   </a>
                })}
             </div>
+
+            {user?.role === 2 || user?.is_admin === 1 ?
+               <>
+                  <h2 className='text-gray-100 text-xl mt-4 pb-2 border-t border-gray-700 pt-6'>Payment Logs</h2>
+                  {paymentLogs && paymentLogs.map((f, i)=>{
+                     return <div key={i} className='border-b !border-gray-800 py-3 mb-3'>
+                     
+                        {f.approval ?
+                        <>
+                        <p className='text-gray-500 text-[17px]'>{f.type} Payment status {f.status} is approved via payment method {f.method}.</p>
+                        <p className='text-gray-500 mt-2 text-sm'>Approved By : {f.updated_by?.name}{f.updated_by?.phone ? `(${f.updated_by?.phone})` : ''}</p>
+                        <p className='text-gray-300 mt-2 text-sm'>Date : <TimeFormat date={f.createdAt || "--"} /></p>
+                        </>
+                        :
+                        <>
+                        <p className='text-gray-500 text-[17px]'>{f.type} Payment status updated to {f.status} via payment method {f.method}.</p>
+                        <p className='text-gray-500 mt-2 text-sm'>Update By : {f.updated_by?.name}{f.updated_by?.phone ? `(${f.updated_by?.phone})` : ''}</p>
+                        <p className='text-gray-300 mt-2 text-sm'>Date : <TimeFormat date={f.createdAt || "--"} /></p>
+                        </> }
+                     </div>
+                  })}
+               </>
+            :''
+            }   
 
          </div> 
    </div>

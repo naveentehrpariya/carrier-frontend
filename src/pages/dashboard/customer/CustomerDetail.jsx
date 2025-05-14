@@ -48,7 +48,7 @@ export default function CustomerDetail() {
             </div>
          </div>
          <div className='text-file'>
-            <CustomerOrders type='customer' customer={id} />
+            <CustomerOrders type='customer' customerID={id} customer={customer} />
          </div>
       </AuthLayout>
   )

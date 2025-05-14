@@ -7,8 +7,9 @@ import OrderItem from '../order/OrderItem';
 import Nocontent from '../../common/NoContent';
 import Currency from '../../common/Currency';
 import Badge from '../../common/Badge';
+import CustomerPaymentExel from './CustomerPaymentExel';
 
-export default function CustomerOrders({isRecent, customer, carrier, sortby, title}) {
+export default function CustomerOrders({isRecent, customerID, customer, carrier, sortby, title}) {
 
    const [loading, setLoading] = useState(true);
    const [lists, setLists] = useState([]);
@@ -16,7 +17,7 @@ export default function CustomerOrders({isRecent, customer, carrier, sortby, tit
 
    const fetchLists = (value) => {
       setLoading(true);
-      const resp = Api.get(`/order/listings?${value ?`search=${value}` : ''}${customer ?`&customer_id=${customer}` : ''} ${sortby ?`&sortby=${sortby}` : ''}`);
+      const resp = Api.get(`/order/listings?${value ?`search=${value}` : ''}${customerID ?`&customer_id=${customerID}` : ''} ${sortby ?`&sortby=${sortby}` : ''}`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
@@ -39,7 +40,7 @@ export default function CustomerOrders({isRecent, customer, carrier, sortby, tit
    const [loadingPayments, setLoadingPayments] = useState(true);
    const fetchPayments = () => {
       setLoading(true);
-      const resp = Api.get(`/payments/listings?${customer ?`&customer_id=${customer}` : ''}${carrier ?`&carrier_id=${carrier}` : ''}`);
+      const resp = Api.get(`/payments/listings?${customerID ?`&customer_id=${customerID}` : ''}${carrier ?`&carrier_id=${carrier}` : ''}`);
       resp.then((res) => {
          setLoadingPayments(false);
          if (res.data.status === true) {
@@ -94,44 +95,47 @@ export default function CustomerOrders({isRecent, customer, carrier, sortby, tit
             }
 
             {/* Payments status */}
-            <div className='md:flex justify-between items-center mt-12 '>
+            <div className='flex justify-between items-center mt-12 '>
                <h2 className='text-white text-2xl mb-4 md:mb-0'>Customer Order Payment</h2>
+               <CustomerPaymentExel  customer={customer} data={lists} />
             </div>
-            <div className='bg-white mt-4 !rounded-xl overflow-x-auto'>
-               <table className='w-full '>
-                  <thead>
-                     <tr>
-                        <th className='p-2 border border-gray-200 text-black'>#</th>
-                        <th className='p-2 border border-gray-200 text-black text-start'>Order No.</th>
-                        <th className='p-2 border border-gray-200 text-black text-start'>Amount</th>
-                        <th className='p-2 border border-gray-200 text-black text-start'>Status</th>
-                        <th className='p-2 border border-gray-200 text-black text-start'>Method</th>
-                        <th className='p-2 border border-gray-200 text-black text-start'>Note</th>
-                     </tr>
-                  </thead>
                      {loadingPayments ? <Loading />
                         :
                         <>
                         {lists && lists.length > 0 ? 
-                           lists.map((item, index) => {
-                              return (
-                                 <tr key={index}>
-                                    <td className='p-2 border border-gray-200 text-black text-center'>{index + 1}</td>
-                                    <td className='p-2 border border-gray-200 text-black text-start'>CMC{item.serial_no}</td>
-                                    <td className='p-2 border border-gray-200 text-black text-start'><Currency amount={item?.total_amount} currency={item?.revenue_currency || 'cad'} /></td>
-                                    <td className='p-2 border border-gray-200 text-black text-start '> <Badge title={true} status={item?.customer_payment_status} text={``} /></td>
-                                    <td className='p-2 border border-gray-200 text-black text-start'>{item.customer_payment_method || 'N/A'}</td>
-                                    <td className='p-2 border border-gray-200 text-black text-start'>{item.customer_payment_date || 'N/A'}</td>
-                                 </tr>
-                              )
-                           })
+                        <>
+                        <div className='bg-dark text-white border border-gray-700 mt-4 !rounded-xl overflow-x-auto'>
+                           <table className='w-full '>
+                           <thead>
+                              <tr>
+                                 <th className='p-2 border border-gray-700 '>#</th>
+                                 <th className='p-2 border border-gray-700  text-start'>Order No.</th>
+                                 <th className='p-2 border border-gray-700  text-start'>Amount</th>
+                                 <th className='p-2 border border-gray-700  text-start'>Status</th>
+                                 <th className='p-2 border border-gray-700  text-start'>Method</th>
+                                 <th className='p-2 border border-gray-700  text-start'>Note</th>
+                              </tr>
+                           </thead>
+                              {lists.map((item, index) => {
+                                 return (
+                                    <tr key={index}>
+                                       <td className='p-2 border border-gray-700 !text-gray-400  text-center'>{index + 1}</td>
+                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'>CMC{item.serial_no}</td>
+                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'><Currency amount={item?.total_amount} currency={item?.revenue_currency || 'cad'} /></td>
+                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start '> <Badge title={true} status={item?.customer_payment_status} text={``} /></td>
+                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'>{item.customer_payment_method || 'N/A'}</td>
+                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'>{item.customer_payment_date || 'N/A'}</td>
+                                    </tr>
+                                 )
+                              })}
+                           </table>
+                        </div>
+                           </>
                            :
                            <Nocontent text="No payments found" />
                         }
                         </>
                      }
-               </table>
-            </div>
 
          </>
    )
