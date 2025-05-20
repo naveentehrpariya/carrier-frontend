@@ -156,17 +156,17 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
    return <div className='orderSider'>
          <button onClick={(e)=>setOpen(true)} className={btnclasses}>{text ? text : "View All Notes"}</button>
          <div className={`sider ${open ? 'open visible' : 'close hidden'} w-full h-screen overflow-auto fixed top-0 right-0 bg-dark1 p-8 z-[9999] pt-[130px] max-w-[500px]`}>
-            
             <div className='flex justify-between items-center'>
                <h2 className='text-white text-2xl'>Details</h2>
                <button className='text-3xl text-white mb-3' onClick={(e)=>setOpen(false)} >&times;</button>
             </div>
+
             <div className="flex mt-6 justify-between items-center">
                <p className=' text-gray-100 text-xl'>Notes</p>
                <AddNotes text={"Edit Note"} classes="text-main" note={order.notes} id={order.id} fetchLists={fetchLists} />
             </div>
-            <p className='my-2 text-white mb-4'>{order.notes}</p>
 
+            <p className='my-2 text-white mb-4'>{order.notes}</p>
             {user?.role === 2 || user?.is_admin === 1 ?
                <>
                   {order?.customer_payment_notes ?<p className='text-white my-2 mt-4'><p className='!text-gray-400'>Customer Payment Notes :</p> {order?.customer_payment_notes}</p> :''}
@@ -174,7 +174,6 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                </> 
                : ""
             }
-
             <div className='flex justify-between mt-6 border-t border-gray-700 pt-6 pb-6'>
                <p className=' text-gray-100 text-xl' >Documents</p>
                <UPLOAD update={fetchFiless} classes="text-main" />

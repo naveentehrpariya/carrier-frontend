@@ -8,11 +8,10 @@ import Badge from '../../common/Badge';
 import TimeFormat from '../../common/TimeFormat';
 import Currency from '../../common/Currency';
 import { jsPDF } from "jspdf";
-import html2canvas from "html2canvas";
 import Loading from '../../common/Loading';
-import html2pdf from 'html2pdf.js';
 
 export default function OrderPDF() {
+   
    
    const [loading, setLoading] = useState(true);
    const [order, setOrder] = useState([]);
@@ -22,13 +21,15 @@ export default function OrderPDF() {
    const pdfRef = useRef();
    const input = pdfRef.current;
    
+   console.log('order',order)
+
+  
+   // current date
+   const todaydate = new Date(); 
+
    const downloadPDF = () => {
       setDownloadingPdf(true);
       window.scrollTo(0, 0);
-      // const buttons = document.querySelectorAll('#revanue');
-      // buttons.forEach(button => {
-      //    button.style.display = 'none';
-      // });
       const element = pdfRef.current;
       if (!element) {
          console.error("PDF content element not found.");
@@ -42,11 +43,14 @@ export default function OrderPDF() {
       });
       doc.html(element, {
          callback: function (doc) {
-            doc.save(`Order-${order?.customer_order_no || 'details'}.pdf`);
-            // Restore hidden elements
-            // buttons.forEach(button => {
-            //    button.style.display = 'block';
-            // });
+            const totalPages = doc.internal.getNumberOfPages();
+            const watermarkImg = "/transparent-logo.png";
+            for (let i = 1; i <= totalPages; i++) {
+               doc.setPage(i);
+               doc.addImage(watermarkImg, "PNG", 50, 60, 100, 38);
+               doc.addImage(watermarkImg, "PNG", 50, 180, 100, 38);
+            }
+            doc.save(`CMC${order?.serial_no || ''}-order-carrier-sheet.pdf`);
             setDownloadingPdf(false);
          },
          x: 5,
@@ -89,121 +93,148 @@ export default function OrderPDF() {
          <h1 className='text-xl font-bold text-white mb-6 mt-4'>Customer Order #{order?.customer_order_no}</h1>
          <button className='bg-main px-4 py-2 rounded-xl text-normal test' onClick={downloadPDF} >{downloadingPdf ? "Downloading..." : "Download PDF"}</button>
       </div>
+
+      
       {loading ? <Loading /> : 
-         <div  className='boltable bg-white rounded-xl p-6' >
-            <div style={{ width: '794px', boxSizing: 'border-box' }} ref={pdfRef} className='w-[794px] m-auto text-gray-700 text-sm bg-white p-6'>
-               <div className='bol-header flex justify-between items-center mb-6'>
-                  <div width="50%">
-                     <h2 className='font-bold text-3xl text-black capitalize'>Cross Miles Carrier</h2>
-                     <p className='flex mb-2'><p className='capitalize' >{company?.address}</p></p>
-                  </div>
-                  <div className='d-flex justify-center'>
-                     <div className='flex justify-center w-full'>
-                     <Logotext black={true} />
-                     </div>
-                     <h3 className='uppercase mt-1 font-bold text-lg text-center text-black'>Rate confirmation</h3>
-                  </div>
+         <div className='bg-white p-[30px]'>
+            <div ref={pdfRef} className="relative max-w-[794px] mx-auto p-[20px] bg-white text-sm text-black shadow-md font-sans">
+               <div className='relative z-1'> 
+               <div className="flex justify-between items-start border-b pb-4 mb-4">
+               <div>
+                  <Logotext black={true} />
+                  <div className="font-bold text-lg">Cross Miles Carrier</div>
+                  <div>{company?.address}</div>
+               </div>
+               <div className="text-right pt-6 pe-6 ">
+                  <div className="text-gray-700 text-lg text-end">PRO # CMC{order?.serial_no}</div>
+                  <div className="font-semibold text-lg text-end">Rate Confirmation</div>
+                  <div className="text-normal text-end"><TimeFormat date={todaydate} /> </div>
+               </div>
                </div>
 
-               <div className='p-3 border border-gray-300 mt-8'>
-                  <ul className='grid grid-cols-3 gap-2'>
-                     <li className=''><strong className=''>Order # :</strong> <p>CMC{order?.serial_no}</p> </li>
-                     <li className=''><strong className=''>Total Distance :</strong> <p>{order.totalDistance || '0'} Miles</p> </li>
-                     <li className=''><strong className=''>Order Created Date :</strong> <p><TimeFormat date={order?.createdAt} /></p> </li>
-                     {/* <li className=''><strong>Order Status :</strong> <p><Badge title={true} status={order?.order_status} /></p> </li> */}
-                  </ul>
+               <div className="grid grid-cols-2 gap-8 border-b pb-4 mb-4">
+               <div>
+                  <h3 className="text-blue-700 font-semibold">FROM</h3>
+                  <p>{company?.name}</p>
+                  <p className='block'>{company?.email}</p>
+                  <p>{company?.phone}</p>
+                  <p>{company?.address}</p>
                </div>
 
-               <div className='orderFill pt-4 flex justify-between mt-6'>
-                  <div className='customerDetails border border-gray-300 border-r-0 p-4 w-full'>
-                     <p className='font-bold text-lg text-black mb-2'>Customer Details</p>
-                     <ul className=''>
-                        <li className='flex mb-2'><p><strong className='text-normal test me-2 !text-gray-700'>Customer Name:</strong> {company?.name}</p> </li>
-                        <li className='flex mb-2'><p><strong className='text-normal test me-2 !text-gray-700'>Customer Phone :</strong>  {company?.phone}</p> </li>
-                        <li className='flex mb-2'><p><strong className='text-normal test me-2 !text-gray-700'>Customer Email :</strong>  {company?.email}</p> </li>
-                        <li className='flex mb-2'><p className='capitalize' ><strong className='text-normal test me-2 !text-gray-700'>Address :</strong>{company?.address}</p></li>
-                     </ul>
-                  </div>
-                  <div className='customerDetails border border-gray-300 p-4 w-full'>
-                     <p className='font-bold text-lg text-black mb-2'>Carrier Details</p>
-                     <ul className=''>
-                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Carrier Name:</strong> <p>{order?.carrier?.name}(MC{order?.carrier?.mc_code})</p> </li>
-                        <li className=' flex mb-2'><strong className='text-normal test me-2 !text-gray-700'>Carrier Phone :</strong> <p>{order?.carrier?.phone}{order?.carrier?.secondary_phone ? `, ${order?.carrier?.secondary_phone}` :''}</p> </li>
-                        <li className=' flex mb-2'> <p> <strong className='text-normal test me-2 !text-gray-700'>Carrier Email :</strong> {order?.carrier?.email}{order?.carrier?.secondary_email ? `, ${order?.carrier?.secondary_email}` :''}</p> </li>
-                        <li className='flex mb-2'><p className='capitalize' ><strong className='text-normal test me-2 !text-gray-700'>Address :</strong>{order?.carrier?.location}</p></li>
-                     </ul>
-                  </div>
+               <div>
+                  <h3 className="text-blue-700 font-semibold">CARRIER</h3>
+                  <p className='uppercase'>{order?.carrier?.name}(MC{order?.carrier?.mc_code})</p>
+                  <p>{order?.carrier?.phone}{order?.carrier?.secondary_phone ? `, ${order?.carrier?.secondary_phone}` :''}</p>
+                  <p>{order?.carrier?.email.trim()}</p>
+                  <p>{order?.carrier?.location}</p>
+               </div>
                </div>
 
-             
-               {order && order.shipping_details && order.shipping_details.map((s, index) => {
-                  return <>
-                     <div className='orderFill p-3 border border-gray-300 mt-8 pt-4 '>
-                        <ul className='flex items-center justify-between pe-6 !mb-4'>
-                           <li className='flex items-center'><strong>Shipment No : </strong> <p>#{index+1}</p> </li>
-                           <li className='flex items-center capitalize'><strong>Commudity : </strong> <p>{s?.commodity?.value}</p> </li>
-                           <li className='flex items-center capitalize'><strong>Equipments : </strong> <p>{s?.equipment?.value}</p> </li>
-                           <li className='flex items-center'><strong>Weight : </strong> <p>{s?.weight || 'N/A'} {s?.weight_unit ||''}</p> </li>
-                        </ul>
-
-                        {s?.locations && s?.locations.length > 0 && s?.locations.map((p, pindex) => {
-                           return <>
-                              {p.type === 'pickup' ? 
-                              <ul className='flex flex-wrap mt-3'>
-                                 <li className='mr-[30px] pt-1 flex items-center'><strong className='text-black text-normal test'>Pickup Reference No : </strong> <p className='ps-1'>{p?.referenceNo}</p> </li>
-                                 <li className='mr-[30px] pt-1 flex items-center'><strong className='text-black text-normal test'>Pickup Appointement : </strong> <p className='ps-1'>{p?.appointment ? "Yes" : "No"}</p> </li>
-                                 <li className='mr-[30px] pt-1 flex items-center'>
-                                    <strong className='text-black text-normal test'>Pickup Date : </strong> 
-                                    <p className='ps-1'><TimeFormat time={false} date={p?.date} /></p> 
-                                 </li>
-                                 <li className='w-full pt-1 pb-[7px] flex items-center'>
-                                    <strong className='text-black text-normal test'>Pickup Location : </strong> 
-                                    <p className='ps-1'>{p?.location}</p> 
-                                 </li>
-                              </ul> 
-                              :
-                              <ul className='flex flex-wrap mt-3'>
-                                 <li className='mr-[30px] pt-1 flex items-center'><strong className='text-black text-normal test'>Delivery Reference No : </strong> <p className='ps-1'>{p?.referenceNo}</p> </li>
-                                 <li className='mr-[30px] pt-1 flex items-center'><strong className='text-black text-normal test'>Delivery Appointement : </strong> <p className='ps-1'>{p?.appointment ? "Yes" : "No"}</p> </li>
-                                 <li className='mr-[30px] pt-1 flex items-center'>
-                                    <strong className='text-black text-normal test'>Delivery Date : </strong> 
-                                    <p className='ps-1'><TimeFormat time={false} date={p?.date} /></p> 
-                                 </li>
-                                 <li className='w-full pt-1 pb-[7px] flex items-center'>
-                                    <strong className='text-black text-normal test'>Delivery Location : </strong> 
-                                    <p className='ps-1'>{p?.location}</p> 
-                                 </li>
-                              </ul> 
-                              }
-                           </>
-                        })}
-                     </div>
-                  </>
-               })}
+               <div className='relative'>
+                  {order && order.shipping_details && order.shipping_details.map((s, index) => {
                      
+                     return <>
+                           <div className="grid grid-cols-2 gap-6 mb-4">
+                           <div>
+                              <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                              <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                           </div>
+                           <div>
+                              <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                              <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                           </div>
+                           </div>
 
-               {order && order.carrier_revenue_items &&
-                  <div id='revanue' className='orderFill py-3 mt-3 pt-4'>
-                     <p className='font-bold text-black text-xl'>Revenue Items</p>
-                     {order && order.carrier_revenue_items && order.carrier_revenue_items.map((r, index) => {
-                        return <div className='border-b pb-2 pt-3 border-gray-200 ' >
-                           <ul className='flex justify-between  '>
-                              <li className='flex items-center w-[32%]'><strong>Item :</strong> <p className='ps-2'>{r?.revenue_item}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Rate : </strong  > <p className='capitalize ps-2'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</p> </li>
-                              <li className='flex items-center whitespace-nowrap'><strong>Sub Total : </strong> <p className='ps-2'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
-                           </ul>
-                           <li className='flex items-center mb-4 w-[32%] mt-2'><strong>Note/Comment : </strong  > <p className='capitalize ps-2'>{r?.note}</p> </li>
-                        </div>
-                     })}
-                  </div>
-               }
+                           <div className="mb-6">
+                              <h3 className="font-semibold mb-2 text-lg">Charges</h3>
+                              <table cellPadding={8} align='center' className="w-full border text-sm table-collapse ">
+                                 <thead className="bg-gray-100">
+                                    <tr>
+                                       <th className="border text-left">Charge Type</th>
+                                       <th className="border text-left">Comment</th>
+                                       <th className="border text-left">Rate</th>
+                                       <th className="border text-left">Total</th>
+                                    </tr>
+                                 </thead>
+                                 <tbody>
+                                    {order && order.carrier_revenue_items && order.carrier_revenue_items.map((r, index) => {
+                                       return <tr>
+                                          <td className='border'>{r?.revenue_item}</td>
+                                          <td className='border text-left text-[12px] max-w-[200px]'>{r?.note}</td>
+                                          <td className='border text-left'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</td>
+                                          <td className='border text-left'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
+                                       </tr>
+                                    })}
+                                 </tbody>
+                              </table>
+                           </div>
 
-               <div className='flex justify-end p-3'>
-                  <div className='py-3'>
-                     {/* <h2 className='font-bold text-black text-xl text-right'>Total : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2> */}
-                     <h2 className='font-bold text-black text-xl text-right'>Order Total : <Currency amount={order?.carrier_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
-                  </div>
+                           <div className="mb-6">
+
+                           {s && s.locations && (() => {
+                              let pickupCount = 0;
+                              let stopCount = 0;
+                              return s && s.locations && s.locations.map((l, index) => {
+                                 if(l.type === 'pickup'){
+                                    pickupCount = pickupCount+1;
+                                    return <>
+                                       <>
+                                          <div className="mb-4">
+                                             <h4 className="text-blue-700 font-bold">PICK {pickupCount}</h4>
+                                             <p>{l?.location}</p>
+                                             <p><TimeFormat date={l?.date} /> {l?.appointment ?  <b>(Appointment)</b>: ''} </p>
+                                             <p>Ref #: {l?.referenceNo}</p>
+                                          </div>
+                                       </>
+                                    </>
+                                 } else {
+                                    stopCount = stopCount+1;
+                                    return <div className="mb-4 bg-blue-100 p-3 border rounded-md">
+                                    <h4 className="text-red-700 font-bold">STOP {stopCount}</h4>
+                                    <p>{l?.location}</p>
+                                    <p><TimeFormat date={l?.date} /> </p>
+                                    <p>Ref #: {l?.referenceNo}</p>
+                                 </div>
+                                 }
+                                    
+                              })
+                           })()}
+                           </div>
+
+                           
+                     </>
+                  })}
                </div>
+
+
+               {/* Terms & Notes */}
+               <div className="text-sm leading-snug border-t pt-4">
+                  <p>
+                     Carrier is responsible to confirm the actual weight and count received from the shipper before transit.
+                  </p>
+                  <p className="mt-1">
+                     Additional fees such as loading/unloading, pallet exchange, etc., are included in the agreed rate.
+                  </p>
+                  <p className="mt-1">
+                     POD must be submitted within 5 days of delivery.
+                  </p>
+                  <p className="mt-1">
+                     Freight charges include $100 for MacroPoint tracking. Non-compliance may lead to deduction.
+                  </p>
+                  <p className="mt-1">
+                     Cross-border shipments require custom stamps or deductions may apply.
+                  </p>
+               </div>
+               <div className="flex justify-between items-center mt-6">
+               <div>
+                  <div className="font-semibold">Carrier Signature: -------------- </div>
+               </div>
+               <div className="text-right">
+                  <div>Date: {todaydate.getDate()} / {(todaydate.getMonth()+1) > 9 ? (todaydate.getMonth()+1) : '0'+(todaydate.getMonth()+1)} / {todaydate.getFullYear()}</div>
+                  <div className="text-xs mt-1">PRO# CMC{order?.serial_no} must appear on all invoices</div>
+               </div>
+               </div>
+            </div>
             </div>
          </div>
       }

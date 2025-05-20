@@ -7,6 +7,7 @@ import TimeFormat from '../../common/TimeFormat';
 import Loading from '../../common/Loading';
 import RemoveCarrier from './RemoveCarrier';
 import Nocontent from './../../common/NoContent';
+import { Link } from 'react-router-dom';
 export default function Carriers() {
 
 
@@ -75,7 +76,7 @@ export default function Carriers() {
                      return <tr key={`carriew-${index}`}>
 
                         <td className='text-sm text-start  uppercase border-b border-gray-900'>
-                           <p className='text-white font-bold'>{c.name}</p>
+                           <p className='text-white font-bold'><Link className='text-main' to={`/carrier/detail/${c?._id}`}>{c?.name}</Link> </p>
                            <p className='text-gray-400'>MC{c.mc_code}</p>
                         </td>
 

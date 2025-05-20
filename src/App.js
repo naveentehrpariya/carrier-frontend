@@ -18,6 +18,7 @@ import CompanyDetails from './pages/auth/CompanyDetails';
 import CustomerDetail from './pages/dashboard/customer/CustomerDetail';
 import Commodity from './pages/dashboard/admin/Commodity';
 import EquipAndCommudity from './pages/dashboard/admin/EquipAndCommudity';
+import PaymentLists from './pages/dashboard/payment/PaymentLists';
 
 
 
@@ -38,6 +39,7 @@ function App() {
                     <Route path="/order/customer/invoice/:id" element={<CustomerInvoice /> } />
                     <Route path="/order/add" element={<AddOrder /> } />
                     <Route path="/customers" element={<Customers /> } />
+                    <Route path="/payments" element={<PaymentLists /> } />
                     <Route path="/customer/detail/:id" element={<CustomerDetail /> } />
                     <Route path="/carriers" element={<Carriers /> } />
                     <Route path="/carrier/detail/:id" element={<CustomerDetail /> } />

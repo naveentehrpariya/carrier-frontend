@@ -2,7 +2,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react'
 import AuthLayout from '../../../layout/AuthLayout';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Nocontent from '../../common/NoContent';
 import Loading from '../../common/Loading';
 import OrderItem from './OrderItem';
@@ -13,9 +13,13 @@ export default function OrdersFetch({isRecent, customer, sortby, hideAddOrder, t
    const [lists, setLists] = useState([]);
    const {Errors, user} = useContext(UserContext);
 
+   // get search query param from url
+   const [searchParams] = useSearchParams();
+   const status = searchParams.get('status');
+   const [orderStatus, setOrderStatus] = useState(status || 'all');
    const fetchLists = (value) => {
       setLoading(true);
-      const resp = Api.get(`/order/listings?${value ?`search=${value}` : ''}${customer ?`&customer_id=${customer}` : ''} ${sortby ?`&sortby=${sortby}` : ''}`);
+      const resp = Api.get(`/order/listings?${orderStatus ?`status=${orderStatus}` : ''}${value ?`&search=${value}` : ''}${customer ?`&customer_id=${customer}` : ''} ${sortby ?`&sortby=${sortby}` : ''}`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
@@ -38,6 +42,12 @@ export default function OrdersFetch({isRecent, customer, sortby, hideAddOrder, t
       fetchLists();
    },[customer]);
 
+   const handleFilter = (e) => {
+      setOrderStatus(e);
+      window.location.href = `/orders?status=${e}`
+   }
+    
+
    const debounceRef = useRef(null);
    const [searching, setSearching] = useState(false);
    const handleInputChange = (e) => {
@@ -58,7 +68,13 @@ export default function OrdersFetch({isRecent, customer, sortby, hideAddOrder, t
                <h2 className='text-white text-2xl mb-4 md:mb-0'>{title ? title : "Orders"}</h2>
                {hideright ? '' :
                <div className='sm:flex items-center justify-between md:justify-end'>
-                  <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search order' className='text-white min-w-[250px] w-full md:w-auto bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
+                  <select defaultValue={orderStatus} onChange={(e) => {handleFilter(e.target.value)}} className='text-white text-sm min-w-[200px] w-full md:w-auto bg-dark1 border border-gray-600 rounded-xl px-4 py-[13px] me-3  focus:shadow-0 focus:outline-0'>
+                     <option value={'all'}>All Orders</option>
+                     <option value={'added'}>Added Orders</option>
+                     <option value={'intransit'}>In-transit </option>
+                     <option value={'completed'}>Completed Orders</option>
+                  </select>
+                  <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search order' className='text-white min-w-[200px] w-full md:w-auto bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
                   {user?.role !== 2 ? <div className='ms-4'></div> : ''}
                   {hideAddOrder ? '' : <Link to="/order/add" className={"btn md text-black font-bold w-full md:w-auto block md:flex mt-3 md:mt-0"} >+ New Order</Link>}
                </div>

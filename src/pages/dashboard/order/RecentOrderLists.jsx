@@ -1,6 +1,4 @@
-import React, {  useEffect, useState } from 'react'
-import Api from '../../../api/Api';
-
+import React from 'react'
 import OrdersFetch from './OrdersFetch';
 
 export default function RecentOrdersLists() {

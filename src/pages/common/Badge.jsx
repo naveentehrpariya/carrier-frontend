@@ -21,19 +21,19 @@ export default function Badge({status,classes, text, title, title2, approved, da
          if(title){
             return "text-green-600";
          }
-         return "bg-green-600";
+         return "bg-green-700";
       }
       if (status === "completed") {
          if(title){
             return "text-green-600";
          }
-         return "bg-green-600";
+         return "bg-green-700";
       }
       if (status === "active") {
          if(title){
             return "text-green-600";
          }
-         return "bg-green-600";
+         return "bg-green-700";
       }
       if (status === "initiated") {
          if(title){
@@ -91,7 +91,7 @@ export default function Badge({status,classes, text, title, title2, approved, da
       ${color(status)} ${title ? 'font-bold text-[13px] px-0 ms-1' : 'min-w-[60px] text-white text-[10px] px-2 py-[2px]'} `}>
          {status} 
          {text} 
-         {date ? <>{approved ? <FaCircleCheck className='ms-1' color='green' size={12} /> : <CiWarning className='ms-1' color='yellow' size={15} />}</>: ''}
+         {date ? <>{approved ? <FaCircleCheck className='ms-1' color='text-green-400' size={12} /> : <CiWarning className='ms-1' color='yellow' size={15} />}</>: ''}
       </div>
   )
 }

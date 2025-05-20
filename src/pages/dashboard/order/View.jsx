@@ -63,7 +63,7 @@ export default function ViewOrder() {
                   <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
                      <p className='font-bold text-gray-400 text-xl mb-2'>Customer Details</p>
                      <ul className=''>
-                        <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Name:</strong>{order?.customer?.name} ({order?.customer?.customerCode}) </p> </li>
+                        <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Name:</strong><Link className='text-main' to={`/customer/detail/${order?.customer?._id}`}>{order?.customer?.name || "--"}({order?.customer?.customerCode || "--"})</Link> </p> </li>
                         <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Phone :</strong>{order?.customer?.phone } {order?.customer?.phone ? `,${order?.customer?.secondary_phone}` :'' } </p> </li>
                         <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Email :</strong> {order?.customer?.email } {order?.customer?.email ? `,${order?.customer?.secondary_email}` :'' }</p> </li>
                         <li className='flex items-center'><p className=''><strong className=' !text-gray-400'>Payment Status:</strong> <Badge approved={order?.customer_payment_approved_by_admin} date={order?.customer_payment_date || ""} title={true} status={order?.customer_payment_status} text={`${order?.customer_payment_status === 'paid' ? `via ${order?.customer_payment_method}` :''} `} /></p> </li>
@@ -72,7 +72,7 @@ export default function ViewOrder() {
                   <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
                      <p className='font-bold text-gray-400 text-xl mb-2'>Carrier Details</p>
                      <ul className=''>
-                        <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Carrier Name:</strong> <p>{order?.carrier?.name} (MC{order?.carrier?.mc_code})</p> </li>
+                        <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Carrier Name:</strong> <p><Link className='text-main' to={`/carrier/detail/${order?.carrier?._id}`}>{order?.carrier?.name} (MC{order?.carrier?.mc_code})</Link> </p> </li>
                         <li className=' flex mb-2'> <p> <strong className=' me-2 !text-gray-400'>Carrier Phone :</strong> {order?.carrier?.phone}, {order?.carrier?.secondary_phone}</p> </li>
                         <li className=' flex mb-2'> <p className='break-all'><strong className=' me-2 !text-gray-400 '>Carrier Email :</strong> {order?.carrier?.email}, {order?.carrier?.secondary_email}</p> </li>
                         <li className=' flex items-center'><strong className=' !text-gray-400'>Payment Status:</strong> <p className='ps-2'><Badge approved={order?.carrier_payment_approved_by_admin} date={order?.carrier_payment_date || ""} title={true} status={order?.carrier_payment_status} text={`${order?.carrier_payment_status === 'paid' ? `via ${order?.carrier_payment_method}` :''} `} /></p> </li>
@@ -92,19 +92,19 @@ export default function ViewOrder() {
                 
                {order && order.shipping_details && order.shipping_details.map((s, index) => {
                   return <>
-                     <div className='orderFill bg-dark1 p-4 rounded-xl border border-gray-700 mt-4'>
-                        <ul className='grid grid-cols-6 gap-2'>
+                     <div className='orderFill bg-dark2 p-6 rounded-xl border border-gray-800 mt-4'>
+                        <ul className='grid grid-cols-6 gap-2 mb-4 p-3 pb-0'>
                            <li className=''><strong className='text-gray-400'>Shipment No.:</strong> <p>#{index+1}</p> </li>
-                           <li className='capitalize '><strong className='text-gray-400'>Commudity :</strong> <p>{s?.commodity?.value}</p> </li>
+                           <li className='capitalize '><strong className='text-gray-400'>Commodity :</strong> <p>{ s?.commodity?.value || s?.commodity}</p> </li>
                            <li className='capitalize '><strong className='text-gray-400'>Equipments :</strong> <p>{s?.equipment?.value}</p> </li>
                            <li className=''><strong className='text-gray-400'>Weight :</strong> <p>{s?.weight || 'N/A'} {s?.weight_unit || s?.weight_unit || ''}</p> </li>
                         </ul>
 
                          <div className='block'>
-                           <div className='mb-6 mt-2'>
+                           <div className=' mt-2'>
                               {s.locations && s.locations.length && s.locations.map((p, i) => {
                                  return <>
-                                 <div className='flex mb-[45px] items-center'>
+                                 <div className='flex mt-[45px] items-center'>
                                     <div className='relative me-4 w-[70px] h-[70px]  min-w-[70px] min-h-[70px]  flex justify-center items-center bg-dark1 border border-gray-700 rounded-full'>
                                        <FaTruckMoving size={25} />
                                        {i > 0 ? <div className='absolute left-[20px] top-[-45px]'>
@@ -113,21 +113,25 @@ export default function ViewOrder() {
                                        </div> : ''}
                                     </div>
                                     {p.type === 'pickup' ? 
-                                       <ul className='grid grid-cols-4 gap-4'>
-                                          <li className='flex pb-[7px]'> <p ><strong className='pe-2 text-gray-300' >Pickup Location :</strong>  {p?.location}</p> </li>
-                                          <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Reference No. :</strong> <p className='ps-2'>{p?.referenceNo}</p> </li>
-                                          <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Appointement : </strong> <p className='ps-2'>{p?.appointment ? "Yes" : "No"}</p> </li>
-                                          <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Date :</strong> 
-                                          <p className='ps-2' ><TimeFormat time={false} date={p?.date} /></p> </li>
-                                       </ul>
+                                       <div>
+                                          <p className='flex pb-[7px]'> <p ><strong className='pe-2 text-gray-300' >Pickup Location :</strong>  {p?.location} </p> </p>
+                                          <div className='grid grid-cols-4 gap-4'>
+                                             <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Reference No. :</strong> <p className='ps-2'>{p?.referenceNo}</p> </p>
+                                             <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Appointement : </strong> <p className='ps-2'>{p?.appointment ? "Yes" : "No"}</p> </p>
+                                             <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Date :</strong> 
+                                             <p className='ps-2' ><TimeFormat time={false} date={p?.date} /></p> </p>
+                                          </div>
+                                       </div>
                                        :
-                                       <ul className='grid grid-cols-4 gap-4'>
-                                          <li className='flex pb-[7px]'> <p ><strong className='pe-2 text-gray-300' >Delivery Location :</strong> {p?.location}</p> </li>
-                                          <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Reference No. :</strong> <p className='ps-2'>{p?.referenceNo}</p> </li>
-                                          <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Appointement : </strong> <p className='ps-2'>{p?.appointment ? "Yes" : "No"}</p> </li>
-                                          <li className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Date :</strong> 
-                                          <p className='ps-2' ><TimeFormat time={false} date={p?.date} /></p> </li>
-                                       </ul>
+                                       <div>
+                                          <p className='flex pb-[7px]'> <p ><strong className='pe-2 text-gray-300' >Delivery Location :</strong>  {p?.location} </p> </p>
+                                          <div className='grid grid-cols-4 gap-4'>
+                                             <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Reference No. :</strong> <p className='ps-2'>{p?.referenceNo}</p> </p>
+                                             <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Appointement : </strong> <p className='ps-2'>{p?.appointment ? "Yes" : "No"}</p> </p>
+                                             <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Date :</strong> 
+                                             <p className='ps-2' ><TimeFormat time={false} date={p?.date} /></p> </p>
+                                          </div>
+                                       </div>
                                     }
                                  </div>
                                  
@@ -144,31 +148,31 @@ export default function ViewOrder() {
                   <div id='revanue' className='orderFill py-3 mt-3 pt-4'>
                      <p className='font-bold  text-xl mb-2'>Customer Revenue Items</p>
                      {order && order.revenue_items && order.revenue_items.map((r, index) => {
-                        return <>
-                           <ul className='flex justify-between mb-4  '>
-                              <li className='flex items-center w-[32%]'><strong>Revenue Item:</strong> <p className='ps-2'>{r.revenue_item}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Rate : </strong  > <p className='capitalize ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /> * {r.quantity}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Note/Comment : </strong> <p className='ps-2'>{r?.note}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Sub Total : </strong> <p className='ps-2'><Currency amount={r?.rate*r.quantity || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
-                           </ul>
-                        </>
+                        return <div className='mt-4 mb-4 pb-2'>
+                           <div className='flex justify-between   '>
+                              <p className='flex items-center w-[32%]'><strong>Revenue Item:</strong> <p className='ps-2'>{r.revenue_item}</p> </p>
+                              <p className='flex items-center w-[32%]'><strong>Rate : </strong  > <p className='capitalize ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /> * {r.quantity}</p> </p>
+                              <p className='flex items-center w-[32%]'><strong>Sub Total : </strong> <p className='ps-2'><Currency amount={r?.rate*r.quantity || 0} currency={order?.revenue_currency || 'cad'} /></p> </p>
+                           </div>
+                           <p className='flex items-center text-gray-400 mt-1 '><strong>Note/Comment : </strong> <p className='ps-2'>{r?.note}</p> </p>
+                        </div>
                      })}
                   </div>
                }
 
 
                {order && order.carrier_revenue_items &&
-                  <div id='revanue' className='orderFill py-3 mt-3 pt-4'>
+                  <div id='revanue' className='orderFill border-t border-gray-700 pb-3 mt-1 pt-6'>
                      <p className='font-bold  text-xl mb-2'>Carrier Revenue Items</p>
                      {order && order.carrier_revenue_items && order.carrier_revenue_items.map((r, index) => {
-                        return <>
-                           <ul className='flex justify-between mb-4  '>
-                              <li className='flex items-center w-[32%]'><strong>Revenue Item:</strong> <p className='ps-2'>{r.revenue_item}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Rate  :   </strong  > <p className='capitalize ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /> * {r.quantity}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Note/Comment :   </strong> <p className='ps-2'>{r?.note}</p> </li>
-                              <li className='flex items-center w-[32%]'><strong>Sub Total :   </strong> <p className='ps-2'><Currency amount={r?.rate*r.quantity || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
-                           </ul>
-                        </>
+                        return <div className='mt-4 mb-4 pb-2' >
+                           <div className='flex justify-between  '>
+                              <p className='flex items-center w-[32%]'><strong>Revenue Item:</strong> <p className='ps-2'>{r.revenue_item}</p> </p>
+                              <p className='flex items-center w-[32%]'><strong>Rate  :   </strong  > <p className='capitalize ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /> * {r.quantity}</p> </p>
+                              <p className='flex items-center w-[32%]'><strong>Sub Total :   </strong> <p className='ps-2'><Currency amount={r?.rate*r.quantity || 0} currency={order?.revenue_currency || 'cad'} /></p> </p>
+                           </div>
+                              <p className='flex items-center text-gray-400 mt-1'><strong>Note/Comment :   </strong> <p className='ps-2'>{r?.note}</p> </p>
+                        </div>
                      })}
                   </div>
                }

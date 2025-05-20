@@ -8,6 +8,7 @@ import Nocontent from '../../common/NoContent';
 import Currency from '../../common/Currency';
 import Badge from '../../common/Badge';
 import CustomerPaymentExel from './CustomerPaymentExel';
+import TimeFormat from '../../common/TimeFormat';
 
 export default function CustomerOrders({isRecent, customerID, customer, carrier, sortby, title}) {
 
@@ -124,7 +125,7 @@ export default function CustomerOrders({isRecent, customerID, customer, carrier,
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start'><Currency amount={item?.total_amount} currency={item?.revenue_currency || 'cad'} /></td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start '> <Badge title={true} status={item?.customer_payment_status} text={``} /></td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start'>{item.customer_payment_method || 'N/A'}</td>
-                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'>{item.customer_payment_date || 'N/A'}</td>
+                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'>{item?.customer_payment_date ? <TimeFormat date={item?.customer_payment_date || "--"} /> : 'N/A'}</td>
                                     </tr>
                                  )
                               })}

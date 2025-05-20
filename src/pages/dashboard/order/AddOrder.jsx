@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
@@ -7,6 +7,7 @@ import Select from 'react-select'
 import { useNavigate } from 'react-router-dom';
 import Popup from '../../common/Popup';
 import Currency from '../../common/Currency';
+import GetLocation from '../../common/GetLocation';
 
 // const revenueItemOptions = [
 //   { label: "Freight Charge", value: "Freight Charge" },
@@ -58,22 +59,6 @@ export default function AddOrder(){
           setRevenueItemOptions(res.data.list);
          } else {
           setRevenueItemOptions([]);
-         }
-         setLoading(false);
-      }).catch((err) => {
-         setLoading(false);
-      });
-   }
-    const [communities, setCommunities] = useState([]);
-    const fetCommunities = () => {
-      setLoading(true);
-      const resp = Api.get(`/cummodityLists`);
-      resp.then((res) => {
-         setLoading(false);
-         if (res.data.status === true) {
-          setCommunities(res.data.list);
-         } else {
-          setCommunities([]);
          }
          setLoading(false);
       }).catch((err) => {
@@ -154,53 +139,27 @@ export default function AddOrder(){
 
  
 
-
-    const [closeCarrierPopup, setCloseCarrierPopup] = useState();
     const [distance, setDistance] = useState(0);
-
-    // const getDistance = () => {
-    //   if (shippingDetails && shippingDetails.length > 0) {
-    //     let totalDistance = 0;
-    //     const distancePromises = shippingDetails.map((item, index) => {
-    //       if (item.pickupLocation && item.deliveryLocation)  {
-    //         return Api.post("/getdistance", {
-    //           start: item.pickupLocation,
-    //           end: item.deliveryLocation,
-    //         }).then((res) => {
-    //           console.log("API response distance:", res.data.data);
-    //           totalDistance += parseInt(res.data.data, 10);
-    //           if(res.data.status === false) {
-    //             setDistanceMsg(res.data.message +'Shipping location '+(index+1));
-    //           } else { 
-    //             setDistanceMsg(false)
-    //           }
-    //         })
-    //         .catch((err) => {
-    //           console.error("Error fetching distance:", err);
-    //           setDistanceMsg('Unable to calculate distance between all shipping locations. Please check all the locations correctly.');
-    //         });
-    //       }
-    //       return Promise.resolve();
-    //     });
-    //     Promise.all(distancePromises).then(() => {
-    //       console.log("Total distance:", totalDistance);
-    //       setDistance(totalDistance);
-    //     });
-    //   }
-    // };
-
-
-    const getPickupLocation = (index, value) => { 
-        handleShippingInputChange(index, "pickupLocation", value);
-        console.log("packup value",value)
-        setTimeout(() => {
-          // getDistance();
-        },1000);
-    }
-    
-    const getDeliveryLocation = (index, value) => { 
-        handleShippingInputChange(index, "deliveryLocation", value);
-    }
+    const getDistance = async () => {
+        let distancesArray = [];
+        shippingDetails && shippingDetails[0] && shippingDetails[0].locations && shippingDetails[0].locations.map((item, index) => {
+          if(item.location){
+            distancesArray.push(item.location);
+          } 
+        });
+        let alldistance = 0
+        if(distancesArray && distancesArray.length < 2) {
+          toast.error('Address is not complete to calculate distance.');
+          return false;
+        }
+        Api.post("/getdistance", {locations: distancesArray}).then((res) => {
+              console.log("API response distance:", res.data.data);
+              alldistance = res.data.totalKm;
+              setDistance(alldistance);
+            });
+        return alldistance;
+    };
+ 
     const [shippingDetails, setShippingDetails] = useState([
       {
         commodity: null,
@@ -278,9 +237,7 @@ export default function AddOrder(){
       const updatedDetails = [...shippingDetails];
       updatedDetails[blockIndex][type][locIndex][field] = value;
       setShippingDetails(updatedDetails);
-      
     };
-    console.log("updatedDetails", shippingDetails);
 
     // Customer revenue items
     const [revenueItems, setRevenueItems] = useState([
@@ -349,8 +306,7 @@ export default function AddOrder(){
       "carrier_payment_status" : "pending",
       "carrier_payment_method" : "",
       "revenue_currency" : 'cad',
-      "order_status" : "added",
-      "totalDistance": null,
+      "order_status" : "added", 
     });
 
     const chooseCustomer = (e) => { 
@@ -358,13 +314,6 @@ export default function AddOrder(){
     }
     const chooseCarrier = (e) => { 
       setData({ ...data, carrier: e.value});
-    }
-
-    const closePopup = () => { 
-      setCloseCarrierPopup("close");
-      setTimeout(() => {
-        setCloseCarrierPopup();
-      },2000);
     }
 
     const [revCurrency, setRevCurrency] = useState('cad');
@@ -375,10 +324,6 @@ export default function AddOrder(){
     
     const {Errors} = useContext(UserContext);
     const [loading, setLoading] = useState(false);
-    const handleinput = (e) => {
-      setData({ ...data, [e.target.name]: e.target.value});
-    }
-    
     const navigate = useNavigate();
 
     useEffect(()=>{
@@ -390,14 +335,10 @@ export default function AddOrder(){
         "revenue_items"  : revenueItems || [],
         "carrier_revenue_items"  : carrierRevenueItems || [],
         "shipping_details" : shippingDetails || [],
+        "totalDistance" : distance > 0 ? distance : getDistance(),
         "total_amount" : revenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
         "carrier_amount" : carrierRevenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
-      }
-      // if(alldata.customer_order_no === '' || alldata.customer_order_no === null) {
-      //   toast.error('Please enter order no of this order.');
-      //   return false;
-      // }
-
+      };
       function isObjectValid(obj) {
         return Object.values(obj).every(value => value !== null && value !== '' && value !== undefined);
       }
@@ -450,36 +391,27 @@ export default function AddOrder(){
         Errors(err);
       });
     }
-   
+    
+    
+  
+
   return (
     <AuthLayout>
       <div>
          <h2 className='text-white heading xl text-2xl '>Add New Order</h2>
-          {/* <p className='text-gray-400 heading xl text-lg mt-6'>Customer Details</p>
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-5'>
-            <div className='input-item'>
-                <label className="mt-4 mb-0 block text-sm text-gray-400">Company Name</label>
-                <input name='company_name' disabled type={'text'} placeholder='Cross Miles Carrier' className="input-sm" />
-            </div>
-            <div className='input-item'>
-                <label className="mt-4 mb-0 block text-sm text-gray-400">Order No.</label>
-                <input required name='customer_order_no' onChange={handleinput} type={'number'} placeholder={"Order Number"} className="input-sm" />
-            </div>
-            <div className='input-item'>
-                <label className="mt-4 mb-0 block text-sm text-gray-400">Customer</label>
-                <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
-                onChange={chooseCustomer}
-                options={customersListing} />
-            </div>
-          </div> */}
+            
 
           <div>
             <div className="flex justify-between mt-12 mb-4 items-center">
               <p className="text-gray-400 heading xl text-xl">Shipping Details</p>
-              <button
+              {/* <button
+                className="btn text-black font-bold"
+                onClick={getDistance}> + getDistance
+              </button> */}
+              {/* <button
                 className="btn text-black font-bold"
                 onClick={addNewShippingBlock}> + Add New
-              </button>
+              </button> */}
             </div>
             {shippingDetails.map((detail, index) => (
               <>
@@ -547,14 +479,15 @@ export default function AddOrder(){
                     <div className="grid grid-cols-4 gap-4 ">
                       <div className="input-item">
                         <label className="mb-0 block text-sm text-gray-400">Pickup Location</label>
-                        <input
+                        {/* <input
                           required
                           onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', e.target.value)}
                           type={"text"} 
                           placeholder={"Enter Pickup location"} 
                           className="input-sm"
-                        />
-                        {/* <GetLocation placeholder={"Enter Pickup Location"} index={index} onchange={getPickupLocation} /> */}
+                        /> */}
+                        <GetLocation placeholder={"Enter Pickup Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
+
                       </div>
                       <div className="input-item">
                         <label className="mb-0 block text-sm text-gray-400">
@@ -599,14 +532,14 @@ export default function AddOrder(){
                     <div className="grid grid-cols-4 gap-4 ">
                       <div className="input-item">
                         <label className="mb-0 block text-sm text-gray-400">Delivery Location</label>
-                        <input
+                        {/* <input
                           required
                           onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', e.target.value)}
                           type={"text"} 
                           placeholder={"Enter Delivery location"} 
                           className="input-sm"
-                        />
-                        {/* <GetLocation placeholder={"Enter Delivery Location"} index={index} onchange={getDeliveryLocation} /> */}
+                        /> */}
+                        <GetLocation placeholder={"Enter Delivery Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
                       </div>
                       <div className="input-item">
                         <label className="mb-0 block text-sm text-gray-400">
@@ -884,8 +817,16 @@ export default function AddOrder(){
           <div className='subtotals flex justify-ends my-6'>
             <ul className='flex justify-between w-full bg-dark2 p-4 border border-gray-700 rounded-xl '>
               <li className='flex justify-end '><p className='text-gray-400 me-4'>Customer Total : </p> <strong className='text-white'> <Currency amount={revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
+              <li className='flex justify-end '><p className='text-gray-400 me-4'>Total Distance : </p> 
+              <strong className='text-white'>  {distance ? ((distance / 1609.34).toFixed(2)) : '0'}Miles
+                {/* {distance > 1 ? '' :  */}
+                <button
+                className="text-main ms-2"
+                onClick={getDistance}> Calculate Distance
+              </button>
+              {/* } */}
+              </strong></li>
               <li className='flex justify-end '><p className='text-gray-400 me-4'>Carrier Total : </p> <strong className='text-white'>  <Currency amount={ carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
-              {/* <li className='flex justify-end '><p className='text-gray-400 me-4'>Total Distance : </p> <strong className='text-white'>  500Miles</strong></li> */}
             </ul>
           </div>
 

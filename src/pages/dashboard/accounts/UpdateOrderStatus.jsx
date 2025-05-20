@@ -5,6 +5,7 @@ import Api from '../../../api/Api';
 import toast from 'react-hot-toast';
 
 export default function UpdateOrderStatus({id, fetchLists, text}) {
+   
    const statuses = [
       {
          name: "completed"
@@ -20,8 +21,8 @@ export default function UpdateOrderStatus({id, fetchLists, text}) {
    const {Errors} = useContext(UserContext);
    const [status, setStatus] = useState('added');
    const [action, setaction] = useState();
-     
    const [loading, setLoading] = useState(false);
+
    const updateStatus = () => {
       setLoading(true);
       const resp = Api.post(`/account/order-status/${id}`, {

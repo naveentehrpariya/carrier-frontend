@@ -103,3 +103,14 @@ body{background:var(--dark);font-family:'productsans';}
   pointer-events: none;
   cursor: not-allowed;
 }
+
+
+
+#place-picker-box{display:flex;justify-content:center;align-items:center;}
+#place-picker-container{text-align:left;}
+#place-picker-container {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 8px;
+}

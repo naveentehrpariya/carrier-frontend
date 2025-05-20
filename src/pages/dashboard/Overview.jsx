@@ -4,6 +4,7 @@ import AuthLayout from '../../layout/AuthLayout';
 // import loads from '../../img/loads-stats.png'
 import RecentOrdersLists from './order/RecentOrderLists';
 import Api from '../../api/Api';
+import { Link } from 'react-router-dom';
 export default function Overview() {
 
    const [lists, setLists] = useState([]);
@@ -28,16 +29,16 @@ export default function Overview() {
             </div> */}
 
          </div>
-         <div className='total-leads mt-4 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3'>
+         <div className='total-leads mt-4 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'>
             {lists && lists.map((item, index) => {
                return <>
-               <div className='lead border border-gray-900 rounded-[30px] p-[15px] md:p-[20px]'>
-                  <div className='cals flex items-center justify-between'>
+               <Link to={item.link} className={`lead border border-gray-700 rounded-[30px] p-[20px] md:p-[25px]`}>
+                  <div className='cals flex items-center justify-between'> 
                      <h2 className='font-bold text-white text-4xl mb-2'>{item.data}</h2>
                   </div>
                   <h2 className='text-gray-300 mb-1 text-normal md:text-xl'>{item.title}</h2>
                   <div className='bg-[#D278D5] h-[3px] w-[40px]'></div>
-               </div>
+               </Link>
                </>
             })}
          </div>
