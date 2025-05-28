@@ -34,6 +34,21 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
    },[open]);
 
 
+   const getMime = (type) => {
+      const isImage = type.includes('image');
+      const isVideo = type.includes('video');
+      const isAudio = type.includes('audio');
+      if (isImage) {
+         return 'image'
+      } else if (isAudio) {
+         return 'audio';
+      } else if (isVideo) {
+         return 'video';
+      } else {
+         return 'doc';
+      }
+   }
+
    function UPLOAD({update, classes, updateSize}) {
       const [open, setOpen] = useState();
       const [uploading, setUploading] = useState(false);
@@ -69,7 +84,6 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
          const resp = Api.post(`/cloud/upload/${order._id}`, fdata, setProgress); 
          resp.then((res)=>{
             if(res.data.status){
-               toast.success(res.data.message);
                setProgress(100);
                setTimeout(()=>{
                   setFile(null);
@@ -80,6 +94,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                      setOpen('');
                   }, 500); 
                   setUploading(false); 
+                  toast.success(res.data.message);
                }, 1000);
             } else {
                toast.error(res.data.message);
@@ -99,7 +114,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                   <div className=" w-full bg-white sm:rounded-lg">
                      <div className="mb-4 md:mb-10 text-center">
                         <h2 className="text-xl sm:text-2xl font-semibold mb-2">Upload your files</h2>
-                        <p className="text-md text-gray-500">File should be of format pdf, doc</p>
+                        <p className="text-md text-gray-500">File should be of format pdf, doc, image</p>
                      </div>
 
                      {file ? <>
@@ -115,12 +130,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                               </video>
                               : ""
                            }
-                           { fileMime === 'audio'?
-                              <audio playsInline className='w-full rounded-xl ' controls >
-                                 <source src={URL.createObjectURL(file)} type={file.type} />
-                              </audio>
-                              : ""
-                           }
+                           
                            { fileMime === 'doc'?
                               <iframe className='w-full rounded-xl ' src={URL.createObjectURL(file)} >
                               </iframe>
@@ -142,7 +152,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                      <div className='flex justify-center'>
                         <button disabled={uploading} onClick={UploadMedia} className='btn w-full max-w-xs' > 
                            {uploading ? 
-                              `${progress ? `${progress === 100 ? "Processing..." : `${progress}% Uploading...` }` : "" } `
+                               `Uploading...`
                            : "Upload"}
                         </button>
                      </div>
@@ -182,8 +192,31 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                {files && files.map((f, i)=>{
                   const size = f.size / 1024 / 1024;
                   return <a href={f.url} target='_blank' className='py-4 px-2 border border-gray-700 rounded-2xl text-center'>
-                     <BsFiletypeDoc color='#D278D5' size={'4rem'} className='m-auto' />
-                     <p className='text-center text-gray-400 mt-6'>{f.name}</p>
+                     
+                     <div className='preview h-[100px] overflow-hidden' >
+                           { getMime(f.mime) === 'image'? 
+                              <img className="h-auto w-full object-cover max-w-full max-h-[300px] sm:max-h-[300px] rounded-xl" src={f.url} alt="Cloud" />
+                              : ""
+                           }
+                           { getMime(f.mime) === 'video'?
+                              <video playsInline className='w-full h-full rounded-xl min-h-[300px] max-h-[300px]' controls >
+                                 <source src={f.url} type={f.mime} />
+                              </video>
+                              : ""
+                           }
+                           
+                           { getMime(f.mime) === 'doc'?
+                              <iframe className='w-full rounded-xl ' src={f.url} >
+                              </iframe>
+                              : ""
+                           }
+
+                           {getMime(f.mime) !== 'doc' && getMime(f.mime) !== 'video' && getMime(f.mime) !== 'image' ?
+                              <BsFiletypeDoc color='#D278D5' size={'4rem'} className='m-auto' /> : ''
+                           }
+                     </div>
+                     
+                     <p className='text-center text-gray-400 mt-2'>{f.name}</p>
                      <p className='text-gray-500 text-sm'>Size : {size.toFixed(2)}MB</p>
                   </a>
                })}

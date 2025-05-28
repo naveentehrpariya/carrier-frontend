@@ -19,14 +19,7 @@ export default function OrderPDF() {
    const { id } = useParams();
    const [downloadingPdf, setDownloadingPdf] = useState(false);
    const pdfRef = useRef();
-   const input = pdfRef.current;
-   
-   console.log('order',order)
-
-  
-   // current date
    const todaydate = new Date(); 
-
    const downloadPDF = () => {
       setDownloadingPdf(true);
       window.scrollTo(0, 0);
@@ -64,7 +57,6 @@ export default function OrderPDF() {
          windowWidth: 794,
       });
    };
-   
 
    const fetchOrder = () => {
       setLoading(true);
@@ -132,7 +124,6 @@ export default function OrderPDF() {
 
                <div className='relative'>
                   {order && order.shipping_details && order.shipping_details.map((s, index) => {
-                     
                      return <>
                            <div className="grid grid-cols-2 gap-6 mb-4">
                            <div>
@@ -196,7 +187,6 @@ export default function OrderPDF() {
                                     <p>Ref #: {l?.referenceNo}</p>
                                  </div>
                                  }
-                                    
                               })
                            })()}
                            </div>

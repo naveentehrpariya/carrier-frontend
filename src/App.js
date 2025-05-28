@@ -19,6 +19,7 @@ import CustomerDetail from './pages/dashboard/customer/CustomerDetail';
 import Commodity from './pages/dashboard/admin/Commodity';
 import EquipAndCommudity from './pages/dashboard/admin/EquipAndCommudity';
 import PaymentLists from './pages/dashboard/payment/PaymentLists';
+import CarrierDetail from './pages/dashboard/carrier/CarrierDetail';
 
 
 
@@ -42,7 +43,7 @@ function App() {
                     <Route path="/payments" element={<PaymentLists /> } />
                     <Route path="/customer/detail/:id" element={<CustomerDetail /> } />
                     <Route path="/carriers" element={<Carriers /> } />
-                    <Route path="/carrier/detail/:id" element={<CustomerDetail /> } />
+                    <Route path="/carrier/detail/:id" element={<CarrierDetail /> } />
                     <Route path="/employees" element={<EmployeesLists /> } />
                     <Route path="/commodity-and-equipments" element={<EquipAndCommudity /> } />
                     <Route path="/accounts/orders" element={<AccountOrders /> } />

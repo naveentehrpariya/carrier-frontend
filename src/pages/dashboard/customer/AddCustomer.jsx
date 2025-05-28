@@ -81,9 +81,23 @@ export default function AddCustomer({item, fetchLists, classes, text}){
           toast.success(res.data.message);
           fetchLists && fetchLists();
           setaction('close');
+          setData({
+            phone: "",
+            email:  "",
+            secondary_phone: "",
+            secondary_email:  "",
+            name:   "",
+            address: "",
+            country: "",
+            state:  "",
+            city: "",
+            zipcode: "",
+            assigned_to: null,
+          });
           setTimeout(() => {
             setaction();
           }, 1000);
+
         } else {
           toast.error(res.data.message);
         }

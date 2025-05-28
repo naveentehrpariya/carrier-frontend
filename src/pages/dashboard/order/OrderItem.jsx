@@ -13,6 +13,7 @@ import { FaLock } from "react-icons/fa";
 import { FaLockOpen } from "react-icons/fa6";
 import LockOrder from './LockOrder'
 import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
+import DistanceInMiles from '../../common/DistanceInMiles'
 
 export default function OrderItem({lists, fetchLists}) {
    const {Errors, user} = useContext(UserContext);
@@ -36,7 +37,7 @@ export default function OrderItem({lists, fetchLists}) {
                      </td>
                      <td className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>
                         <p className='my-1 whitespace-nowrap flex items-center'>Status : <Badge title={true} status={c?.order_status} /></p>
-                        <p className='my-1 whitespace-nowrap'>Total Distance :  {c?.totalDistance || "00"} Miles</p>
+                        <p className='my-1 whitespace-nowrap'>Total Distance : <DistanceInMiles d={c?.totalDistance} /></p>
                      </td>
                   
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>

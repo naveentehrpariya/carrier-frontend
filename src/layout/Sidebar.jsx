@@ -11,6 +11,7 @@ import { UserContext } from '../context/AuthProvider';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { TbListDetails } from "react-icons/tb";
 import { MdOutlineDocumentScanner } from "react-icons/md";
+import { IoMdAddCircle } from "react-icons/io";
 
 export default function Sidebar() {
 
@@ -34,6 +35,10 @@ export default function Sidebar() {
         {user?.is_admin === 1 || user?.role === 1 ? 
         <>
           <li>
+            <Link className={`${location.pathname === '/order/add' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/order/add'} ><IoMdAddCircle className='me-2' size={'1.4rem'} /> Add New Order 
+          </Link>
+          </li>
+          <li>
             <Link className={`${location.pathname === '/orders' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/orders'} ><FiBox className='me-2' size={'1.4rem'} /> Orders 
           </Link>
           </li> 
@@ -55,7 +60,7 @@ export default function Sidebar() {
             </Link>
           </li>
           <li>
-            <Link className={`${location.pathname === '/commodity-and-equipments' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/commodity-and-equipments'} ><MdOutlineDocumentScanner className='me-2' size={'1.4rem'} />Commodity & Equipments 
+            <Link className={`${location.pathname === '/commodity-and-equipments' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/commodity-and-equipments'} ><MdOutlineDocumentScanner className='me-2' size={'1.4rem'} />Equip & Revenue Items
             </Link>
           </li>
         </>
@@ -75,16 +80,12 @@ export default function Sidebar() {
           </Link>
           </li> 
         : "" }
-        
-      </ul>
       
-      {/* <h2 className='mt-8 mb-3 text-sm uppercase text-gray-400'>Other Menu</h2>
-      <ul>
         <li>
-          <button className='text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' onClick={logout} ><MdOutlineLogout className='me-2' size={'1.4rem'} /> Logout 
+          <button className='text-gray-200 w-full mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' onClick={logout} ><MdOutlineLogout className='me-2' size={'1.4rem'} /> Logout 
           </button>
         </li>
-      </ul> */}
+      </ul>
     </div>
   )
 }

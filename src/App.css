@@ -114,3 +114,8 @@ body{background:var(--dark);font-family:'productsans';}
   height: auto;
   padding: 8px;
 }
+select {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+}

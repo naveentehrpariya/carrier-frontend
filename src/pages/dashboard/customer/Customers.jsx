@@ -77,11 +77,11 @@ export default function Customers() {
                         </td>
                         <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
                            <p>{c?.email ? <a href={`mailto:${c?.email}`}>{c?.email}</a>  : "--"}</p>
-                           <p>{c?.secondary_email ? <a href={`mailto:${c?.secondary_email}`}>{c?.secondary_email}</a>  : "--"}</p>
+                           <p>{c?.secondary_email ? <a href={`mailto:${c?.secondary_email}`}>{c?.secondary_email}</a>  : ""}</p>
                         </td>
                         <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
                            <p>{c?.phone ? <a href={`tel:${c?.phone}`}>{c?.phone}</a>  : "--"}</p>
-                           <p>{c?.secondary_phone ? <a href={`tel:${c?.secondary_phone}`}>{c?.secondary_phone}</a> : "--"}</p>
+                           <p>{c?.secondary_phone ? <a href={`tel:${c?.secondary_phone}`}>{c?.secondary_phone}</a> : ''}</p>
                         </td>
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <div class='has-tooltip line-clamp-2  max-w-[250px]'>

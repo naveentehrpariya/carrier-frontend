@@ -15,75 +15,47 @@ export default function CustomerInvoice() {
    const [loading, setLoading] = useState(true);
    const [order, setOrder] = useState([]);
    const {Errors, company} = useContext(UserContext);
-   const { id } = useParams();
+    const { id } = useParams();
    const [downloadingPdf, setDownloadingPdf] = useState(false);
    const pdfRef = useRef();
+   const todaydate = new Date(); 
    const downloadPDF = () => {
       setDownloadingPdf(true);
-     const input = pdfRef.current;
-   //   input.style.backgroundColor = 'black';
-     input.style.padding = '40px';
-   //   const elementWithMargin = input.querySelector('.element-with-margin');
-   //   if (elementWithMargin) {
-   //     elementWithMargin.style.margin = '20px';
-   //   }
- 
-   //   const buttons = input.querySelectorAll('button');
-   //   buttons.forEach(button => {
-   //     button.style.backgroundColor = 'transparent';
-   //     button.style.border = "none";
-   //   });
- 
-   //   const match_score = input.querySelectorAll('.match_score');
-   //   match_score.forEach(button => {
-   //     button.style.setProperty("background-color", "transparent", "important");
-   //     button.style.border = "none";
-   //   });
- 
-     html2canvas(input, {
-       useCORS: true,
-       allowTaint: true,
-       logging: true,
-       scale: 1
-     }).then((canvas) => {
-       const imgData = canvas.toDataURL("image/png");
-       const pdf = new jsPDF("p", "mm", "a4");
-       const pageWidth = pdf.internal.pageSize.getWidth();
-       const pageHeight = pdf.internal.pageSize.getHeight();
-       const canvasAspectRatio = canvas.width / canvas.height;
-       const pageAspectRatio = pageWidth / pageHeight;
- 
-       let imgWidth = pageWidth;
-       let imgHeight = pageWidth / canvasAspectRatio;
-       if (imgHeight > pageHeight) {
-         imgHeight = pageHeight;
-         imgWidth = pageHeight * canvasAspectRatio;
-       }
- 
-       const xPos = (pageWidth - imgWidth) / 2; // Center horizontally
-       const yPos = 0; // Center vertically
- 
- 
-       pdf.addImage(imgData, "PNG", xPos, yPos, imgWidth, imgHeight);
-       pdf.save("download.pdf");
-      //  input.style.backgroundColor = 'black'; // Reset to original (or '')
-       input.style.padding = '10px';        // Reset to original (or '')
- 
-      //  buttons.forEach(button => {
-      //    button.style.backgroundColor = '';
-      //    button.style.border = "";
-      //  });
-   
-      //  match_score.forEach(button => {
-      //    button.style.backgroundColor = '';
-      //    button.style.border = "none";
-      //  });
-      setDownloadingPdf(false);
-     }).catch(error => {
-       console.error("Error capturing canvas or generating PDF:", error);
-     });
+      window.scrollTo(0, 0);
+      const element = pdfRef.current;
+      if (!element) {
+         console.error("PDF content element not found.");
+         setDownloadingPdf(false);
+         return;
+      }
+      const doc = new jsPDF({
+         unit: 'mm',
+         format: 'a4',
+         orientation: 'portrait',
+      });
+      doc.html(element, {
+         callback: function (doc) {
+            const totalPages = doc.internal.getNumberOfPages();
+            const watermarkImg = "/transparent-logo.png";
+            for (let i = 1; i <= totalPages; i++) {
+               doc.setPage(i);
+               doc.addImage(watermarkImg, "PNG", 50, 60, 100, 38);
+               doc.addImage(watermarkImg, "PNG", 50, 150, 100, 38);
+            }
+            doc.save(`CMC${order?.serial_no || ''}-order-carrier-sheet.pdf`);
+            setDownloadingPdf(false);
+         },
+         x: 5,
+         y: 5,
+         html2canvas: {
+            scale: 0.25,
+            useCORS: true,
+         },
+         autoPaging: 'text',
+         width: 1800,       
+         windowWidth: 794,
+      });
    };
-
 
 
    const fetchOrder = () => {
@@ -107,118 +79,133 @@ export default function CustomerInvoice() {
       fetchOrder();
    }, []);
 
+   const [invoiceNo, setInvoiceNo] = useState(Math.floor(Math.random() * 1000000));
+
    return <AuthLayout>
       <div className='flex justify-between items-center'>
          <h1 className='text-xl font-bold text-white mb-6 mt-4'>Order INVOICE #{order?.customer_order_no}</h1>
          <button className='bg-main px-4 py-2 rounded-xl text-sm' onClick={downloadPDF} >{downloadingPdf ? "Downloading..." : "Download PDF"}</button>
       </div>
+
       {loading ? <Loading /> : 
          <div  className='boltable  bg-white rounded-xl p-6 py-12'>
-            <div ref={pdfRef} className='max-w-[800px] text-gray-700 m-auto'>
-               <div className='bol-header p-3 ps-0 flex justify-between items-center '>
-                  <div width="50%">
-                     <div className='max-w-[400px]'>
-                        <h2 className='font-bold text-2xl text-black capitalize'>{company?.name || "Cross Miles Carrier"}</h2>
-                        <p className='capitalize' ><strong className='text-black'>{company?.address|| ''}</strong></p>
-                        <p>{company?.email}</p>
-                        <p>PH : {company?.phone}</p>
+            <div ref={pdfRef} className="relative max-w-[794px] mx-auto p-[20px] bg-white text-sm text-black shadow-md font-sans">
+               <div className='relative z-1'> 
+                     <div className="flex justify-between items-center border-b pb-4 mb-4">
+                        <div>
+                           <h2 className='font-bold text-3xl text-black capitalize'>INVOICE</h2>
+                           <p className='capitalize' ><strong className='text-black'>{company?.address|| ''}</strong></p>
+                           <p>{company?.email}</p>
+                           <p>PH : {company?.phone}</p>
+                        </div>
+                        <div className="text-right pt-6 pe-6 ">
+                           <Logotext black={true} />
+                           <div className="text-gray-700 text-end">Invoice # {invoiceNo}</div>
+                        </div>
                      </div>
-                  </div>
-                   
-                  <div className='d-flex justify-center'>
-                     <div className='flex justify-center w-full'>
-                     <Logotext black="true" />
+      
+                     <div className="grid grid-cols-2 gap-8 border-b pb-4 mb-4">
+                        <div>
+                           <h3 className="text-blue-700 font-semibold">BILL TO</h3>
+                           <p className=' text-black capitalize'>{order?.customer?.name}</p>
+                           <p >Reference No : {order?.customer?.customerCode}</p>
+                           <p >Email : {order?.customer?.email}</p>
+                           <p >Phone : {order?.customer?.phone}</p>
+                        </div>
+                        <div>
+                           <h3 className="text-blue-700 font-semibold">CUSTOMER</h3>
+                           <p className='uppercase'>Order Number : #CMC{order.serial_no}</p>
+                           <p>Invoice Date : <TimeFormat time={false} date={Date.now()} /></p>
+                           <p>Amount : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p>
+                        </div>
                      </div>
-                     <h3 className='uppercase font-bold text-xl text-center text-black'>INVOICE</h3>
-                  </div>
-               </div>
 
-               <div className='flex w-full'>
-                  <div className='p-3 border border-gray-300 mt-3 pt-4 w-full '>
-                     <p className='font-bold text-black'>Bill To</p>
-                     <p className=' text-black capitalize'>{order?.customer?.name}</p>
-                     <p >Reference No. : {order?.customer?.customerCode}</p>
-                     <p >Email : {order?.customer?.email}</p>
-                     <p >Phone : {order?.customer?.phone}</p>
-                     <p className='max-w-[400px] capitalize' ><p className='capitalize'>{order?.carrier?.location}, {order?.carrier?.state} ({order?.carrier?.country})</p></p>
-                  </div>
-                  <div className='p-3 border border-gray-300 mt-3 pt-4 w-full '>
-                     <ul className=''>
-                        <li className=' flex'><strong className='text-sm me-2 text-black'>Customer Order Number :</strong> <p className='font-bold'>#{order.customer_order_no}</p> </li>
-                        <li className=' flex'><strong className='text-sm me-2 text-black'>Invoice #:</strong> <p>{Date.now()}</p> </li>
-                        <li className=' flex'><strong className='text-sm me-2 text-black'>Invoice Date :</strong> <p><TimeFormat time={false} date={Date.now()} /></p> </li>
-                        <li className=' flex'><strong className='text-sm me-2 text-black'>Amount :</strong> <p><Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
-                     </ul>
-                  </div>
-               </div>
-
-               {order && order.shipping_details && order.shipping_details.map((s, index) => {
-                  return <>
-                  <div className='flex w-full'>
-                     <div className='p-3 border border-gray-300 mt-3 pt-4 w-full '>
-                           <ul className='flex flex-wrap w-full'>
-                              <li className='w-full max-w-[100%] pb-[7px] flex flex-wrap items-center'><strong className='text-black text-sm'>Pickup Location :</strong> <p>{s?.pickupLocation}</p> </li>
-                           </ul>
-                           <p className='w-full pb-[7px]'><strong className='text-black text-sm'>Pickup Date : </strong>  
-                           <TimeFormat time={false} date={s?.pickupDate} /> </p>
+                        <div className='relative'>
+                        {order && order.shipping_details && order.shipping_details.map((s, index) => {
+                           return <>
+                                 <div className="grid grid-cols-2 gap-6 mb-4">
+                                 <div>
+                                    <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                                    <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                                 </div>
+                                 <div>
+                                    <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                                    <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                                 </div>
+                                 </div>
+      
+                                 <div className="mb-6">
+      
+                                 {s && s.locations && (() => {
+                                    let pickupCount = 0;
+                                    let stopCount = 0;
+                                    return s && s.locations && s.locations.map((l, index) => {
+                                       if(l.type === 'pickup'){
+                                          pickupCount = pickupCount+1;
+                                          return <>
+                                             <>
+                                                <div className="mb-4">
+                                                   <h4 className="text-blue-700 font-bold">PICK {pickupCount}</h4>
+                                                   <p>{l?.location}</p>
+                                                   <p><TimeFormat date={l?.date} /> {l?.appointment ?  <b>(Appointment)</b>: ''} </p>
+                                                   <p>Ref #: {l?.referenceNo}</p>
+                                                </div>
+                                             </>
+                                          </>
+                                       } else {
+                                          stopCount = stopCount+1;
+                                          return <div className="mb-4 bg-blue-100 p-3 border rounded-md">
+                                          <h4 className="text-red-700 font-bold">STOP {stopCount}</h4>
+                                          <p>{l?.location}</p>
+                                          <p><TimeFormat date={l?.date} /> </p>
+                                          <p>Ref #: {l?.referenceNo}</p>
+                                       </div>
+                                       }
+                                    })
+                                 })()}
+                                 </div>
+      
+                                 
+                           </>
+                        })}
                      </div>
-                     <div className='p-3 border border-gray-300 mt-3 pt-4 w-full '>
-                           <p className='w-full max-w-[100%] pb-[7px] flex flex-wrap items-center'><strong className='text-black text-sm'>Delivery Location :</strong> <p>{s?.deliveryLocation}</p> </p>
-                           <p className='w-full pb-[7px]'><strong className='text-black text-sm'>Delivery Date :</strong> 
-                            <TimeFormat time={false} date={s?.deliveryDate} /> </p>
+                     
+                     <div className='p3  mt-3 pt-4 w-full flex  sborder sborder-gray-300 '>
+                        <ul className='w-full'>
+                        </ul>
+                        <ul className='w-full border border-gray-100 p-3'>
+                           <table border={'1'} className='w-full text-start'>
+                              <tr>
+                                 <th align='left' className='text-black'>Charges</th>
+                                 <th align='left ' className='text-black'>Amount</th>
+                              </tr>
+                              {order && order.revenue_items&&
+                                 <>
+                                       {order && order.revenue_items && order.revenue_items.map((r, index) => {
+                                          return <>
+                                          <tr>
+                                             <td><p className='text-sm text-black'>{r.revenue_item} - <span className='capitalize'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} />*{r.quantity}</span></p></td>
+                                             <td><Currency amount={((r?.rate) * (r.quantity)) || 0} currency={order?.revenue_currency || 'cad'} /></td>
+                                          </tr>
+                                          </>
+                                       })}
+                                 </>
+                              }
+                              <tr>
+                                 <td><strong className='text-sm text-black'>Total</strong></td>
+                                 <td className='font-bold text-black'><Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></td>
+                              </tr>
+                           </table>
+                        </ul>
                      </div>
-                  </div>
-                  </>
-               })}
 
-
-               <div className='p-3 border border-gray-300 mt-3 pt-4 w-full flex   '>
-                  <ul className='w-full grid grid-cols-3'>
-                     <li className=' flex'><strong className='text-sm me-2 text-black'>Order :</strong> <p>CMC{order.serial_no}</p> </li>
-                     {/* <li className=' flex'><strong className='text-sm me-2 text-black'>Order Number #:</strong> <p>{order.customer_order_no}</p> </li> */}
-                     <li className=' flex'><strong className='text-sm me-2 text-black'>Order Status :</strong> <p>
-                        <Badge title={true} status={order?.order_status} /> </p> </li>
-                     <li className=' flex'><strong className='text-sm me-2 text-black'>Amount :</strong> <p><Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
-                  </ul>
-                  {/* <ul className='w-full'>
-                     <li className=' flex'><strong className='text-sm me-2 text-black'>Order Number #:</strong> <p>{order.customer_order_no}</p> </li>
-                     <li className=' flex'><strong className='text-sm me-2 text-black'>Order Status :</strong> <p>
-                        <Badge title={true} status={order?.order_status} /> </p> </li>
-                     <li className=' flex'><strong className='text-sm me-2 text-black'>Amount :</strong> <p><Currency amount={order?.carrier_amount || 0} currency={order?.revenue_currency || 'cad'} /></p> </li>
-                  </ul> */}
+                     <div className="flex justify-end items-center mt-6">
+                        <div className="text-right">
+                           <div>Date: {todaydate.getDate()} / {(todaydate.getMonth()+1) > 9 ? (todaydate.getMonth()+1) : '0'+(todaydate.getMonth()+1)} / {todaydate.getFullYear()}</div>
+                           <div className="text-xs mt-1">INVOICE# {invoiceNo} must appear on all invoices</div>
+                        </div>
+                     </div>
                </div>
-
-
-               <div className='p3  mt-3 pt-4 w-full flex  sborder sborder-gray-300 '>
-                  <ul className='w-full'>
-                  </ul>
-                  <ul className='w-full border border-gray-300 p-3'>
-                     <table border={'1'} className='w-full text-start'>
-                        <tr>
-                           <th align='left' className='text-black'>Charges</th>
-                           <th align='left ' className='text-black'>Amount</th>
-                        </tr>
-                           {/* {order && order.revenue_items &&
-                              <>
-                                    {order && order.revenue_items && order.revenue_items.map((r, index) => {
-                                       return <>
-                                       <tr>
-                                          <td><strong className='text-sm text-black'>{r.revenue_item} - <span className='capitalize'>{r.rate_method}</span></strong></td>
-                                          <td><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /></td>
-                                       </tr>
-                                       </>
-                                    })}
-                              </>
-                           } */}
-                        <tr>
-                           <td><strong className='text-sm text-black text-xl'>Total</strong></td>
-                           <td className='font-bold text-black'><Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></td>
-                        </tr>
-                     </table>
-                  </ul>
-               </div>
-
-                
             </div>
          </div>
       }

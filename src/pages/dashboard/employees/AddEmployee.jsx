@@ -7,7 +7,7 @@ import countries from './../../common/Countries';
 
 export default function AddEmployee({fetchLists, item, text, classes}){
 
-    const commisions = Array.from({ length: 100 }, (_, index) => (index + 1) * 5);
+    const commisions = Array.from({ length: 100 }, (_, index) => (index + 1) * 1);
     const [staffType, setStaffType] = useState(item?.role);
     const [data, setData] = useState({
       name: item?.name || "",

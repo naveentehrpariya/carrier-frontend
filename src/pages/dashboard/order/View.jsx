@@ -10,6 +10,7 @@ import Badge from '../../common/Badge';
 import { FaLock } from "react-icons/fa";
 import { FaLockOpen } from "react-icons/fa6";
 import { FaTruckMoving } from "react-icons/fa6";
+import OrderMap from './OrderMap';
 
 export default function ViewOrder() {
    
@@ -59,34 +60,37 @@ export default function ViewOrder() {
                   </ul>
                </div>
 
-               <div className='orderFill py-3 mt-3 pt-4 grid grid-cols-3 gap-4'>
-                  <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
-                     <p className='font-bold text-gray-400 text-xl mb-2'>Customer Details</p>
-                     <ul className=''>
-                        <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Name:</strong><Link className='text-main' to={`/customer/detail/${order?.customer?._id}`}>{order?.customer?.name || "--"}({order?.customer?.customerCode || "--"})</Link> </p> </li>
-                        <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Phone :</strong>{order?.customer?.phone } {order?.customer?.phone ? `,${order?.customer?.secondary_phone}` :'' } </p> </li>
-                        <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Email :</strong> {order?.customer?.email } {order?.customer?.email ? `,${order?.customer?.secondary_email}` :'' }</p> </li>
-                        <li className='flex items-center'><p className=''><strong className=' !text-gray-400'>Payment Status:</strong> <Badge approved={order?.customer_payment_approved_by_admin} date={order?.customer_payment_date || ""} title={true} status={order?.customer_payment_status} text={`${order?.customer_payment_status === 'paid' ? `via ${order?.customer_payment_method}` :''} `} /></p> </li>
+               <div className='orderFill py-3 mt-3 pt-4 grid grid-cols-2 gap-4'>
+                  <div>
+                     <div className='customerDetails mb-2 bg-dark1 border border-gray-700 p-4 rounded-xl'>
+                        <p className='font-bold text-gray-400 text-xl mb-2'>Customer Details</p>
+                        <ul className=''>
+                           <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Name:</strong><Link className='text-main' to={`/customer/detail/${order?.customer?._id}`}>{order?.customer?.name || "--"}({order?.customer?.customerCode || "--"})</Link> </p> </li>
+                           <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Phone :</strong>{order?.customer?.phone } {order?.customer?.phone ? `,${order?.customer?.secondary_phone}` :'' } </p> </li>
+                           <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Email :</strong> {order?.customer?.email } {order?.customer?.email ? `,${order?.customer?.secondary_email}` :'' }</p> </li>
+                           <li className='flex items-center'><p className=''><strong className=' !text-gray-400'>Payment Status:</strong> <Badge approved={order?.customer_payment_approved_by_admin} date={order?.customer_payment_date || ""} title={true} status={order?.customer_payment_status} text={`${order?.customer_payment_status === 'paid' ? `via ${order?.customer_payment_method}` :''} `} /></p> </li>
+                        </ul>
+                     </div>
+                     <div className='customerDetails mb-2 bg-dark1 border border-gray-700 p-4 rounded-xl'>
+                        <p className='font-bold text-gray-400 text-xl mb-2'>Carrier Details</p>
+                        <ul className=''>
+                           <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Carrier Name:</strong> <p><Link className='text-main' to={`/carrier/detail/${order?.carrier?._id}`}>{order?.carrier?.name} (MC{order?.carrier?.mc_code})</Link> </p> </li>
+                           <li className=' flex mb-2'> <p> <strong className=' me-2 !text-gray-400'>Carrier Phone :</strong> {order?.carrier?.phone}, {order?.carrier?.secondary_phone}</p> </li>
+                           <li className=' flex mb-2'> <p className='break-all'><strong className=' me-2 !text-gray-400 '>Carrier Email :</strong> {order?.carrier?.email}, {order?.carrier?.secondary_email}</p> </li>
+                           <li className=' flex items-center'><strong className=' !text-gray-400'>Payment Status:</strong> <p className='ps-2'><Badge approved={order?.carrier_payment_approved_by_admin} date={order?.carrier_payment_date || ""} title={true} status={order?.carrier_payment_status} text={`${order?.carrier_payment_status === 'paid' ? `via ${order?.carrier_payment_method}` :''} `} /></p> </li>
                      </ul>
+                     </div>
+                     <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
+                        <p className='font-bold text-gray-400 text-xl mb-2'>Staff Details</p>
+                        <ul className=''>
+                           <li className=' flex items-center mb-2'><strong className=' !text-gray-400'>Staff Name:</strong> <p className='ps-2'>{order?.created_by?.name}</p> </li>
+                           <li className=' flex items-center mb-2'><strong className=' me-1 !text-gray-400'>Email: </strong> <p>{order?.created_by?.email}</p> </li>
+                           <li className=' flex items-center mb-2 '><strong className=' me-1 !text-gray-400'>Phone: </strong> <p>{order?.created_by?.phone}</p> </li>
+                           <li className=' flex items-center capitalize'> <p> <strong className=' me-1 !text-gray-400'>Address : </strong> {order?.created_by?.address}</p> </li>
+                        </ul>
+                     </div>
                   </div>
-                  <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
-                     <p className='font-bold text-gray-400 text-xl mb-2'>Carrier Details</p>
-                     <ul className=''>
-                        <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Carrier Name:</strong> <p><Link className='text-main' to={`/carrier/detail/${order?.carrier?._id}`}>{order?.carrier?.name} (MC{order?.carrier?.mc_code})</Link> </p> </li>
-                        <li className=' flex mb-2'> <p> <strong className=' me-2 !text-gray-400'>Carrier Phone :</strong> {order?.carrier?.phone}, {order?.carrier?.secondary_phone}</p> </li>
-                        <li className=' flex mb-2'> <p className='break-all'><strong className=' me-2 !text-gray-400 '>Carrier Email :</strong> {order?.carrier?.email}, {order?.carrier?.secondary_email}</p> </li>
-                        <li className=' flex items-center'><strong className=' !text-gray-400'>Payment Status:</strong> <p className='ps-2'><Badge approved={order?.carrier_payment_approved_by_admin} date={order?.carrier_payment_date || ""} title={true} status={order?.carrier_payment_status} text={`${order?.carrier_payment_status === 'paid' ? `via ${order?.carrier_payment_method}` :''} `} /></p> </li>
-                    </ul>
-                  </div>
-                  <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
-                     <p className='font-bold text-gray-400 text-xl mb-2'>Staff Details</p>
-                     <ul className=''>
-                        <li className=' flex items-center mb-2'><strong className=' !text-gray-400'>Staff Name:</strong> <p className='ps-2'>{order?.created_by?.name}</p> </li>
-                        <li className=' flex items-center mb-2'><strong className=' me-1 !text-gray-400'>Email: </strong> <p>{order?.created_by?.email}</p> </li>
-                        <li className=' flex items-center mb-2 '><strong className=' me-1 !text-gray-400'>Phone: </strong> <p>{order?.created_by?.phone}</p> </li>
-                        <li className=' flex items-center capitalize'> <p> <strong className=' me-1 !text-gray-400'>Address : </strong> {order?.created_by?.address}</p> </li>
-                     </ul>
-                  </div>
+                  <OrderMap order={order} />
                </div>
 
                 
@@ -159,7 +163,6 @@ export default function ViewOrder() {
                      })}
                   </div>
                }
-
 
                {order && order.carrier_revenue_items &&
                   <div id='revanue' className='orderFill border-t border-gray-700 pb-3 mt-1 pt-6'>
