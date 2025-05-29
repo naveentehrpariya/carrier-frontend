@@ -96,7 +96,7 @@ export default function CarrierOrders({isRecent, carrierID, customer, carrier, s
 
             {/* Payments status */}
             <div className='flex justify-between items-center mt-12 '>
-               <h2 className='text-white text-2xl mb-4 md:mb-0'>Customer Order Payment</h2>
+               <h2 className='text-white text-2xl mb-4 md:mb-0'>Carrier Payments</h2>
                <CarrierPaymentExel  carrier={carrier} data={lists} />
             </div>
                      {loadingPayments ? <Loading />
@@ -120,7 +120,7 @@ export default function CarrierOrders({isRecent, carrierID, customer, carrier, s
                                  return (
                                     <tr key={index}>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-center'>{index + 1}</td>
-                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'>CMC{item.serial_no}</td>
+                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'><Link className='text-main' to={`/view/order/${item._id}`} >CMC{item.serial_no}</Link></td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start'><Currency amount={item?.carrier_amount} currency={item?.revenue_currency || 'cad'} /></td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start '> <Badge title={true} status={item?.carrier_payment_status} text={``} /></td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start'>{item.carrier_payment_method || 'N/A'}</td>

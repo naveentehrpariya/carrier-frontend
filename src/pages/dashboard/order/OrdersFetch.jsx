@@ -19,7 +19,7 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
    // get search query param from url
    const [searchParams] = useSearchParams();
    const status = searchParams.get('status');
-   const [orderStatus, setOrderStatus] = useState(status || 'all');
+   const [orderStatus, setOrderStatus] = useState(status || null);
    const fetchLists = (value) => {
       setLoading(true);
       const resp = Api.get(`/order/listings?${orderStatus ?`status=${orderStatus}` : ''}${payementStatus ?`&paymentStatus=${payementStatus}` : ''}${value ?`&search=${value}` : ''}${customer ?`&customer_id=${customer}` : ''} ${sortby ?`&sortby=${sortby}` : ''}`);
@@ -84,27 +84,32 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
                <div className='sm:flex items-center justify-between md:justify-end'>
                   {hideFilter ? '' :
                   <>
-                  <select 
-                  defaultValue={orderStatus}
-                  onChange={(e) => {handleFilter(e.target.value)}}
-                  className={`appearance-none ${orderStatus ? "bg-main" : ''} text-white text-sm min-w-[140px] max-w-[150px] w-full md:w-auto bg-dark1 border border-gray-600 rounded-xl px-4 py-[13px] me-3 focus:shadow-0 focus:outline-0`}>
-                  <option value={''}>All Orders</option>
-                  <option value={'added'}>Added Orders</option>
-                  <option value={'intransit'}>In-transit</option>
-                  <option value={'completed'}>Completed Orders</option>
-                  </select>
-
-                  
-                  <select 
+                  <div className='relative me-3'>
+                     {orderStatus ? <button onClick={()=>setOrderStatus()} className='bg-blue-600 p-1 text-2xl text-white absolute top-[3px] right-2 hover:text-red-500'>&times;</button> :""}
+                     <select 
                      defaultValue={orderStatus}
-                     onChange={(e) => {handlePaymentFilter(e.target.value)}}
-                     className={`appearance-none text-white text-sm min-w-[140px] max-w-[150px] w-full md:w-auto bg-dark1 border border-gray-600 rounded-xl px-4 py-[13px] me-3 focus:shadow-0 focus:outline-0`}>
-                     <option value={''}>All Payments</option>
-                     <option value={'paid'}>Completed Payments</option>
-                     <option value={'pending'}>Pending Payments</option>
-                     <option value={'initiated'}>Initiated Payments</option>
-                     <option value={'failed'}>Failed Payments</option>
-                  </select>
+                     onChange={(e) => {handleFilter(e.target.value)}}
+                     className={`appearance-none ${orderStatus ? "bg-blue-600 border border-blue-500" : 'bg-dark1 border border-gray-600'} text-white text-sm min-w-[160px] max-w-[170px] w-full md:w-auto  rounded-xl px-4 py-[13px]  focus:shadow-0 focus:outline-0`}>
+                     <option value={''}>All Orders</option>
+                     <option value={'added'}>Added Orders</option>
+                     <option value={'intransit'}>In-transit</option>
+                     <option value={'completed'}>Completed Orders</option>
+                     </select>
+                  </div>
+
+                  <div className='relative me-3'>
+                     {payementStatus ? <button onClick={()=>setPaymentStatus()} className='bg-blue-600 p-1 text-2xl text-white absolute top-[3px] right-2 hover:text-red-500'>&times;</button> :""}
+                     <select 
+                        defaultValue={payementStatus}
+                        onChange={(e) => {handlePaymentFilter(e.target.value)}}
+                        className={`${payementStatus ? "bg-blue-600 border border-blue-500" : 'bg-dark1 border border-gray-600'} appearance-none text-white text-sm min-w-[140px] max-w-[170px] w-full md:w-auto  rounded-xl px-4 py-[13px] focus:shadow-0 focus:outline-0`}>
+                        <option value={''}>All Payments</option>
+                        <option value={'paid'}>Completed Payments</option>
+                        <option value={'pending'}>Pending Payments</option>
+                        <option value={'initiated'}>Initiated Payments</option>
+                        <option value={'failed'}>Failed Payments</option>
+                     </select>
+                  </div>
 
                   </>
                   }

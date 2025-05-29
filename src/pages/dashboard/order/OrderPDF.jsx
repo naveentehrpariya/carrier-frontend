@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import AuthLayout from '../../../layout/AuthLayout';
 import Logotext from '../../common/Logotext';
 import Badge from '../../common/Badge';
@@ -9,13 +9,14 @@ import TimeFormat from '../../common/TimeFormat';
 import Currency from '../../common/Currency';
 import { jsPDF } from "jspdf";
 import Loading from '../../common/Loading';
+import DistanceInMiles from '../../common/DistanceInMiles';
 
 export default function OrderPDF() {
    
    
    const [loading, setLoading] = useState(true);
    const [order, setOrder] = useState([]);
-   const {Errors, company} = useContext(UserContext);
+   const {Errors, company, user} = useContext(UserContext);
    const { id } = useParams();
    const [downloadingPdf, setDownloadingPdf] = useState(false);
    const pdfRef = useRef();
@@ -83,7 +84,11 @@ export default function OrderPDF() {
    return <AuthLayout>
       <div className='flex justify-between items-center'>
          <h1 className='text-xl font-bold text-white mb-6 mt-4'>Customer Order #{order?.customer_order_no}</h1>
-         <button className='bg-main px-4 py-2 rounded-xl text-normal test' onClick={downloadPDF} >{downloadingPdf ? "Downloading..." : "Download PDF"}</button>
+         
+         <div className='flex items-center'>
+           
+            <button  button className='bg-main px-4 py-2 rounded-xl text-normal test' onClick={downloadPDF} >{downloadingPdf ? "Downloading..." : "Download PDF"}</button>
+         </div>
       </div>
 
       
@@ -125,15 +130,12 @@ export default function OrderPDF() {
                <div className='relative'>
                   {order && order.shipping_details && order.shipping_details.map((s, index) => {
                      return <>
-                           <div className="grid grid-cols-2 gap-6 mb-4">
-                           <div>
+                           <div className="grid grid-cols-3 gap-2 mb-4">
                               <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
                               <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
-                           </div>
-                           <div>
+                              <p><strong>Total Distance : </strong> <DistanceInMiles d={order.totalDistance} /></p>
                               <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
                               <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
-                           </div>
                            </div>
 
                            <div className="mb-6">
@@ -217,7 +219,7 @@ export default function OrderPDF() {
                </div>
                <div className="flex justify-between items-center mt-6">
                <div>
-                  <div className="font-semibold">Carrier Signature: -------------- </div>
+                  {/* <div className="font-semibold">Carrier Signature: -------------- </div> */}
                </div>
                <div className="text-right">
                   <div>Date: {todaydate.getDate()} / {(todaydate.getMonth()+1) > 9 ? (todaydate.getMonth()+1) : '0'+(todaydate.getMonth()+1)} / {todaydate.getFullYear()}</div>

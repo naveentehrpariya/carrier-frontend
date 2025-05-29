@@ -163,7 +163,7 @@ export default function AddOrder(){
                 toast.error(res.data.msg)
               }
             });
-        return alldistance;
+        return alldistance || 0;
     };
  
     const [shippingDetails, setShippingDetails] = useState([

@@ -11,13 +11,21 @@ import { FaLock } from "react-icons/fa";
 import { FaLockOpen } from "react-icons/fa6";
 import { FaTruckMoving } from "react-icons/fa6";
 import OrderMap from './OrderMap';
+import DistanceInMiles from '../../common/DistanceInMiles';
+import OrderView from './OrderView';
+import Dropdown from '../../common/Dropdown';
+import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
+import UpdatePaymentStatus from '../accounts/UpdatePaymentStatus';
+import LockOrder from './LockOrder';
+import UpdateOrderStatus from '../accounts/UpdateOrderStatus';
+import { LuDownload } from "react-icons/lu";
 
 export default function ViewOrder() {
    
    const [order, setOrder] = useState([]);
    const [paymentLogs, setPaymentLogs] = useState([]);
    const [loading, setLoading] = useState(true);
-   const {Errors} = useContext(UserContext);
+   const {Errors,user} = useContext(UserContext);
    const { id } = useParams();
    
    const fetchOrder = () => {
@@ -46,17 +54,52 @@ export default function ViewOrder() {
       <div className='flex justify-between items-center'>
          <h1 className='text-2xl font-bold text-white mb-6 mt-4'> Order CMC{order?.serial_no}</h1>
          {/* <button className='bg-main px-4 py-2 rounded-xl'>Edit Order</button> */}
-         <Link to={`/order/detail/${order?._id}`} className='bg-main px-4 py-2 rounded-xl'>Download PDF</Link>
+         <div className='flex items-center ps-3'>
+            <Link to={`/order/detail/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Carrier Sheet</Link>
+            <Link to={`/order/customer/invoice/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Invoice</Link>
+            <Dropdown classes={'relative top-1'} iconsize={'30px '}>
+               {(user && user.is_admin === 1) || (user && user.role === 2) ?
+                  <>
+                     <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
+                        <UpdatePaymentStatus pstatus={order?.carrier_payment_status} pmethod={order?.carrier_payment_method} pnotes={order?.carrier_payment_notes} text={<>{order?.lock ? <FaLock size={12} className='me-1' /> : ""} Update Carrier Payment</>} paymentType={2} id={order?.id} type={2} fetchLists={fetchOrder} />
+                     </li>
+                     {user && user.is_admin === 1 ?
+                        <>
+                           <li className='list-none text-sm'>
+                              <LockOrder order={order} fetchLists={fetchOrder} />
+                           </li>
+                        </>
+                     : ''}
+                     <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
+                        <UpdatePaymentStatus pstatus={order?.customer_payment_status} pmethod={order?.payment_method} pnotes={order?.customer_payment_notes} text={<>{order?.lock ? <FaLock size={12} className='me-1' /> : ""} Update Customer Payment</>} paymentType={1} id={order?.id} type={1} fetchLists={fetchOrder} />
+                     </li>
+                     <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
+                        <UpdateOrderStatus text={<>{order?.lock ? <FaLock size={12} className='me-1' /> : ""} Update Order Status </>} id={order?.id} fetchLists={fetchOrder} />
+                     </li>
+                  </> 
+               : '' }
+               <li className='list-none text-sm'>
+                  <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${order?._id}`}>Download Customer Invoice</Link>
+               </li>
+               <li className='list-none text-sm'>
+                  <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${order?._id}`}>Download Carrier Sheet</Link>
+               </li>
+            </Dropdown>
+            <div className='ms-3'>
+               <OrderView text={<><TbLayoutSidebarLeftCollapse size={20} /></>}  order={order} fetchLists={fetchOrder} />
+            </div>
+         </div>
+      
       </div> 
       {loading ? <Loading /> : 
          <div className='boltables' >
             <div  className='text-white m-auto'>
                <div className='py-3 mt-3 pt-4'>
                   <ul className='grid grid-cols-4 gap-2'>
-                     <li className=''><strong className='text-gray-400 '> Order No. # :</strong> <p className='flex mt-1'>{order?.lock ? <FaLock className='me-1' /> : <FaLockOpen className='me-1' />} CMC{order?.serial_no}</p> </li>
+                     <li className=''><strong className='text-gray-400 '> Order No. # :</strong> <p className='flex mt-1'>{order?.lock ? <FaLock className='me-1 text-red-500' /> : <FaLockOpen className='me-1' />} CMC{order?.serial_no}</p> </li>
                      <li className=''><strong className='text-gray-400'>Order Created Date :</strong> <p><TimeFormat date={order?.createdAt} /></p> </li>
                      <li className=''><strong className='text-gray-400'>Order Status :</strong> <p><Badge title={true} status={order?.order_status} /></p> </li>
-                     <li className=''><strong className='text-gray-400'>Total Distance :</strong> <p>{order.totalDistance || "00"} Miles</p> </li>
+                     <li className=''><strong className='text-gray-400'>Total Distance :</strong> <p><DistanceInMiles d={order.totalDistance} /></p> </li>
                   </ul>
                </div>
 

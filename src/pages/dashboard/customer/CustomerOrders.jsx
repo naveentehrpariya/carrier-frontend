@@ -121,7 +121,7 @@ export default function CustomerOrders({isRecent, customerID, customer, carrier,
                                  return (
                                     <tr key={index}>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-center'>{index + 1}</td>
-                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'>CMC{item.serial_no}</td>
+                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'><Link className='text-main' to={`/view/order/${item._id}`} >CMC{item.serial_no}</Link></td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start'><Currency amount={item?.total_amount} currency={item?.revenue_currency || 'cad'} /></td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start '> <Badge title={true} status={item?.customer_payment_status} text={``} /></td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start'>{item.customer_payment_method || 'N/A'}</td>

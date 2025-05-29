@@ -99,7 +99,7 @@ body{background:var(--dark);font-family:'productsans';}
   }
 }
 .disabled-order {
-  opacity: 0.8;
+  opacity: 0.6;
   pointer-events: none;
   cursor: not-allowed;
 }

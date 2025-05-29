@@ -37,10 +37,15 @@ export default function LockOrder({text, order, fetchLists}) {
     <>
       <Popup action={action} size="md:max-w-xl" space='p-8' bg="bg-black" btnclasses="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700" 
       btntext={text ? text :<>{order.lock ? "Unlock Order" : 'Lock Order'}</>} >
-         <h2 className='text-white font-bold text-center text-lg '>Lock Order</h2>
-          <p className='text-white text-center my-4 text-lg'>After locking the order you <br></br>will not be able to update it.</p>
+         <h2 className='text-white font-bold text-center text-lg '>{order.lock ? "Unlock Order" : 'Lock Order'}</h2>
+
+         {order.lock ?
+          <p className='text-white text-center my-4 text-lg'>After unlocking,   payment and order status can be updated.</p>
+          :
+          <p className='text-white text-center my-4 text-lg'>After locking the order, you <br></br>will not be able to update it.</p>
+         }
          <div className='flex justify-center items-center'>
-            <button onClick={lockOrder} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Updating" : <>{order.lock ? "Unlock Order" : 'Lock Order'}</> }</button>
+            <button onClick={lockOrder} className={`btn md mt-6 px-[50px] ${order.lock ? "bg-green-500" : 'bg-red-500'} text-black font-bold`}>{loading ? "Updating" : <>{order.lock ? "Unlock Order" : 'Lock Order'}</> }</button>
          </div>
       </Popup>
     </>

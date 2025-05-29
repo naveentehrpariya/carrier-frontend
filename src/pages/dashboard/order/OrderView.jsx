@@ -6,7 +6,10 @@ import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { BsFiletypeDoc } from "react-icons/bs";
 import TimeFormat from '../../common/TimeFormat';
+import Badge from '../../common/Badge';
 
+import { FaLock } from "react-icons/fa";
+import { FaLockOpen } from "react-icons/fa6";
 export default function OrderView({order, text, fetchLists, btnclasses}){ 
 
    const [open, setOpen] = useState(false);
@@ -139,7 +142,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                         </div>
                      </> :
                      <div className="relative w-full max-w-xs mb-10  bg-white bg-gray-200 rounded-lg border border-dashed m-auto">
-                        <input onChange={handleFile} type="file" id="file-upload" className="hidden" />
+                        <input onChange={handleFile} type="file" id="file-upload" accept="image/*,application/pdf,text/plain" className="hidden" />
                         <label for="file-upload" className="z-20 flex flex-col-reverse items-center justify-center w-full cursor-pointer p-8">
                            <p className="z-10 text-xs font-light text-center text-gray-500">Drag & Drop your files here</p>
                            <svg className="z-10 w-8 h-8 text-indigo-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -173,7 +176,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
 
             <div className="flex mt-6 justify-between items-center">
                <p className=' text-gray-100 text-xl'>Notes</p>
-               <AddNotes text={"Edit Note"} classes="text-main" note={order.notes} id={order.id} fetchLists={fetchLists} />
+               {order?.lock ? <button className='flex items-center'>{order?.lock ? <FaLock className='me-1 text-red-500' /> : <FaLockOpen className='me-1' />} Edit Notes</button> : <AddNotes text={"Edit Note"} classes="text-main" note={order.notes} id={order.id} fetchLists={fetchLists} />}
             </div>
 
             <p className='my-2 text-white mb-4'>{order.notes}</p>
@@ -204,10 +207,8 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                               </video>
                               : ""
                            }
-                           
                            { getMime(f.mime) === 'doc'?
-                              <iframe className='w-full rounded-xl ' src={f.url} >
-                              </iframe>
+                              <iframe className='w-full rounded-xl ' src={f.url} > </iframe>
                               : ""
                            }
 
@@ -218,6 +219,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                      
                      <p className='text-center text-gray-400 mt-2'>{f.name}</p>
                      <p className='text-gray-500 text-sm'>Size : {size.toFixed(2)}MB</p>
+                     <p className='text-gray-500 text-sm'>Added By : {f.added_by?.name}</p>
                   </a>
                })}
             </div>
@@ -227,16 +229,15 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                   <h2 className='text-gray-100 text-xl mt-4 pb-2 border-t border-gray-700 pt-6'>Payment Logs</h2>
                   {paymentLogs && paymentLogs.map((f, i)=>{
                      return <div key={i} className='border-b !border-gray-800 py-3 mb-3'>
-                     
-                        {f.approval ?
+                        {f.approval && f.updated_by.is_admin ?
                         <>
-                        <p className='text-gray-500 text-[17px]'>{f.type} Payment status {f.status} is approved via payment method {f.method}.</p>
+                        <p className='text-gray-500 text-[17px]'>{f.type} Payment status <Badge classes={'!inline m-0'} title={true} status={f.status} /> is <span className='text-green-500'>approved</span> via payment method {f.method}.</p>
                         <p className='text-gray-500 mt-2 text-sm'>Approved By : {f.updated_by?.name}{f.updated_by?.phone ? `(${f.updated_by?.phone})` : ''}</p>
                         <p className='text-gray-300 mt-2 text-sm'>Date : <TimeFormat date={f.createdAt || "--"} /></p>
                         </>
                         :
                         <>
-                        <p className='text-gray-500 text-[17px]'>{f.type} Payment status updated to {f.status} via payment method {f.method}.</p>
+                        <p className='text-gray-500 text-[17px] '>{f.type} Payment status updated to <Badge classes={'!inline m-0'} title={true} status={f.status} /> via payment method {f.method}.</p>
                         <p className='text-gray-500 mt-2 text-sm'>Update By : {f.updated_by?.name}{f.updated_by?.phone ? `(${f.updated_by?.phone})` : ''}</p>
                         <p className='text-gray-300 mt-2 text-sm'>Date : <TimeFormat date={f.createdAt || "--"} /></p>
                         </> }
