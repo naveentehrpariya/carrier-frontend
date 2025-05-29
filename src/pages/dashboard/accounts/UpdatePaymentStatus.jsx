@@ -4,7 +4,8 @@ import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
 import toast from 'react-hot-toast';
 
-export default function UpdatePaymentStatus({id, item, fetchLists, paymentType, text, pstatus, pmethod, pnotes}) {
+export default function UpdatePaymentStatus({order, id, classes, fetchLists, paymentType, text, pstatus, pmethod, pnotes}) {
+   
    const statuses = [
       {
          name: "pending"
@@ -34,9 +35,9 @@ export default function UpdatePaymentStatus({id, item, fetchLists, paymentType, 
       } 
    ];
 
-   const {Errors} = useContext(UserContext);
+   const {Errors, user} = useContext(UserContext);
    const [type, setType] = useState(paymentType);
-   const [method, setmethod] = useState(pmethod || 'Cheque');
+   const [method, setmethod] = useState(pmethod || 'cheque');
    const [status, setStatus] = useState( pstatus || 'pending');
    const [notes, setNotes] = useState( pnotes || '');
    const [action, setaction] = useState();
@@ -67,7 +68,7 @@ export default function UpdatePaymentStatus({id, item, fetchLists, paymentType, 
 
   return (
     <>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700" btntext={text || "Update Status"} >
+      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={`${classes} p-3 hover:opacity-60 w-full text-start rounded-xl text-gray-700 whitespace-nowrap flex items-center`} btntext={text || "Update Status"} >
          <h2 className='text-white font-bold'>Update {type === 1 ? 'Customer' : 'Carrier'} Payment Status</h2>
          {/* <div>
             <label className="mt-4 block text-sm mb-2  text-gray-400">Choose Payment Type</label>
@@ -79,8 +80,8 @@ export default function UpdatePaymentStatus({id, item, fetchLists, paymentType, 
          <div className='grid sm:grid-cols-2 gap-4'>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Payment Status {pmethod}</label>
-               <select defaultValue={status}  onChange={(e)=>setStatus(e.target.value)} name='payment_status' className="input-sm" >
-               <option selected disabled className='text-black'>Choose Payment Status</option>
+               <select defaultValue={status}  onChange={(e)=>setStatus(e.target.value)} name='payment_status' className="focus:outline-0 capitalize input-sm" >
+               <option selected disabled className='text-black capitalize'>Choose Payment Status</option>
                   {statuses && statuses.map((c, i)=>{
                      return <option value={c.name} className='text-black capitalize'>{c.name}</option>
                   })}
@@ -88,7 +89,7 @@ export default function UpdatePaymentStatus({id, item, fetchLists, paymentType, 
             </div>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Payment method</label>
-               <select defaultValue={method} onChange={(e)=>setmethod(e.target.value)} name='payment_method' className="input-sm" >
+               <select defaultValue={method} onChange={(e)=>setmethod(e.target.value)} name='payment_method' className="focus:outline-0 capitalize input-sm" >
                <option selected disabled className='text-black'>Choose Payment method</option>
                   {methods && methods.map((c, i)=>{
                      return <option value={c.name} className='text-black capitalize'>{c.name}</option>
@@ -97,10 +98,26 @@ export default function UpdatePaymentStatus({id, item, fetchLists, paymentType, 
             </div>
          </div>
          <div className='input-item mt-4'>
-            <textarea defaultValue={notes} onChange={(e)=>setNotes(e.target.value)} placeholder='Notes' className='bg-dark border border-gray-700 rounded-2xl w-full p-4 text-white' rows='3'></textarea>
+            <textarea defaultValue={notes} onChange={(e)=>setNotes(e.target.value)} placeholder='Notes' className='bg-dark border border-gray-700 rounded-2xl w-full p-4 text-white focus:outline-0' rows='3'></textarea>
          </div>
+
+                
+         {paymentType === 1 && user && user?.is_admin && order?.customer_payment_date ?
+            <p className='text-green-600 text-center capitalize  mt-3 '>Order payment status is updated to <span className='font-bold'>{status}.</span></p>
+         : ''}
+
+         {paymentType === 2 && user && user?.is_admin && order?.carrier_payment_date ?
+            <p className='text-green-600 text-center capitalize  mt-3 '>Order payment status is updated to <span className='font-bold'>{status}.</span></p>
+         : ''}
+
          <div className='flex justify-center items-center'>
-            <button  onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
+            {user && user?.is_admin ?
+               <>
+               <button onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn !bg-green-600 text-white capitalize font-bold">{loading ? "Updating..." : `Approve ${status} Status`}</button>
+               </>
+               :
+               <button  onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Updating..." : "Update"}</button>
+            }
          </div>
       </Popup>
     </>

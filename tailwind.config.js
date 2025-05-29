@@ -18,6 +18,10 @@ module.exports = {
       fontFamily: {
         custom: ['productsans', 'sans-serif'],
       },
+      rotate: {
+        '30': '30deg',
+        '270': '270deg',
+      }
     },
   },
   plugins: [],

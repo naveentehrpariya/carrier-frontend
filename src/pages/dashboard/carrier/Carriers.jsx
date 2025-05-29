@@ -7,6 +7,7 @@ import TimeFormat from '../../common/TimeFormat';
 import Loading from '../../common/Loading';
 import RemoveCarrier from './RemoveCarrier';
 import Nocontent from './../../common/NoContent';
+import { Link } from 'react-router-dom';
 export default function Carriers() {
 
 
@@ -75,21 +76,22 @@ export default function Carriers() {
                      return <tr key={`carriew-${index}`}>
 
                         <td className='text-sm text-start  uppercase border-b border-gray-900'>
-                           <p className='text-white font-bold'>{c.name}</p>
+                           <p className='text-white font-bold'><Link className='text-main' to={`/carrier/detail/${c?._id}`}>{c?.name}</Link> </p>
                            <p className='text-gray-400'>MC{c.mc_code}</p>
                         </td>
 
                         <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
-                           <p>{c.email || ""}</p>
-                           <p>{c.secondary_email || ""}</p>
+                           <p>{c?.email ? <a href={`mailto:${c?.email}`}>{c?.email}</a>  : "--"}</p>
+                           <p>{c?.secondary_email ? <a href={`mailto:${c?.secondary_email}`}>{c?.secondary_email}</a>  : ""}</p>
                         </td>
+
                         <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
-                           <p>{c.phone || ""}</p>
-                           <p>{c.secondary_phone || ""}</p>
+                           <p>{c?.phone ? <a href={`tel:${c?.phone}`}>{c?.phone}</a>  : "--"}</p>
+                           <p>{c?.secondary_phone ? <a href={`tel:${c?.secondary_phone}`}>{c?.secondary_phone}</a>  : ""}</p>
                         </td>
-                        
+
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <div class='has-tooltip line-clamp-1 max-w-[160px]'>
+                           <div class='has-tooltip line-clamp-2 max-w-[200px]'>
                               <span class='tooltip rounded shadow-xl p-2 bg-gray-100 text-black -mt-8 '>{c.location || "--"} {c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}</span>
                               {c.location || "--"} {c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}
                            </div>
@@ -106,6 +108,7 @@ export default function Carriers() {
                               <RemoveCarrier classes="text-red-600 mt-2" text={"Remove"} item={c} fetchLists={fetchLists} />
                            </td> 
                         : "" }
+
                      </tr>
                   })}
                   

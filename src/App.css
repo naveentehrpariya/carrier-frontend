@@ -28,18 +28,21 @@ body{
 .darkpopup .close{color:#fff;}
 body{background:var(--dark);font-family:'productsans';}
 .bg-main-fade{background:var(--main-fade);}
+
 .bg-main{background:var(--main);}
 .bg-dark{background:var(--dark);}
 .bg-dark1{background:var(--dark1);}
 .bg-dark2{background:var(--dark2);}
 .bg-dark3{background:var(--dark3);}
+
 .text-main{color:var(--main);}
 .font-mona{font-family:'monasans','sans-serif';}
 .font-mona-i{font-family:'monasans-italic','sans-serif';}
 .input-field{border:1px solid var(--main);}
 .input:not(select):focus{box-shadow:none;outline:none;background:var(--dark2);}
 .border-main{border:1px solid var(--main);}
-@layer components{.btn{@apply px-6 py-2.5 cursor-pointer text-white bg-main font-medium rounded-[30px] text-sm text-center}
+@layer components {
+.btn{@apply px-6 py-2.5 cursor-pointer text-white bg-main font-medium rounded-[30px] text-sm text-center}
 .md{@apply text-[16px] px-7 py-3 text-center}
 .lg{@apply text-[18px] px-8 py-3.5 text-center}
 .heading{@apply text-white font-bold font-mona}
@@ -49,9 +52,7 @@ body{background:var(--dark);font-family:'productsans';}
 .normal-heading{@apply text-white text-[24px] font-bold}
 .para{@apply text-white text-[24px] font-bold}
 .input{@apply bg-dark2 justify-center  border-gray-700 border items-start px-[25px] py-[21px] mt-2.5 w-full whitespace-nowrap text-white rounded-[20px] bg-black max-w-full }
-.input-sm {
-  @apply input px-[20px] py-[15px] rounded-[15px]
-}
+.input-sm {@apply input px-[20px] py-[15px] rounded-[15px]}
 .box{@apply rounded-[30px] bg-dark1}
 }
 .disabled{opacity:0.5;pointer-events:none;cursor:none;}
@@ -96,4 +97,25 @@ body{background:var(--dark);font-family:'productsans';}
   .mobilesidebar.open {
     display: block; transition: 0.5s; z-index: 9999999;
   }
+}
+.disabled-order {
+  opacity: 0.6;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+
+
+#place-picker-box{display:flex;justify-content:center;align-items:center;}
+#place-picker-container{text-align:left;}
+#place-picker-container {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 8px;
+}
+select {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
 }

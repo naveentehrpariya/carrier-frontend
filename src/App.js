@@ -11,11 +11,15 @@ import Orders from './pages/dashboard/order/Orders';
 import AddOrder from './pages/dashboard/order/AddOrder';
 import EmployeesLists from './pages/dashboard/employees/EmployeesLists';
 import AccountOrders from './pages/dashboard/accounts/AccountOrders';
-import OrderDetail from './pages/dashboard/order/OrderDetail';
+import OrderPDF from './pages/dashboard/order/OrderPDF';
 import CustomerInvoice from './pages/dashboard/order/CustomerInvoice';
 import ViewOrder from './pages/dashboard/order/View';
 import CompanyDetails from './pages/auth/CompanyDetails';
 import CustomerDetail from './pages/dashboard/customer/CustomerDetail';
+import Commodity from './pages/dashboard/admin/Commodity';
+import EquipAndCommudity from './pages/dashboard/admin/EquipAndCommudity';
+import PaymentLists from './pages/dashboard/payment/PaymentLists';
+import CarrierDetail from './pages/dashboard/carrier/CarrierDetail';
 
 
 
@@ -30,15 +34,18 @@ function App() {
                     <Route path="/" element={<Login /> } />
                     <Route path="/home" element={<Overview /> } />
                     <Route path="/orders" element={<Orders /> } />
-                    <Route path="/order/detail/:id" element={<OrderDetail /> } />
+                    <Route path="/order/detail/:id" element={<OrderPDF /> } />
                     <Route path="/edit/order/:id" element={<AddOrder isEdit={true} /> } />
                     <Route path="/view/order/:id" element={<ViewOrder /> } />
                     <Route path="/order/customer/invoice/:id" element={<CustomerInvoice /> } />
                     <Route path="/order/add" element={<AddOrder /> } />
                     <Route path="/customers" element={<Customers /> } />
+                    <Route path="/payments" element={<PaymentLists /> } />
                     <Route path="/customer/detail/:id" element={<CustomerDetail /> } />
                     <Route path="/carriers" element={<Carriers /> } />
+                    <Route path="/carrier/detail/:id" element={<CarrierDetail /> } />
                     <Route path="/employees" element={<EmployeesLists /> } />
+                    <Route path="/commodity-and-equipments" element={<EquipAndCommudity /> } />
                     <Route path="/accounts/orders" element={<AccountOrders /> } />
                     <Route path="/company/details" element={<CompanyDetails /> } />
                     <Route path="*" element={<Error404 />} /> 

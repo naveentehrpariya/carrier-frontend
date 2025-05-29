@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { HiDotsVertical } from 'react-icons/hi';
 
-export default function Dropdown({ children }) {
+export default function Dropdown({ children, classes, text,iconsize }) {
   const [open, setOpen] = useState(false);
   const buttonRef = useRef(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
@@ -21,8 +21,9 @@ export default function Dropdown({ children }) {
       )}
 
       <div className="relative inline-block text-left">
-        <button ref={buttonRef} onClick={() => setOpen(!open)}>
-          <HiDotsVertical size={'20px'} color="white" />
+        <button className={classes} ref={buttonRef} onClick={() => setOpen(!open)}>
+          {text ? text : <HiDotsVertical size={iconsize ? iconsize : '20px'} color="white" />}
+          
         </button>
 
         {open &&
@@ -33,7 +34,7 @@ export default function Dropdown({ children }) {
               aria-orientation="vertical"
               style={{
                 position: 'absolute',
-                top: `${dropdownPosition.top}px`,
+                top: `${dropdownPosition.top+30}px`,
                 left: `${dropdownPosition.left}px`,
               }}
             >

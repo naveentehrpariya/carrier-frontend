@@ -43,6 +43,19 @@ export default function AddCarrier({item, fetchLists, classes, text}){
           toast.success(res.data.message);
           fetchLists && fetchLists();
           setaction('close');
+          setData({
+            phone: "",
+            email:  "",
+            name:   "",
+            location: "",
+            country: "",
+            state: "",
+            city: "",
+            zipcode: "",
+            mc_code: "",
+            secondary_email: "",
+            secondary_phone: "",
+          });
           setTimeout(() => {
             setaction();
           }, 1000);
@@ -78,11 +91,11 @@ export default function AddCarrier({item, fetchLists, classes, text}){
             </div>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Phone</label>
-               <input defaultValue={item?.phone} required name='phone' onChange={handleinput} type={'number'} placeholder={"Phone Number"} className="input-sm" />
+               <input defaultValue={item?.phone} required name='phone' onChange={handleinput} type='number' placeholder={"Phone Number"} className="input-sm" />
             </div>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400"> Secondary Phone</label>
-               <input defaultValue={item?.secondary_phone} required name='secondary_phone' onChange={handleinput} type={'number'} placeholder={"Secondary Phone"} className="input-sm" />
+               <input defaultValue={item?.secondary_phone} required name='secondary_phone' onChange={handleinput} type='number' placeholder={"Secondary Phone"} className="input-sm" />
             </div>
             </div>
 
