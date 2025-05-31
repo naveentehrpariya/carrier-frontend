@@ -119,3 +119,11 @@ select {
      -moz-appearance: none;
           appearance: none;
 }
+.tooltipwrap + .tooltip-content {
+  display: none !important;
+  opacity: 0 !important;
+}
+.tooltipwrap:hover + .tooltip-content {
+  display: block !important;
+  opacity: 1 !important;
+}

@@ -49,7 +49,7 @@ export default function PaymentExelSheet({data, type, title}) {
                'Amount' :formattedValue((e?.revenue_currency||'cad'), e?.total_amount),
                'Status' : e?.customer_payment_status || 'None',
                'Method' : e?.customer_payment_method || 'None',
-               'Admin Approval' : e?.customer_payment_approved_by_admin ? "YES" : 'NO',
+               'Admin Approval' : e?.customer_payment_approved_by_admin ? "Approved" : 'Un-Approved',
                'Payment Date' : formattime(e?.customer_payment_date, 'time') || "None",
             });
          } else {

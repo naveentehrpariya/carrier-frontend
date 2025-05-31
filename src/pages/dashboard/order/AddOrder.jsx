@@ -336,12 +336,15 @@ export default function AddOrder(){
       console.log("shippingDetails",shippingDetails);
     },[shippingDetails]);
 
-    const addOrder = () => {
+    const addOrder = async () => {
+      if(distance == null || distance == 0 || distance == undefined || distance == '') {
+        await getDistance();
+      }
       const alldata = {...data, 
         "revenue_items"  : revenueItems || [],
         "carrier_revenue_items"  : carrierRevenueItems || [],
         "shipping_details" : shippingDetails || [],
-        "totalDistance" : distance > 0 ? distance : getDistance(),
+        "totalDistance" : parseInt(distance),
         "total_amount" : revenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
         "carrier_amount" : carrierRevenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
       };
@@ -388,7 +391,7 @@ export default function AddOrder(){
         setLoading(false);
         if (res.data.status === true) {
           toast.success(res.data.message);
-          // navigate('/orders')
+          navigate('/orders')
         } else {
           toast.error(res.data.message);
         }

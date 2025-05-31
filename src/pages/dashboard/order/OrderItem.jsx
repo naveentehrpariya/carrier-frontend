@@ -50,12 +50,14 @@ export default function OrderItem({lists, fetchLists}) {
                               pstatus={c.customer_payment_status} 
                               pmethod={c.payment_method} 
                               pnotes={c.customer_payment_notes} 
-                              text={<><Badge approved={c?.customer_payment_approved_by_admin} 
+                              text={<><Badge tooltipcontent={c?.customer_payment_date && !c?.customer_payment_approved_by_admin ? `Customer payment status currently in pending and not approve by admin yet.` :''} approved={c?.customer_payment_approved_by_admin} 
                               date={c?.customer_payment_date || ""} title={true} status={c?.customer_payment_status} text={`${c?.customer_payment_status === 'paid' ? `  (${c?.customer_payment_method})` :''} `} /></>} 
                               paymentType={1} id={c.id} type={1} 
                               fetchLists={fetchLists} /> 
                            :
-                              <Badge approved={c?.customer_payment_approved_by_admin} date={c?.customer_payment_date || ""} title={true} status={c?.customer_payment_status} text={`${c?.customer_payment_status === 'paid' ? `(${c?.customer_payment_method})` :''} `} />
+                              <Badge tooltipcontent={c?.customer_payment_date && !c?.customer_payment_approved_by_admin ? `Customer payment status currently in pending and not approve by admin yet.` :''} approved={c?.customer_payment_approved_by_admin}
+                              date={c?.customer_payment_date || ""} title={true} status={c?.customer_payment_status} 
+                              text={`${c?.customer_payment_status === 'paid' ? `(${c?.customer_payment_method})` :''} `} />
                            }
                            </p>
                         <p className='mt-1 whitespace-nowrap'>Order Amount : <Currency amount={c?.total_amount} currency={c?.revenue_currency || 'cad'} /></p>
@@ -72,7 +74,9 @@ export default function OrderItem({lists, fetchLists}) {
                            pmethod={c.carrier_payment_method} 
                            pnotes={c.carrier_payment_notes} 
                            text={<>
-                              <Badge approved={c?.carrier_payment_approved_by_admin} 
+                              <Badge 
+                              tooltipcontent={c?.carrier_payment_date && !c?.carrier_payment_approved_by_admin ? `Carrrier payment status currently in pending and not approve by admin yet.` :''}
+                              approved={c?.carrier_payment_approved_by_admin} 
                               date={c?.carrier_payment_date || ""} 
                               title={true} status={c?.carrier_payment_status} 
                               text={`${c?.carrier_payment_status === 'paid' ? `(${c?.carrier_payment_method})` :''} `} />
@@ -81,7 +85,9 @@ export default function OrderItem({lists, fetchLists}) {
                            fetchLists={fetchLists} 
                            />
                            :
-                           <Badge approved={c?.carrier_payment_approved_by_admin} date={c?.carrier_payment_date || ""} title={true} status={c?.carrier_payment_status} text={`${c?.carrier_payment_status === 'paid' ? ` (${c?.carrier_payment_method})` :''} `} />
+                           <Badge 
+                              tooltipcontent={c?.carrier_payment_date &&  !c?.carrier_payment_approved_by_admin ? `Carrrier payment status currently in pending and not approve by admin yet.` :''}
+                              approved={c?.carrier_payment_approved_by_admin} date={c?.carrier_payment_date || ""} title={true} status={c?.carrier_payment_status} text={`${c?.carrier_payment_status === 'paid' ? ` (${c?.carrier_payment_method})` :''} `} />
                            }
                         </p>
                         <p className='mt-1 whitespace-nowrap'>Sell Amount : <Currency amount={c?.carrier_amount} currency={c?.revenue_currency || 'cad'} /></p>

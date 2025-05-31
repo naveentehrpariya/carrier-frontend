@@ -2,7 +2,7 @@ import React from 'react'
 import { FaCircleCheck } from "react-icons/fa6";
 import { CiWarning } from "react-icons/ci";
 
-export default function Badge({status,classes, text, title, title2, approved, date}){
+export default function Badge({tooltipcontent, status,classes, text, title, title2, approved, date}){
 
    function color(status) {
       if (status === "pending") {
@@ -87,11 +87,32 @@ export default function Badge({status,classes, text, title, title2, approved, da
    }
    
   return (
-    <div className={`${classes} inline-block uppercase rounded-[30px] flex items-center text-center hover:!bg-none 
-      ${color(status)} ${title ? 'font-bold text-[13px] px-0 ms-1' : 'min-w-[60px] text-white text-[10px] px-2 py-[2px]'} `}>
-         {status} 
-         {text} 
-         {date ? <>{approved ? <FaCircleCheck className='ms-1' color='text-green-400' size={12} /> : <CiWarning className='ms-1' color='yellow' size={15} />}</>: ''}
+    <div className=" relative group inline-block ">
+         <div
+            className={`${classes} tooltipwrap inline-block uppercase rounded-[30px] flex items-center text-center hover:!bg-none 
+               ${color(status)} ${title ? 'font-bold text-[13px] px-0 ms-1' : 'min-w-[60px] text-white text-[10px] px-2 py-[2px]'} `}
+         >
+            {status} 
+            {text} 
+            {date ? (
+               <>
+               {approved ? (
+                  <FaCircleCheck className="ms-1 text-green-400" size={14} />
+               ) : (
+                  <CiWarning className="ms-1 text-yellow-400" size={17} />
+               )}
+               </>
+            ) : null}
+         </div>
+
+         {tooltipcontent ? 
+            <div className="tooltip-content absolute bottom-full mb-1 w-full min-w-[200px] max-w-[200px] 
+            left-1/2 -translate-x-1/2 bg-white !whitespace-normal  word-break-keep-all
+            text-black text-xs rounded-xl p-2  z-10">
+               {tooltipcontent}
+            </div>
+         :''} 
       </div>
+
   )
 }

@@ -45,7 +45,7 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
 
    const updateStatus = () => {
       setLoading(true);
-      const resp = Api.post(`/account/order/update/${id}/${type === 1 ? 'customer' : 'carrier'}`, {
+      const resp = Api.post(`/account/order/update/payment/${id}/${type === 1 ? 'customer' : 'carrier'}`, {
          status, method, notes 
       });
       resp.then((res) => {
@@ -68,15 +68,8 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
 
   return (
     <>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={`${classes} p-3 hover:opacity-60 w-full text-start rounded-xl text-gray-700 whitespace-nowrap flex items-center`} btntext={text || "Update Status"} >
-         <h2 className='text-white font-bold'>Update {type === 1 ? 'Customer' : 'Carrier'} Payment Status</h2>
-         {/* <div>
-            <label className="mt-4 block text-sm mb-2  text-gray-400">Choose Payment Type</label>
-            <div className='flex justify-start mb-2'>
-               <button className={`me-2 ${type === 1 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-4 py-2`} onClick={(e)=>setType(1)} > Customer Payment</button>
-               <button className={`me-2 ${type === 2 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-4 py-2`} onClick={(e)=>setType(2)} >Carrier Payment</button>
-            </div>
-         </div> */}
+      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={`${classes} p-3  w-full text-start rounded-xl text-gray-700 whitespace-nowrap flex items-center`} btntext={text || "Update Status"} >
+         <h2 className='text-white font-bold text-xl'>Update {type === 1 ? 'Customer' : 'Carrier'} Payment Status</h2>
          <div className='grid sm:grid-cols-2 gap-4'>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Payment Status {pmethod}</label>
@@ -103,15 +96,23 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
 
                 
          {paymentType === 1 && user && user?.is_admin && order?.customer_payment_date ?
-            <p className='text-green-600 text-center capitalize  mt-3 '>Order payment status is updated to <span className='font-bold'>{status}.</span></p>
+            <div class="bg-red-100 rounded-xl border-t border-b border-red-500  text-red-800 px-4 mt-3 py-3" role="alert">
+               <p className='capitalize   '>Customer payment status of this order is set to <span className='font-bold'>{status}.</span></p>
+               <p className='text-red-400 text-sm capitalize '>Updated By : {order?.customer_payment_updated_by?.name} {order?.customer_payment_updated_by?.position ? `(${order?.customer_payment_updated_by?.position})` : ''} </p>
+            </div>
          : ''}
 
          {paymentType === 2 && user && user?.is_admin && order?.carrier_payment_date ?
-            <p className='text-green-600 text-center capitalize  mt-3 '>Order payment status is updated to <span className='font-bold'>{status}.</span></p>
+            <div class="bg-red-100 rounded-xl border-t border-b border-red-500  text-red-800 px-4 mt-3 py-3" role="alert">
+               <p className='capitalize   '>Carrier payment status of this order is set to <span className='font-bold'>{status}.</span></p>
+               <p className='text-red-400 text-sm capitalize '>Updated By : {order?.carrier_payment_updated_by?.name} {order?.carrier_payment_updated_by?.position ? `(${order?.carrier_payment_updated_by?.position})` : ''} </p>
+            </div>
          : ''}
 
+        {paymentType === 2 ?
+         <>
          <div className='flex justify-center items-center'>
-            {user && user?.is_admin ?
+            {user && user?.is_admin && order?.carrier_payment_date ?
                <>
                <button onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn !bg-green-600 text-white capitalize font-bold">{loading ? "Updating..." : `Approve ${status} Status`}</button>
                </>
@@ -119,6 +120,22 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
                <button  onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Updating..." : "Update"}</button>
             }
          </div>
+         </>
+         :
+         <>
+         <div className='flex justify-center items-center'>
+            {user && user?.is_admin && order?.customer_payment_date ?
+               <>
+               <button onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn !bg-green-600 text-white capitalize font-bold">{loading ? "Updating..." : `Approve ${status} Status`}</button>
+               </>
+               :
+               <button  onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Updating..." : "Update"}</button>
+            }
+         </div>
+         </>
+         }
+
+
       </Popup>
     </>
   )
