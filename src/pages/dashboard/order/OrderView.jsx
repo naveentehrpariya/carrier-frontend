@@ -10,13 +10,16 @@ import Badge from '../../common/Badge';
 
 import { FaLock } from "react-icons/fa";
 import { FaLockOpen } from "react-icons/fa6";
+import Loading from '../../common/Loading';
 export default function OrderView({order, text, fetchLists, btnclasses}){ 
 
    const [open, setOpen] = useState(false);
    const {Errors, user} = useContext(UserContext);
    const [files, setFiles] = useState([]);
    const [paymentLogs, setPaymentLogs] = useState([]);
+   const [fetching, setFeching] = useState(false);
    const fetchFiless = () => { 
+      setFeching(true);
       const resp = Api.get(`/order_docs/${order._id}`); 
       resp.then((res)=>{
          if(res.data.status){
@@ -25,8 +28,10 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
          } else {
             setFiles([]);
          }
+         setFeching(false);
       }).catch(err => {
          Errors(err);
+         setFeching(false);
       });
    }
 
@@ -168,7 +173,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
 
    return <div className='orderSider'>
          <button onClick={(e)=>setOpen(true)} className={btnclasses}>{text ? text : "View All Notes"}</button>
-         <div className={`sider ${open ? 'open visible' : 'close hidden'} w-full h-screen overflow-auto fixed top-0 right-0 bg-dark1 p-8 z-[9999] pt-[130px] max-w-[500px]`}>
+         <div className={`sider ${open ? 'open visible' : 'close hidden'} w-full h-screen overflow-auto fixed top-0 right-0 bg-dark1 p-8 z-[9999] pt-[20px] max-w-[500px]`}>
             <div className='flex justify-between items-center'>
                <h2 className='text-white text-2xl'>Details</h2>
                <button className='text-3xl text-white mb-3' onClick={(e)=>setOpen(false)} >&times;</button>
@@ -191,62 +196,78 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                <p className=' text-gray-100 text-xl' >Documents</p>
                <UPLOAD update={fetchFiless} classes="text-main" />
             </div>
-            <div className='grid grid-cols-2 gap-2'>
-               {files && files.map((f, i)=>{
-                  const size = f.size / 1024 / 1024;
-                  return <a href={f.url} target='_blank' className='py-4 px-2 border border-gray-700 rounded-2xl text-center'>
-                     
-                     <div className='preview h-[100px] overflow-hidden' >
-                           { getMime(f.mime) === 'image'? 
-                              <img className="h-auto w-full object-cover max-w-full max-h-[300px] sm:max-h-[300px] rounded-xl" src={f.url} alt="Cloud" />
-                              : ""
-                           }
-                           { getMime(f.mime) === 'video'?
-                              <video playsInline className='w-full h-full rounded-xl min-h-[300px] max-h-[300px]' controls >
-                                 <source src={f.url} type={f.mime} />
-                              </video>
-                              : ""
-                           }
-                           { getMime(f.mime) === 'doc'?
-                              <iframe className='w-full rounded-xl ' src={f.url} > </iframe>
-                              : ""
-                           }
 
-                           {getMime(f.mime) !== 'doc' && getMime(f.mime) !== 'video' && getMime(f.mime) !== 'image' ?
-                              <BsFiletypeDoc color='#D278D5' size={'4rem'} className='m-auto' /> : ''
-                           }
+            {fetching ? <Loading /> :
+               <div>
+
+                  {files && files.length > 0 ? 
+                     <div className='grid grid-cols-2 gap-2'>
+                        {files && files.map((f, i)=>{
+                           const size = f.size / 1024 / 1024;
+                           return <a href={f.url} target='_blank' className='py-4 px-2 border border-gray-700 rounded-2xl text-center'>
+                              
+                              <div className='preview h-[100px] overflow-hidden' >
+                                    { getMime(f.mime) === 'image'? 
+                                       <img className="h-auto w-full object-cover max-w-full max-h-[300px] sm:max-h-[300px] rounded-xl" src={f.url} alt="Cloud" />
+                                       : ""
+                                    }
+                                    { getMime(f.mime) === 'video'?
+                                       <video playsInline className='w-full h-full rounded-xl min-h-[300px] max-h-[300px]' controls >
+                                          <source src={f.url} type={f.mime} />
+                                       </video>
+                                       : ""
+                                    }
+                                    { getMime(f.mime) === 'doc'?
+                                       <iframe className='w-full rounded-xl ' src={f.url} > </iframe>
+                                       : ""
+                                    }
+
+                                    {getMime(f.mime) !== 'doc' && getMime(f.mime) !== 'video' && getMime(f.mime) !== 'image' ?
+                                       <BsFiletypeDoc color='#D278D5' size={'4rem'} className='m-auto' /> : ''
+                                    }
+                              </div>
+                              
+                              <p className='text-center text-gray-400 mt-2'>{f.name}</p>
+                              <p className='text-gray-500 text-sm'>Size : {size.toFixed(2)}MB</p>
+                              <p className='text-gray-500 text-sm'>Added By : {f.added_by?.name}</p>
+                           </a>
+                        })}
                      </div>
-                     
-                     <p className='text-center text-gray-400 mt-2'>{f.name}</p>
-                     <p className='text-gray-500 text-sm'>Size : {size.toFixed(2)}MB</p>
-                     <p className='text-gray-500 text-sm'>Added By : {f.added_by?.name}</p>
-                  </a>
-               })}
-            </div>
+                     :
+                     <p className='text-gray-500 text-sm'>No documents found for this order.</p> 
+                  }
 
-            {user?.role === 2 || user?.is_admin === 1 ?
-               <>
-                  <h2 className='text-gray-100 text-xl mt-4 pb-2 border-t border-gray-700 pt-6'>Payment Logs</h2>
-                  {paymentLogs && paymentLogs.map((f, i)=>{
-                     return <div key={i} className='border-b !border-gray-800 py-3 mb-3'>
-                        {f.approval && f.updated_by.is_admin ?
-                        <>
-                        <p className='text-gray-500 text-[17px]'>{f.type} Payment status <Badge classes={'!inline m-0'} title={true} status={f.status} /> is <span className='text-green-500'>approved</span> via payment method {f.method}.</p>
-                        <p className='text-gray-500 mt-2 text-sm'>Approved By : {f.updated_by?.name}{f.updated_by?.phone ? `(${f.updated_by?.phone})` : ''}</p>
-                        <p className='text-gray-300 mt-2 text-sm'>Date : <TimeFormat date={f.createdAt || "--"} /></p>
-                        </>
+                  {user?.role === 2 || user?.is_admin === 1 ?
+                     <>
+                        <h2 className='text-gray-100 text-xl mt-4 pb-2 border-t border-gray-700 pt-6'>Payment Logs</h2>
+                        
+                        {paymentLogs && paymentLogs.length > 0 ? 
+                           <>
+                              {paymentLogs && paymentLogs.map((f, i)=>{
+                                 return <div key={i} className='border-b !border-gray-800 py-3 mb-3'>
+                                    {f.approval && f.updated_by.is_admin ?
+                                    <>
+                                    <p className='text-gray-500 text-[17px]'>{f.type} Payment status <Badge classes={'!inline m-0'} title={true} status={f.status} /> is <span className='text-green-500'>approved</span> via payment method {f.method}.</p>
+                                    <p className='text-gray-500 mt-2 text-sm'>Approved By : {f.updated_by?.name}{f.updated_by?.phone ? `(${f.updated_by?.phone})` : ''}</p>
+                                    <p className='text-gray-300 mt-2 text-sm'>Date : <TimeFormat date={f.createdAt || "--"} /></p>
+                                    </>
+                                    :
+                                    <>
+                                    <p className='text-gray-500 text-[17px] '>{f.type} Payment status updated to <Badge classes={'!inline m-0'} title={true} status={f.status} /> via payment method {f.method}.</p>
+                                    <p className='text-gray-500 mt-2 text-sm'>Update By : {f.updated_by?.name}{f.updated_by?.phone ? `(${f.updated_by?.phone})` : ''}</p>
+                                    <p className='text-gray-300 mt-2 text-sm'>Date : <TimeFormat date={f.createdAt || "--"} /></p>
+                                    </> }
+                                 </div>
+                              })}
+                           </>
                         :
-                        <>
-                        <p className='text-gray-500 text-[17px] '>{f.type} Payment status updated to <Badge classes={'!inline m-0'} title={true} status={f.status} /> via payment method {f.method}.</p>
-                        <p className='text-gray-500 mt-2 text-sm'>Update By : {f.updated_by?.name}{f.updated_by?.phone ? `(${f.updated_by?.phone})` : ''}</p>
-                        <p className='text-gray-300 mt-2 text-sm'>Date : <TimeFormat date={f.createdAt || "--"} /></p>
-                        </> }
-                     </div>
-                  })}
-               </>
-            :''
-            }   
-
+                           <p className='text-gray-500 text-sm'>No Payment Logs found.</p> 
+                        }
+                     </>
+                  :''
+                  }   
+               </div>
+            }
          </div> 
    </div>
 }
