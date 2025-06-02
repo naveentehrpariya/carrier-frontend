@@ -79,8 +79,13 @@ export default function CustomerInvoice() {
       fetchOrder();
    }, []);
 
-   const [invoiceNo, setInvoiceNo] = useState(Math.floor(Math.random() * 1000000));
-
+   const [invoiceNo, setInvoiceNo] = useState(``);
+   useEffect(() => {
+      if (order) {
+         setInvoiceNo(`${order?.serial_no}-${todaydate.getMonth() + 1}${todaydate.getDate()}${Math.floor(Math.random() * 1000)}`);
+      }
+   }, [order]);
+   
    return <AuthLayout>
       <div className='flex justify-between items-center'>
          <h1 className='text-xl font-bold text-white mb-6 mt-4'>Order INVOICE #{order?.customer_order_no}</h1>
@@ -107,13 +112,13 @@ export default function CustomerInvoice() {
                      <div className="grid grid-cols-2 gap-8 border-b pb-4 mb-4">
                         <div>
                            <h3 className="text-blue-700 font-semibold">BILL TO</h3>
-                           <p className=' text-black capitalize'>{order?.customer?.name}</p>
-                           <p >Reference No : {order?.customer?.customerCode}</p>
+                           <p className=' text-black capitalize'>{order?.customer?.name}  {order?.customer?.customerCode ? `(Ref No: ${order?.customer?.customerCode})` : '' }</p>
+                           <p >{order?.customer?.address}</p>
                            <p >Email : {order?.customer?.email}</p>
                            <p >Phone : {order?.customer?.phone}</p>
                         </div>
                         <div>
-                           <h3 className="text-blue-700 font-semibold">CUSTOMER</h3>
+                           {/* <h3 className="text-blue-700 font-semibold">CUSTOMER</h3> */}
                            <p className='uppercase'>Order Number : #CMC{order.serial_no}</p>
                            <p>Invoice Date : <TimeFormat time={false} date={Date.now()} /></p>
                            <p>Amount : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p>
