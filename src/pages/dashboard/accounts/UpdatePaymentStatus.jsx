@@ -95,24 +95,25 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
          </div>
 
                 
-         {paymentType === 1 && user && user?.is_admin && order?.customer_payment_date ?
+         {paymentType === 1 && !order?.customer_payment_approved_by_admin && user && user?.is_admin && order?.customer_payment_date ?
             <div class="bg-red-100 rounded-xl border-t border-b border-red-500  text-red-800 px-4 mt-3 py-3" role="alert">
                <p className='capitalize   '>Customer payment status of this order is set to <span className='font-bold'>{status}.</span></p>
                <p className='text-red-400 text-sm capitalize '>Updated By : {order?.customer_payment_updated_by?.name} {order?.customer_payment_updated_by?.position ? `(${order?.customer_payment_updated_by?.position})` : ''} </p>
             </div>
          : ''}
 
-         {paymentType === 2 && user && user?.is_admin && order?.carrier_payment_date ?
+         {paymentType === 2 && !order?.carrier_payment_approved_by_admin && user && user?.is_admin && order?.carrier_payment_date ?
             <div class="bg-red-100 rounded-xl border-t border-b border-red-500  text-red-800 px-4 mt-3 py-3" role="alert">
                <p className='capitalize   '>Carrier payment status of this order is set to <span className='font-bold'>{status}.</span></p>
                <p className='text-red-400 text-sm capitalize '>Updated By : {order?.carrier_payment_updated_by?.name} {order?.carrier_payment_updated_by?.position ? `(${order?.carrier_payment_updated_by?.position})` : ''} </p>
             </div>
          : ''}
 
+
         {paymentType === 2 ?
          <>
          <div className='flex justify-center items-center'>
-            {user && user?.is_admin && order?.carrier_payment_date ?
+            {user && user?.is_admin && order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ?
                <>
                <button onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn !bg-green-600 text-white capitalize font-bold">{loading ? "Updating..." : `Approve ${status} Status`}</button>
                </>
@@ -124,7 +125,7 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
          :
          <>
          <div className='flex justify-center items-center'>
-            {user && user?.is_admin && order?.customer_payment_date ?
+            {user && user?.is_admin && order?.customer_payment_date && !order?.customer_payment_approved_by_admin ?
                <>
                <button onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn !bg-green-600 text-white capitalize font-bold">{loading ? "Updating..." : `Approve ${status} Status`}</button>
                </>
