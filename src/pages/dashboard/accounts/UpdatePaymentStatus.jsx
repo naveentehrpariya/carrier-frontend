@@ -110,27 +110,42 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
          : ''}
 
 
+
+         {paymentType === 1 && order?.customer_payment_approved_by_admin == 1 && order?.customer_payment_date ?
+            <p className='capitalize text-green-500 text-center mt-4 '>Payment Status {status} is Approved by Admin.</p>
+         : ''}
+
+         {paymentType === 2 && order?.carrier_payment_approved_by_admin == 1 && order?.carrier_payment_date ?
+            <p className='capitalize text-green-500 text-center mt-4   '>Payment Status {status} is Approved by Admin.</p>
+         : ''}
+
+
         {paymentType === 2 ?
          <>
-         <div className='flex justify-center items-center'>
-            {user && user?.is_admin && order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ?
-               <>
-               <button onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn !bg-green-600 text-white capitalize font-bold">{loading ? "Updating..." : `Approve ${status} Status`}</button>
-               </>
-               :
-               <button  onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Updating..." : "Update"}</button>
-            }
-         </div>
+            <div className='flex justify-center items-center'>
+               {user && user?.is_admin && order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ?
+                     <button onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn !bg-green-600 text-white capitalize font-bold">{loading ? "Updating..." : `Approve ${status} Status`}</button>
+                  :
+                  <>
+                  {order?.carrier_payment_approved_by_admin &&  user && !user?.is_admin ? '' : 
+                     <button onClick={updateStatus} className={`btn md mt-6 px-[50px] main-btn text-black font-bold`}>{loading ? "Updating..." : "Update"}</button>
+                  }
+                  </>
+               }
+            </div>
          </>
          :
          <>
          <div className='flex justify-center items-center'>
             {user && user?.is_admin && order?.customer_payment_date && !order?.customer_payment_approved_by_admin ?
-               <>
                <button onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn !bg-green-600 text-white capitalize font-bold">{loading ? "Updating..." : `Approve ${status} Status`}</button>
-               </>
                :
-               <button  onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Updating..." : "Update"}</button>
+               <>
+               {order?.customer_payment_approved_by_admin && user && !user?.is_admin ? ''
+                  :
+                  <button  onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Updating..." : "Update"}</button>
+               }
+               </>
             }
          </div>
          </>

@@ -86,12 +86,10 @@ export default function AccountOrders() {
                               <p className='flex items-center'>Status :<Badge title={true} status={c.order_status} /> </p>
                               <p className='text-gray-500 text-[12px]'><TimeFormat date={c.createdAt || "--"} /> </p>
                            </td> 
-
                            <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                               <p>
                                  <Link className='text-main' to={`/customer/detail/${c?.customer?._id}`}>{c?.customer?.name || "--"}({c?.customer?.customerCode || "--"})</Link>
-                                 </p>
-                              
+                              </p>
                               <p className='mt-1 whitespace-nowrap'>Customer Payment : 
                                  <UpdatePaymentStatus order={c} classes={`!p-0 mt-1 ${c?.lock ? 'disabled-order' : ''}`}
                                  pstatus={c.customer_payment_status} 
