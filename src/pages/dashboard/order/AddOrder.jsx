@@ -494,7 +494,7 @@ export default function AddOrder(){
                                   placeholder={"Enter Pickup location"} 
                                   className="input-sm"
                                 /> */}
-                                <GetLocation placeholder={"Enter Pickup Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
+                                <GetLocation id="getpickup" placeholder={"Enter Pickup Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
 
                               </div>
                               <div className="input-item">
@@ -549,7 +549,7 @@ export default function AddOrder(){
                                   placeholder={"Enter Delivery location"} 
                                   className="input-sm"
                                 /> */}
-                                <GetLocation placeholder={"Enter Delivery Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
+                                <GetLocation id="getdelivery"  placeholder={"Enter Delivery Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
                               </div>
                               <div className="input-item">
                                 <label className="mb-0 block text-sm text-gray-400">

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-export default function GetLocation({ index, onchange, placeholder }) {
+export default function GetLocation({ index, onchange, placeholder, id }) {
   const googlemap = 'AIzaSyARl049FrKlkbob8QImlI5LAa8QmzReNBw';
   const inputRef = useRef(null);
   const [inputText, setInput] = useState(""); 
@@ -59,6 +59,7 @@ export default function GetLocation({ index, onchange, placeholder }) {
   return (
     <div className="relative">
       <input
+      id={id}
         ref={inputRef}
         type="text"
         name="location"
