@@ -5,8 +5,10 @@ import loads from '../../img/loads-stats.png'
 import RecentOrdersLists from './order/RecentOrderLists';
 import Api from '../../api/Api';
 import { Link } from 'react-router-dom';
+import { useContext } from 'react';
+import { UserContext } from '../../context/AuthProvider';
 export default function Overview() {
-
+  const { user} = useContext(UserContext);
    const [lists, setLists] = useState([]);
    useEffect(() => { 
       Api.get('/overview').then((res) => {
@@ -20,6 +22,7 @@ export default function Overview() {
 
   return (
       <AuthLayout> 
+         <h2 className='text-gray-400 font-bold text-3xl mb-4'>Welcome to {user?.company?.name}</h2>
          <div className='flex justify-between items-center'>
             <h2 className='text-white text-2xl'>Overview</h2>
             {/* <div className='filter'>
