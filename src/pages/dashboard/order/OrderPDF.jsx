@@ -10,6 +10,7 @@ import Currency from '../../common/Currency';
 import { jsPDF } from "jspdf";
 import Loading from '../../common/Loading';
 import DistanceInMiles from '../../common/DistanceInMiles';
+   import html2canvas from "html2canvas";
 
 export default function OrderPDF() {
    
@@ -21,43 +22,62 @@ export default function OrderPDF() {
    const [downloadingPdf, setDownloadingPdf] = useState(false);
    const pdfRef = useRef();
    const todaydate = new Date(); 
-   const downloadPDF = () => {
-      setDownloadingPdf(true);
-      window.scrollTo(0, 0);
-      const element = pdfRef.current;
-      if (!element) {
-         console.error("PDF content element not found.");
+
+const downloadPDF = async () => {
+   setDownloadingPdf(true);
+   window.scrollTo(0, 0);
+   const element = pdfRef.current;
+   const headerElement = document.getElementById("pdf-header-html");
+
+   if (!element || !headerElement) {
+      console.error("Missing content or header element.");
+      setDownloadingPdf(false);
+      return;
+   }
+
+   // Render header to canvas
+   const headerCanvas = await html2canvas(headerElement, {
+      scale: 2,
+      useCORS: true,
+   });
+   const headerImgData = headerCanvas.toDataURL("image/png");
+   const headerHeight = (headerCanvas.height * 210) / headerCanvas.width; // A4 width scaling (210mm)
+
+   const doc = new jsPDF({
+      unit: "mm",
+      format: "a4",
+      orientation: "portrait",
+   });
+
+   doc.html(element, {
+      callback: function (doc) {
+         const totalPages = doc.internal.getNumberOfPages();
+         const watermarkImg = "/transparent-logo.png";
+         for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+
+            // doc.addImage(headerImgData, "PNG", 0, 0, 210, headerHeight);
+            doc.addImage(headerImgData, "PNG", 10, 0, 190, headerHeight); // x = 10mm, width = 190mm to match content
+            doc.addImage(watermarkImg, "PNG", 50, 60, 100, 38);
+            doc.addImage(watermarkImg, "PNG", 50, 180, 100, 38);
+         }
+         doc.save(`CMC${order?.serial_no || ''}-order-carrier-sheet.pdf`);
          setDownloadingPdf(false);
-         return;
-      }
-      const doc = new jsPDF({
-         unit: 'mm',
-         format: 'a4',
-         orientation: 'portrait',
-      });
-      doc.html(element, {
-         callback: function (doc) {
-            const totalPages = doc.internal.getNumberOfPages();
-            const watermarkImg = "/transparent-logo.png";
-            for (let i = 1; i <= totalPages; i++) {
-               doc.setPage(i);
-               doc.addImage(watermarkImg, "PNG", 50, 60, 100, 38);
-               doc.addImage(watermarkImg, "PNG", 50, 180, 100, 38);
-            }
-            doc.save(`CMC${order?.serial_no || ''}-order-carrier-sheet.pdf`);
-            setDownloadingPdf(false);
-         },
-         x: 5,
-         y: 5,
-         html2canvas: {
-            scale: 0.25,
-            useCORS: true,
-         },
-         autoPaging: 'text',
-         width: 1800,       
-         windowWidth: 794,
-      });
-   };
+      },
+      x: 10,
+      y: 5, 
+      html2canvas: {
+         scale: 0.25,
+         useCORS: true,
+      },
+      autoPaging: 'text',
+      width: 1800,
+      windowWidth: 794,
+      margin: [headerHeight, 0, 20, 0], // top, left, bottom, right
+
+   });
+};
+
 
    const fetchOrder = () => {
       setLoading(true);
@@ -94,37 +114,69 @@ export default function OrderPDF() {
       
       {loading ? <Loading /> : 
          <div className='bg-white p-[30px]'>
-            <div ref={pdfRef} className="relative max-w-[794px] mx-auto p-[20px] bg-white text-sm text-black shadow-md font-sans">
-               <div className='relative z-1'> 
-               <div className="flex justify-between items-start border-b pb-4 mb-4">
-               <div>
-                  <Logotext black={true} />
-                  <div className="font-bold text-lg">Cross Miles Carrier</div>
-                  <div>{company?.address}</div>
+
+            <div className="relative max-w-[794px] mx-auto p-[20px] bg-white text-sm text-black shadow-md font-sans">
+               {/* Header start */}
+               <div className='relative z-1 '> 
+                  <div className="flex justify-between items-start border-b pb-4 mb-4">
+                  <div>
+                     <Logotext black={true} />
+                     <div className="font-bold text-lg">Cross Miles Carrier</div>
+                     <div>{company?.address}</div>
+                  </div>
+                  <div className="text-right pt-6 pe-6 ">
+                     <div className="text-gray-700 text-lg text-end">PRO # CMC{order?.serial_no}</div>
+                     <div className="font-semibold text-lg text-end">Rate Confirmation</div>
+                     <div className="text-normal text-end"><TimeFormat date={todaydate} /> </div>
+                  </div>
                </div>
-               <div className="text-right pt-6 pe-6 ">
-                  <div className="text-gray-700 text-lg text-end">PRO # CMC{order?.serial_no}</div>
-                  <div className="font-semibold text-lg text-end">Rate Confirmation</div>
-                  <div className="text-normal text-end"><TimeFormat date={todaydate} /> </div>
-               </div>
+            </div>
+            {/* Header end */}
+
+            <div ref={pdfRef} className="relative max-w-[794px] mx-auto p-[20px] bg-white text-sm text-black font-sans">
+               
+               {/* Hidden HTML header for PDF, off-screen */}
+               <div id="pdf-header-html" 
+                  style={{
+                     position: "absolute",
+                     top: "-9999px",
+                     left: "-9999px",
+                     width: "794px", // match PDF content width
+                     padding: "20px",
+                     fontSize: "12px",
+                     boxSizing: "border-box",
+                     backgroundColor: "white",
+                  }}>
+                  <div className="flex justify-between items-start border-b pb-4 mb-4">
+                     <div>
+                        <Logotext black={true} />
+                        <div className="font-bold text-lg">Cross Miles Carrier</div>
+                        <div>{company?.address}</div>
+                     </div>
+                     <div className="text-right pt-6 pe-6 ">
+                        <div className="text-gray-700 text-lg text-end">PRO # CMC{order?.serial_no}</div>
+                        <div className="font-semibold text-lg text-end">Rate Confirmation</div>
+                        <div className="text-normal text-end"><TimeFormat date={todaydate} /></div>
+                     </div>
+                  </div>
                </div>
 
                <div className="grid grid-cols-2 gap-8 border-b pb-4 mb-4">
-               <div>
-                  <h3 className="text-blue-700 font-semibold">FROM</h3>
-                  <p>{company?.name}</p>
-                  <p className='block'>{company?.email}</p>
-                  <p>{company?.phone}</p>
-                  <p>{company?.address}</p>
-               </div>
+                  <div>
+                     <h3 className="text-blue-700 font-semibold">FROM</h3>
+                     <p>{company?.name}</p>
+                     <p className='block'>{company?.email}</p>
+                     <p>{company?.phone}</p>
+                     <p>{company?.address}</p>
+                  </div>
 
-               <div>
-                  <h3 className="text-blue-700 font-semibold">CARRIER</h3>
-                  <p className='uppercase'>{order?.carrier?.name}(MC{order?.carrier?.mc_code})</p>
-                  <p>{order?.carrier?.phone}{order?.carrier?.secondary_phone ? `, ${order?.carrier?.secondary_phone}` :''}</p>
-                  <p>{order?.carrier?.email.trim()}</p>
-                  <p>{order?.carrier?.location}</p>
-               </div>
+                  <div>
+                     <h3 className="text-blue-700 font-semibold">CARRIER</h3>
+                     <p className='uppercase'>{order?.carrier?.name}(MC{order?.carrier?.mc_code})</p>
+                     <p>{order?.carrier?.phone}{order?.carrier?.secondary_phone ? `, ${order?.carrier?.secondary_phone}` :''}</p>
+                     <p>{order?.carrier?.email.trim()}</p>
+                     <p>{order?.carrier?.location}</p>
+                  </div>
                </div>
 
                <div className='relative'>
