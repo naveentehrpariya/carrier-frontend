@@ -67,7 +67,7 @@ const downloadPDF = async () => {
       x: 10,
       y: 5, 
       html2canvas: {
-         scale: 0.25,
+         scale: 0.24,
          useCORS: true,
       },
       autoPaging: 'text',
@@ -106,7 +106,6 @@ const downloadPDF = async () => {
          <h1 className='text-xl font-bold text-white mb-6 mt-4'>Customer Order #{order?.customer_order_no}</h1>
          
          <div className='flex items-center'>
-           
             <button  button className='bg-main px-4 py-2 rounded-xl text-normal test' onClick={downloadPDF} >{downloadingPdf ? "Downloading..." : "Download PDF"}</button>
          </div>
       </div>
@@ -115,7 +114,7 @@ const downloadPDF = async () => {
       {loading ? <Loading /> : 
          <div className='bg-white p-[30px]'>
 
-            <div className="relative max-w-[794px] mx-auto p-[20px] bg-white text-sm text-black shadow-md font-sans">
+            <div className="relative max-w-[794px] mx-auto p-[10px] bg-white text-sm text-black shadow-md font-sans">
                {/* Header start */}
                <div className='relative z-1 '> 
                   <div className="flex justify-between items-start border-b pb-4 mb-4">
@@ -133,7 +132,7 @@ const downloadPDF = async () => {
             </div>
             {/* Header end */}
 
-            <div ref={pdfRef} className="relative max-w-[794px] mx-auto p-[20px] bg-white text-sm text-black font-sans">
+            <div ref={pdfRef} className="relative max-w-[794px] mx-auto p-[10px] bg-white text-sm text-black font-sans">
                
                {/* Hidden HTML header for PDF, off-screen */}
                <div id="pdf-header-html" 
@@ -142,7 +141,7 @@ const downloadPDF = async () => {
                      top: "-9999px",
                      left: "-9999px",
                      width: "794px", // match PDF content width
-                     padding: "20px",
+                     padding: "10px",
                      fontSize: "12px",
                      boxSizing: "border-box",
                      backgroundColor: "white",
@@ -179,6 +178,216 @@ const downloadPDF = async () => {
                   </div>
                </div>
 
+               <div className='relative'>
+                  {order && order.shipping_details && order.shipping_details.map((s, index) => {
+                     return <>
+                           <div className="grid grid-cols-3 gap-2 mb-4">
+                              <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                              <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                              <p><strong>Total Distance : </strong> <DistanceInMiles d={order.totalDistance} /></p>
+                              <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                              <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                           </div>
+
+                           <div className="mb-6">
+                              <h3 className="font-semibold mb-2 text-lg">Charges</h3>
+                              <table cellPadding={8} align='center' className="w-full border text-sm table-collapse ">
+                                 <thead className="bg-gray-100">
+                                    <tr>
+                                       <th className="border text-left">Charge Type</th>
+                                       <th className="border text-left">Comment</th>
+                                       <th className="border text-left">Rate</th>
+                                       <th className="border text-left">Total</th>
+                                    </tr>
+                                 </thead>
+                                 <tbody>
+                                    {order && order.carrier_revenue_items && order.carrier_revenue_items.map((r, index) => {
+                                       return <tr>
+                                          <td className='border'>{r?.revenue_item}</td>
+                                          <td className='border text-left text-[12px] max-w-[200px]'>{r?.note}</td>
+                                          <td className='border text-left'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</td>
+                                          <td className='border text-left'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
+                                       </tr>
+                                    })}
+                                 </tbody>
+                              </table>
+                           </div>
+
+                           <div className="mb-6">
+
+                           {s && s.locations && (() => {
+                              let pickupCount = 0;
+                              let stopCount = 0;
+                              return s && s.locations && s.locations.map((l, index) => {
+                                 if(l.type === 'pickup'){
+                                    pickupCount = pickupCount+1;
+                                    return <>
+                                       <>
+                                          <div className="mb-4">
+                                             <h4 className="text-blue-700 font-bold">PICK {pickupCount}</h4>
+                                             <p>{l?.location}</p>
+                                             <p><TimeFormat date={l?.date} /> {l?.appointment ?  <b>(Appointment)</b>: ''} </p>
+                                             <p>Ref #: {l?.referenceNo}</p>
+                                          </div>
+                                       </>
+                                    </>
+                                 } else {
+                                    stopCount = stopCount+1;
+                                    return <div className="mb-4 bg-blue-100 p-3 border rounded-md">
+                                    <h4 className="text-red-700 font-bold">STOP {stopCount}</h4>
+                                    <p>{l?.location}</p>
+                                    <p><TimeFormat date={l?.date} /> </p>
+                                    <p>Ref #: {l?.referenceNo}</p>
+                                 </div>
+                                 }
+                              })
+                           })()}
+                           </div>
+
+                           
+                     </>
+                  })}
+               </div>
+               <div className='relative'>
+                  {order && order.shipping_details && order.shipping_details.map((s, index) => {
+                     return <>
+                           <div className="grid grid-cols-3 gap-2 mb-4">
+                              <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                              <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                              <p><strong>Total Distance : </strong> <DistanceInMiles d={order.totalDistance} /></p>
+                              <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                              <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                           </div>
+
+                           <div className="mb-6">
+                              <h3 className="font-semibold mb-2 text-lg">Charges</h3>
+                              <table cellPadding={8} align='center' className="w-full border text-sm table-collapse ">
+                                 <thead className="bg-gray-100">
+                                    <tr>
+                                       <th className="border text-left">Charge Type</th>
+                                       <th className="border text-left">Comment</th>
+                                       <th className="border text-left">Rate</th>
+                                       <th className="border text-left">Total</th>
+                                    </tr>
+                                 </thead>
+                                 <tbody>
+                                    {order && order.carrier_revenue_items && order.carrier_revenue_items.map((r, index) => {
+                                       return <tr>
+                                          <td className='border'>{r?.revenue_item}</td>
+                                          <td className='border text-left text-[12px] max-w-[200px]'>{r?.note}</td>
+                                          <td className='border text-left'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</td>
+                                          <td className='border text-left'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
+                                       </tr>
+                                    })}
+                                 </tbody>
+                              </table>
+                           </div>
+
+                           <div className="mb-6">
+
+                           {s && s.locations && (() => {
+                              let pickupCount = 0;
+                              let stopCount = 0;
+                              return s && s.locations && s.locations.map((l, index) => {
+                                 if(l.type === 'pickup'){
+                                    pickupCount = pickupCount+1;
+                                    return <>
+                                       <>
+                                          <div className="mb-4">
+                                             <h4 className="text-blue-700 font-bold">PICK {pickupCount}</h4>
+                                             <p>{l?.location}</p>
+                                             <p><TimeFormat date={l?.date} /> {l?.appointment ?  <b>(Appointment)</b>: ''} </p>
+                                             <p>Ref #: {l?.referenceNo}</p>
+                                          </div>
+                                       </>
+                                    </>
+                                 } else {
+                                    stopCount = stopCount+1;
+                                    return <div className="mb-4 bg-blue-100 p-3 border rounded-md">
+                                    <h4 className="text-red-700 font-bold">STOP {stopCount}</h4>
+                                    <p>{l?.location}</p>
+                                    <p><TimeFormat date={l?.date} /> </p>
+                                    <p>Ref #: {l?.referenceNo}</p>
+                                 </div>
+                                 }
+                              })
+                           })()}
+                           </div>
+
+                           
+                     </>
+                  })}
+               </div>
+               <div className='relative'>
+                  {order && order.shipping_details && order.shipping_details.map((s, index) => {
+                     return <>
+                           <div className="grid grid-cols-3 gap-2 mb-4">
+                              <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                              <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                              <p><strong>Total Distance : </strong> <DistanceInMiles d={order.totalDistance} /></p>
+                              <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                              <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                           </div>
+
+                           <div className="mb-6">
+                              <h3 className="font-semibold mb-2 text-lg">Charges</h3>
+                              <table cellPadding={8} align='center' className="w-full border text-sm table-collapse ">
+                                 <thead className="bg-gray-100">
+                                    <tr>
+                                       <th className="border text-left">Charge Type</th>
+                                       <th className="border text-left">Comment</th>
+                                       <th className="border text-left">Rate</th>
+                                       <th className="border text-left">Total</th>
+                                    </tr>
+                                 </thead>
+                                 <tbody>
+                                    {order && order.carrier_revenue_items && order.carrier_revenue_items.map((r, index) => {
+                                       return <tr>
+                                          <td className='border'>{r?.revenue_item}</td>
+                                          <td className='border text-left text-[12px] max-w-[200px]'>{r?.note}</td>
+                                          <td className='border text-left'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</td>
+                                          <td className='border text-left'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
+                                       </tr>
+                                    })}
+                                 </tbody>
+                              </table>
+                           </div>
+
+                           <div className="mb-6">
+
+                           {s && s.locations && (() => {
+                              let pickupCount = 0;
+                              let stopCount = 0;
+                              return s && s.locations && s.locations.map((l, index) => {
+                                 if(l.type === 'pickup'){
+                                    pickupCount = pickupCount+1;
+                                    return <>
+                                       <>
+                                          <div className="mb-4">
+                                             <h4 className="text-blue-700 font-bold">PICK {pickupCount}</h4>
+                                             <p>{l?.location}</p>
+                                             <p><TimeFormat date={l?.date} /> {l?.appointment ?  <b>(Appointment)</b>: ''} </p>
+                                             <p>Ref #: {l?.referenceNo}</p>
+                                          </div>
+                                       </>
+                                    </>
+                                 } else {
+                                    stopCount = stopCount+1;
+                                    return <div className="mb-4 bg-blue-100 p-3 border rounded-md">
+                                    <h4 className="text-red-700 font-bold">STOP {stopCount}</h4>
+                                    <p>{l?.location}</p>
+                                    <p><TimeFormat date={l?.date} /> </p>
+                                    <p>Ref #: {l?.referenceNo}</p>
+                                 </div>
+                                 }
+                              })
+                           })()}
+                           </div>
+
+                           
+                     </>
+                  })}
+               </div>
                <div className='relative'>
                   {order && order.shipping_details && order.shipping_details.map((s, index) => {
                      return <>

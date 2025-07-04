@@ -9,6 +9,7 @@ import Popup from '../../common/Popup';
 import Currency from '../../common/Currency';
 import GetLocation from '../../common/GetLocation';
 import DistanceInMiles from '../../common/DistanceInMiles';
+import GetDeliveryLocation from '../../common/GetDeliveryLocation';
 
 // const revenueItemOptions = [
 //   { label: "Freight Charge", value: "Freight Charge" },
@@ -542,14 +543,16 @@ export default function AddOrder(){
                             <div className="grid grid-cols-4 gap-4 ">
                               <div className="input-item">
                                 <label className="mb-0 block text-sm text-gray-400">Delivery Location</label>
-                                {/* <input
+                                {/* 
+                                <input
                                   required
                                   onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', e.target.value)}
                                   type={"text"} 
                                   placeholder={"Enter Delivery location"} 
                                   className="input-sm"
-                                /> */}
-                                <GetLocation id="getdelivery"  placeholder={"Enter Delivery Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
+                                /> 
+                                */}
+                                <GetDeliveryLocation id="getdelivery"  placeholder={"Enter Delivery Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
                               </div>
                               <div className="input-item">
                                 <label className="mb-0 block text-sm text-gray-400">
