@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useRef, useState } from 'react'
 import { Dialog, Transition } from '@headlessui/react'
 
-export default function Popup({btnclasses, btntext, size, children, space, action, bg}) {
+export default function Popup({btnclasses, iconcolor, btntext, size, children, space, action, bg}) {
 
   const [open, setOpen] = useState(false)
   const cancelButtonRef = useRef(null);
@@ -49,7 +49,7 @@ export default function Popup({btnclasses, btntext, size, children, space, actio
                   </div>
                   <button
                     type="button"
-                    className="close absolute top-2 right-6 text-black text-[30px] "
+                    className={`close absolute top-2 right-6 text-${iconcolor || 'white'} text-[30px] `}
                     onClick={() => setOpen(false)}
                     ref={cancelButtonRef}>
                     &times;   

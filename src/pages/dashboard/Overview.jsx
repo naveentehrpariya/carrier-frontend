@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react'
 import AuthLayout from '../../layout/AuthLayout';
 import revanue from '../../img/revenue-graph.png'
-import loads from '../../img/loads-stats.png'
+import loads from '../../img/loads-stats.png';
+import { FaRegCreditCard } from "react-icons/fa6";
+
+import { TbTruckDelivery } from "react-icons/tb";
 import RecentOrdersLists from './order/RecentOrderLists';
 import Api from '../../api/Api';
 import { Link } from 'react-router-dom';
@@ -22,7 +25,7 @@ export default function Overview() {
 
   return (
       <AuthLayout> 
-         <h2 className='text-gray-400 font-bold text-3xl mb-4'>Welcome to {user?.company?.name}</h2>
+         <h2 className='text-gray-200 font-bold text-4xl mb-12'>Welcome to {user?.company?.name}</h2>
          <div className='flex justify-between items-center'>
             <h2 className='text-white text-2xl'>Overview</h2>
             {/* <div className='filter'>
@@ -35,12 +38,17 @@ export default function Overview() {
          <div className='total-leads mt-4 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'>
             {lists && lists.map((item, index) => {
                return <>
-               <Link to={item.link} className={`lead border border-gray-700 rounded-[30px] p-[20px] md:p-[25px]`}>
-                  <div className='cals flex items-center justify-between'> 
-                     <h2 className='font-bold text-white text-4xl mb-2'>{item.data}</h2>
-                  </div>
+               <Link to={item.link} className={`hover:!bg-[#131313] hover:border-gray-800 lead border border-gray-700 rounded-[30px] p-[20px] md:p-[25px]`}>
                   <h2 className='text-gray-300 mb-1 text-normal md:text-xl'>{item.title}</h2>
-                  <div className='bg-[#D278D5] h-[3px] w-[40px]'></div>
+                  <div className='cals flex items-center justify-start mb-3 mt-4'> 
+                     {item.icon === 'van' ?
+                        <TbTruckDelivery className='text-5xl text-gray-400 me-4' />
+                        :
+                        <FaRegCreditCard className='text-4xl text-gray-400 me-4' />
+                     }
+                     <h2 className='font-bold text-white text-4xl  '>{item.data}</h2>
+                  </div>
+                     <div className='bg-[#D278D5] h-[3px] !mt-4 w-[40px]'></div>
                </Link>
                </>
             })}

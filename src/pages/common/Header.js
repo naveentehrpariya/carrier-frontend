@@ -28,7 +28,7 @@ export default function Header() {
   return (
     <>
     <CheckLogin  />
-      <header id='header' className='sticky top-2 py-3 z-10' >
+      <header id='header' className=' sticky top-2 py-3 z-10' >
          <div className='container m-auto'>
             <nav className="px-3 py-1 md:py-3 ">
                <div class="flex flex-wrap justify-between items-center mx-auto max-w-screen-xl">

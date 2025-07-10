@@ -92,7 +92,9 @@ export default function Carriers() {
 
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <div class='has-tooltip line-clamp-2 max-w-[200px]'>
-                              <span class='tooltip rounded shadow-xl p-2 bg-gray-100 text-black -mt-8 '>{c.location || "--"} {c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}</span>
+                              <span class='tooltip rounded shadow-xl p-2 bg-gray-100 text-black -mt-8 max-w-[200px] '>
+                                 {c.location || "--"} {c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}
+                              </span>
                               {c.location || "--"} {c.city || ""} {c.state || ""} {c.country || ""} {c.zipcode || ""}
                            </div>
                         </td>

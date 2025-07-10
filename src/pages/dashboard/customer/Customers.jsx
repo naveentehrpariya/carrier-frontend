@@ -85,7 +85,7 @@ export default function Customers() {
                         </td>
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <div class='has-tooltip line-clamp-2  max-w-[250px]'>
-                              <span class='tooltip rounded shadow-xl p-2 bg-gray-100 text-black -mt-8'>{c?.address || ""} {c?.city || ""} {c?.state || ""} {c?.country || ""} {c?.zipcode || ""}</span>
+                              <span class='tooltip rounded shadow-xl p-2 bg-gray-100 text-black -mt-8 max-w-[200px]'>{c?.address || ""} {c?.city || ""} {c?.state || ""} {c?.country || ""} {c?.zipcode || ""}</span>
                               {c?.address || ""} {c?.city || ""} {c?.state || ""} {c?.country || ""} {c?.zipcode || ""}
                            </div>
                         </td>

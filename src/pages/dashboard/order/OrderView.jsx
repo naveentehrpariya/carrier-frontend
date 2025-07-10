@@ -117,7 +117,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
 
    return (
       <>
-         <Popup action={open} space={'p-6 sm:p-10'} btntext={"+ Add More"} btnclasses={classes ? classes : 'bg-main text-white rounded-[30px] px-3 md:px-4 py-[4px] md:py-[11px] text-[12px] md:text-[15px] uppercase  '} >
+         <Popup iconcolor={'black'} action={open} space={'p-6 sm:p-10'} btntext={"+ Add More"} btnclasses={classes ? classes : 'bg-main text-white rounded-[30px] px-3 md:px-4 py-[4px] md:py-[11px] text-[12px] md:text-[15px] uppercase  '} >
                <div className="flex justify-center w-full mx-auto">
                   <div className=" w-full bg-white sm:rounded-lg">
                      <div className="mb-4 md:mb-10 text-center">
@@ -128,6 +128,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                      {file ? <>
                         <div className='selectedMedia mb-6 relative' >
                            <button onClick={()=>setFile(null)} className='bg-red-800 rounded-xl px-3 py-2 text-sm text-white absolute top-2 right-2 z-[2]'>Remove</button>
+                           
                            { fileMime === 'image'? 
                               <img className="h-auto w-full object-cover max-w-full max-h-[300px] sm:max-h-[300px] rounded-xl" src={URL.createObjectURL(file)} alt="Cloud" />
                               : ""
@@ -144,6 +145,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                               </iframe>
                               : ""
                            }
+
                         </div>
                      </> :
                      <div className="relative w-full max-w-xs mb-10  bg-white bg-gray-200 rounded-lg border border-dashed m-auto">
@@ -171,11 +173,12 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
    )
    }
 
-   return <div className='orderSider'>
+   return <>
+      <div className='orderSider'>
          <button onClick={(e)=>setOpen(true)} className={btnclasses}>{text ? text : "View All Notes"}</button>
-         <div className={`sider ${open ? 'open visible' : 'close hidden'} w-full h-screen overflow-auto fixed top-0 right-0 bg-dark1 p-8 z-[9999] pt-[20px] max-w-[500px]`}>
+         <div className={`sider ${open ? 'ordersidebar open' : 'ordersidebar close'} w-full h-screen overflow-auto fixed top-0 right-0 bg-dark1 p-8 z-[9999] pt-[20px] max-w-[500px]`}>
             <div className='flex justify-between items-center'>
-               <h2 className='text-white text-2xl'>Details</h2>
+               <h2 className='text-white text-2xl'><strong>CMC#{order?.serial_no}</strong> Order Details</h2>
                <button className='text-3xl text-white mb-3' onClick={(e)=>setOpen(false)} >&times;</button>
             </div>
 
@@ -268,5 +271,6 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                </div>
             }
          </div> 
-   </div>
+      </div>
+   </>
 }
