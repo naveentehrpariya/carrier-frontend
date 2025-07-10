@@ -49,7 +49,7 @@ export default function Popup({btnclasses, btntext, size, children, space, actio
                   </div>
                   <button
                     type="button"
-                    className="close absolute top-2 right-6 text-white text-[30px] "
+                    className="close absolute top-2 right-6 text-black text-[30px] "
                     onClick={() => setOpen(false)}
                     ref={cancelButtonRef}>
                     &times;   

@@ -199,14 +199,15 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
 
             {fetching ? <Loading /> :
                <div>
-
                   {files && files.length > 0 ? 
                      <div className='grid grid-cols-2 gap-2'>
+
                         {files && files.map((f, i)=>{
-                           const size = f.size / 1024 / 1024;
-                           return <a href={f.url} target='_blank' className='py-4 px-2 border border-gray-700 rounded-2xl text-center'>
-                              
-                              <div className='preview h-[100px] overflow-hidden' >
+                           const size = f.size / 1024;
+                           const finalsize =  size > 1024 ? `${(size / 1024).toFixed(2)} MB` : `${size.toFixed(2)} KB`;
+
+                           return <a href={f.url} target='_blank' className='relative py-4 px-2 border border-gray-700 rounded-2xl text-center'>
+                              <div className='preview h-[100px] overflow-hidden bg-white rounded-xl' >
                                     { getMime(f.mime) === 'image'? 
                                        <img className="h-auto w-full object-cover max-w-full max-h-[300px] sm:max-h-[300px] rounded-xl" src={f.url} alt="Cloud" />
                                        : ""
@@ -221,14 +222,12 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                                        <iframe className='w-full rounded-xl ' src={f.url} > </iframe>
                                        : ""
                                     }
-
                                     {getMime(f.mime) !== 'doc' && getMime(f.mime) !== 'video' && getMime(f.mime) !== 'image' ?
                                        <BsFiletypeDoc color='#D278D5' size={'4rem'} className='m-auto' /> : ''
                                     }
                               </div>
-                              
-                              <p className='text-center text-gray-400 mt-2'>{f.name}</p>
-                              <p className='text-gray-500 text-sm'>Size : {size.toFixed(2)}MB</p>
+                              <p className='text-center text-gray-400 mt-2 capitalize'>{f.name}</p>
+                              <p className='text-gray-500 text-sm'>Size : {finalsize}</p>
                               <p className='text-gray-500 text-sm'>Added By : {f.added_by?.name}</p>
                            </a>
                         })}
