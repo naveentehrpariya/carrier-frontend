@@ -60,3 +60,32 @@ select{-webkit-appearance:none;-moz-appearance:none;appearance:none;}
   transform: translateX(0);
   transition: transform 0.3s ease-in-out;
 }
+
+
+
+
+
+img, table {
+  max-width: 100%;
+  height: auto;
+  table-layout: fixed;
+  word-break: break-word;
+}
+.pdf-content, .pdf-content * {
+  font-size: 12px !important;
+  box-sizing: border-box;
+  max-width: 100% !important;
+  overflow-x: hidden;
+  word-break: break-word;
+}
+/* Add this to your CSS file or inside a <style> tag in your component */
+#pdf-export-root, #pdf-export-root * {
+    font-size: 12px !important;      /* or whatever size fits nicely */
+    box-sizing: border-box !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    word-break: break-word !important;
+    line-height: 1.5 !important;
+}
+
+

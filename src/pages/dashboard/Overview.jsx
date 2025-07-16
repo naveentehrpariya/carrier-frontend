@@ -25,7 +25,7 @@ export default function Overview() {
 
   return (
       <AuthLayout> 
-         <h2 className='text-gray-200 font-bold text-4xl mb-12'>Welcome to {user?.company?.name}</h2>
+         <h2 className='text-gray-200 font-bold text-2xl md:text-3xl  lg:text-4xl mb-12'>Welcome to {user?.company?.name}</h2>
          <div className='flex justify-between items-center'>
             <h2 className='text-white text-2xl'>Overview</h2>
             {/* <div className='filter'>
