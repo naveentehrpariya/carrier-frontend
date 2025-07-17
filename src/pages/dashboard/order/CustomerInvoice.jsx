@@ -15,64 +15,25 @@ export default function CustomerInvoice() {
    const [loading, setLoading] = useState(true);
    const [order, setOrder] = useState([]);
    const {Errors, company} = useContext(UserContext);
-    const { id } = useParams();
+   const { id } = useParams();
    const [downloadingPdf, setDownloadingPdf] = useState(false);
    const pdfRef = useRef();
-   const todaydate = new Date(); 
-   const downloadPDF = () => {
-      setDownloadingPdf(true);
-      window.scrollTo(0, 0);
-      const element = pdfRef.current;
-      if (!element) {
-         console.error("PDF content element not found.");
-         setDownloadingPdf(false);
-         return;
-      }
-      const doc = new jsPDF({
-         unit: 'mm',
-         format: 'a4',
-         orientation: 'portrait',
-      });
-      doc.html(element, {
-         callback: function (doc) {
-            const totalPages = doc.internal.getNumberOfPages();
-            const watermarkImg = "/transparent-logo.png";
-            for (let i = 1; i <= totalPages; i++) {
-               doc.setPage(i);
-               doc.addImage(watermarkImg, "PNG", 50, 60, 100, 38);
-               doc.addImage(watermarkImg, "PNG", 50, 150, 100, 38);
-            }
-            doc.save(`CMC${order?.serial_no || ''}-order-carrier-sheet.pdf`);
-            setDownloadingPdf(false);
-         },
-         x: 5,
-         y: 5,
-         html2canvas: {
-            scale: 0.25,
-            useCORS: true,
-         },
-         autoPaging: 'text',
-         width: 1800,       
-         windowWidth: 794,
-      });
-   };
-
+   const todaydate = new Date();
 
    const fetchOrder = () => {
       setLoading(true);
-      const resp = Api.get(`/order/detail/${id}`);
-      resp.then((res) => {
-         setLoading(false);
-         if (res.data.status) {
-            setOrder(res.data.order);
-         } else {
-            setOrder(null);
-         }
-         setLoading(false);
-      }).catch((err) => {
-         setLoading(false);
-         Errors(err);
-      });
+      Api.get(`/order/detail/${id}`)
+         .then((res) => {
+            setLoading(false);
+            if (res.data.status) {
+               setOrder(res.data.order);
+            } else {
+               setOrder(null);
+            }
+         }).catch((err) => {
+            setLoading(false);
+            Errors(err);
+         });
    }
 
    useEffect(() => {
@@ -85,50 +46,93 @@ export default function CustomerInvoice() {
          setInvoiceNo(`${order?.serial_no}-${todaydate.getMonth() + 1}${todaydate.getDate()}${Math.floor(Math.random() * 1000)}`);
       }
    }, [order]);
-   
-   return <AuthLayout>
-      <div className='flex justify-between items-center'>
-         <h1 className='text-xl font-bold text-white mb-6 mt-4'>Order INVOICE #{order?.customer_order_no}</h1>
-         <button className='bg-main px-4 py-2 rounded-xl text-sm' onClick={downloadPDF} >{downloadingPdf ? "Downloading..." : "Download PDF"}</button>
-      </div>
 
-      {loading ? <Loading /> : 
-         <div  className='boltable  bg-white rounded-xl p-6 py-12'>
-            <div ref={pdfRef} className="relative max-w-[794px] mx-auto p-[20px] bg-white text-sm text-black shadow-md font-sans">
-               <div className='relative z-1'> 
+   const downloadPDF = () => {
+   setDownloadingPdf(true);
+   window.scrollTo(0,0);
+
+   const element = pdfRef.current;
+   if (!element) {
+      setDownloadingPdf(false);
+      return;
+   }
+ 
+   const doc = new jsPDF({
+  unit: 'mm',
+  format: 'a4',
+  orientation: 'portrait',
+});
+doc.html(pdfRef.current, {
+  callback: function (doc) {
+    doc.save('invoice.pdf');
+    setDownloadingPdf(false);
+  },
+  x: 0,
+  y: 0,
+  html2canvas: { scale: 0.265, useCORS: true },
+  width: 210,          // A4 width in mm
+  windowWidth: 794,    // Must match export container's pixel width
+});
+
+};
+
+
+   return (
+      <AuthLayout>
+         <div className='flex justify-between items-center'>
+            <h1 className='text-xl font-bold text-white mb-6 mt-4'>Order INVOICE #{order?.customer_order_no}</h1>
+            <button className='bg-main px-4 py-2 rounded-xl text-sm' onClick={downloadPDF} >
+               {downloadingPdf ? "Downloading..." : "Download PDF"}
+            </button>
+         </div>
+         {loading ? <Loading /> :
+            <div className="boltable">
+               {/* Critical: ONLY inline style for export container */}
+               <div
+                  ref={pdfRef}
+                  style={{
+                     width: '794px',
+                     minWidth: '794px',
+                     maxWidth: '794px',
+                     background: '#fff',
+                     color: '#222',
+                     fontFamily: 'sans-serif',
+                     padding: '20px'
+                  }}
+
+               >
+                  {/* --- your full invoice content BELOW here... --- */}
+                  <div>
                      <div className="flex justify-between items-center border-b pb-4 mb-4">
                         <div>
-                           <h2 className='font-bold text-3xl text-black capitalize'>INVOICE</h2>
-                           <p className='capitalize' ><strong className='text-black'>{company?.address|| ''}</strong></p>
+                           <h2 style={{ fontWeight: 700, fontSize: "2rem", color: "#111" }}>INVOICE</h2>
+                           <p><strong>{company?.address || ''}</strong></p>
                            <p>{company?.email}</p>
                            <p>PH : {company?.phone}</p>
                         </div>
-                        <div className="text-right pt-6 pe-6 ">
+                        <div style={{ textAlign: "right", paddingTop: "1.5rem" }}>
                            <Logotext black={true} />
-                           <div className="text-gray-700 text-end">Invoice # {invoiceNo}</div>
+                           <div style={{ color: "#444" }}>Invoice # {invoiceNo}</div>
                         </div>
                      </div>
-      
-                     <div className="grid grid-cols-2 gap-8 border-b pb-4 mb-4">
+                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", borderBottom: "1px solid #ddd", paddingBottom: "1rem", marginBottom: "1rem" }}>
                         <div>
-                           <h3 className="text-blue-700 font-semibold">BILL TO</h3>
-                           <p className=' text-black capitalize'>{order?.customer?.name}  {order?.customer?.customerCode ? `(Ref No: ${order?.customer?.customerCode})` : '' }</p>
-                           <p >{order?.customer?.address}</p>
-                           <p >Email : {order?.customer?.email}</p>
-                           <p >Phone : {order?.customer?.phone}</p>
+                           <h3 style={{ color: "#2563eb", fontWeight: 600 }}>BILL TO</h3>
+                           <p style={{ color: "#111" }}>{order?.customer?.name} {order?.customer?.customerCode ? `(Ref No: ${order?.customer?.customerCode})` : '' }</p>
+                           <p>{order?.customer?.address}</p>
+                           <p>Email: {order?.customer?.email}</p>
+                           <p>Phone: {order?.customer?.phone}</p>
                         </div>
                         <div>
-                           {/* <h3 className="text-blue-700 font-semibold">CUSTOMER</h3> */}
-                           <p className='uppercase'>Order Number : #CMC{order.serial_no}</p>
+                           <p style={{ textTransform: "uppercase" }}>Order Number : #CMC{order?.serial_no}</p>
                            <p>Invoice Date : <TimeFormat time={false} date={Date.now()} /></p>
                            <p>Amount : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p>
                         </div>
                      </div>
-
-                        <div className='relative'>
-                        {order && order.shipping_details && order.shipping_details.map((s, index) => {
-                           return <>
-                                 <div className="grid grid-cols-2 gap-6 mb-4">
+                     <div>
+                        {order && order.shipping_details && order.shipping_details.map((s, index) => (
+                           <div key={index}>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1rem" }}>
                                  <div>
                                     <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
                                     <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
@@ -137,82 +141,302 @@ export default function CustomerInvoice() {
                                     <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
                                     <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
                                  </div>
-                                 </div>
-      
-                                 <div className="mb-6">
-      
-                                 {s && s.locations && (() => {
+                              </div>
+                              <div style={{ marginBottom: "2rem" }}>
+                                 {s.locations && (() => {
                                     let pickupCount = 0;
                                     let stopCount = 0;
-                                    return s && s.locations && s.locations.map((l, index) => {
-                                       if(l.type === 'pickup'){
-                                          pickupCount = pickupCount+1;
-                                          return <>
-                                             <>
-                                                <div className="mb-4">
-                                                   <h4 className="text-blue-700 font-bold">PICK {pickupCount}</h4>
-                                                   <p>{l?.location}</p>
-                                                   <p><TimeFormat date={l?.date} /> {l?.appointment ?  <b>(Appointment)</b>: ''} </p>
-                                                   <p>Ref #: {l?.referenceNo}</p>
-                                                </div>
-                                             </>
-                                          </>
+                                    return s.locations.map((l, idx) => {
+                                       if (l.type === 'pickup') {
+                                          pickupCount++;
+                                          return (
+                                             <div key={idx} style={{ marginBottom: '1rem' }}>
+                                                <h4 style={{ color: "#2563eb", fontWeight: 700 }}>PICK {pickupCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} /> {l.appointment ? <b>(Appointment)</b> : null}</p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
                                        } else {
-                                          stopCount = stopCount+1;
-                                          return <div className="mb-4 bg-blue-100 p-3 border rounded-md">
-                                          <h4 className="text-red-700 font-bold">STOP {stopCount}</h4>
-                                          <p>{l?.location}</p>
-                                          <p><TimeFormat date={l?.date} /> </p>
-                                          <p>Ref #: {l?.referenceNo}</p>
-                                       </div>
+                                          stopCount++;
+                                          return (
+                                             <div key={idx} style={{ background: "#dbeafe", padding: "1rem", borderRadius: "7px", marginBottom: '1rem' }}>
+                                                <h4 style={{ color: "#b91c1c", fontWeight: 700 }}>STOP {stopCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} /></p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
                                        }
-                                    })
+                                    });
                                  })()}
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                     <div>
+                        {order && order.shipping_details && order.shipping_details.map((s, index) => (
+                           <div key={index}>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1rem" }}>
+                                 <div>
+                                    <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                                    <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
                                  </div>
-      
-                                 
-                           </>
-                        })}
+                                 <div>
+                                    <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                                    <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                                 </div>
+                              </div>
+                              <div style={{ marginBottom: "2rem" }}>
+                                 {s.locations && (() => {
+                                    let pickupCount = 0;
+                                    let stopCount = 0;
+                                    return s.locations.map((l, idx) => {
+                                       if (l.type === 'pickup') {
+                                          pickupCount++;
+                                          return (
+                                             <div key={idx} style={{ marginBottom: '1rem' }}>
+                                                <h4 style={{ color: "#2563eb", fontWeight: 700 }}>PICK {pickupCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} /> {l.appointment ? <b>(Appointment)</b> : null}</p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
+                                       } else {
+                                          stopCount++;
+                                          return (
+                                             <div key={idx} style={{ background: "#dbeafe", padding: "1rem", borderRadius: "7px", marginBottom: '1rem' }}>
+                                                <h4 style={{ color: "#b91c1c", fontWeight: 700 }}>STOP {stopCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} /></p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
+                                       }
+                                    });
+                                 })()}
+                              </div>
+                           </div>
+                        ))}
                      </div>
-                     
-                     <div className='p3  mt-3 pt-4 w-full flex  sborder sborder-gray-300 '>
-                        <ul className='w-full'>
-                        </ul>
-                        <ul className='w-full border border-gray-100 p-3'>
-                           <table border={'1'} className='w-full text-start'>
-                              <tr>
-                                 <th align='left' className='text-black'>Charges</th>
-                                 <th align='left ' className='text-black'>Amount</th>
-                              </tr>
-                              {order && order.revenue_items&&
-                                 <>
-                                       {order && order.revenue_items && order.revenue_items.map((r, index) => {
-                                          return <>
-                                          <tr>
-                                             <td><p className='text-sm text-black'>{r.revenue_item} - <span className='capitalize'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} />*{r.quantity}</span></p></td>
-                                             <td><Currency amount={((r?.rate) * (r.quantity)) || 0} currency={order?.revenue_currency || 'cad'} /></td>
-                                          </tr>
-                                          </>
-                                       })}
-                                 </>
-                              }
-                              <tr>
-                                 <td><strong className='text-sm text-black'>Total</strong></td>
-                                 <td className='font-bold text-black'><Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></td>
-                              </tr>
-                           </table>
-                        </ul>
+                     <div>
+                        {order && order.shipping_details && order.shipping_details.map((s, index) => (
+                           <div key={index}>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1rem" }}>
+                                 <div>
+                                    <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                                    <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                                 </div>
+                                 <div>
+                                    <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                                    <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                                 </div>
+                              </div>
+                              <div style={{ marginBottom: "2rem" }}>
+                                 {s.locations && (() => {
+                                    let pickupCount = 0;
+                                    let stopCount = 0;
+                                    return s.locations.map((l, idx) => {
+                                       if (l.type === 'pickup') {
+                                          pickupCount++;
+                                          return (
+                                             <div key={idx} style={{ marginBottom: '1rem' }}>
+                                                <h4 style={{ color: "#2563eb", fontWeight: 700 }}>PICK {pickupCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} /> {l.appointment ? <b>(Appointment)</b> : null}</p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
+                                       } else {
+                                          stopCount++;
+                                          return (
+                                             <div key={idx} style={{ background: "#dbeafe", padding: "1rem", borderRadius: "7px", marginBottom: '1rem' }}>
+                                                <h4 style={{ color: "#b91c1c", fontWeight: 700 }}>STOP {stopCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} /></p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
+                                       }
+                                    });
+                                 })()}
+                              </div>
+                           </div>
+                        ))}
                      </div>
-
-                     <div className="flex justify-end items-center mt-6">
-                        <div className="text-right">
-                           <div>Date: {todaydate.getDate()} / {(todaydate.getMonth()+1) > 9 ? (todaydate.getMonth()+1) : '0'+(todaydate.getMonth()+1)} / {todaydate.getFullYear()}</div>
-                           <div className="text-xs mt-1">INVOICE# {invoiceNo} must appear on all invoices</div>
+                     <div>
+                        {order && order.shipping_details && order.shipping_details.map((s, index) => (
+                           <div key={index}>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1rem" }}>
+                                 <div>
+                                    <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                                    <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                                 </div>
+                                 <div>
+                                    <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                                    <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                                 </div>
+                              </div>
+                              <div style={{ marginBottom: "2rem" }}>
+                                 {s.locations && (() => {
+                                    let pickupCount = 0;
+                                    let stopCount = 0;
+                                    return s.locations.map((l, idx) => {
+                                       if (l.type === 'pickup') {
+                                          pickupCount++;
+                                          return (
+                                             <div key={idx} style={{ marginBottom: '1rem' }}>
+                                                <h4 style={{ color: "#2563eb", fontWeight: 700 }}>PICK {pickupCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} /> {l.appointment ? <b>(Appointment)</b> : null}</p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
+                                       } else {
+                                          stopCount++;
+                                          return (
+                                             <div key={idx} style={{ background: "#dbeafe", padding: "1rem", borderRadius: "7px", marginBottom: '1rem' }}>
+                                                <h4 style={{ color: "#b91c1c", fontWeight: 700 }}>STOP {stopCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} /></p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
+                                       }
+                                    });
+                                 })()}
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                     <div>
+                        {order && order.shipping_details && order.shipping_details.map((s, index) => (
+                           <div key={index}>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1rem" }}>
+                                 <div>
+                                    <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                                    <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                                 </div>
+                                 <div>
+                                    <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                                    <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                                 </div>
+                              </div>
+                              <div style={{ marginBottom: "2rem" }}>
+                                 {s.locations && (() => {
+                                    let pickupCount = 0;
+                                    let stopCount = 0;
+                                    return s.locations.map((l, idx) => {
+                                       if (l.type === 'pickup') {
+                                          pickupCount++;
+                                          return (
+                                             <div key={idx} style={{ marginBottom: '1rem' }}>
+                                                <h4 style={{ color: "#2563eb", fontWeight: 700 }}>PICK {pickupCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} /> {l.appointment ? <b>(Appointment)</b> : null}</p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
+                                       } else {
+                                          stopCount++;
+                                          return (
+                                             <div key={idx} style={{ background: "#dbeafe", padding: "1rem", borderRadius: "7px", marginBottom: '1rem' }}>
+                                                <h4 style={{ color: "#b91c1c", fontWeight: 700 }}>STOP {stopCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} /></p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
+                                       }
+                                    });
+                                 })()}
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                     <div>
+                        {order && order.shipping_details && order.shipping_details.map((s, index) => (
+                           <div key={index}>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1rem" }}>
+                                 <div>
+                                    <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                                    <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                                 </div>
+                                 <div>
+                                    <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                                    <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                                 </div>
+                              </div>
+                              <div style={{ marginBottom: "2rem" }}>
+                                 {s.locations && (() => {
+                                    let pickupCount = 0;
+                                    let stopCount = 0;
+                                    return s.locations.map((l, idx) => {
+                                       if (l.type === 'pickup') {
+                                          pickupCount++;
+                                          return (
+                                             <div key={idx} style={{ marginBottom: '1rem' }}>
+                                                <h4 style={{ color: "#2563eb", fontWeight: 700 }}>PICK {pickupCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} /> {l.appointment ? <b>(Appointment)</b> : null}</p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
+                                       } else {
+                                          stopCount++;
+                                          return (
+                                             <div key={idx} style={{ background: "#dbeafe", padding: "1rem", borderRadius: "7px", marginBottom: '1rem' }}>
+                                                <h4 style={{ color: "#b91c1c", fontWeight: 700 }}>STOP {stopCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} /></p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
+                                       }
+                                    });
+                                 })()}
+                              </div>
+                           </div>
+                        ))}
+                     </div>
+                     <div style={{marginTop: "2rem", borderTop: "1px solid #eee", paddingTop: "1rem"}}>
+                        <table style={{ width: "100%", textAlign: "left", borderCollapse: "collapse" }} border="1">
+                           <thead>
+                              <tr>
+                                 <th style={{ color: "#111" }}>Charges</th>
+                                 <th style={{ color: "#111" }}>Amount</th>
+                              </tr>
+                           </thead>
+                           <tbody>
+                              {order && order.revenue_items && order.revenue_items.map((r, idx) => (
+                                 <tr key={idx}>
+                                    <td>
+                                       <span style={{ color: "#111" }}>{r.revenue_item} - <Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} />*{r.quantity}</span>
+                                    </td>
+                                    <td>
+                                       <Currency amount={(r?.rate || 0) * (r.quantity)} currency={order?.revenue_currency || 'cad'} />
+                                    </td>
+                                 </tr>
+                              ))}
+                              <tr>
+                                 <td><strong style={{ color: "#111" }}>Total</strong></td>
+                                 <td style={{ fontWeight: 700, color: "#111" }}>
+                                    <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} />
+                                 </td>
+                              </tr>
+                           </tbody>
+                        </table>
+                     </div>
+                     <div style={{textAlign: 'right', marginTop: "2rem"}}>
+                        <div>Date: {todaydate.getDate()} / {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getFullYear()}</div>
+                        <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>
+                           INVOICE# {invoiceNo} must appear on all invoices
                         </div>
                      </div>
+                  </div>
                </div>
             </div>
-         </div>
-      }
-   </AuthLayout>
+         }
+      </AuthLayout>
+   );
 }
