@@ -9,7 +9,7 @@ import Currency from '../../common/Currency';
 import { jsPDF } from "jspdf";
 import Loading from '../../common/Loading';
 import DistanceInMiles from '../../common/DistanceInMiles';
-   import html2canvas from "html2canvas";
+import html2canvas from "html2canvas";
 
 export default function OrderPDF() {
    
@@ -22,7 +22,7 @@ export default function OrderPDF() {
    const pdfRef = useRef();
    const todaydate = new Date(); 
 
-const downloadPDF = async () => {
+   const downloadPDF = async () => {
    setDownloadingPdf(true);
    window.scrollTo(0, 0);
    const element = pdfRef.current;
@@ -60,11 +60,11 @@ const downloadPDF = async () => {
             doc.addImage(watermarkImg, "PNG", 50, 60, 100, 38);
             doc.addImage(watermarkImg, "PNG", 50, 180, 100, 38);
          }
-         doc.save(`CMC${order?.serial_no || ''}-order-carrier-sheet.pdf`);
+         doc.save(`Order_CMC${order?.serial_no || ''}_Rate_Confirmation.pdf`);
          setDownloadingPdf(false);
       },
       x: 10,
-      y: 5, 
+      y: 0, 
       html2canvas: {
          scale: 0.24,
          useCORS: true,
@@ -108,25 +108,35 @@ const downloadPDF = async () => {
                   <button  button className='bg-main px-4 py-2 rounded-xl text-normal test' onClick={downloadPDF} >{downloadingPdf ? "Downloading..." : "Download PDF"}</button>
                </div>
             </div>
-            <div className="relative max-w-[794px] mx-auto p-[10px] bg-white text-sm text-black shadow-md font-sans">
+            <div className="relative max-w-[794px] mx-auto p-[40px] bg-white text-sm text-black shadow-md font-sans">
                {/* Header start */}
                <div className='relative z-1 '> 
-                  <div className="flex justify-between items-start border-b pb-4 mb-4">
+                  <div className="flex justify-between items-center border-b pb-4 mb-4">
                   <div>
-                     <Logotext black={true} />
-                     <div className="font-bold text-lg">Cross Miles Carrier</div>
-                     <div>{company?.address}</div>
-                  </div>
-                  <div className="text-right pt-6 pe-6 ">
-                     <div className="text-gray-700 text-lg text-end">PRO # CMC{order?.serial_no}</div>
-                     <div className="font-semibold text-lg text-end">Rate Confirmation</div>
-                     <div className="text-normal text-end"><TimeFormat date={todaydate} /> </div>
-                  </div>
+                        <div className="font-semibold text-3xl text-start font-bold uppercase">Rate Confirmation</div>
+                        <div className="font-bold text-lg">Cross Miles Carrier</div>
+                        <div>{company?.address}</div>
+                     </div>
+                     <div className="text-right pe-6 ">
+                        <Logotext black={true} />
+                        <div className="text-gray-700 text-lg text-end">PRO # CMC{order?.serial_no}</div>
+                        <div className="text-normal text-end"><TimeFormat date={todaydate} /></div>
+                     </div>
                </div>
             </div>
             {/* Header end */}
 
-            <div ref={pdfRef} className="relative max-w-[794px] mx-auto p-[10px] bg-white text-sm text-black font-sans">
+            <div ref={pdfRef} 
+            style={{
+                     width: '794px',
+                     minWidth: '794px',
+                     maxWidth: '794px',
+                     background: '#fff',
+                     color: '#222',
+                     fontFamily: 'sans-serif',
+                     padding: '10px 10px 10px 10px'
+                  }}
+                  >
                
                {/* Hidden HTML header for PDF, off-screen */}
                <div id="pdf-header-html" 
@@ -142,13 +152,13 @@ const downloadPDF = async () => {
                   }}>
                   <div className="flex justify-between items-start border-b pb-4 mb-4">
                      <div>
-                        <Logotext black={true} />
-                        <div className="font-bold text-lg">Cross Miles Carrier</div>
-                        <div>{company?.address}</div>
+                        <div className="font-semibold text-3xl text-start font-bold uppercase">Rate Confirmation</div>
+                        <div className="font-bold text-xl mt-3">Cross Miles Carrier</div>
+                        <div className='mt-1 text-[18px]'>{company?.address} </div>
                      </div>
-                     <div className="text-right pt-6 pe-6 ">
+                     <div className="text-right pe-6 ">
+                        <Logotext black={true} />
                         <div className="text-gray-700 text-lg text-end">PRO # CMC{order?.serial_no}</div>
-                        <div className="font-semibold text-lg text-end">Rate Confirmation</div>
                         <div className="text-normal text-end"><TimeFormat date={todaydate} /></div>
                      </div>
                   </div>
@@ -156,7 +166,7 @@ const downloadPDF = async () => {
 
                <div className="grid grid-cols-2 gap-8 border-b pb-4 mb-4">
                   <div>
-                     <h3 className="text-blue-700 font-semibold">FROM</h3>
+                     <h3 className="text-blue-700 font-bold text-lg">FROM</h3>
                      <p>{company?.name}</p>
                      <p className='block'>{company?.email}</p>
                      <p>{company?.phone}</p>
@@ -164,7 +174,7 @@ const downloadPDF = async () => {
                   </div>
 
                   <div>
-                     <h3 className="text-blue-700 font-semibold">CARRIER</h3>
+                     <h3 className="text-blue-700 font-bold text-lg">CARRIER</h3>
                      <p className='uppercase'>{order?.carrier?.name}(MC{order?.carrier?.mc_code})</p>
                      <p>{order?.carrier?.phone}{order?.carrier?.secondary_phone ? `, ${order?.carrier?.secondary_phone}` :''}</p>
                      <p>{order?.carrier?.email.trim()}</p>
@@ -175,17 +185,17 @@ const downloadPDF = async () => {
                <div className='relative'>
                   {order && order.shipping_details && order.shipping_details.map((s, index) => {
                      return <>
-                           <div className="grid grid-cols-3 gap-2 mb-4">
-                              <p><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
-                              <p><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
-                              <p><strong>Total Distance : </strong> <DistanceInMiles d={order.totalDistance} /></p>
-                              <p><strong>Equipments : </strong> {s?.equipment?.value}</p>
-                              <p><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                           <div className="grid grid-cols-2 gap-2 mb-4">
+                              <p className='flex items-center'><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                              <p className='flex items-center'><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                              <p className='flex items-center'><strong>Total Distance : </strong> <DistanceInMiles d={order.totalDistance} /></p>
+                              <p className='flex items-center'><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                              <p className='flex items-center'><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
                            </div>
 
                            <div className="mb-6">
-                              <h3 className="font-semibold mb-2 text-lg">Charges</h3>
-                              <table cellPadding={8} align='center' className="w-full border text-sm table-collapse ">
+                              <h3 className="font-semibold mb-4 text-lg">Charges</h3>
+                              <table cellPadding={8} align='center' className="w-full border text-normal table-collapse ">
                                  <thead className="bg-gray-100">
                                     <tr>
                                        <th className="border text-left">Charge Type</th>
@@ -236,37 +246,6 @@ const downloadPDF = async () => {
                                  })
                               })()}
                            </div>
-                           <div className="mb-6">
-                              {s && s.locations && (() => {
-                                 let pickupCount = 0;
-                                 let stopCount = 0;
-                                 return s && s.locations && s.locations.map((l, index) => {
-                                    if(l.type === 'pickup'){
-                                       pickupCount = pickupCount+1;
-                                       return <>
-                                          <>
-                                             <div className="mb-4">
-                                                <h4 className="text-blue-700 font-bold">PICK {pickupCount}</h4>
-                                                <p>{l?.location}</p>
-                                                <p><TimeFormat date={l?.date} /> {l?.appointment ?  <b>(Appointment)</b>: ''} </p>
-                                                <p>Ref #: {l?.referenceNo}</p>
-                                             </div>
-                                          </>
-                                       </>
-                                    } else {
-                                       stopCount = stopCount+1;
-                                       return <div className="mb-4 bg-blue-100 p-3 border rounded-md">
-                                       <h4 className="text-red-700 font-bold">STOP {stopCount}</h4>
-                                       <p>{l?.location}</p>
-                                       <p><TimeFormat date={l?.date} /> </p>
-                                       <p>Ref #: {l?.referenceNo}</p>
-                                    </div>
-                                    }
-                                 })
-                              })()}
-                           </div>
-                           
-
                            
                      </>
                   })}
@@ -276,7 +255,7 @@ const downloadPDF = async () => {
 
 
                {/* Terms & Notes */}
-               <div className="text-sm leading-snug border-t pt-4">
+               <div className=" leading-snug border-t pt-4">
                   <p>
                      Carrier is responsible to confirm the actual weight and count received from the shipper before transit.
                   </p>

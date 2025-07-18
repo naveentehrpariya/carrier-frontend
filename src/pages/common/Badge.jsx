@@ -93,7 +93,7 @@ export default function Badge({tooltipcontent, status,classes, text, title, titl
                ${color(status)} ${title ? 'font-bold text-[13px] px-0 ms-1' : 'min-w-[60px] text-white text-[10px] px-2 py-[2px]'} `}
          >
             {status} 
-            {text} 
+            {text ? <>&nbsp;{text}</> : ''} 
             {date ? (
                <>
                {approved ? (

@@ -143,28 +143,40 @@ export default function AddOrder(){
 
     const [distance, setDistance] = useState(0);
     const getDistance = async () => {
-        let distancesArray = [];
-        shippingDetails && shippingDetails[0] && shippingDetails[0].locations && shippingDetails[0].locations.map((item, index) => {
-          if(item.location){
+      let distancesArray = [];
+
+      if (
+        shippingDetails &&
+        shippingDetails[0] &&
+        shippingDetails[0].locations
+      ) {
+        shippingDetails[0].locations.forEach((item) => {
+          if (item.location) {
             distancesArray.push(item.location);
-          } 
+          }
         });
-        let alldistance = 0
-        if(distancesArray && distancesArray.length < 2) {
-          toast.error('Address is not complete to calculate distance.');
-          return false;
+      }
+
+      if (distancesArray.length < 2) {
+        toast.error("Address is not complete to calculate distance.");
+        return 0;
+      }
+
+      try {
+        const res = await Api.post("/getdistance", { locations: distancesArray });
+
+        if (res.data.status) {
+          const alldistance = res.data.totalKm;
+          setDistance(alldistance); // Optional, for UI only
+          return alldistance;
+        } else {
+          toast.error(res.data.msg);
+          return 0;
         }
-        Api.post("/getdistance", {locations: distancesArray}).then((res) => {
-            console.log("API response distance:", res.data.data);
-              if(res.data.status){
-                alldistance = res.data.totalKm;
-                setDistance(alldistance);
-                toast.success(res.data.msg)
-              } else {
-                toast.error(res.data.msg)
-              }
-            });
-        return alldistance || 0;
+      } catch (error) {
+        toast.error("Error fetching distance");
+        return 0;
+      }
     };
  
     const [shippingDetails, setShippingDetails] = useState([
@@ -172,6 +184,7 @@ export default function AddOrder(){
         commodity: null,
         equipment: null,
         weight: "",
+        weight_unit: "KG",
         locations: [
           {
             location: "",
@@ -338,17 +351,21 @@ export default function AddOrder(){
     },[shippingDetails]);
 
     const addOrder = async () => {
-      if(distance == null || distance == 0 || distance == undefined || distance == '') {
-        await getDistance();
-      }
+
+      setLoading(true);
+      const calculated_distance = await getDistance();
+      // add 2 seconds delay to get distance
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
       const alldata = {...data, 
         "revenue_items"  : revenueItems || [],
         "carrier_revenue_items"  : carrierRevenueItems || [],
         "shipping_details" : shippingDetails || [],
-        "totalDistance" : parseInt(distance),
+        "totalDistance" : distance ? Number(distance) : Number(calculated_distance),
         "total_amount" : revenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
         "carrier_amount" : carrierRevenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
       };
+
       function isObjectValid(obj) {
         return Object.values(obj).every(value => value !== null && value !== '' && value !== undefined);
       }
@@ -357,6 +374,7 @@ export default function AddOrder(){
         const isall = isObjectValid(alldata.shipping_details && alldata.shipping_details[0]);
         if(!isall) {
           toast.error('Please enter shipping details of this order.');
+          setLoading(false);
           return false;
         }
       }
@@ -364,6 +382,7 @@ export default function AddOrder(){
         const isall = isObjectValid(alldata.revenue_items && alldata.revenue_items[0]);
         if(!isall) {
           toast.error('Please enter correct customer revenue details of this order.');
+          setLoading(false);
           return false;
         }
       }
@@ -371,22 +390,29 @@ export default function AddOrder(){
         const isall = isObjectValid(alldata.carrier_revenue_items && alldata.carrier_revenue_items[0]);
         if(!isall) {
           toast.error('Please enter correct carrier revenue details of this order.');
+          setLoading(false);
           return false;
         }
       }
       
-      if(alldata.carrier_amount === '') {
-        toast.error('Carrier amount is required');
+      if(alldata.customer === null || alldata.customer === '') {
+        toast.error('Customer is required');
+        setLoading(false);
+        return false;
+      }
+      if(alldata.carrier === null || alldata.carrier === '') {
+        toast.error('Carrier is required');
+        setLoading(false);
         return false;
       }
 
       if(alldata.total_amount === '') {
         toast.error('Total amount can not be empty.');
+        setLoading(false);
         return false;
       }
 
 
-      setLoading(true);
       const resp = Api.post(`/order/add`, alldata);
       resp.then((res) => {
         setLoading(false);
@@ -526,7 +552,7 @@ export default function AddOrder(){
                                   Pickup Date
                                 </label>
                                 <input
-                                  required
+                                  required onClick={(e) => e.target.showPicker && e.target.showPicker()}
                                   onChange={(e) => handleNestedInputChange(index, 'locations', locationIndex, 'date', e.target.value)}
                                   type={"date"}
                                   placeholder={"Enter Pickup Date"}
@@ -581,7 +607,7 @@ export default function AddOrder(){
                                 <label className="mb-0 block text-sm text-gray-400">
                                   Delivery Date
                                 </label>
-                                <input
+                                <input onClick={(e) => e.target.showPicker && e.target.showPicker()}
                                   required
                                   onChange={(e) => handleNestedInputChange(index, 'locations', locationIndex, 'date', e.target.value)}
                                   type={"date"}
@@ -801,7 +827,7 @@ export default function AddOrder(){
                         </p>
                         { index > 0 ?
                         <button className="text-red-700  absolute top-[7px] right-4 text-3xl"
-                        onClick={()=>removeCarrierRevenueLine} >&times;
+                        onClick={()=>removeCarrierRevenueLine(index)} >&times;
                         </button> : ""
                         }
                       </div>
@@ -848,8 +874,30 @@ export default function AddOrder(){
           </div>
 
           <div className='flex justify-end items-center mt-6'>
-            <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? "Logging in..." : "Submit Order"}</button>
+            <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? "Adding..." : "Submit Order"}</button>
           </div>
+          {/* <div className='flex justify-end items-center mt-6'>
+            {distance ?
+            <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? "Adding..." : "Submit Order"}</button>
+            :
+          <Popup  size="md:max-w-xl" space='p-8' bg="bg-black" btnclasses={`btn md    px-[50px] text-sm ms-3 main-btn text-black font-bold`} 
+            btntext={<>Add Order</>} >
+                <h2 className='text-white font-bold text-center text-lg '>Add Order Without Total Distance.</h2>
+                <p className='text-white text-center my-4 text-lg'>
+                  You can add order without calculating total distance, but it is recommended to calculate distance before adding order.
+                </p>
+
+                { distance ?
+                <p className='text-white text-center my-4 text-lg'>Total Distance : <span className='text-gray-400'> <DistanceInMiles d={distance} /> </span></p>
+                : ''}
+                <div className='flex justify-center gap-3 items-center mt-6 '>
+                    <button onClick={getDistance} className={`btn bg-gray-700  md px-[50px] text-white font-bold`}>Calculate Distance</button>
+                    <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? "Adding..." : "Submit Order"}</button>
+                </div>
+            </Popup>
+             
+            }
+            </div> */}
 
       </div>
     </AuthLayout>

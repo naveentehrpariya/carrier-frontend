@@ -13,6 +13,7 @@ import { FaLockOpen } from "react-icons/fa6";
 import LockOrder from './LockOrder'
 import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
 import DistanceInMiles from '../../common/DistanceInMiles'
+import RemoveOrder from './RemoveOrder'
 
 export default function OrderItem({lists, fetchLists}) {
    const {Errors, user} = useContext(UserContext);
@@ -110,6 +111,9 @@ export default function OrderItem({lists, fetchLists}) {
                                     <>
                                        <li className='list-none text-sm'>
                                           <LockOrder order={c} fetchLists={fetchLists} />
+                                       </li>
+                                       <li className='list-none text-sm'>
+                                          <RemoveOrder order={c} fetchLists={fetchLists} />
                                        </li>
                                     </>
                                  : ''}

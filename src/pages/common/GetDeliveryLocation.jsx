@@ -1,71 +1,50 @@
 import React, { useEffect, useRef, useState } from "react";
-export default function GetDeliveryLocation({  onchange, placeholder  }) {
-  const googlemap = 'AIzaSyARl049FrKlkbob8QImlI5LAa8QmzReNBw';
+import { loadGoogleMapsScript } from "../utils/googleMapsLoader"; // adjust path as needed
+
+export default function GetDeliveryLocation({ onchange, placeholder }) {
+  const apiKey = 'AIzaSyARl049FrKlkbob8QImlI5LAa8QmzReNBw';
   const deliveryRef = useRef(null);
-  const [inputText, setInput] = useState(""); 
-  const [isSuggestionSelected, setIsSuggestionSelected] = useState(false);
+  const [inputText, setInputText] = useState("");
 
   useEffect(() => {
     let autocompleteInstance;
-    const loadScript = () => {
-      if (!document.querySelector("#google-maps-script")) {
-        const script = document.createElement("script");
-        script.id = "google-maps-script";
-        script.async = true;
-        script.onload = initializeAutocomplete;
-        document.body.appendChild(script);
-      } else if (window.google) {
-        initializeAutocomplete();
-      }
-    };
 
-    const initializeAutocomplete = () => {
-      if (deliveryRef.current && window.google) {
+    loadGoogleMapsScript(apiKey).then(() => {
+      if (deliveryRef.current) {
         autocompleteInstance = new window.google.maps.places.Autocomplete(deliveryRef.current);
-        autocompleteInstance.setFields(["formatted_address"]); // Load only address info
-        autocompleteInstance.addListener("place_changed", handlePlaceSelect);
-      }
-    };
+        autocompleteInstance.setFields(["formatted_address"]);
 
-    const handlePlaceSelect = () => {
-      if (autocompleteInstance) {
-        const place = autocompleteInstance.getPlace();
-        if (place?.formatted_address) {
-          setInput(place.formatted_address); // Set the input value to the selected address
-          setIsSuggestionSelected(true); // Flag that a suggestion was selected
-          onchange && onchange(place.formatted_address); // Pass the selected address back to parent component
-          console.log("place.formatted_address", place.formatted_address);
-        }
+        autocompleteInstance.addListener("place_changed", () => {
+          const place = autocompleteInstance.getPlace();
+          if (place?.formatted_address) {
+            setInputText(place.formatted_address);
+            onchange && onchange(place.formatted_address);
+            console.log("Selected address:", place.formatted_address);
+          }
+        });
       }
-    };
-    loadScript();
+    });
+
     return () => {
       if (autocompleteInstance) {
         window.google.maps.event.clearInstanceListeners(autocompleteInstance);
       }
     };
-  }, [googlemap]);
+  }, [apiKey, onchange]);
 
-  const handleInput = (e) => {
-    setInput(e.target.value);
-    setIsSuggestionSelected(false);
-    if (!isSuggestionSelected) {
-      setTimeout(() => {
-        onchange && onchange(inputText);
-      }, 100)
-    }
+  const handleInputChange = (e) => {
+    setInputText(e.target.value);
   };
 
   return (
     <div className="relative">
       <input
-         id={'deliverylocationinput'}
+        id="deliverylocationinput"
         ref={deliveryRef}
         type="text"
         name="location"
         value={inputText}
-        onChange={handleInput}
-        onBlur={handleInput}
+        onChange={handleInputChange}
         className="input-sm"
         placeholder={placeholder || "Search Location"}
       />
