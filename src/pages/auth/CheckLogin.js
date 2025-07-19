@@ -12,18 +12,18 @@ export default function CheckLogin({redirect, takeaction}) {
       const resp = Api.get('/user/profile');
       resp.then((res) => {
         if(res.data.status){
-          if(res.data.user && res.data.user.mailVerifiedAt === null){
-            navigate('/send-verification-email');
-          }  
+          // if(res.data.user && res.data.user.mailVerifiedAt === null){
+          //   navigate('/send-verification-email');
+          // }  
           setIsAuthenticated(true);
           setUser(res.data.user);
           setcompany(res.data.company);
-         if(redirect){
-             navigate('/home');
-         }
+          if(redirect){
+              navigate('/home');
+          }
         } else {
            toast.error("You must login first.");
-           navigate('/login');
+          //  navigate('/login');
            setIsAuthenticated(false);
            setUser(null);
         }

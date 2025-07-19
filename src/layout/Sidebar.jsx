@@ -13,15 +13,26 @@ import { TbListDetails } from "react-icons/tb";
 import { MdOutlineDocumentScanner } from "react-icons/md";
 import { IoMdAddCircle } from "react-icons/io";
  import { HiOutlineUserCircle } from "react-icons/hi2";
+import Api from '../api/Api';
 
 export default function Sidebar({toggle}) {
 
   const location = useLocation();
   const {user}  = useContext(UserContext);
-  
-  const logout = () => { 
-    localStorage && localStorage.removeItem("token");
-    window.location.href = "/login";
+
+  const logout = () => {
+    Api.get('/user/logout')
+      .then((res) => {
+        if(res.data.status){
+          localStorage.removeItem("token");
+          window.location.href = "/login";
+        } else {
+          console.error("Logout failed:", res.data.message);
+        }
+      })
+      .catch((err) => {
+        console.error("Logout error:", err);
+      });
   }
 
   const roleChecker = () =>{

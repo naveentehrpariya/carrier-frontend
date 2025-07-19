@@ -1,15 +1,14 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import loginbg from "../../img/login-bg.png";
 import { UserContext } from "../../context/AuthProvider";
 import toast from "react-hot-toast";
-import CheckLogin from "./CheckLogin";
 import Logotext from "../common/Logotext";
 import Api from "../../api/Api";
 
 export default function Login() {
   
-    const {Errors, setIsAuthenticated, setUser} = useContext(UserContext);
+    const {Errors,setcompany, user, setIsAuthenticated, setUser} = useContext(UserContext);
     function LoginForm(){
 
     const inputFields = [
@@ -41,15 +40,16 @@ export default function Login() {
       resp.then((res) => {
         setLoading(false);
         if(res.data.status){
-          if(res.data.user.role !== '1'){
+          // if(res.data.user.role !== '1'){
             toast.success(res.data.message);
-            localStorage.setItem("token", res.data.token);
+            // Cookie is automatically set by the server with HttpOnly flag
+            // No need to manually store token in localStorage
             setUser(res.data.user);
             setIsAuthenticated(true);
             navigate("/home");
-          } else {
-            toast.error("Invalid credentials. Please try again.");
-          }
+          // } else {
+          //   toast.error("Invalid credentials. Please try again.");
+          // }
         } else { 
           toast.error(res.data.message);
         }
@@ -58,6 +58,12 @@ export default function Login() {
         Errors(err);
       });
     }
+ 
+    useEffect(()=>{
+      if(user && user._id){
+        navigate('/home');
+      } 
+    },[user]);
 
     return (
       <>
@@ -78,7 +84,6 @@ export default function Login() {
 
     return (
       <>
-        <CheckLogin takeaction={true}  redirect={true} />
         <div className="h-[100vh] overflow-hidden lg:flex justify-center items-center" >
           <div className="side-image w-full hidden lg:block lg:max-w-[50%] ">
             <img src={loginbg} className="img-fluid block m-3 rounded-[30px]" alt="loginimage" />
