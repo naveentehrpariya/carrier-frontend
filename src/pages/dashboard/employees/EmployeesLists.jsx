@@ -9,11 +9,14 @@ import Dropdown from '../../common/Dropdown';
 import SuspandAccount from './SuspandAccount';
 import Badge from '../../common/Badge';
 import ChangePassword from './ChangePassword';
+import EmployeeDocuments from './EmployeeDocuments';
 export default function EmployeesLists() {
 
 
    const [loading, setLoading] = useState(true);
    const [lists, setLists] = useState([]);
+   const [showDocuments, setShowDocuments] = useState(false);
+   const [selectedEmployee, setSelectedEmployee] = useState(null);
    const {Errors} = useContext(UserContext);
 
    const fetchLists = () => {
@@ -53,6 +56,7 @@ export default function EmployeesLists() {
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Corporate ID</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Address</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone/Email</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Documents</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                </tr>
                {lists && lists.map((c, index) => {
@@ -80,7 +84,9 @@ export default function EmployeesLists() {
                         <p>{c?.phone ? <a href={`tel:${c?.phone}`}>{c?.phone}</a>  : ""}</p>
                         <p>{c?.email ? <a href={`mailto:${c?.email}`}>{c?.email}</a>  : ""}</p>
                      </td>
-                      
+                     <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
+                        <EmployeeDocuments employee={c} />
+                     </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <Dropdown>
                               <li className='list-none text-sm'>

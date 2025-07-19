@@ -1,6 +1,8 @@
 import './App.css';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import PrivateRoute from './components/PrivateRoute';
+import RoleBasedRoute from './components/RoleBasedRoute';
 import UserContextProvider from './context/AuthProvider';
 import Error404 from './404';
 import Overview from './pages/dashboard/Overview';
@@ -27,31 +29,101 @@ function App() {
   return (
     <UserContextProvider>
         <div className="App">
-              <Router>
+              <BrowserRouter>
                 <div className="routes">
                   <Routes>
-                    <Route path="/login" element={<Login /> } />
-                    <Route path="/" element={<Login /> } />
-                    <Route path="/home" element={<Overview /> } />
-                    <Route path="/orders" element={<Orders /> } />
-                    <Route path="/order/detail/:id" element={<OrderPDF /> } />
-                    <Route path="/edit/order/:id" element={<AddOrder isEdit={true} /> } />
-                    <Route path="/view/order/:id" element={<ViewOrder /> } />
-                    <Route path="/order/customer/invoice/:id" element={<CustomerInvoice /> } />
-                    <Route path="/order/add" element={<AddOrder /> } />
-                    <Route path="/customers" element={<Customers /> } />
-                    <Route path="/payments" element={<PaymentLists /> } />
-                    <Route path="/customer/detail/:id" element={<CustomerDetail /> } />
-                    <Route path="/carriers" element={<Carriers /> } />
-                    <Route path="/carrier/detail/:id" element={<CarrierDetail /> } />
-                    <Route path="/employees" element={<EmployeesLists /> } />
-                    <Route path="/commodity-and-equipments" element={<EquipAndCommudity /> } />
-                    <Route path="/accounts/orders" element={<AccountOrders /> } />
-                    <Route path="/company/details" element={<CompanyDetails /> } />
+                    {/* Public routes */}
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/" element={<Login />} />
+
+                    {/* Private routes - require authentication */}
+                    <Route path="/home" element={
+                      <PrivateRoute>
+                        <Overview />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/orders" element={
+                      <PrivateRoute>
+                        <Orders />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/order/detail/:id" element={
+                      <PrivateRoute>
+                        <OrderPDF />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/edit/order/:id" element={
+                      <PrivateRoute>
+                        <AddOrder isEdit={true} />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/view/order/:id" element={
+                      <PrivateRoute>
+                        <ViewOrder />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/order/customer/invoice/:id" element={
+                      <RoleBasedRoute allowedRoles={[1, 2, 3]}>
+                        <CustomerInvoice />
+                      </RoleBasedRoute>
+                    } />
+                    <Route path="/order/add" element={
+                      <RoleBasedRoute allowedRoles={[1, 3]}>
+                        <AddOrder />
+                      </RoleBasedRoute>
+                    } />
+                    <Route path="/customers" element={
+                      <PrivateRoute>
+                        <Customers />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/payments" element={
+                      <RoleBasedRoute allowedRoles={[2, 3]}>
+                        <PaymentLists />
+                      </RoleBasedRoute>
+                    } />
+                    <Route path="/customer/detail/:id" element={
+                      <PrivateRoute>
+                        <CustomerDetail />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/carriers" element={
+                      <PrivateRoute>
+                        <Carriers />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/carrier/detail/:id" element={
+                      <PrivateRoute>
+                        <CarrierDetail />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/employees" element={
+                      <PrivateRoute>
+                        <EmployeesLists />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/accounts/orders" element={
+                      <RoleBasedRoute allowedRoles={[2, 3]}>
+                        <AccountOrders />
+                      </RoleBasedRoute>
+                    } />
+                    <Route path="/company/details" element={
+                      <PrivateRoute>
+                        <CompanyDetails />
+                      </PrivateRoute>
+                    } />
+
+                    {/* Role-based protected routes - example for admin access */}
+                    <Route path="/commodity-and-equipments" element={
+                      <RoleBasedRoute allowedRoles={[3]}>
+                        <EquipAndCommudity />
+                      </RoleBasedRoute>
+                    } />
+
                     <Route path="*" element={<Error404 />} /> 
                   </Routes>
                 </div>
-              </Router>
+              </BrowserRouter>
               <Toaster
                 position="top-right"
                 reverseOrder={false}
