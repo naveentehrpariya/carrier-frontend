@@ -19,6 +19,7 @@ import UpdatePaymentStatus from '../accounts/UpdatePaymentStatus';
 import LockOrder from './LockOrder';
 import UpdateOrderStatus from '../accounts/UpdateOrderStatus';
 import { LuDownload } from "react-icons/lu";
+import RemoveOrder from './RemoveOrder';
 
 export default function ViewOrder() {
    
@@ -67,6 +68,7 @@ export default function ViewOrder() {
                         <>
                            <li className='list-none text-sm'>
                               <LockOrder order={order} fetchLists={fetchOrder} />
+                              <RemoveOrder order={order} fetchLists={fetchOrder} />
                            </li>
                         </>
                      : ''}
