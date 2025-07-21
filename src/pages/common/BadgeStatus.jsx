@@ -3,7 +3,6 @@ import { FaCircleCheck } from "react-icons/fa6";
 import { CiWarning } from "react-icons/ci";
 
 export default function BadgeStatus({tooltipcontent, status,classes, text, title, title2, approved, date}){
-
    function color(status) {
       if (status === "pending") {
          if(title){
