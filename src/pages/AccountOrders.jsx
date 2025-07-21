@@ -34,7 +34,6 @@ export default function AccountOrders() {
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900 min-w-[220px] md:min-w-[auto]'>Amount/Profit</th>
                      <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                   </tr>
-   
                      <tr  >
                         <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
                            <p className='flex items-center'>Status :<BadgeStatus title={true} status={'active'} /> </p>
@@ -65,8 +64,6 @@ export default function AccountOrders() {
                         </td> 
    
                      </tr>
-                     
-                     
                      <tr  >
                         <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
                            <p className='flex items-center'>Status :<BadgeStatus title={true} status={'active'} /> </p>
