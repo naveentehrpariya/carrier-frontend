@@ -78,11 +78,9 @@ export default function AccountOrders() {
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            $4500
                         </td>
-   
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <p>Amount : 400 USD</p>
                         </td>
-   
                         <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                               <div className='flex items-center'>
                               <Dropdown>
@@ -92,7 +90,6 @@ export default function AccountOrders() {
                               </Dropdown>
                               </div>
                         </td> 
-   
                      </tr>
                      <tr  >
                         <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
