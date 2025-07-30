@@ -5,78 +5,80 @@ import { UserContext } from "../../context/AuthProvider";
 import toast from "react-hot-toast";
 import Logotext from "../common/Logotext";
 import Api from "../../api/Api";
+import CheckLogin from "./CheckLogin";
 
 export default function Login() {
-  
     const {Errors,setcompany, user, setIsAuthenticated, setUser} = useContext(UserContext);
     function LoginForm(){
-
-    const inputFields = [
-      { type:"text", name :"corporateID", label: "Corporate ID" },
-      { type:"email", name :"email", label: "Email" },
-      { type:"text", name :"password", label: "Password" },
-    ];
-      
-    const [data, setData] = useState({
-      corporateID: "",
-      email: "",
-      password: "",
-    });
-
-    const handleinput = (e) => {
-      setData({ ...data, [e.target.name]: e.target.value});
-    }
-
-    const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
-    function handleLogin(e) {
-      e.preventDefault();
-      if (data.email === "" || data.password === "" || data.corporateID === "") {
-        toast.error("All fields are required.");
-        return false
-      }
-      setLoading(true);
-      const resp = Api.post(`/user/login`, data);
-      resp.then((res) => {
-        setLoading(false);
-        if(res.data.status){
-          // if(res.data.user.role !== '1'){
-            toast.success(res.data.message);
-            // Cookie is automatically set by the server with HttpOnly flag
-            // No need to manually store token in localStorage
-            setUser(res.data.user);
-            setIsAuthenticated(true);
-            navigate("/home");
-          // } else {
-          //   toast.error("Invalid credentials. Please try again.");
-          // }
-        } else { 
-          toast.error(res.data.message);
-        }
-      }).catch((err) => {
-        setLoading(false);
-        Errors(err);
+      const inputFields = [
+        { type:"text", name :"corporateID", label: "Corporate ID" },
+        { type:"email", name :"email", label: "Email" },
+        { type:"text", name :"password", label: "Password" },
+      ];
+        
+      const [data, setData] = useState({
+        corporateID: "",
+        email: "",
+        password: "",
       });
-    }
- 
-    useEffect(()=>{
-      if(user && user._id){
-        navigate('/home');
-      } 
-    },[user]);
+
+      const handleinput = (e) => {
+        setData({ ...data, [e.target.name]: e.target.value});
+      }
+
+      const [loading, setLoading] = useState(false);
+      const navigate = useNavigate();
+      function handleLogin(e) {
+        e.preventDefault();
+        if (data.email === "" || data.password === "" || data.corporateID === "") {
+          toast.error("All fields are required.");
+          return false
+        }
+        setLoading(true);
+        const resp = Api.post(`/user/login`, data);
+        resp.then((res) => {
+          setLoading(false);
+          if(res.data.status){
+            // if(res.data.user.role !== '1'){
+              toast.success(res.data.message);
+              // Cookie is automatically set by the server with HttpOnly flag
+              // No need to manually store token in localStorage
+              setUser(res.data.user);
+              setIsAuthenticated(true);
+              navigate("/home");
+              setcompany(res.data.company);
+              localStorage.setItem('token', res.data.token);
+            // } else {
+            //   toast.error("Invalid credentials. Please try again.");
+            // }
+          } else { 
+            toast.error(res.data.message);
+          }
+        }).catch((err) => {
+          setLoading(false);
+          Errors(err);
+        });
+      }
+  
+      useEffect(()=>{
+        if(user && user._id){
+          navigate('/home');
+        } 
+      },[user]);
 
     return (
       <>
+      <CheckLogin />
       <form onSubmit={handleLogin} >
-        {inputFields.map((field, index) => (
-          <>
-          <label className="mt-4 mb-0 block">{field.label}</label>
-          <input required key={index} name={field.name} onChange={handleinput} type={field.type} placeholder={field.label} className="input" />
-          </>
-        ))}
-        <div className="mt-2 flex justify-center lg:justify-start">
-          <button type="submit" onClick={handleLogin} className="btn md mt-6 px-[50px] w-full lg:w-auto main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
-        </div>
+          {inputFields.map((field, index) => (
+            <>
+            <label className="mt-4 mb-0 block">{field.label}</label>
+            <input required key={index} name={field.name} onChange={handleinput} type={field.type} placeholder={field.label} className="input" />
+            </>
+          ))}
+          <div className="mt-2 flex justify-center lg:justify-start">
+            <button type="submit" onClick={handleLogin} className="btn md mt-6 px-[50px] w-full lg:w-auto main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
+          </div>
         </form>
       </>
     );

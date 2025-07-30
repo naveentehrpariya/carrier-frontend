@@ -3,29 +3,30 @@ import axios from 'axios';
 const APP_URL = "https://logistikore.com/api";
 const host = window.location.host;
 
+function getToken(){
+  const data = localStorage && localStorage.getItem('token');
+  return data; 
+}
+
 let Api = axios.create({
-  baseURL: host === 'localhost:3000' ? "http://localhost:8080" : APP_URL,
-  withCredentials: true, // Enable cookies to be sent with requests
+  baseURL: host === 'localhost:3000' ? 'http://localhost:8080' : APP_URL,
   headers: {
     'Accept': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-    'Content-Type': 'application/json'
+    'Authorization': `Bearer ${getToken()}`,
+    'Access-Control-Allow-Origin': '*'
   }
 }); 
 
-// Response interceptor to handle authentication errors
-Api.interceptors.response.use(
-  (response) => {
-    console.log("API Response:", response);
-    // If the response is successful, return it
-    return response;
+Api.interceptors.request.use(
+  async (config) => {
+      const token = getToken();
+      if (token !== null) {
+          config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config; 
   },
   (error) => {
-    console.error("API Error:", error);
-    if (error.response?.status === 401) {
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
+      return Promise.reject(error);
   }
 );
 

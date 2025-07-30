@@ -18,7 +18,6 @@ export default function AuthLayout({children, heading}) {
     localStorage.removeItem("token");
     window.location.href = "/login";
   };
-
   
   // const [windowWidth, setWindowWidth] = React.useState(window && window.innerWidth);
   // React.useEffect(() => {
