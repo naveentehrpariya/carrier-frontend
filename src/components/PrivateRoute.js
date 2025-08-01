@@ -14,22 +14,18 @@ const PrivateRoute = ({ children, requiredPermission = null, requiredRole = null
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated || !user) {
-    return <Navigate to="/login" replace />;
-  }
+  // // Redirect to login if not authenticated
+  // if (!isAuthenticated || !user) {
+  //   return <Navigate to="/login" replace />;
+  // }
 
   // Check role-based access if requiredRole is specified
   if (requiredRole && user.role !== requiredRole) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // Check permission-based access if requiredPermission is specified
   if (requiredPermission) {
-    // Assuming permissions are stored as an array in user object
-    // You may need to adjust this based on your user object structure
     const userPermissions = user.permissions || [];
-    
     if (!userPermissions.includes(requiredPermission)) {
       return <Navigate to="/unauthorized" replace />;
     }

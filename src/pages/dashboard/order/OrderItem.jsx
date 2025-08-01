@@ -112,9 +112,16 @@ export default function OrderItem({lists, fetchLists}) {
                                        <li className='list-none text-sm'>
                                           <LockOrder order={c} fetchLists={fetchLists} />
                                        </li>
-                                       <li className='list-none text-sm'>
-                                          <RemoveOrder order={c} fetchLists={fetchLists} />
-                                       </li>
+                                       {c.lock ? 
+                                          <li className={`list-none text-sm  ${c.lock ? "disabled" : ""}`}>
+                                             <Link className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${c.lock ? 'opacity-50 pointer-events-none' : ''}`} to={`/edit/order/${c._id}`}>{c.lock ? <FaLock size={12} className='me-1 inline' /> : ""} Delete Order</Link>
+                                          </li>
+                                          :
+
+                                          <li className='list-none text-sm'>
+                                             <RemoveOrder order={c} fetchLists={fetchLists} />
+                                          </li>
+                                       }
                                     </>
                                  : ''}
                                  <li className={`list-none text-sm  ${c.lock ? "disabled" : ""}`}>
@@ -122,6 +129,9 @@ export default function OrderItem({lists, fetchLists}) {
                                  </li>
                                  <li className={`list-none text-sm  ${c.lock ? "disabled" : ""}`}>
                                     <UpdateOrderStatus text={<>{c.lock ? <FaLock size={12} className='me-1' /> : ""} Update Order Status </>} id={c.id} fetchLists={fetchLists} />
+                                 </li>
+                                 <li className={`list-none text-sm  ${c.lock ? "disabled" : ""}`}>
+                                    <Link className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${c.lock ? 'opacity-50 pointer-events-none' : ''}`} to={`/edit/order/${c._id}`}>{c.lock ? <FaLock size={12} className='me-1 inline' /> : ""} Edit Order</Link>
                                  </li>
                               </> 
                            : '' }

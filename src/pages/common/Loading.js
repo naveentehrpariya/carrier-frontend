@@ -2,7 +2,13 @@ import React from 'react'
 
 export default function Loading({fixed, dark}) {
   return (
-    <div className={`w-full px-12 py-20 flex justify-center ${fixed ? 'fixed top-0 z-50 flex justify-center items-center h-full bg-[#0004] left-0' : ''}`}>
+    <>
+
+      <div className="flex justify-center items-center py-12">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-700"></div>
+      </div>
+
+    {/* <div className={`w-full px-12 py-20 flex justify-center ${fixed ? 'fixed top-0 z-50 flex justify-center items-center h-full bg-[#0004] left-0' : ''}`}>
       <style>{`
       .loader {
          width: 100px;
@@ -50,6 +56,7 @@ export default function Loading({fixed, dark}) {
          }
        }
        `}</style>
+    
        <div>
         <div className="loader">
           <li className="ball"></li>
@@ -58,6 +65,7 @@ export default function Loading({fixed, dark}) {
         </div>
         <p className='text-center mt-8 text-gray-500 uppercase text-md'>Loading...</p>
        </div>
-    </div>
+    </div> */}
+    </>
   )
 }

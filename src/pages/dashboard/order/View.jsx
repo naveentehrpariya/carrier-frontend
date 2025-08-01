@@ -58,34 +58,47 @@ export default function ViewOrder() {
          <div className='flex items-center ps-3'>
             <Link to={`/order/detail/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Carrier Sheet</Link>
             <Link to={`/order/customer/invoice/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Invoice</Link>
+          
             <Dropdown classes={'relative top-1'} iconsize={'30px '}>
-               {(user && user.is_admin === 1) || (user && user.role === 2) ?
-                  <>
-                     <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
-                        <UpdatePaymentStatus pstatus={order?.carrier_payment_status} pmethod={order?.carrier_payment_method} pnotes={order?.carrier_payment_notes} text={<>{order?.lock ? <FaLock size={12} className='me-1' /> : ""} Update Carrier Payment</>} paymentType={2} id={order?.id} type={2} fetchLists={fetchOrder} />
-                     </li>
-                     {user && user.is_admin === 1 ?
-                        <>
+            {(user && user.is_admin === 1) || (user && user.role === 2) ?
+               <>
+                  <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
+                     <UpdatePaymentStatus pstatus={order?.carrier_payment_status} pmethod={order?.carrier_payment_method} pnotes={order?.carrier_payment_notes} text={<>{order?.lock ? <FaLock size={12} className='me-1' /> : ""} Update Carrier Payment</>} paymentType={2} id={order?.id} type={2} fetchLists={fetchOrder} />
+                  </li>
+                  {user && user.is_admin === 1 ?
+                     <>
+                        <li className='list-none text-sm'>
+                           <LockOrder order={order} fetchLists={fetchOrder} />
+                        </li>
+                        {order?.lock ? 
+                           <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
+                              <Link className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${order?.lock ? 'opacity-50 pointer-events-none' : ''}`} to={`/edit/order/${order?._id}`}>{order?.lock ? <FaLock size={12} className='me-1 inline' /> : ""} Delete Order</Link>
+                           </li>
+                           :
+
                            <li className='list-none text-sm'>
-                              <LockOrder order={order} fetchLists={fetchOrder} />
                               <RemoveOrder order={order} fetchLists={fetchOrder} />
                            </li>
-                        </>
-                     : ''}
-                     <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
-                        <UpdatePaymentStatus pstatus={order?.customer_payment_status} pmethod={order?.payment_method} pnotes={order?.customer_payment_notes} text={<>{order?.lock ? <FaLock size={12} className='me-1' /> : ""} Update Customer Payment</>} paymentType={1} id={order?.id} type={1} fetchLists={fetchOrder} />
-                     </li>
-                     <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
-                        <UpdateOrderStatus text={<>{order?.lock ? <FaLock size={12} className='me-1' /> : ""} Update Order Status </>} id={order?.id} fetchLists={fetchOrder} />
-                     </li>
-                  </> 
-               : '' }
-               <li className='list-none text-sm'>
-                  <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${order?._id}`}>Download Customer Invoice</Link>
-               </li>
-               <li className='list-none text-sm'>
-                  <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${order?._id}`}>Download Carrier Sheet</Link>
-               </li>
+                        }
+                     </>
+                  : ''}
+                  <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
+                     <UpdatePaymentStatus pstatus={order?.customer_payment_status} pmethod={order?.payment_method} pnotes={order?.customer_payment_notes} text={<>{order?.lock ? <FaLock size={12} className='me-1' /> : ""} Update Customer Payment</>} paymentType={1} id={order?.id} type={1} fetchLists={fetchOrder} />
+                  </li>
+                  <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
+                     <UpdateOrderStatus text={<>{order?.lock ? <FaLock size={12} className='me-1' /> : ""} Update Order Status </>} id={order?.id} fetchLists={fetchOrder} />
+                  </li>
+                  <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
+                     <Link className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${order?.lock ? 'opacity-50 pointer-events-none' : ''}`} to={`/edit/order/${order?._id}`}>{order?.lock ? <FaLock size={12} className='me-1 inline' /> : ""} Edit Order</Link>
+                  </li>
+               </> 
+            : '' }
+            <li className='list-none text-sm'>
+               <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${order?._id}`}>Download Customer Invoice</Link>
+            </li>
+            <li className='list-none text-sm'>
+               <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${order?._id}`}>Download Carrier Sheet</Link>
+            </li>
             </Dropdown>
             <div className='ms-3'>
                <OrderView text={<><TbLayoutSidebarLeftCollapse size={20} /></>}  order={order} fetchLists={fetchOrder} />
@@ -166,7 +179,7 @@ export default function ViewOrder() {
                                           <p className='flex pb-[7px]'> <p ><strong className='pe-2 text-gray-300' >Pickup Location :</strong>  {p?.location} </p> </p>
                                           <div className='grid grid-cols-4 gap-4'>
                                              <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Reference No. :</strong> <p className='ps-2'>{p?.referenceNo}</p> </p>
-                                             <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Appointement : </strong> <p className='ps-2'>{p?.appointment ? "Yes" : "No"}</p> </p>
+                                             <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Appointement : </strong> <p className='ps-2'>{p?.appointment|| "No"}</p> </p>
                                              <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Pickup Date :</strong> 
                                              <p className='ps-2' ><TimeFormat time={false} date={p?.date} /></p> </p>
                                           </div>
@@ -176,7 +189,7 @@ export default function ViewOrder() {
                                           <p className='flex pb-[7px]'> <p ><strong className='pe-2 text-gray-300' >Delivery Location :</strong>  {p?.location} </p> </p>
                                           <div className='grid grid-cols-4 gap-4'>
                                              <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Reference No. :</strong> <p className='ps-2'>{p?.referenceNo}</p> </p>
-                                             <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Appointement : </strong> <p className='ps-2'>{p?.appointment ? "Yes" : "No"}</p> </p>
+                                             <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Appointement : </strong> <p className='ps-2'>{p?.appointment ||  "No"}</p> </p>
                                              <p className='flex pb-[7px]'><strong className=' text-gray-300 '>Delivery Date :</strong> 
                                              <p className='ps-2' ><TimeFormat time={false} date={p?.date} /></p> </p>
                                           </div>

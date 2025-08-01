@@ -18,12 +18,10 @@ import CustomerInvoice from './pages/dashboard/order/CustomerInvoice';
 import ViewOrder from './pages/dashboard/order/View';
 import CompanyDetails from './pages/auth/CompanyDetails';
 import CustomerDetail from './pages/dashboard/customer/CustomerDetail';
-import Commodity from './pages/dashboard/admin/Commodity';
 import EquipAndCommudity from './pages/dashboard/admin/EquipAndCommudity';
 import PaymentLists from './pages/dashboard/payment/PaymentLists';
 import CarrierDetail from './pages/dashboard/carrier/CarrierDetail';
-
-
+import Unauthorized from './components/Unauthorized';
 
 function App() {
   return (
@@ -35,8 +33,7 @@ function App() {
                     {/* Public routes */}
                     <Route path="/login" element={<Login />} />
                     <Route path="/" element={<Login />} />
-
-                    {/* Private routes - require authentication */}
+ 
                     <Route path="/home" element={
                       <PrivateRoute>
                         <Overview />
@@ -120,6 +117,7 @@ function App() {
                       </RoleBasedRoute>
                     } />
 
+                    <Route path="/unauthorized" element={<Unauthorized />} /> 
                     <Route path="*" element={<Error404 />} /> 
                   </Routes>
                 </div>

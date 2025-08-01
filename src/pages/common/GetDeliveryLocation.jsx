@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { loadGoogleMapsScript } from "../utils/googleMapsLoader"; // adjust path as needed
 
-export default function GetDeliveryLocation({ onchange, placeholder }) {
+export default function GetDeliveryLocation({ onchange, placeholder, initialValue }) {
   const apiKey = 'AIzaSyARl049FrKlkbob8QImlI5LAa8QmzReNBw';
   const deliveryRef = useRef(null);
-  const [inputText, setInputText] = useState("");
+ const [inputText, setInputText] = useState(initialValue || "");
 
   useEffect(() => {
     let autocompleteInstance;
@@ -31,6 +31,13 @@ export default function GetDeliveryLocation({ onchange, placeholder }) {
       }
     };
   }, [apiKey, onchange]);
+
+  // Update inputText when initialValue changes (for edit mode)
+  useEffect(() => {
+    if (initialValue && initialValue !== inputText) {
+      setInputText(initialValue);
+    }
+  }, [initialValue]);
 
   const handleInputChange = (e) => {
     setInputText(e.target.value);

@@ -8,7 +8,7 @@ import Api from "../../api/Api";
 import CheckLogin from "./CheckLogin";
 
 export default function Login() {
-    const {Errors,setcompany, user, setIsAuthenticated, setUser} = useContext(UserContext);
+    const {Errors, login, user, setIsAuthenticated, setUser} = useContext(UserContext);
     function LoginForm(){
       const inputFields = [
         { type:"text", name :"corporateID", label: "Corporate ID" },
@@ -41,13 +41,11 @@ export default function Login() {
           if(res.data.status){
             // if(res.data.user.role !== '1'){
               toast.success(res.data.message);
-              // Cookie is automatically set by the server with HttpOnly flag
-              // No need to manually store token in localStorage
-              setUser(res.data.user);
-              setIsAuthenticated(true);
-              navigate("/home");
-              setcompany(res.data.company);
+              // Store token in localStorage for persistence
               localStorage.setItem('token', res.data.token);
+              // Use the login function from AuthProvider
+              login(res.data.user, res.data.company);
+              navigate("/home");
             // } else {
             //   toast.error("Invalid credentials. Please try again.");
             // }
@@ -68,7 +66,7 @@ export default function Login() {
 
     return (
       <>
-      <CheckLogin />
+      {/* <CheckLogin redirect={true} /> */}
       <form onSubmit={handleLogin} >
           {inputFields.map((field, index) => (
             <>

@@ -186,8 +186,9 @@ export default function CustomerInvoice() {
                            <p>Phone: {order?.customer?.phone}</p>
                         </div>
                         <div>
+                           <p style={{ textTransform: "uppercase", marginTop: "1.3rem" }}> </p>
                            <p style={{ textTransform: "uppercase" }}>Order Number : #CMC{order?.serial_no}</p>
-                           <p>Invoice Date : <TimeFormat time={false} date={Date.now()} /></p>
+                           <p>Invoice Date : <TimeFormat time={true} date={Date.now()} /></p>
                            <p>Amount : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p>
                         </div>
                      </div>
@@ -215,7 +216,7 @@ export default function CustomerInvoice() {
                                              <div key={idx} style={{ marginBottom: '1rem' }}>
                                                 <h4 style={{ color: "#2563eb", fontWeight: 700 }}>PICK {pickupCount}</h4>
                                                 <p>{l.location}</p>
-                                                <p><TimeFormat date={l.date} /> {l.appointment ? <b>(Appointment)</b> : null}</p>
+                                                <p><TimeFormat time={false} date={l.date} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''}</p>
                                                 <p>Ref #: {l.referenceNo}</p>
                                              </div>
                                           );
@@ -225,7 +226,7 @@ export default function CustomerInvoice() {
                                              <div key={idx} style={{ background: "#dbeafe", padding: "1rem", borderRadius: "7px", marginBottom: '1rem' }}>
                                                 <h4 style={{ color: "#b91c1c", fontWeight: 700 }}>STOP {stopCount}</h4>
                                                 <p>{l.location}</p>
-                                                <p><TimeFormat date={l.date} /></p>
+                                                <p><TimeFormat date={l.date} time={false} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''}</p>
                                                 <p>Ref #: {l.referenceNo}</p>
                                              </div>
                                           );
@@ -266,7 +267,7 @@ export default function CustomerInvoice() {
                         </table>
                      </div>
                      <div style={{textAlign: 'right', marginTop: "2rem"}}>
-                        <div>Date: {todaydate.getDate()} / {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getFullYear()}</div>
+                        <div>Date: {todaydate.getDate()} / {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'} </div>
                         <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>
                            INVOICE# {invoiceNo} must appear on all invoices
                         </div>

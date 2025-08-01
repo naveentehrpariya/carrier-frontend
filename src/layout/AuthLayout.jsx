@@ -53,10 +53,10 @@ export default function AuthLayout({children, heading}) {
       <Helmet>
          <meta charSet="utf-8" />
          <title>{heading ? `${heading} | ` : '' } Cross Miles Carrier </title>
-         <link rel="canonical" href={window.location.href || "https://runstream.co"} />
+         <link rel="canonical" href={window.location.href || ""} />
       </Helmet>
-     
-     {toggle ? <div onClick={showSidebar} className="fixed top-0 left-0 w-full h-full bg-[#0009] blur z-[9999]"></div> : ''}
+      <CheckLogin  />
+      {toggle ? <div onClick={showSidebar} className="fixed top-0 left-0 w-full h-full bg-[#0009] blur z-[9999]"></div> : ''}
       <div className="auth-wrap flex justify-between max-lg:flex-wrap">
         <main className="main-wrap">
           <header className="fixed top-0 lg:top-0 z-[9998] bg-dark border-b border-gray-800 px-6 md:px-7 py-2 xl:py-4 flex items-center w-full justify-between">
@@ -88,7 +88,6 @@ export default function AuthLayout({children, heading}) {
             </div>
           </div>
         </main>
-        <CheckLogin takeaction={true} />
       </div>
     </>
   );

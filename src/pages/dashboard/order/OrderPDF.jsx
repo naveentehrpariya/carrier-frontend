@@ -229,7 +229,7 @@ export default function OrderPDF() {
                                              <div className="mb-4">
                                                 <h4 className="text-blue-700 font-bold">PICK {pickupCount}</h4>
                                                 <p>{l?.location}</p>
-                                                <p><TimeFormat date={l?.date} /> {l?.appointment ?  <b>(Appointment)</b>: ''} </p>
+                                                <p><TimeFormat time={false} date={l?.date} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''} </p>
                                                 <p>Ref #: {l?.referenceNo}</p>
                                              </div>
                                           </>
@@ -239,7 +239,7 @@ export default function OrderPDF() {
                                        return <div className="mb-4 bg-blue-100 p-3 border rounded-md">
                                        <h4 className="text-red-700 font-bold">STOP {stopCount}</h4>
                                        <p>{l?.location}</p>
-                                       <p><TimeFormat date={l?.date} /> </p>
+                                       <p><TimeFormat time={false} date={l?.date} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''} </p>
                                        <p>Ref #: {l?.referenceNo}</p>
                                     </div>
                                     }
@@ -277,7 +277,7 @@ export default function OrderPDF() {
                   {/* <div className="font-semibold">Carrier Signature: -------------- </div> */}
                </div>
                <div className="text-right">
-                  <div>Date: {todaydate.getDate()} / {(todaydate.getMonth()+1) > 9 ? (todaydate.getMonth()+1) : '0'+(todaydate.getMonth()+1)} / {todaydate.getFullYear()}</div>
+                  <div>Date: {todaydate.getDate()} / {(todaydate.getMonth()+1) > 9 ? (todaydate.getMonth()+1) : '0'+(todaydate.getMonth()+1)} / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'}</div>
                   <div className="text-xs mt-1">PRO# CMC{order?.serial_no} must appear on all invoices</div>
                </div>
                </div>

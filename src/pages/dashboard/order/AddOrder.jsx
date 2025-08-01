@@ -4,12 +4,13 @@ import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import AuthLayout from '../../../layout/AuthLayout';
 import Select from 'react-select'
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import Popup from '../../common/Popup';
 import Currency from '../../common/Currency';
 import GetLocation from '../../common/GetLocation';
 import DistanceInMiles from '../../common/DistanceInMiles';
 import GetDeliveryLocation from '../../common/GetDeliveryLocation';
+import Loading from '../../common/Loading';
 
 // const revenueItemOptions = [
 //   { label: "Freight Charge", value: "Freight Charge" },
@@ -22,8 +23,9 @@ const rateMethodOptions = [
 ];
 
 const appointmentOptions = [
-  { value: 0, label: "No Appointment" },
-  { value: 1,  label: "Appointment" },
+  { value: "no", label: "No Appointment" },
+  { value: "appointment", label: "Appointment" },
+  { value: "time", label: "Appointment with Time" },
 ];
 
 const weightUnits = [
@@ -31,25 +33,33 @@ const weightUnits = [
   { value: 'LBS',  label: "LBS" },
 ];
 
-export default function AddOrder(){
+export default function AddOrder({ isEdit = false }){
 
-    // const [exits, setExists] = useState(null)
-    // const { id } = useParams();
-    // const fetchOrder = () => {
-    //   setLoading(true);
-    //   const resp = Api.get(`/order/detail/${id}`);
-    //   resp.then((res) => {
-    //     setLoading(false);
-    //     if (res.data.status) {
-    //         setExists(res.data.order);
-    //     } else {
-    //         setExists(null);
-    //     }
-    //   }).catch((err) => {
-    //     setLoading(false);
-    //     Errors(err);
-    //   });
-    // }
+    const { id } = useParams();
+    const [isEditMode, setIsEditMode] = useState(isEdit && id);
+    const [existingOrder, setExistingOrder] = useState(null);
+    const [initialLoading, setInitialLoading] = useState(isEdit && id);
+    
+    const fetchOrder = () => {
+      if (!isEdit || !id) return;
+      
+      setInitialLoading(true);
+      const resp = Api.get(`/order/detail/${id}`);
+      resp.then((res) => {
+        setInitialLoading(false);
+        if (res.data.status) {
+            setExistingOrder(res.data.order);
+            populateOrderData(res.data.order);
+        } else {
+            toast.error('Order not found');
+            navigate('/orders');
+        }
+      }).catch((err) => {
+        setInitialLoading(false);
+        Errors(err);
+        navigate('/orders');
+      });
+    }
 
     const [revenueItemOptions, setRevenueItemOptions] = useState([]);
     const fetchCharges = () => {
@@ -130,14 +140,15 @@ export default function AddOrder(){
           setCarrierListings([]);
         });
     }
-    useEffect(()=>{ 
+    useEffect(()=> { 
       fetchcustomers();
       fetchcarriers();
-      // fetCommunities();
       fetchequipmentOptions();
       fetchCharges();
-          // fetchOrder();
-    }, []);
+      if (isEdit && id) {
+        fetchOrder();
+      }
+    }, [isEdit, id]);
 
  
 
@@ -189,14 +200,14 @@ export default function AddOrder(){
           {
             location: "",
             referenceNo: "",
-            appointment: 0,
+            appointment: "no",
             date: "",
             type: "pickup",
           },
           {
             location: "",
             referenceNo: "",
-            appointment: 0,
+            appointment: "no",
             date: "",
             type: "delivery",
           }
@@ -216,22 +227,22 @@ export default function AddOrder(){
           commodity: null,
           equipment: null,
           weight: "",
-          weight_unit: "",
-          pickup: [
+          weight_unit: "KG",
+          locations: [
             {
               location: "",
               referenceNo: "",
-              appointment: null,
+              appointment: "no",
               date: "",
+              type: "pickup",
             },
-          ],
-          delivery: [
             {
               location: "",
               referenceNo: "",
-              appointment: null,
+              appointment: "no",
               date: "",
-            },
+              type: "delivery",
+            }
           ],
         },
       ]);
@@ -241,10 +252,16 @@ export default function AddOrder(){
       updatedDetails[blockIndex].locations.push({
         location: "",
         referenceNo: "",
-        appointment: null,
+        appointment: "no",
         date: "",
         type: tag,
       });
+      setShippingDetails(updatedDetails);
+    };
+    
+    const removeLocation = (blockIndex, locationIndex) => {
+      const updatedDetails = [...shippingDetails];
+      updatedDetails[blockIndex].locations.splice(locationIndex, 1);
       setShippingDetails(updatedDetails);
     };
     
@@ -255,7 +272,7 @@ export default function AddOrder(){
     };
     const handleNestedInputChange = (blockIndex, type, locIndex, field, value) => {
       const updatedDetails = [...shippingDetails];
-      updatedDetails[blockIndex][type][locIndex][field] = value;
+      updatedDetails[blockIndex].locations[locIndex][field] = value;
       setShippingDetails(updatedDetails);
     };
 
@@ -336,6 +353,46 @@ export default function AddOrder(){
       setData({ ...data, carrier: e.value});
     }
 
+    // Function to populate form data when editing
+    const populateOrderData = (order) => {
+      if (!order) return;
+      
+      // Set basic order data
+      setData({
+        company_name: order.company_name || "Cross Miles Carrier",
+        customer: order.customer?._id || null,
+        customer_payment_method: order.customer_payment_method || '',
+        carrier: order.carrier?._id || null,
+        payment_status: order.payment_status || "pending",
+        payment_method: order.payment_method || "none",
+        carrier_payment_status: order.carrier_payment_status || "pending",
+        carrier_payment_method: order.carrier_payment_method || "",
+        revenue_currency: order.revenue_currency || 'cad',
+        order_status: order.order_status || "added"
+      });
+      
+      // Set currency
+      setRevCurrency(order.revenue_currency || 'cad');
+      
+      // Set distance
+      setDistance(order.totalDistance || 0);
+      
+      // Set shipping details
+      if (order.shipping_details && order.shipping_details.length > 0) {
+        setShippingDetails(order.shipping_details);
+      }
+      
+      // Set revenue items
+      if (order.revenue_items && order.revenue_items.length > 0) {
+        setRevenueItems(order.revenue_items);
+      }
+      
+      // Set carrier revenue items
+      if (order.carrier_revenue_items && order.carrier_revenue_items.length > 0) {
+        setCarrierRevenueItems(order.carrier_revenue_items);
+      }
+    };
+
     const [revCurrency, setRevCurrency] = useState('cad');
     const chooseAmountCurrency = (e) => { 
       setData({ ...data, revenue_currency: e.target.value});
@@ -361,7 +418,7 @@ export default function AddOrder(){
         "revenue_items"  : revenueItems || [],
         "carrier_revenue_items"  : carrierRevenueItems || [],
         "shipping_details" : shippingDetails || [],
-        "totalDistance" : distance ? Number(distance) : Number(calculated_distance),
+        "totalDistance" : Number(calculated_distance),
         "total_amount" : revenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
         "carrier_amount" : carrierRevenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
       };
@@ -413,12 +470,16 @@ export default function AddOrder(){
       }
 
 
-      const resp = Api.post(`/order/add`, alldata);
+      // Determine if we're adding or updating
+      const endpoint = isEditMode ? `/order/update/${id}` : `/order/add`;
+      const method = isEditMode ? 'put' : 'post';
+      
+      const resp = Api[method](endpoint, alldata);
       resp.then((res) => {
         setLoading(false);
         if (res.data.status === true) {
           toast.success(res.data.message);
-          navigate('/orders')
+          navigate('/orders');
         } else {
           toast.error(res.data.message);
         }
@@ -431,10 +492,19 @@ export default function AddOrder(){
     
   
 
+  // Show loading while fetching order data for editing
+  if (initialLoading) {
+    return (
+      <AuthLayout>
+        <Loading />
+      </AuthLayout>
+    );
+  }
+
   return (
     <AuthLayout>
       <div>
-         <h2 className='text-white heading xl text-2xl '>Add New Order</h2>
+         <h2 className='text-white heading xl text-2xl '>{isEditMode ? `Edit Order #${existingOrder?.serial_no}` : 'Add New Order'}</h2>
           <div>
             {/* <div className="flex justify-between mt-12 mb-4 items-center">
               <p className="text-gray-400 heading xl text-xl">Shipping Details</p>
@@ -463,6 +533,7 @@ export default function AddOrder(){
                     <input
                       required
                       name="commodity"
+                      value={detail.commodity || ""}
                       onChange={(e) =>handleShippingInputChange(index, "commodity", e.target.value)}
                       type={"text"}
                       placeholder={"Enter Commodity"}
@@ -474,6 +545,7 @@ export default function AddOrder(){
                     <Select
                       classNamePrefix="react-select input"
                       placeholder={"Equipment"}
+                      value={detail.equipment}
                       onChange={(selected) =>handleShippingInputChange(index, "equipment", selected)}
                       options={equipmentOptions}
                     />
@@ -483,6 +555,7 @@ export default function AddOrder(){
                     <label className="mb-0 block text-sm text-gray-400">Weight</label>
                     <input
                       required name="weight"
+                      value={detail.weight || ""}
                       onChange={(e) =>
                         handleShippingInputChange(index, "weight", e.target.value)
                       }
@@ -495,6 +568,7 @@ export default function AddOrder(){
                     <Select
                       classNamePrefix="react-select input"
                       placeholder={"Weight Unit"}
+                      value={detail.weight_unit ? weightUnits.find(option => option.value === detail.weight_unit) : null}
                       onChange={(selected) =>
                         handleShippingInputChange(index, "weight_unit", selected && selected.value)
                       }
@@ -509,8 +583,19 @@ export default function AddOrder(){
                     return detail?.locations && detail?.locations.map((l, locationIndex)=>{
                         if(l.type === 'pickup'){
                           pickupCount = pickupCount+1;
-                          return  <div>
-                            <h2 className='text-white mb-3 mt-6 text-normal heading'>Pickup #{pickupCount}</h2>
+                          const totalPickups = detail.locations.filter(loc => loc.type === 'pickup').length;
+                          return  <div key={`pickup-${locationIndex}`}>
+                            <div className='flex justify-betweens items-center mb-3 mt-6'>
+                              <h2 className='text-white text-normal heading'>Pickup #{pickupCount}</h2>
+                              {totalPickups > 1 && (
+                                <button 
+                                  className="text-red-500 ms-4 text-sm font-normal hover:text-red-400"
+                                  onClick={() => removeLocation(index, locationIndex)}
+                                >
+                                  Remove Pickup
+                                </button>
+                              )}
+                            </div>
                             <div className="grid grid-cols-4 gap-4 ">
                               <div className="input-item">
                                 <label className="mb-0 block text-sm text-gray-400">Pickup Location</label>
@@ -521,7 +606,7 @@ export default function AddOrder(){
                                   placeholder={"Enter Pickup location"} 
                                   className="input-sm"
                                 /> */}
-                                <GetLocation id="getpickup" placeholder={"Enter Pickup Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
+                                <GetLocation id="getpickup" initialValue={l.location || ""} placeholder={"Enter Pickup Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
 
                               </div>
                               <div className="input-item">
@@ -530,6 +615,7 @@ export default function AddOrder(){
                                 </label>
                                 <input
                                   required
+                                  value={l.referenceNo || ""}
                                   onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'referenceNo', e.target.value)}
                                   type={"text"}
                                   placeholder={"Pickup Reference No."}
@@ -538,14 +624,14 @@ export default function AddOrder(){
                               </div>
                               <div className="input-item">
                                 <label className="mb-0 block text-sm text-gray-400">
-                                  Pickup Appointment
+                                   Appointment Time
                                 </label>
-                                <Select
-                                  classNamePrefix="react-select input"
-                                  placeholder={"Choose Appointment"}
-                                  onChange={(selected) => handleNestedInputChange(index, 'locations', locationIndex, 'appointment', selected && selected.value)}
-                                  options={appointmentOptions}
-                                />
+                              <input
+                                type="time" defaultValue={l.appointment || "no"}
+                                onChange={(e) => handleNestedInputChange(index, 'locations', locationIndex, 'appointment', e.target.value || "no")}
+                                className="input-sm"
+                                placeholder="Select time"
+                              />
                               </div>
                               <div className="input-item">
                                 <label className="mb-0 block text-sm text-gray-400">
@@ -553,6 +639,7 @@ export default function AddOrder(){
                                 </label>
                                 <input
                                   required onClick={(e) => e.target.showPicker && e.target.showPicker()}
+                                  value={l.date || ""}
                                   onChange={(e) => handleNestedInputChange(index, 'locations', locationIndex, 'date', e.target.value)}
                                   type={"date"}
                                   placeholder={"Enter Pickup Date"}
@@ -564,8 +651,19 @@ export default function AddOrder(){
 
                         } else {
                           stopCount = stopCount+1;
-                          return <div>
-                            <h2 className='text-white mb-3 mt-6 text-normal heading'>Delivery #{stopCount}</h2>
+                          const totalDeliveries = detail.locations.filter(loc => loc.type === 'delivery').length;
+                          return <div key={`delivery-${locationIndex}`}>
+                            <div className='flex justify-betweens items-center mb-3 mt-6'>
+                              <h2 className='text-white text-normal heading'>Delivery #{stopCount}</h2>
+                              {totalDeliveries > 1 && (
+                                <button 
+                                  className="text-red-500 ms-4 text-sm font-normal hover:text-red-400"
+                                  onClick={() => removeLocation(index, locationIndex)}
+                                >
+                                  Remove Delivery
+                                </button>
+                              )}
+                            </div>
                             <div className="grid grid-cols-4 gap-4 ">
                               <div className="input-item">
                                 <label className="mb-0 block text-sm text-gray-400">Delivery Location</label>
@@ -578,7 +676,7 @@ export default function AddOrder(){
                                   className="input-sm"
                                 /> 
                                 */}
-                                <GetDeliveryLocation id="getdelivery"  placeholder={"Enter Delivery Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
+                                <GetDeliveryLocation id="getdelivery"  initialValue={l.location || ""} placeholder={"Enter Delivery Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
                               </div>
                               <div className="input-item">
                                 <label className="mb-0 block text-sm text-gray-400">
@@ -586,6 +684,7 @@ export default function AddOrder(){
                                 </label>
                                 <input
                                   required
+                                  value={l.referenceNo || ""}
                                   onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'referenceNo', e.target.value)}
                                   type={"text"}
                                   placeholder={"Delivery Reference No."}
@@ -596,11 +695,11 @@ export default function AddOrder(){
                                 <label className="mb-0 block text-sm text-gray-400">
                                   Delivery Appointment
                                 </label>
-                                <Select
-                                  classNamePrefix="react-select input"
-                                  placeholder={"Choose Appointment"}
-                                  onChange={(selected) => handleNestedInputChange(index, 'locations', locationIndex, 'appointment', selected && selected.value)}
-                                  options={appointmentOptions}
+                                <input
+                                  type="time" defaultValue={l.appointment || "no"}
+                                  onChange={(e) => handleNestedInputChange(index, 'locations', locationIndex, 'appointment', e.target.value || "no")}
+                                  className="input-sm"
+                                  placeholder="Select time"
                                 />
                               </div>
                               <div className="input-item">
@@ -609,6 +708,7 @@ export default function AddOrder(){
                                 </label>
                                 <input onClick={(e) => e.target.showPicker && e.target.showPicker()}
                                   required
+                                  value={l.date || ""}
                                   onChange={(e) => handleNestedInputChange(index, 'locations', locationIndex, 'date', e.target.value)}
                                   type={"date"}
                                   placeholder={"Enter Delivery Date"}
@@ -636,7 +736,7 @@ export default function AddOrder(){
             <div className="flex justify-between mt-12 mb-4 items-center">
               <p className="text-gray-400 heading xl text-xl">Customer Revenue Items</p>
               <div className='flex items-center'>
-                <select onChange={chooseAmountCurrency} className='currency-drop bg-gray-800 text-white px-2 py-[5px] rounded-[10px]'>
+                <select value={revCurrency} onChange={chooseAmountCurrency} className='currency-drop bg-gray-800 text-white px-2 py-[5px] rounded-[10px]'>
                   <option value={"cad"} >CAD</option>
                   {/* <option value={"gbp"} >GBP</option> */}
                   <option value={"usd"} >USD</option>
@@ -649,6 +749,7 @@ export default function AddOrder(){
             <div className='input-item mb-3'>
                 <label className="mt-2 mb-0 block text-sm text-gray-400">Customer</label>
                 <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
+                value={data.customer ? customersListing.find(customer => customer.value === data.customer) : null}
                 onChange={chooseCustomer}
                 options={customersListing} />
             </div>
@@ -679,6 +780,7 @@ export default function AddOrder(){
                             name="rate"
                             type="text"
                             placeholder="Notes"
+                            value={item.note || ""}
                             className="input-sm"
                             onChange={(e) => {
                               handleCustomerRevInputChange(index, "note", e.target.value)
@@ -698,6 +800,7 @@ export default function AddOrder(){
                             name="rate"
                             type="number"
                             placeholder="Rate"
+                            value={item.rate || ""}
                             className="input-sm ps-[50px]"
                             onChange={(e) => handleCustomerRevInputChange(index, "rate", e.target.value)}
                           />
@@ -712,6 +815,7 @@ export default function AddOrder(){
                             name="quantity"
                             type="text"
                             placeholder="Quantity"
+                            value={item.quantity || ""}
                             className="input-sm"
                             onChange={(e) => {
                               handleCustomerRevInputChange(index, "quantity", e.target.value)
@@ -749,6 +853,7 @@ export default function AddOrder(){
             <div className='input-item mb-4'>
               <label className="mt-2 mb-0 block text-sm text-gray-400">Choose Carrier</label>
               <Select classNamePrefix="react-select input"  placeholder={'Choose Carrier'}
+                value={data.carrier ? carriersListing.find(carrier => carrier.value === data.carrier) : null}
                 onChange={chooseCarrier}
                 options={carriersListing} />
             </div>
@@ -779,6 +884,7 @@ export default function AddOrder(){
                             name="rate"
                             type="text"
                             placeholder="Notes"
+                            value={item.note || ""}
                             className="input-sm"
                             onChange={(e) => {
                               handleCarrierRevInputChange(index, "note", e.target.value)
@@ -798,6 +904,7 @@ export default function AddOrder(){
                             name="rate"
                             type="number"
                             placeholder="Rate"
+                            value={item.rate || ""}
                             className="input-sm ps-[50px]"
                             onChange={(e) => handleCarrierRevInputChange(index, "rate", e.target.value)}
                           />
@@ -812,6 +919,7 @@ export default function AddOrder(){
                             name="quantity"
                             type="text"
                             placeholder="Quantity"
+                            value={item.quantity || ""}
                             className="input-sm"
                             onChange={(e) => {
                               handleCarrierRevInputChange(index, "quantity", e.target.value)
@@ -874,7 +982,7 @@ export default function AddOrder(){
           </div>
 
           <div className='flex justify-end items-center mt-6'>
-            <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? "Adding..." : "Submit Order"}</button>
+            <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? (isEditMode ? "Updating..." : "Adding...") : (isEditMode ? "Update Order" : "Submit Order")}</button>
           </div>
           {/* <div className='flex justify-end items-center mt-6'>
             {distance ?

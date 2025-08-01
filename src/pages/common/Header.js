@@ -27,7 +27,6 @@ export default function Header() {
 
   return (
     <>
-    <CheckLogin  />
       <header id='header' className=' sticky top-2 py-3 z-10' >
          <div className='container m-auto'>
             <nav className="px-3 py-1 md:py-3 ">

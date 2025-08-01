@@ -3,41 +3,36 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import { UserContext } from '../../context/AuthProvider';
 import Api from '../../api/Api';
-export default function CheckLogin({redirect, takeaction}) {
+export default function CheckLogin({redirect}) {
 
-  const { Errors, setcompany,setIsAuthenticated, setUser} = useContext(UserContext);
+  const { Errors, login, logout, isAuthenticated, setIsAuthenticated} = useContext(UserContext);
   const navigate = useNavigate();
 
   function check_login(e) {
       const resp = Api.get('/user/profile');
       resp.then((res) => {
         if(res.data.status){
-          // if(res.data.user && res.data.user.mailVerifiedAt === null){
-          //   navigate('/send-verification-email');
-          // }  
-          setIsAuthenticated(true);
-          setUser(res.data.user);
-          setcompany(res.data.company);
+          login(res.data.user, res.data.company);
           if(redirect){
-              navigate('/home');
+              // navigate('/home');
           }
         } else {
-           toast.error("You must login first.");
-          //  navigate('/login');
-           setIsAuthenticated(false);
-           setUser(null);
+          //  toast.error("You must login first.");
+           navigate('/login');
+            logout();
+          //  setIsAuthenticated(false);
         }
+        console.log("errors getting",res.data.status);
         
       }).catch((err) => {
-        console.log("errors",err);
-        if(takeaction){
-          navigate('/login');
-        } 
+        logout();
+        navigate('/login');
+        console.log("err errors getting",err);
       });
   }
 
   useEffect(()=>{
-    check_login();
+      check_login();
   },[]);
 
   return (
