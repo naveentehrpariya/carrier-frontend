@@ -266,8 +266,20 @@ export default function CustomerInvoice() {
                            </tbody>
                         </table>
                      </div>
+
+                     <div className='bank-details'>
+                        <h3 style={{ color: "#2563eb", fontWeight: 900, marginTop: "2rem" }}>NAME OF BANK :- ROYAL BANK OF CANADA</h3>
+                       
+                       <div className='p-6 border rounded-2xl mt-6 '>
+                           <p>Bank Name: {company?.bank_name || ''}</p>
+                           <p>Account Name: {company?.account_name || ''}</p>
+                           <p>Account Number: {company?.account_number || ''}</p>
+                           <p>Routing Number: {company?.routing_number || ''}</p>
+                       </div>
+
+                     </div>
                      <div style={{textAlign: 'right', marginTop: "2rem"}}>
-                        <div>Date: {todaydate.getDate()} / {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'} </div>
+                        <div>Date: {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getDate()}  / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'} </div>
                         <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>
                            INVOICE# {invoiceNo} must appear on all invoices
                         </div>

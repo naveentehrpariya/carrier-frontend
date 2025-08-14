@@ -277,7 +277,7 @@ export default function OrderPDF() {
                   {/* <div className="font-semibold">Carrier Signature: -------------- </div> */}
                </div>
                <div className="text-right">
-                  <div>Date: {todaydate.getDate()} / {(todaydate.getMonth()+1) > 9 ? (todaydate.getMonth()+1) : '0'+(todaydate.getMonth()+1)} / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'}</div>
+                  <div>Date: {(todaydate.getMonth()+1) > 9 ? (todaydate.getMonth()+1) : '0'+(todaydate.getMonth()+1)} / {todaydate.getDate()} /  {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'}</div>
                   <div className="text-xs mt-1">PRO# CMC{order?.serial_no} must appear on all invoices</div>
                </div>
                </div>

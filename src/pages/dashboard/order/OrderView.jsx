@@ -173,6 +173,28 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
    )
    }
 
+   const DOCVIEW = ({f}) => { 
+      return <>
+         { getMime(f.mime) === 'image'? 
+            <img className="h-auto w-full object-cover max-w-full max-h-[300px] sm:max-h-[300px] rounded-xl" src={f.url} alt="Cloud" />
+            : ""
+         }
+         { getMime(f.mime) === 'video'?
+            <video playsInline className='w-full h-full rounded-xl min-h-[300px] max-h-[300px]' controls >
+               <source src={f.url} type={f.mime} />
+            </video>
+            : ""
+         }
+         { getMime(f.mime) === 'doc'?
+            <iframe className='w-full rounded-xl ' src={f.url} > </iframe>
+            : ""
+         }
+         {getMime(f.mime) !== 'doc' && getMime(f.mime) !== 'video' && getMime(f.mime) !== 'image' ?
+            <BsFiletypeDoc color='#D278D5' size={'4rem'} className='m-auto' /> : ''
+         }
+      </>
+   }
+
    return <>
       <div className='orderSider'>
          <button onClick={(e)=>setOpen(true)} className={btnclasses}>{text ? text : "View All Notes"}</button>
@@ -204,35 +226,20 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                <div>
                   {files && files.length > 0 ? 
                      <div className='grid grid-cols-2 gap-2'>
-
                         {files && files.map((f, i)=>{
                            const size = f.size / 1024;
                            const finalsize =  size > 1024 ? `${(size / 1024).toFixed(2)} MB` : `${size.toFixed(2)} KB`;
-
-                           return <a href={f.url} target='_blank' className='relative py-4 px-2 border border-gray-700 rounded-2xl text-center'>
+                           return <div className='relative py-4 px-2 border border-gray-700 rounded-2xl text-center'>
                               <div className='preview h-[100px] overflow-hidden bg-white rounded-xl' >
-                                    { getMime(f.mime) === 'image'? 
-                                       <img className="h-auto w-full object-cover max-w-full max-h-[300px] sm:max-h-[300px] rounded-xl" src={f.url} alt="Cloud" />
-                                       : ""
-                                    }
-                                    { getMime(f.mime) === 'video'?
-                                       <video playsInline className='w-full h-full rounded-xl min-h-[300px] max-h-[300px]' controls >
-                                          <source src={f.url} type={f.mime} />
-                                       </video>
-                                       : ""
-                                    }
-                                    { getMime(f.mime) === 'doc'?
-                                       <iframe className='w-full rounded-xl ' src={f.url} > </iframe>
-                                       : ""
-                                    }
-                                    {getMime(f.mime) !== 'doc' && getMime(f.mime) !== 'video' && getMime(f.mime) !== 'image' ?
-                                       <BsFiletypeDoc color='#D278D5' size={'4rem'} className='m-auto' /> : ''
-                                    }
+                                    <Popup iconcolor={'black'} action={open} space={'p-6 sm:p-10'} btntext={<DOCVIEW f={f} />} 
+                                    btnclasses={'bg-main text-white rounded-[30px] px-3 md:px-4 py-[4px] md:py-[11px] text-[12px] md:text-[15px] uppercase  '} >
+                                       <DOCVIEW f={f} />
+                                    </Popup> 
                               </div>
                               <p className='text-center text-gray-400 mt-2 capitalize'>{f.name}</p>
                               <p className='text-gray-500 text-sm'>Size : {finalsize}</p>
                               <p className='text-gray-500 text-sm'>Added By : {f.added_by?.name}</p>
-                           </a>
+                           </div>
                         })}
                      </div>
                      :
