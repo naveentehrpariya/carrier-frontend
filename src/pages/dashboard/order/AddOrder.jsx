@@ -193,6 +193,7 @@ export default function AddOrder({ isEdit = false }){
     const [shippingDetails, setShippingDetails] = useState([
       {
         commodity: null,
+        reference: "",
         equipment: null,
         weight: "",
         weight_unit: "KG",
@@ -225,6 +226,7 @@ export default function AddOrder({ isEdit = false }){
         ...prevDetails,
         {
           commodity: null,
+          reference: "",
           equipment: null,
           weight: "",
           weight_unit: "KG",
@@ -503,8 +505,8 @@ export default function AddOrder({ isEdit = false }){
 
   return (
     <AuthLayout>
-      <div>
-         <h2 className='text-white heading xl text-2xl '>{isEditMode ? `Edit Order #${existingOrder?.serial_no}` : 'Add New Order'}</h2>
+      <div className="px-4 sm:px-0">
+         <h2 className='text-white heading xl text-xl sm:text-2xl '>{isEditMode ? `Edit Order #${existingOrder?.serial_no}` : 'Add New Order'}</h2>
           <div>
             {/* <div className="flex justify-between mt-12 mb-4 items-center">
               <p className="text-gray-400 heading xl text-xl">Shipping Details</p>
@@ -519,15 +521,15 @@ export default function AddOrder({ isEdit = false }){
               <>
               <div key={index}
                 className="mt-2 mb-6">
-                <div className='flex mb-4 justify-between'>
-                  <p className="text-gray-400 heading xl text-xl ">Shipment Details
+                <div className='flex flex-col sm:flex-row mb-4 justify-between items-start sm:items-center gap-2 sm:gap-0'>
+                  <p className="text-gray-400 heading xl text-lg sm:text-xl ">Shipment Details
                   </p>
                   {index  ?<button  className="!text-red-500 !font-sm !font-normal !ms-3"
                   onClick={() => removeItemShipItem(index)} >Remove
                   </button> : ''}
                 </div>
                   
-                <div className="grid grid-cols-4 gap-4 pb-8 border-b border-gray-800 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 pb-8 border-b border-gray-800 mb-8">
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Commodity</label>
                     <input
@@ -537,6 +539,17 @@ export default function AddOrder({ isEdit = false }){
                       onChange={(e) =>handleShippingInputChange(index, "commodity", e.target.value)}
                       type={"text"}
                       placeholder={"Enter Commodity"}
+                      className="input-sm"
+                    />
+                  </div>
+                  <div className="input-item">
+                    <label className="mb-0 block text-sm text-gray-400">Reference (PO#, Load#, etc.)</label>
+                    <input
+                      name="reference"
+                      value={detail.reference || ""}
+                      onChange={(e) =>handleShippingInputChange(index, "reference", e.target.value)}
+                      type={"text"}
+                      placeholder={"PO#, Load#, Customer Pickup#, Container#"}
                       className="input-sm"
                     />
                   </div>
@@ -585,7 +598,7 @@ export default function AddOrder({ isEdit = false }){
                           pickupCount = pickupCount+1;
                           const totalPickups = detail.locations.filter(loc => loc.type === 'pickup').length;
                           return  <div key={`pickup-${locationIndex}`}>
-                            <div className='flex justify-betweens items-center mb-3 mt-6'>
+                <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 mt-6 gap-2 sm:gap-0'>
                               <h2 className='text-white text-normal heading'>Pickup #{pickupCount}</h2>
                               {totalPickups > 1 && (
                                 <button 
@@ -596,7 +609,7 @@ export default function AddOrder({ isEdit = false }){
                                 </button>
                               )}
                             </div>
-                            <div className="grid grid-cols-4 gap-4 ">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ">
                               <div className="input-item">
                                 <label className="mb-0 block text-sm text-gray-400">Pickup Location</label>
                                 {/* <input
@@ -653,7 +666,7 @@ export default function AddOrder({ isEdit = false }){
                           stopCount = stopCount+1;
                           const totalDeliveries = detail.locations.filter(loc => loc.type === 'delivery').length;
                           return <div key={`delivery-${locationIndex}`}>
-                            <div className='flex justify-betweens items-center mb-3 mt-6'>
+                <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 mt-6 gap-2 sm:gap-0'>
                               <h2 className='text-white text-normal heading'>Delivery #{stopCount}</h2>
                               {totalDeliveries > 1 && (
                                 <button 
@@ -664,7 +677,7 @@ export default function AddOrder({ isEdit = false }){
                                 </button>
                               )}
                             </div>
-                            <div className="grid grid-cols-4 gap-4 ">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ">
                               <div className="input-item">
                                 <label className="mb-0 block text-sm text-gray-400">Delivery Location</label>
                                 {/* 
@@ -721,7 +734,7 @@ export default function AddOrder({ isEdit = false }){
                       })
                     })()}
 
-                <div className='flex'>
+                <div className='flex flex-col sm:flex-row gap-2 sm:gap-0'>
                   <button onClick={()=>addStop(index, 'pickup')} className='text-main  mt-4 me-8  ' >+ Add Pickup Stop</button>
                   <button onClick={()=>addStop(index, 'delivery')} className='text-main  mt-4  ' >+ Add Delivery Stop</button>
                 </div>
@@ -733,8 +746,8 @@ export default function AddOrder({ isEdit = false }){
           </div>
 
           <div className='customer'>
-            <div className="flex justify-between mt-12 mb-4 items-center">
-              <p className="text-gray-400 heading xl text-xl">Customer Revenue Items</p>
+            <div className="flex flex-col sm:flex-row justify-between mt-12 mb-4 items-start sm:items-center gap-4 sm:gap-0">
+              <p className="text-gray-400 heading xl text-lg sm:text-xl">Customer Revenue Items</p>
               <div className='flex items-center'>
                 <select value={revCurrency} onChange={chooseAmountCurrency} className='currency-drop bg-gray-800 text-white px-2 py-[5px] rounded-[10px]'>
                   <option value={"cad"} >CAD</option>
@@ -758,7 +771,7 @@ export default function AddOrder({ isEdit = false }){
               {revenueItems.map((item, index) => {
                 const total  = item.rate * item.quantity;
                 return <div key={index} className="rev-items flex justify-between items-center mb-4">
-                  <div className="grid grid-cols-5 w-full gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 w-full gap-3">
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Revenue Item</label>
                       <Select
@@ -826,7 +839,7 @@ export default function AddOrder({ isEdit = false }){
 
                     <div className="input-item relative">
                       <label className="block text-sm text-gray-400 mb-2">Total</label>
-                      <div className='border border-gray-500 p-4 rounded-xl relative'>
+                      <div className='border border-gray-500 p-3 sm:p-4 rounded-xl relative'>
                         <p className='text-white'> <Currency amount={total} currency={revCurrency || 'cad'} />
                         </p>
                         { index > 0 ?
@@ -838,8 +851,8 @@ export default function AddOrder({ isEdit = false }){
                   </div>
                 </div>
               })}
-              <div className='flex justify-between'>
-                  <button className="text-main ms-3 text-black font-bold" onClick={addCustomerRevItems}> + Add New Line </button>
+              <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0'>
+                  <button className="text-main ms-0 sm:ms-3 text-black font-bold" onClick={addCustomerRevItems}> + Add New Line </button>
                   <h2 className='text-white'>Customer Total : <Currency amount={revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></h2>
               </div>
             </div>
@@ -847,7 +860,7 @@ export default function AddOrder({ isEdit = false }){
 
 
           {/* CARRIER DETAILS */}
-          <h2 className='heading text-xl text-gray-400 pt-12 border-t border-gray-800 mt-12 mb-6'>Carrier Details</h2>
+          <h2 className='heading text-lg sm:text-xl text-gray-400 pt-12 border-t border-gray-800 mt-12 mb-6'>Carrier Details</h2>
           <div className='customer'>
 
             <div className='input-item mb-4'>
@@ -862,7 +875,7 @@ export default function AddOrder({ isEdit = false }){
               {carrierRevenueItems.map((item, index) => {
                 const total  = item.rate * item.quantity;
                 return <div key={index} className="rev-items flex justify-between items-center mb-4">
-                  <div className="grid grid-cols-5 w-full gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 w-full gap-3">
                     <div className="input-item">
                       <label className="block text-sm text-gray-400">Revenue Item</label>
                       <Select
@@ -930,7 +943,7 @@ export default function AddOrder({ isEdit = false }){
 
                     <div className="input-item relative">
                       <label className="block text-sm text-gray-400 mb-2">Total</label>
-                      <div className='border border-gray-500 p-4 rounded-xl relative'>
+                      <div className='border border-gray-500 p-3 sm:p-4 rounded-xl relative'>
                         <p className='text-white'> <Currency amount={total} currency={revCurrency || 'cad'} />
                         </p>
                         { index > 0 ?
@@ -943,8 +956,8 @@ export default function AddOrder({ isEdit = false }){
                   </div>
                 </div>
               })}
-              <div className='flex justify-between'>
-                  <button className="text-main ms-3 text-black font-bold" onClick={addCarrierRevItems}> + Add New Line </button>
+              <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0'>
+                  <button className="text-main ms-0 sm:ms-3 text-black font-bold" onClick={addCarrierRevItems}> + Add New Line </button>
                   <h2 className='text-white'>Carrier Total : <Currency amount={carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></h2>
               </div>
             </div>
@@ -963,9 +976,9 @@ export default function AddOrder({ isEdit = false }){
           : ''}
 
           <div className='subtotals flex justify-ends my-6'>
-            <ul className='flex justify-between w-full bg-dark2 p-4 border border-gray-700 rounded-xl '>
-              <li className='flex justify-end '><p className='text-gray-400 me-4'>Customer Total : </p> <strong className='text-white'> <Currency amount={revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
-              <li className='flex justify-end '><p className='text-gray-400 me-4'>Total Distance : </p> 
+            <ul className='flex flex-col sm:flex-row justify-between w-full bg-dark2 p-3 sm:p-4 border border-gray-700 rounded-xl gap-4 sm:gap-0'>
+              <li className='flex justify-center sm:justify-end '><p className='text-gray-400 me-4'>Customer Total : </p> <strong className='text-white'> <Currency amount={revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
+              <li className='flex justify-center sm:justify-end '><p className='text-gray-400 me-4'>Total Distance : </p>
               <strong className='text-white'> <DistanceInMiles d={distance} />
                 {distance > 1 ? <button
                 className="text-main ms-2"
@@ -977,12 +990,12 @@ export default function AddOrder({ isEdit = false }){
               </button>
               }
               </strong></li>
-              <li className='flex justify-end '><p className='text-gray-400 me-4'>Carrier Total : </p> <strong className='text-white'>  <Currency amount={ carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
+              <li className='flex justify-center sm:justify-end '><p className='text-gray-400 me-4'>Carrier Total : </p> <strong className='text-white'>  <Currency amount={ carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
             </ul>
           </div>
 
-          <div className='flex justify-end items-center mt-6'>
-            <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? (isEditMode ? "Updating..." : "Adding...") : (isEditMode ? "Update Order" : "Submit Order")}</button>
+          <div className='flex justify-center sm:justify-end items-center mt-6'>
+            <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-8 sm:px-[50px] text-sm ms-0 sm:ms-3 main-btn text-black font-bold w-full sm:w-auto`}>{loading ? (isEditMode ? "Updating..." : "Adding...") : (isEditMode ? "Update Order" : "Submit Order")}</button>
           </div>
           {/* <div className='flex justify-end items-center mt-6'>
             {distance ?

@@ -1,6 +1,12 @@
 @tailwind base;@tailwind components;@tailwind utilities;.tooltip{@apply invisible absolute;}
 .has-tooltip:hover .tooltip{@apply visible z-50;}
 body{--main:#A093F7;--main-fade:rgba(255,91,91,1);--dark:#02000D;--dark1:#06131C;--dark2:rgba(255,255,255,0.05);--dark3:#213848;}
+
+::-webkit-scrollbar{width:5px;border-radius:10px;}
+::-webkit-scrollbar-thumb{background-color:#888;border-radius:10px;}
+::-webkit-scrollbar-track{background-color:#222222;}
+
+
 .scroller::-webkit-scrollbar{width:5px;border-radius:10px;}
 .scroller::-webkit-scrollbar-thumb{background-color:#888;border-radius:10px;}
 .scroller::-webkit-scrollbar-track{background-color:#222222;}
@@ -42,6 +48,73 @@ body{background:var(--dark);font-family:'productsans';}
 @media screen and (max-width:991px){
   .mobilesidebar{display:none;transition:0.5s;position:fixed;height:100%;z-index:9999999;padding-top:30px !important;}
   .mobilesidebar.open{display:block;transition:0.5s;z-index:9999999;}
+}
+
+/* Mobile Responsive Styles */
+@media screen and (max-width:768px){
+  .input, .input-sm{
+    padding: 12px 15px;
+    font-size: 14px;
+    border-radius: 12px;
+    min-height: 45px;
+  }
+  
+  .react-select.input__control{
+    padding: 8px 12px;
+    font-size: 14px;
+    border-radius: 12px;
+    min-height: 45px;
+  }
+  
+  /* React Select Mobile Improvements */
+  .css-1s2u09g-control, .css-t3ipsp-control {
+    min-height: 45px !important;
+    border-radius: 12px !important;
+  }
+  
+  .css-1pahdxg-control {
+    min-height: 45px !important;
+  }
+  
+  /* Better touch targets */
+  select, input[type="date"], input[type="time"] {
+    min-height: 45px;
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  .heading{
+    font-size: 18px;
+    line-height: 22px;
+  }
+  
+  .heading.xl{
+    font-size: 20px;
+    line-height: 24px;
+  }
+  
+  .btn{
+    padding: 10px 16px;
+    font-size: 14px;
+    min-height: 45px;
+  }
+  
+  .btn.md{
+    padding: 12px 20px;
+    font-size: 15px;
+    min-height: 48px;
+  }
+  
+  /* Improved spacing for mobile */
+  .input-item {
+    margin-bottom: 1rem;
+  }
+  
+  /* Currency dropdown mobile styling */
+  .currency-drop {
+    min-height: 40px;
+    padding: 8px 12px;
+    font-size: 14px;
+  }
 }
 .disabled-order{opacity:0.6;pointer-events:none;cursor:not-allowed;}
 #place-picker-box{display:flex;justify-content:center;align-items:center;}

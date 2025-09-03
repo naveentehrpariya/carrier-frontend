@@ -4,7 +4,8 @@ import Popup from '../../common/Popup';
 import { UserContext } from '../../../context/AuthProvider';
 import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
-import { BsFiletypeDoc } from "react-icons/bs";
+import { BsFiletypeDoc, BsX } from "react-icons/bs";
+import { BsPlayCircle } from 'react-icons/bs';
 import TimeFormat from '../../common/TimeFormat';
 import Badge from '../../common/Badge';
 
@@ -18,6 +19,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
    const [files, setFiles] = useState([]);
    const [paymentLogs, setPaymentLogs] = useState([]);
    const [fetching, setFeching] = useState(false);
+   const [previewingDocIndex, setPreviewingDocIndex] = useState(null);
    const fetchFiless = () => { 
       setFeching(true);
       const resp = Api.get(`/order_docs/${order._id}`); 
@@ -62,6 +64,7 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
       const [uploading, setUploading] = useState(false);
       const [file, setFile] = useState(null);
       const [fileMime, setFileMime] = useState(null);
+      const [previewingUpload, setPreviewingUpload] = useState(false);
       const {Errors} = useContext(UserContext);
 
       const handleFile = async (e) => {
@@ -141,8 +144,23 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                            }
                            
                            { fileMime === 'doc'?
-                              <iframe className='w-full rounded-xl ' src={URL.createObjectURL(file)} >
-                              </iframe>
+                              <div className='w-full rounded-xl bg-gray-100 min-h-[300px] flex flex-col items-center justify-center'>
+                                 {!previewingUpload ? (
+                                    <>
+                                       <BsFiletypeDoc size={'4rem'} className='text-gray-400 mb-4' />
+                                       <p className='text-gray-600 mb-4'>Click to preview document</p>
+                                       <button 
+                                          onClick={() => setPreviewingUpload(true)}
+                                          className='bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center'
+                                       >
+                                          <BsPlayCircle className='mr-2' /> Preview Document
+                                       </button>
+                                    </>
+                                 ) : (
+                                    <iframe className='w-full rounded-xl h-[300px]' src={URL.createObjectURL(file)} >
+                                    </iframe>
+                                 )}
+                              </div>
                               : ""
                            }
 
@@ -173,7 +191,8 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
    )
    }
 
-   const DOCVIEW = ({f}) => { 
+   const DOCVIEW = ({f, index, isPreview = false}) => {
+      
       return <>
          { getMime(f.mime) === 'image'? 
             <img className="h-auto w-full object-cover max-w-full max-h-[300px] sm:max-h-[300px] rounded-xl" src={f.url} alt="Cloud" />
@@ -186,7 +205,52 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
             : ""
          }
          { getMime(f.mime) === 'doc'?
-            <iframe className='w-full rounded-xl ' src={f.url} > </iframe>
+            <div className={`w-full ${isPreview ? 'smin-h-[500px]' : 'sh-full'} flex flex-col items-center justify-center`}>
+               {previewingDocIndex !== index && !isPreview ? (
+                  <>
+                     <BsFiletypeDoc size={isPreview ? '4rem' : '2rem'} className='text-gray-400 mb-2' />
+                     {/* <button 
+                        onClick={(e) => {
+                           e.preventDefault();
+                           e.stopPropagation();
+                           setPreviewingDocIndex(index);
+                        }}
+                        className='bg-blue-500 text-white px-2 py-1 rounded text-xs flex items-center'
+                     >
+                        <BsPlayCircle className='mr-1' size='12' /> Preview
+                     </button> */}
+                  </>
+               ) : (
+                  <div className='w-full h-full flex flex-col'>
+                     <iframe 
+                        className={`w-full rounded-xl border-0 ${isPreview ? 'h-[300px]' : 'h-full min-h-[200px]'}`} 
+                        src={f.url}
+                        title={`Document preview: ${f.name}`}
+                        style={{ minHeight: isPreview ? '55vh' : '20vh' }}
+                     > 
+                     </iframe>
+                     {isPreview && (
+                        <div className='mt-3 sm:flex justify-center gap-3'>
+                           <a 
+                              href={f.url} 
+                              target='_blank' 
+                              rel='noopener noreferrer'
+                              className='text-center mt-2 bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 flex items-center'
+                           >
+                              📄 Open in New Tab
+                           </a>
+                           <a 
+                              href={f.url} 
+                              download={f.name}
+                              className='text-center mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center'
+                           >
+                              ⬇️ Download
+                           </a>
+                        </div>
+                     )}
+                  </div>
+               )}
+            </div>
             : ""
          }
          {getMime(f.mime) !== 'doc' && getMime(f.mime) !== 'video' && getMime(f.mime) !== 'image' ?
@@ -229,16 +293,26 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                         {files && files.map((f, i)=>{
                            const size = f.size / 1024;
                            const finalsize =  size > 1024 ? `${(size / 1024).toFixed(2)} MB` : `${size.toFixed(2)} KB`;
-                           return <div className='relative py-4 px-2 border border-gray-700 rounded-2xl text-center'>
+                           return <div key={i} className='relative py-4 px-2 border border-gray-700 rounded-2xl text-center'>
                               <div className='preview h-[100px] overflow-hidden bg-white rounded-xl' >
-                                    <Popup iconcolor={'black'} action={open} space={'p-6 sm:p-10'} btntext={<DOCVIEW f={f} />} 
-                                    btnclasses={'bg-main text-white rounded-[30px] px-3 md:px-4 py-[4px] md:py-[11px] text-[12px] md:text-[15px] uppercase  '} >
-                                       <DOCVIEW f={f} />
-                                    </Popup> 
+                                    <DOCVIEW f={f} index={i} />
                               </div>
                               <p className='text-center text-gray-400 mt-2 capitalize'>{f.name}</p>
                               <p className='text-gray-500 text-sm'>Size : {finalsize}</p>
                               <p className='text-gray-500 text-sm'>Added By : {f.added_by?.name}</p>
+                              <Popup 
+                                 iconcolor={'black'} 
+                                 space={'p-6 sm:p-10'} 
+                                 size={'md:max-w-4xl'} 
+                                 btntext={'View Full Size'} 
+                                 btnclasses={'absolute top-[30%] right-[25%] bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700'}
+                              >
+                                 <div className='w-full text-center mb-4'>
+                                    <h3 className='text-xl font-bold'>{f.name}</h3>
+                                    <p className='text-gray-600'>Size: {finalsize}</p>
+                                 </div>
+                                 <DOCVIEW f={f} index={i} isPreview={true} />
+                              </Popup>
                            </div>
                         })}
                      </div>

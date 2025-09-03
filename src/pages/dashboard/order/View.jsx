@@ -155,9 +155,10 @@ export default function ViewOrder() {
                {order && order.shipping_details && order.shipping_details.map((s, index) => {
                   return <>
                      <div className='orderFill bg-dark2 p-6 rounded-xl border border-gray-800 mt-4'>
-                        <ul className='grid grid-cols-6 gap-2 mb-4 p-3 pb-0'>
+                        <ul className='grid grid-cols-3 gap-2 mb-4 p-3 pb-0'>
                            <li className=''><strong className='text-gray-400'>Shipment No.:</strong> <p>#{index+1}</p> </li>
                            <li className='capitalize '><strong className='text-gray-400'>Commodity :</strong> <p>{ s?.commodity?.value || s?.commodity}</p> </li>
+                           {s?.reference && <li className='capitalize '><strong className='text-gray-400'>Commodity Reference :</strong> <p>{ s?.reference}</p> </li>}
                            <li className='capitalize '><strong className='text-gray-400'>Equipments :</strong> <p>{s?.equipment?.value}</p> </li>
                            <li className=''><strong className='text-gray-400'>Weight :</strong> <p>{s?.weight || 'N/A'} {s?.weight_unit || s?.weight_unit || ''}</p> </li>
                         </ul>

@@ -1,7 +1,7 @@
 import   { useContext, useEffect, useRef, useState } from 'react'
 import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import AuthLayout from '../../../layout/AuthLayout';
 import Logotext from '../../common/Logotext';
 import TimeFormat from '../../common/TimeFormat';
@@ -34,18 +34,28 @@ export default function OrderPDF() {
       return;
    }
 
-   // Render header to canvas
+   // Render header to canvas with maximum quality
    const headerCanvas = await html2canvas(headerElement, {
-      scale: 2,
+      scale: 3,
       useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      logging: false,
+      pixelRatio: window.devicePixelRatio || 1,
+      dpi: 300,
+      letterRendering: true,
    });
-   const headerImgData = headerCanvas.toDataURL("image/png");
-   const headerHeight = (headerCanvas.height * 210) / headerCanvas.width; // A4 width scaling (210mm)
+   // Optimize header image with better compression
+   const headerImgData = headerCanvas.toDataURL("image/jpeg", 0.85);
+   const headerHeight = ((headerCanvas.height * 210) / headerCanvas.width)-5; // A4 width scaling (210mm)
 
    const doc = new jsPDF({
       unit: "mm",
       format: "a4",
       orientation: "portrait",
+      compress: true,
+      precision: 2,
+      userUnit: 1.0,
    });
 
    doc.html(element, {
@@ -56,21 +66,37 @@ export default function OrderPDF() {
             doc.setPage(i);
 
             // doc.addImage(headerImgData, "PNG", 0, 0, 210, headerHeight);
-            doc.addImage(headerImgData, "PNG", 10, 0, 190, headerHeight); // x = 10mm, width = 190mm to match content
-            doc.addImage(watermarkImg, "PNG", 50, 60, 100, 38);
-            doc.addImage(watermarkImg, "PNG", 50, 180, 100, 38);
+            doc.addImage(headerImgData, "JPEG", 12.5, 0, 195, headerHeight, '', 'MEDIUM'); // x = 12.5mm, width = 185mm to match content
+            doc.addImage(watermarkImg, "PNG", 50, 100, 100, 38, '', 'FAST');
+            // doc.addImage(watermarkImg, "PNG", 50, 180, 100, 38, '', 'FAST');
          }
          doc.save(`Order_CMC${order?.serial_no || ''}_Rate_Confirmation.pdf`);
          setDownloadingPdf(false);
       },
-      x: 10,
-      y: 0, 
+      x: 12.5,
+      y: 0,
       html2canvas: {
-         scale: 0.24,
+         scale: 0.235,
          useCORS: true,
+         allowTaint: true,
+         backgroundColor: null,
+         logging: false,
+         imageTimeout: 15000,
+         removeContainer: true,
+         pixelRatio: 1,
+         foreignObjectRendering: false,
+         onclone: function(clonedDoc) {
+            // Optimize fonts and elements for smaller size
+            clonedDoc.querySelectorAll('*').forEach(el => {
+               const style = el.style;
+               if (style.fontWeight === 'bold' || style.fontWeight === '700' || style.fontWeight === '900') {
+                  style.fontWeight = '600'; // Lighter bold for smaller file
+               }
+            });
+         }
       },
       autoPaging: 'text',
-      width: 1800,
+      width: 185,
       windowWidth: 794,
       margin: [headerHeight, 0, 20, 0],
    });
@@ -181,20 +207,47 @@ export default function OrderPDF() {
                      <p>{order?.carrier?.location}</p>
                   </div>
                </div>
+               
+               {/* Employee Information Section */}
+               {order?.created_by && (
+                  <div className="border-b pb-4 mb-4">
+                     <h3 className="text-blue-700 font-bold text-lg mb-2">PROCESSED BY</h3>
+                     <div className="grid grid-cols-2 gap-8">
+                        <div>
+                           <p><strong>Employee Name:</strong> 
+                              {order?.created_by?.name ? 
+                                 <Link to={`/employee/detail/${order.created_by._id}`} className='text-blue-600 hover:text-blue-700 font-semibold ml-1'>
+                                    {order.created_by.name}
+                                 </Link>
+                                 : 'N/A'
+                              }
+                           </p>
+                           <p><strong>Employee ID:</strong> {order?.created_by?.corporateID || 'N/A'}</p>
+                        </div>
+                        <div>
+                           <p><strong>Email:</strong> {order?.created_by?.email}</p>
+                           <p><strong>Phone:</strong> {order?.created_by?.phone || 'N/A'}</p>
+                        </div>
+                     </div>
+                  </div>
+               )}
 
                <div className='relative'>
                   {order && order.shipping_details && order.shipping_details.map((s, index) => {
                      return <>
                            <div className="grid grid-cols-2 gap-2 mb-4">
                               <p className='flex items-center'><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
-                              <p className='flex items-center'><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                              <p className='flex items-center'><strong>Commodity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                              {s?.reference && (
+                                 <p className='flex items-center'><strong>Commodity Reference : </strong> {s.reference}</p>
+                              )}
                               <p className='flex items-center'><strong>Total Distance : </strong> <DistanceInMiles d={order.totalDistance} /></p>
                               <p className='flex items-center'><strong>Equipments : </strong> {s?.equipment?.value}</p>
                               <p className='flex items-center'><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
                            </div>
 
                            <div className="mb-6">
-                              <h3 className="font-semibold mb-4 text-lg">Charges</h3>
+                              <h3 className="font-semibold mb-2 mt-4 text-lg">Charges</h3>
                               <table cellPadding={8} align='center' className="w-full border text-normal table-collapse ">
                                  <thead className="bg-gray-100">
                                     <tr>
@@ -208,11 +261,18 @@ export default function OrderPDF() {
                                     {order && order.carrier_revenue_items && order.carrier_revenue_items.map((r, index) => {
                                        return <tr>
                                           <td className='border'>{r?.revenue_item}</td>
-                                          <td className='border text-left text-[12px] max-w-[200px]'>{r?.note}</td>
+                                          <td className='border text-left text-[15px] max-w-[200px]'>{r?.note}</td>
                                           <td className='border text-left'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</td>
                                           <td className='border text-left'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
                                        </tr>
                                     })}
+                                    <tr>
+                                       <td colSpan={2} align='left' className='border' ><strong style={{ color: "#111" }}></strong></td>
+                                       <td  align='left' className='border bg-gray-100' ><strong style={{ color: "#111" }}>Total</strong></td>
+                                       <td   align='left' className='border bg-gray-100'  style={{ fontWeight: 700, color: "#111" }}>
+                                          <Currency amount={order.carrier_revenue_items.reduce((acc, item) => acc + (item.rate * item.quantity), 0)} currency={order?.revenue_currency || 'cad'} />
+                                       </td>
+                                    </tr>
                                  </tbody>
                               </table>
                            </div>
@@ -256,25 +316,31 @@ export default function OrderPDF() {
 
                {/* Terms & Notes */}
                <div className=" leading-snug border-t pt-4">
-                  <p>
-                     Carrier is responsible to confirm the actual weight and count received from the shipper before transit.
-                  </p>
-                  <p className="mt-1">
-                     Additional fees such as loading/unloading, pallet exchange, etc., are included in the agreed rate.
-                  </p>
-                  <p className="mt-1">
-                     POD must be submitted within 5 days of delivery.
-                  </p>
-                  <p className="mt-1">
-                     Freight charges include $100 for MacroPoint tracking. Non-compliance may lead to deduction.
-                  </p>
-                  <p className="mt-1">
-                     Cross-border shipments require custom stamps or deductions may apply.
-                  </p>
+                  {(() => {
+                     const defaultTerms = `Carrier is responsible to confirm the actual weight and count received from the shipper before transit.
+
+Additional fees such as loading/unloading, pallet exchange, etc., are included in the agreed rate.
+
+POD must be submitted within 5 days of delivery.
+
+Freight charges include $100 for MacroPoint tracking. Non-compliance may lead to deduction.
+
+Cross-border shipments require custom stamps or deductions may apply.`;
+                     
+                     const termsToDisplay = company?.rate_confirmation_terms || defaultTerms;
+                     
+                     return termsToDisplay.split('\n').map((line, index) => (
+                        <p key={index} className={index === 0 ? '' : 'mt-1'}>
+                           {line}
+                        </p>
+                     ));
+                  })()}
                </div>
                <div className="flex justify-between items-center mt-6">
                <div>
-                  {/* <div className="font-semibold">Carrier Signature: -------------- </div> */}
+                  <div className="font-semibold mb-2">Carrier Signature:</div>
+                  <div className="border-b-2 border-black w-64 h-12 mb-2"></div>
+                  <div className="text-sm text-gray-600">Sign here</div>
                </div>
                <div className="text-right">
                   <div>Date: {(todaydate.getMonth()+1) > 9 ? (todaydate.getMonth()+1) : '0'+(todaydate.getMonth()+1)} / {todaydate.getDate()} /  {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'}</div>

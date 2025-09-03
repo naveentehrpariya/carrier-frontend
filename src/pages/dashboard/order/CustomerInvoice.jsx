@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import AuthLayout from '../../../layout/AuthLayout';
 import Logotext from '../../common/Logotext';
 import Badge from './../../common/Badge';
@@ -10,6 +10,7 @@ import Currency from '../../common/Currency';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import Loading from './../../common/Loading';
+import DebugCompanyData from '../../../components/DebugCompanyData';
 
 export default function CustomerInvoice() {
    const [loading, setLoading] = useState(true);
@@ -27,6 +28,13 @@ export default function CustomerInvoice() {
             setLoading(false);
             if (res.data.status) {
                setOrder(res.data.order);
+               
+               // Debug: Log company data to check remittance emails
+               console.log('Company data in invoice:', company);
+               console.log('Remittance emails available:', {
+                  primary: company?.remittance_primary_email,
+                  secondary: company?.remittance_secondary_email
+               });
             } else {
                setOrder(null);
             }
@@ -65,19 +73,29 @@ export default function CustomerInvoice() {
       return;
    }
 
-   // Render header to canvas
+   // Render header to canvas with maximum quality
    const headerCanvas = await html2canvas(headerElement, {
-      scale: 2,
+      scale: 3,
       useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      logging: false,
+      pixelRatio: window.devicePixelRatio || 1,
+      dpi: 300,
+      letterRendering: true,
    });
-   const headerImgData = headerCanvas.toDataURL("image/png");
-   const headerHeight = (headerCanvas.height * 210) / headerCanvas.width; // A4 width scaling (210mm)
+   // Optimize header image with better compression
+   const headerImgData = headerCanvas.toDataURL("image/jpeg", 0.85);
+   const headerHeight = ((headerCanvas.height * 210) / headerCanvas.width)-5; // A4 width scaling (210mm)
 
  
    const doc = new jsPDF({
    unit: 'mm',
    format: 'a4',
    orientation: 'portrait',
+   compress: true,
+   precision: 2,
+   userUnit: 1.0,
    });
    doc.html(pdfRef.current, {
       callback: function (doc) {
@@ -87,18 +105,37 @@ export default function CustomerInvoice() {
             doc.setPage(i);
 
             // doc.addImage(headerImgData, "PNG", 0, 0, 210, headerHeight);
-            doc.addImage(headerImgData, "PNG", 10, 0, 190, headerHeight); // x = 10mm, width = 190mm to match content
-            doc.addImage(watermarkImg, "PNG", 50, 60, 100, 38);
-            doc.addImage(watermarkImg, "PNG", 50, 180, 100, 38);
+            doc.addImage(headerImgData, "JPEG", 12.5, 0, 185, headerHeight, '', 'MEDIUM'); // x = 12.5mm, width = 185mm to match content
+            doc.addImage(watermarkImg, "PNG", 50, 110, 100, 38, '', 'FAST');
+            // doc.addImage(watermarkImg, "PNG", 50, 180, 100, 38, '', 'FAST');
          }
          doc.save(`invoice-${invoiceNo}.pdf`);
          setDownloadingPdf(false);
       },
-      x: 10,
+      x: 12.5,
       y: 0,
-      html2canvas: { scale: 0.24, useCORS: true },
+      html2canvas: { 
+         scale: 0.236, 
+         useCORS: true,
+         allowTaint: true,
+         backgroundColor: null,
+         logging: false,
+         imageTimeout: 15000,
+         removeContainer: true,
+         pixelRatio: 1,
+         foreignObjectRendering: false,
+         onclone: function(clonedDoc) {
+            // Optimize fonts and elements for smaller size
+            clonedDoc.querySelectorAll('*').forEach(el => {
+               const style = el.style;
+               if (style.fontWeight === 'bold' || style.fontWeight === '700' || style.fontWeight === '900') {
+                  style.fontWeight = '600'; // Lighter bold for smaller file
+               }
+            });
+         }
+      },
       autoPaging: 'text',
-      width: 1800,
+      width: 185,
       windowWidth: 794,
       margin: [headerHeight, 0, 20, 0],    // Must match export container's pixel width
    });
@@ -108,7 +145,7 @@ export default function CustomerInvoice() {
 
    return (
       <AuthLayout>
-         
+         <DebugCompanyData />
          {loading ? <Loading /> :
             <div className="boltable bg-white">
 
@@ -192,13 +229,37 @@ export default function CustomerInvoice() {
                            <p>Amount : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p>
                         </div>
                      </div>
+                     
+                     {/* Employee Information Section */}
+                     {order?.created_by && (
+                        <div style={{ borderBottom: "1px solid #ddd", paddingBottom: "1rem", marginBottom: "1rem" }}>
+                           <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>PROCESSED BY</h3>
+                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+                              <div>
+                                 <p><strong>Employee Name:</strong> 
+                                    {order?.created_by?.name ? 
+                                       <Link to={`/employee/detail/${order.created_by._id}`} className='text-blue-600 hover:text-blue-700 font-semibold ml-1'>
+                                          {order.created_by.name}
+                                       </Link>
+                                       : 'N/A'
+                                    }
+                                 </p>
+                                 <p><strong>Employee ID:</strong> {order?.created_by?.corporateID || 'N/A'}</p>
+                              </div>
+                              <div>
+                                 <p><strong>Email:</strong> {order?.created_by?.email}</p>
+                                 <p><strong>Phone:</strong> {order?.created_by?.phone || 'N/A'}</p>
+                              </div>
+                           </div>
+                        </div>
+                     )}
                      <div>
                         {order && order.shipping_details && order.shipping_details.map((s, index) => (
                            <div key={index}>
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1rem" }}>
                                  <div>
                                     <p className='flex items-center'><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
-                                    <p className='flex items-center'><strong>Commudity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                                    <p className='flex items-center'><strong>Commodity : </strong> {s?.commodity?.value || s?.commodity}</p>
                                  </div>
                                  <div>
                                     <p className='flex items-center'><strong>Equipments : </strong> {s?.equipment?.value}</p>
@@ -239,27 +300,29 @@ export default function CustomerInvoice() {
                      </div>
                      
                      <div style={{marginTop: "2rem", borderTop: "1px solid #eee", paddingTop: "1rem"}}>
-                        <table   style={{ width: "100%", textAlign: "left", borderCollapse: "collapse" }} border="1">
+                        <table  cellPadding={8} className='bg-white'  style={{ width: "100%", textAlign: "left", borderCollapse: "collapse" }} border="1">
                            <thead>
                               <tr>
-                                 <th style={{ color: "#111" }}>Charges</th>
-                                 <th style={{ color: "#111" }}>Amount</th>
+                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Charges</th>
+                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Notes</th>
+                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Rate</th>
+                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Amount</th>
                               </tr>
                            </thead>
                            <tbody>
                               {order && order.revenue_items && order.revenue_items.map((r, idx) => (
                                  <tr key={idx}>
-                                    <td >
-                                       <span style={{ color: "#111" }}>{r.revenue_item} - <Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} />*{r.quantity}</span>
-                                    </td>
-                                    <td >
-                                       <Currency amount={(r?.rate || 0) * (r.quantity)} currency={order?.revenue_currency || 'cad'} />
-                                    </td>
+                                    <td className='border'>{r?.revenue_item}</td>
+                                    <td className='border text-left text-[14px] max-w-[200px]'>{r?.note}</td>
+                                    <td className='border text-left'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</td>
+                                    <td className='border text-left'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
                                  </tr>
+
                               ))}
                               <tr>
-                                 <td ><strong style={{ color: "#111" }}>Total</strong></td>
-                                 <td  style={{ fontWeight: 700, color: "#111" }}>
+                                 <td colSpan={2} align='left' className='border' ><strong style={{ color: "#111" }}></strong></td>
+                                 <td  align='left' className='border bg-gray-100' ><strong style={{ color: "#111" }}>Total</strong></td>
+                                 <td   align='left' className='border bg-gray-100'  style={{ fontWeight: 700, color: "#111" }}>
                                     <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} />
                                  </td>
                               </tr>
@@ -267,18 +330,28 @@ export default function CustomerInvoice() {
                         </table>
                      </div>
 
+                     <p className='mt-8 mb-4'>Please send remittance to - 
+                        <a className='text-blue-600' href={`mailto:${company?.remittance_primary_email || company.email || ''}`}>
+                           {company?.remittance_primary_email || company.email || ''}
+                        </a>
+                        {(company?.remittance_secondary_email) && (
+                           <>, cc <a className='text-blue-600' href={`mailto:${company?.remittance_secondary_email || ''}`}>
+                              {company?.remittance_secondary_email || ''}
+                           </a></>
+                        )}
+                     </p>
                      <div className='bank-details'>
-                        <h3 style={{ color: "#2563eb", fontWeight: 900, marginTop: "2rem" }}>NAME OF BANK :- ROYAL BANK OF CANADA</h3>
+                        <h3 style={{ color: "#2563eb", fontWeight: 900, }}>NAME OF BANK :- {company?.bank_name || 'ROYAL BANK OF CANADA'}</h3>
                        
-                       <div className='p-6 border rounded-2xl mt-6 '>
-                           <p>Bank Name: {company?.bank_name || ''}</p>
-                           <p>Account Name: {company?.account_name || ''}</p>
-                           <p>Account Number: {company?.account_number || ''}</p>
-                           <p>Routing Number: {company?.routing_number || ''}</p>
+                       <div className='p-6 border rounded-2xl mt-4 '>
+                           <p className=''><strong>Bank Name:</strong> {company?.bank_name || ''}</p>
+                           <p className='mt-2'><strong>Account Name:</strong> {company?.account_name || ''}</p>
+                           <p className='mt-2'> <strong>Account Number:</strong> {company?.account_number || ''}</p>
+                           <p className='mt-2'> <strong>Routing Number:</strong> {company?.routing_number || ''}</p>
                        </div>
 
                      </div>
-                     <div style={{textAlign: 'right', marginTop: "2rem"}}>
+                     <div style={{textAlign: 'right', marginTop: "2rem",marginBottom: "2rem"}}>
                         <div>Date: {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getDate()}  / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'} </div>
                         <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>
                            INVOICE# {invoiceNo} must appear on all invoices

@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom';
 import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
 import AuthLayout from '../../../layout/AuthLayout';
@@ -63,7 +64,12 @@ export default function EmployeesLists() {
                   return <tr key={`carriew-${index}`}>
 
                      <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
-                        <p className='whitespace-nowrap flex'>{c.name} <Badge title={true} status={c.status} /> </p>
+                        <div className='whitespace-nowrap flex items-center gap-2'>
+                           <Link to={`/employee/detail/${c._id}`} className='text-blue-400 hover:text-blue-300 font-semibold transition-colors'>
+                              {c.name}
+                           </Link>
+                           <Badge title={true} status={c.status} />
+                        </div>
                         <p className='whitespace-nowrap text-[12px]'>Joined On : <TimeFormat date={c.createdAt || "--"} /> </p>
                         <button className={` ${c.role ===  '2' ? "bg-main text-white" : "bg-blue-600 text-white"} text-[10px]  p-[1px] px-[10px] rounded-[20px] mt-2 `}>{c.role === '2' ? "Accountant" : "Employee"} {c?.position ? `(${c.position})` : ""}</button>
                      </td>
@@ -88,17 +94,25 @@ export default function EmployeesLists() {
                         <EmployeeDocuments employee={c} />
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <Dropdown>
-                              <li className='list-none text-sm'>
-                                 <AddEmployee text="Edit" classes="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block" item={c} fetchLists={fetchLists} />
-                              </li>
-                              <li className='list-none text-sm'>
-                                 <SuspandAccount text="Change Account Status" item={c} fetchLists={fetchLists} />
-                              </li>
-                              <li className='list-none text-sm'>
-                                 <ChangePassword text="Change Password" item={c} fetchLists={fetchLists} />
-                              </li>
-                           </Dropdown>
+                           <div className='flex items-center gap-2'>
+                              <Link 
+                                 to={`/employee/detail/${c._id}`} 
+                                 className='bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-xs transition-colors'
+                              >
+                                 View Details
+                              </Link>
+                              <Dropdown>
+                                 <li className='list-none text-sm'>
+                                    <AddEmployee text="Edit" classes="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block" item={c} fetchLists={fetchLists} />
+                                 </li>
+                                 <li className='list-none text-sm'>
+                                    <SuspandAccount text="Change Account Status" item={c} fetchLists={fetchLists} />
+                                 </li>
+                                 <li className='list-none text-sm'>
+                                    <ChangePassword text="Change Password" item={c} fetchLists={fetchLists} />
+                                 </li>
+                              </Dropdown>
+                           </div>
                      </td>
  
 

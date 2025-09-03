@@ -32,12 +32,19 @@ export default function OrderItem({lists, fetchLists}) {
                   return <tr key={`carriew-${index}`}>
                      <td className='text-sm text-start text-gray-300 uppercase border-b border-gray-900'>
                         <Link to={`/view/order/${c._id}`} className=' text-main  flex uppercase text-[14px] m-auto d-table  rounded-[20px]'  > {c.lock ? <FaLock className='me-1' color='red' /> : <FaLockOpen className='me-1' />} CMC{c.serial_no || "--"}</Link>
-                        <p className='text-gray-500'>Created by : {c.created_by?.name || "--"}</p>
-                        <p className='text-gray-500 text-[12px]'><TimeFormat date={c.createdAt || "--"} /></p>
+                        <p className='text-gray-500 text-[14px]'><TimeFormat date={c.createdAt || "--"} /></p>
                      </td>
                      <td className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>
                         <p className='my-1 whitespace-nowrap flex items-center'>Status : <Badge title={true} status={c?.order_status} /></p>
                         <p className='my-1 whitespace-nowrap'>Total Distance : <DistanceInMiles d={c?.totalDistance} /></p>
+                        <p className='text-gray-500'>Created by : 
+                           {c.created_by?.name ? 
+                              <Link to={`/employee/detail/${c.created_by._id}`} className='text-blue-400 hover:text-blue-300 font-semibold transition-colors'>
+                                 {c.created_by.name}
+                              </Link>
+                              : "--"
+                           }
+                        </p>
                      </td>
                   
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>

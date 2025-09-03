@@ -4,6 +4,7 @@ import Loading from '../../common/Loading';
 import Popup from '../../common/Popup';
 import { LuEye } from "react-icons/lu";
 import { BsFiletypeDoc } from 'react-icons/bs';
+import { BsPlayCircle } from 'react-icons/bs';
 import toast from 'react-hot-toast';
 import { UserContext } from '../../../context/AuthProvider';
 
@@ -28,6 +29,8 @@ export default function EmployeeDocuments({ employee, onClose, classes, text }) 
     const [fileMime, setFileMime] = useState(null);
    const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [previewingDoc, setPreviewingDoc] = useState(null);
+    const [previewingUpload, setPreviewingUpload] = useState(false);
 
     const handleFile = async (e) => {
          setFile(e.target.files[0]);
@@ -120,8 +123,23 @@ export default function EmployeeDocuments({ employee, onClose, classes, text }) 
                             }
                             
                             { fileMime === 'doc'?
-                                <iframe className='w-full rounded-xl ' src={URL.createObjectURL(file)} >
-                                </iframe>
+                                <div className='w-full rounded-xl bg-gray-100 min-h-[300px] flex flex-col items-center justify-center'>
+                                    {!previewingUpload ? (
+                                        <>
+                                            <BsFiletypeDoc size={'4rem'} className='text-gray-400 mb-4' />
+                                            <p className='text-gray-600 mb-4'>Click to preview document</p>
+                                            <button 
+                                                onClick={() => setPreviewingUpload(true)}
+                                                className='bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center'
+                                            >
+                                                <BsPlayCircle className='mr-2' /> Preview Document
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <iframe className='w-full rounded-xl h-[300px]' src={URL.createObjectURL(file)} >
+                                        </iframe>
+                                    )}
+                                </div>
                                 : ""
                             }
 
@@ -155,7 +173,7 @@ export default function EmployeeDocuments({ employee, onClose, classes, text }) 
                                 const size = f.size / 1024;
                                 const finalsize =  size > 1024 ? `${(size / 1024).toFixed(2)} MB` : `${size.toFixed(2)} KB`;
 
-                                return <a href={f.url} target='_blank' className='relative py-4 px-2 border border-gray-700 rounded-2xl text-center' rel="noreferrer">
+                                return <div key={i} className='relative py-4 px-2 border border-gray-700 rounded-2xl text-center'>
                                 <div className='preview h-[180px] overflow-hidden bg-white rounded-xl' >
                                         { getMime(f.mime) === 'image'? 
                                             <img className="h-auto w-full object-cover max-w-full max-h-[300px] sm:max-h-[300px] rounded-xl" src={f.url} alt="Cloud" />
@@ -168,7 +186,48 @@ export default function EmployeeDocuments({ employee, onClose, classes, text }) 
                                             : ""
                                         }
                                         { getMime(f.mime) === 'doc'?
-                                            <iframe title='document' className='w-full rounded-xl ' src={f.url} > </iframe>
+                                            <div className='w-full h-full flex flex-col items-center justify-center'>
+                                                {previewingDoc !== i ? (
+                                                    <>
+                                                        <BsFiletypeDoc size={'3rem'} className='text-gray-400 mb-2' />
+                                                        {/* <button 
+                                                            onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+                                                                setPreviewingDoc(i);
+                                                            }}
+                                                            className='bg-blue-500 text-white px-3 py-1 rounded text-sm flex items-center'
+                                                        >
+                                                            <BsPlayCircle className='mr-1' size='14' /> Preview
+                                                        </button> */}
+                                                    </>
+                                                ) : (
+                                                    <div className='w-full h-full flex flex-col'>
+                                                        <iframe title='document' className='w-full h-full rounded-xl' src={f.url} style={{minHeight: '150px'}}> </iframe>
+                                                        <div className='mt-2 flex justify-center space-x-2'>
+                                                            <button 
+                                                                onClick={(e) => {
+                                                                    e.preventDefault();
+                                                                    e.stopPropagation();
+                                                                    setPreviewingDoc(null);
+                                                                }}
+                                                                className='bg-gray-500 text-white px-3 py-1 rounded text-xs hover:bg-gray-600'
+                                                            >
+                                                                Hide
+                                                            </button>
+                                                            <a 
+                                                                href={f.url} 
+                                                                target='_blank' 
+                                                                rel='noopener noreferrer'
+                                                                className='bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700'
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                📄 Open
+                                                            </a>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                             : ""
                                         }
                                         {getMime(f.mime) !== 'doc' && getMime(f.mime) !== 'video' && getMime(f.mime) !== 'image' ?
@@ -178,7 +237,54 @@ export default function EmployeeDocuments({ employee, onClose, classes, text }) 
                                 <p className='text-center text-gray-400 mt-2 capitalize'>{f.name}</p>
                                 <p className='text-gray-500 text-sm'>Size : {finalsize}</p>
                                 <p className='text-gray-500 text-sm'>Added By : {f.added_by?.name}</p>
-                                </a>
+                                <Popup  iconcolor={'black'}
+                                    size="md:max-w-4xl" 
+                                    space="p-8" 
+                                    bg="bg-white" 
+                                    btnclasses='absolute top-[20%] !p-3 right-[35%] bg-blue-600 text-white px-2 py-1 !rounded-xl text-xs hover:bg-blue-700'
+                                    btntext='View Full Size'
+                                >
+                                    <div className='w-full text-center mb-4'>
+                                        <h3 className='text-xl font-bold text-gray-800'>{f.name}</h3>
+                                        <p className='text-gray-600'>Size: {finalsize} | Added by: {f.added_by?.name}</p>
+                                    </div>
+                                    <div className='w-full min-h-[500px] flex flex-col items-center justify-center'>
+                                        { getMime(f.mime) === 'image'? 
+                                            <img className="h-auto w-full object-cover max-w-full max-h-[600px] rounded-xl" src={f.url} alt="Document" />
+                                            : ""
+                                        }
+                                        { getMime(f.mime) === 'video'?
+                                            <video playsInline className='w-full h-auto rounded-xl max-h-[600px]' controls >
+                                                <source src={f.url} type={f.mime} />
+                                            </video>
+                                            : ""
+                                        }
+                                        { getMime(f.mime) === 'doc'?
+                                            <div className='w-full h-full flex flex-col'>
+                                                <iframe title='document' className='w-full h-[500px] rounded-xl' src={f.url}> </iframe>
+                                                <div className='mt-4 flex justify-center space-x-3'>
+                                                    <a 
+                                                        href={f.url} 
+                                                        target='_blank' 
+                                                        rel='noopener noreferrer'
+                                                        className='bg-green-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-700 flex items-center'
+                                                    >
+                                                        📄 Open in New Tab
+                                                    </a>
+                                                    <a 
+                                                        href={f.url} 
+                                                        download={f.name}
+                                                        className='bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center'
+                                                    >
+                                                        ⬇️ Download
+                                                    </a>
+                                                </div>
+                                            </div>
+                                            : ""
+                                        }
+                                    </div>
+                                </Popup>
+                                </div>
                             })}
                         </div>
                         :

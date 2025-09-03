@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import countries from './../../common/Countries';
+import DynamicCarrierEmailInput from '../../../components/DynamicCarrierEmailInput';
 
 export default function AddCarrier({item, fetchLists, classes, text}){
 
@@ -21,6 +22,7 @@ export default function AddCarrier({item, fetchLists, classes, text}){
       secondary_phone: item?.secondary_phone || "",
     });
 
+    const [emails, setEmails] = useState([]);
     const [action, setaction] = useState();
     const {Errors} = useContext(UserContext);
 
@@ -28,14 +30,36 @@ export default function AddCarrier({item, fetchLists, classes, text}){
       setData({ ...data, [e.target.name]: e.target.value});
     }
     
+    const handleEmailsChange = (emailsArray) => {
+      console.log('Carrier emails changed:', emailsArray);
+      setEmails(emailsArray);
+      // Update legacy fields for backward compatibility
+      const primaryEmail = emailsArray.find(e => e.is_primary);
+      const secondaryEmails = emailsArray.filter(e => !e.is_primary);
+      
+      setData(prevData => ({
+        ...prevData,
+        email: primaryEmail?.email || '',
+        secondary_email: secondaryEmails[0]?.email || ''
+      }));
+    }
+    
     const [loading, setLoading] = useState(false);
     const addcarrier = () => {
+      // Validate that at least one valid email is provided
+      const validEmails = emails.filter(e => e.email && e.email.trim() !== '');
+      if(validEmails.length === 0){
+        toast.error("Please provide at least one valid email address.");
+        return false
+      }
+      
       setLoading(true);
+      const requestData = { ...data, emails: validEmails };
       let carrierIstance;
       if(item){
-        carrierIstance = Api.post(`/carriers/update/${item._id}`, {...data, carrierID:item.carrierID});
+        carrierIstance = Api.post(`/carriers/update/${item._id}`, {...requestData, carrierID:item.carrierID});
       } else { 
-        carrierIstance = Api.post(`/carriers/add`, {...data});
+        carrierIstance = Api.post(`/carriers/add`, requestData);
       }
       carrierIstance.then((res) => {
         setLoading(false);
@@ -56,6 +80,7 @@ export default function AddCarrier({item, fetchLists, classes, text}){
             secondary_email: "",
             secondary_phone: "",
           });
+          setEmails([]);
           setTimeout(() => {
             setaction();
           }, 1000);
@@ -81,13 +106,12 @@ export default function AddCarrier({item, fetchLists, classes, text}){
                <label className="mt-4 mb-0 block text-sm text-gray-400">MC Code</label>
                <input defaultValue={item?.mc_code} required name='mc_code' onChange={handleinput} type={'number'} placeholder={"MC code"} className="input-sm" />
             </div>
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Email</label>
-               <input defaultValue={item?.email} required name='email' onChange={handleinput} type={'text'} placeholder={"Enter email .."} className="input-sm" />
-            </div>
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Secondary Email</label>
-               <input defaultValue={item?.secondary_email} required name='secondary_email' onChange={handleinput} type={'text'} placeholder={"Enter secondary email .."} className="input-sm" />
+            {/* Dynamic Email Input Component */}
+            <div className='col-span-2'>
+              <DynamicCarrierEmailInput 
+                existingCarrier={item}
+                onChange={handleEmailsChange}
+              />
             </div>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Phone</label>

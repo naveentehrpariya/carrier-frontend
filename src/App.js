@@ -18,9 +18,10 @@ import CustomerInvoice from './pages/dashboard/order/CustomerInvoice';
 import ViewOrder from './pages/dashboard/order/View';
 import CompanyDetails from './pages/auth/CompanyDetails';
 import CustomerDetail from './pages/dashboard/customer/CustomerDetail';
-import EquipAndCommudity from './pages/dashboard/admin/EquipAndCommudity';
+import EquipAndCommodity from './pages/dashboard/admin/EquipAndCommodity';
 import PaymentLists from './pages/dashboard/payment/PaymentLists';
 import CarrierDetail from './pages/dashboard/carrier/CarrierDetail';
+import EmployeeDetail from './pages/dashboard/employees/EmployeeDetail';
 import Unauthorized from './components/Unauthorized';
 
 function App() {
@@ -99,6 +100,11 @@ function App() {
                         <EmployeesLists />
                       </PrivateRoute>
                     } />
+                    <Route path="/employee/detail/:id" element={
+                      <PrivateRoute>
+                        <EmployeeDetail />
+                      </PrivateRoute>
+                    } />
                     <Route path="/accounts/orders" element={
                       <RoleBasedRoute allowedRoles={[2, 3]}>
                         <AccountOrders />
@@ -113,7 +119,7 @@ function App() {
                     {/* Role-based protected routes - example for admin access */}
                     <Route path="/commodity-and-equipments" element={
                       <RoleBasedRoute allowedRoles={[3]}>
-                        <EquipAndCommudity />
+                        <EquipAndCommodity />
                       </RoleBasedRoute>
                     } />
 

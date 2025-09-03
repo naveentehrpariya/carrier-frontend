@@ -13,7 +13,7 @@ export default function Commodity() {
 
    const fetchLists = () => {
       setLoading(true);
-      const resp = Api.get(`/cummodityLists`);
+      const resp = Api.get(`/commodityLists`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
@@ -33,9 +33,9 @@ export default function Commodity() {
 
    const [inputValue, setInputValue] = useState('');
    const [adding, setAdding] = useState(false);
-   const AddCommudity = () => {
+   const AddCommodity = () => {
       setAdding(true);
-      const addC = Api.post(`/addCummodity`, {value:inputValue});
+      const addC = Api.post(`/addCommodity`, {value:inputValue});
       addC.then((res) => {
         setAdding(false);
         if (res.data.status === true) {
@@ -51,7 +51,7 @@ export default function Commodity() {
       });
    }
    const removeCommodity = (value) => {
-      const addC = Api.post(`/removeCummodity`, {id:value});
+      const addC = Api.post(`/removeCommodity`, {id:value});
       addC.then((res) => {
         if (res.data.status === true) {
           toast.success(res.data.message);
@@ -68,7 +68,7 @@ export default function Commodity() {
   return (
       <div> 
          <div className='flex justify-between items-center mb-4'>
-            <h2 className='text-white text-2xl'>Commudity</h2>
+            <h2 className='text-white text-2xl'>Commodity</h2>
          </div>
          {loading ? <Loading /> :
          <div className='fgdg'>
@@ -83,8 +83,8 @@ export default function Commodity() {
               </ul>
              </ul>
              <div className='flex justify-between items-center mt-4'>
-               <input defaultValue={inputValue} onChange={(e) => setInputValue(e.target.value)} className='text-white rounded-xl bg-dark1 border border-gray-800 focus:border-gray-600 w-full me-4 p-3' placeholder='Add Commudity' />
-               <button className='btn text-black whitespace-nowrap' onClick={AddCommudity} >{adding ? "Adding..." : "Add Commudity"}</button>
+               <input defaultValue={inputValue} onChange={(e) => setInputValue(e.target.value)} className='text-white rounded-xl bg-dark1 border border-gray-800 focus:border-gray-600 w-full me-4 p-3' placeholder='Add Commodity' />
+               <button className='btn text-black whitespace-nowrap' onClick={AddCommodity} >{adding ? "Adding..." : "Add Commodity"}</button>
              </div>
          </div>
          }

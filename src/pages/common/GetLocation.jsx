@@ -12,14 +12,53 @@ export default function GetLocation({ index, onchange, placeholder, id, initialV
     loadGoogleMapsScript(apiKey).then(() => {
       if (inputRef.current) {
         autocompleteInstance = new window.google.maps.places.Autocomplete(inputRef.current);
-        autocompleteInstance.setFields(["formatted_address"]);
+        autocompleteInstance.setFields([
+          "formatted_address", 
+          "name", 
+          "business_status", 
+          "types",
+          "place_id",
+          "geometry"
+        ]);
 
         autocompleteInstance.addListener("place_changed", () => {
           const place = autocompleteInstance.getPlace();
           if (place?.formatted_address) {
-            setInputText(place.formatted_address);
-            onchange && onchange(place.formatted_address);
-            console.log("Selected address:", place.formatted_address);
+            // Create a comprehensive location string
+            let locationString = '';
+            
+            // Check if this place has a business name
+            if (place.name && place.name !== place.formatted_address) {
+              // Check if it's a business/establishment type
+              const isBusinessType = place.types && (
+                place.types.includes('establishment') ||
+                place.types.includes('point_of_interest') ||
+                place.types.includes('store') ||
+                place.types.includes('shopping_mall') ||
+                place.types.includes('warehouse') ||
+                place.types.includes('storage') ||
+                place.types.includes('logistics') ||
+                place.types.includes('premise')
+              );
+              
+              if (isBusinessType) {
+                locationString = `${place.name}, ${place.formatted_address}`;
+              } else {
+                locationString = place.formatted_address;
+              }
+            } else {
+              locationString = place.formatted_address;
+            }
+            
+            setInputText(locationString);
+            onchange && onchange(locationString);
+            console.log("Selected location:", {
+              name: place.name,
+              address: place.formatted_address,
+              types: place.types,
+              business_status: place.business_status,
+              final_string: locationString
+            });
           }
         });
       }

@@ -4,7 +4,7 @@ import Commodity from './Commodity';
 import EquipmentLists from './EquipmentLists';
 import ChargesItems from './ChargesItems';
 
-export default function EquipAndCommudity() {
+export default function EquipAndCommodity() {
   return (
       <AuthLayout> 
           {/* <Commodity /> */}

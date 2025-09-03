@@ -5,6 +5,7 @@ import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import countries from './../../common/Countries';
 import Select from 'react-select'
+import DynamicEmailInput from '../../../components/DynamicEmailInput'
 
 export default function AddCustomer({item, fetchLists, classes, text}){
 
@@ -23,6 +24,7 @@ export default function AddCustomer({item, fetchLists, classes, text}){
       assigned_to: item?.assigned_to?._id || null,
     });
 
+    const [emails, setEmails] = useState([]);
     const [action, setaction] = useState();
     const {Errors} = useContext(UserContext);
 
@@ -62,18 +64,41 @@ export default function AddCustomer({item, fetchLists, classes, text}){
     const chooseStaff = (e) => { 
       setData({ ...data, assigned_to: e.value});
     }
+
+    const handleEmailsChange = (emailsArray) => {
+      console.log('Emails changed:', emailsArray);
+      setEmails(emailsArray);
+      // Update legacy fields for backward compatibility
+      const primaryEmail = emailsArray.find(e => e.is_primary);
+      const secondaryEmails = emailsArray.filter(e => !e.is_primary);
+      
+      setData(prevData => ({
+        ...prevData,
+        email: primaryEmail?.email || '',
+        secondary_email: secondaryEmails[0]?.email || ''
+      }));
+    }
+
     const add_customer = () => {
       if(data.assigned_to == null || data.assigned_to === ''){
         toast.error("Please select a staff member.");
         return false
       }
+
+      // Validate that at least one valid email is provided
+      const validEmails = emails.filter(e => e.email && e.email.trim() !== '');
+      if(validEmails.length === 0){
+        toast.error("Please provide at least one valid email address.");
+        return false
+      }
      
       setLoading(true);
+      const requestData = { ...data, emails: validEmails };
       let customerInstance;
       if(item){
-        customerInstance = Api.post(`/customer/update/${item._id}`, {...data});
+        customerInstance = Api.post(`/customer/update/${item._id}`, requestData);
       } else { 
-        customerInstance = Api.post(`/customer/add`, {...data});
+        customerInstance = Api.post(`/customer/add`, requestData);
       }
       customerInstance.then((res) => {
         setLoading(false);
@@ -132,14 +157,12 @@ export default function AddCustomer({item, fetchLists, classes, text}){
                <input  defaultValue={item?.mc_code} name='mc_code' onChange={handleinput} type={'number'} placeholder={"MC Code"} className="input-sm" />
             </div> */}
 
-            <div className='input-item mt-2'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Email</label>
-              <input  defaultValue={item?.email} name='email' onChange={handleinput} type={'email'} placeholder={"Email address"} className="input-sm" />
-            </div>
-
-            <div className='input-item mt-2'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Secondary Email</label>
-              <input  defaultValue={item?.secondary_email} name='secondary_email' onChange={handleinput} type={'email'} placeholder={"Secondary Email address"} className="input-sm" />
+            {/* Dynamic Email Input Component */}
+            <div className='col-span-2'>
+              <DynamicEmailInput 
+                existingCustomer={item}
+                onChange={handleEmailsChange}
+              />
             </div>
 
             <div className='input-item'>
