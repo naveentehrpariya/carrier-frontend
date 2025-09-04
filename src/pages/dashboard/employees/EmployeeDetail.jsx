@@ -18,19 +18,13 @@ export default function EmployeeDetail() {
    
    const fetchEmployee = () => {
       setLoadEmployee(true);
-      // Fetch from employee listing endpoint
-      const resp = Api.get(`/user/employeesLisiting`);
+      // Fetch specific employee by ID
+      const resp = Api.get(`/user/employee/detail/${id}`);
       resp.then((res) => {
-         if (res.data.status === true && res.data.lists) {
-            // Find the specific employee from the list
-            const foundEmployee = res.data.lists.find(emp => emp._id === id);
-            if (foundEmployee) {
-               setEmployee(foundEmployee);
-            } else {
-               setEmployee({ error: 'Employee not found' });
-            }
+         if (res.data.status === true && res.data.employee) {
+            setEmployee(res.data.employee);
          } else {
-            setEmployee({ error: 'Failed to load employee data' });
+            setEmployee({ error: res.data.message || 'Employee not found' });
          }
          setLoadEmployee(false);
       }).catch((err) => {

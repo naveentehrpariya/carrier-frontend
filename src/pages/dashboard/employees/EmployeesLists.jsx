@@ -57,7 +57,6 @@ export default function EmployeesLists() {
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Corporate ID</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Address</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone/Email</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Documents</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                </tr>
                {lists && lists.map((c, index) => {
@@ -95,12 +94,12 @@ export default function EmployeesLists() {
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <div className='flex items-center gap-2'>
-                              <Link 
+                              {/* <Link 
                                  to={`/employee/detail/${c._id}`} 
                                  className='bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-xs transition-colors'
                               >
                                  View Details
-                              </Link>
+                              </Link> */}
                               <Dropdown>
                                  <li className='list-none text-sm'>
                                     <AddEmployee text="Edit" classes="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block" item={c} fetchLists={fetchLists} />

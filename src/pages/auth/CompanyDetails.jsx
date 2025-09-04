@@ -120,6 +120,8 @@ Cross-border shipments require custom stamps or deductions may apply.`;
       <div className='flex justify-center items-center w-full'>
          <div className='max-w-[900px] w-full'>
             <h2 className='text-white font-bold text-xl md:text-3xl'>Company Details</h2>
+            <p className='text-gray-400 text-normal mt-2'>These details will appear on rate confirmations. You can update as needed.</p>
+
             <div className='grid grid-cols-1 md:grid-cols-3 gap-1 md:gap-5 mt-3'>
                <div className='input-item'>
                   <label className="mt-4 mb-0 block text-sm text-gray-400">Name</label>

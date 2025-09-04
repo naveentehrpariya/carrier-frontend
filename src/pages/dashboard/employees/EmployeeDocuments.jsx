@@ -52,6 +52,7 @@ export default function EmployeeDocuments({ employee, onClose, classes, text }) 
 
     const {Errors} = useContext(UserContext);
     const fetchDocuments = () => { 
+        if (!employee || !employee._id) return; // Guard against undefined
         setLoading(true);
         const resp = Api.get(`/user/employee/docs/${employee._id}`); 
         resp.then((res)=>{
@@ -70,7 +71,7 @@ export default function EmployeeDocuments({ employee, onClose, classes, text }) 
     const [progress, setProgress] = useState(0);
     const [uploading, setUploading] = useState(false);
     async function UploadMedia() {
-        if (!file) return;
+        if (!file || !employee || !employee._id) return;
         setUploading(true);
         const fdata = new FormData();
         fdata.append('attachment', file);
@@ -98,7 +99,9 @@ export default function EmployeeDocuments({ employee, onClose, classes, text }) 
 
     useEffect(() => {
         fetchDocuments();
-    }, []);
+        // Re-fetch whenever the employee changes and has a valid _id
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [employee && employee._id]);
 
     return (
         <Popup size="md:max-w-2xl" space="p-8" bg="bg-black" btnclasses={classes || 'text-main flex items-center'} btntext={text || <> <LuEye size={'18'} className='me-2' /> Documents</>}>
