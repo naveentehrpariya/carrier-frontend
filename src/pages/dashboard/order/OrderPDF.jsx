@@ -97,7 +97,7 @@ export default function OrderPDF() {
       },
       autoPaging: 'text',
       width: 185,
-      windowWidth: 794,
+      windowWidth: 185,
       margin: [headerHeight, 0, 20, 0],
    });
 };
