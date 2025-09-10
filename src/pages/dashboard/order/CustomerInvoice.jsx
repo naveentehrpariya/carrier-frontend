@@ -108,6 +108,57 @@ export default function CustomerInvoice() {
                for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
                   doc.setPage(pageNum);
                   doc.addImage(headerImgData, "JPEG", 12.5, 5, 185, Math.min(headerHeight, 40), '', 'FAST');
+                  
+                  // Add logo image watermark to each page
+                  try {
+                     // Create watermark from logo element in the header
+                     const logoElement = headerElement.querySelector('img, [class*="logo"], .logotext');
+                     if (logoElement) {
+                        // Render the logo as watermark
+                        const logoCanvas = await html2canvas(logoElement, {
+                           scale: 2,
+                           useCORS: true,
+                           allowTaint: true,
+                           backgroundColor: null,
+                           logging: false
+                        });
+                        
+                        // Create a semi-transparent version for watermark
+                        const watermarkCanvas = document.createElement('canvas');
+                        const watermarkCtx = watermarkCanvas.getContext('2d');
+                        watermarkCanvas.width = logoCanvas.width;
+                        watermarkCanvas.height = logoCanvas.height;
+                        
+                        // Set low opacity for watermark effect
+                        watermarkCtx.globalAlpha = 0.15; // Light watermark
+                        watermarkCtx.drawImage(logoCanvas, 0, 0);
+                        
+                        const logoWatermarkData = watermarkCanvas.toDataURL('image/png');
+                        
+                        // Add logo watermark at multiple positions
+                        const logoSize = 60; // Size in mm
+                        doc.addImage(logoWatermarkData, 'PNG', 30, 120, logoSize, logoSize * 0.5, '', 'FAST');
+                        doc.addImage(logoWatermarkData, 'PNG', 120, 160, logoSize, logoSize * 0.5, '', 'FAST');
+                        doc.addImage(logoWatermarkData, 'PNG', 30, 200, logoSize, logoSize * 0.5, '', 'FAST');
+                     } else {
+                        // Fallback to text watermark if no logo found
+                        doc.setTextColor(230, 230, 230);
+                        doc.setFontSize(35);
+                        doc.text('CROSS MILES CARRIER', 105, 150, {
+                           angle: 45,
+                           align: 'center'
+                        });
+                     }
+                  } catch (watermarkError) {
+                     console.log('Logo watermark failed, using text fallback:', watermarkError);
+                     // Text fallback
+                     doc.setTextColor(230, 230, 230);
+                     doc.setFontSize(35);
+                     doc.text('CROSS MILES CARRIER', 105, 150, {
+                        angle: 45,
+                        align: 'center'
+                     });
+                  }
                }
                setPdfProgress('Compressing PDF...');
                const pdfArrayBuffer = doc.output('arraybuffer');
@@ -127,7 +178,7 @@ export default function CustomerInvoice() {
                const url = URL.createObjectURL(blob);
                const link = document.createElement('a');
                link.href = url;
-               link.download = `invoice-${invoiceNo}.pdf`;
+               link.download = `CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`;
                document.body.appendChild(link);
                link.click();
                document.body.removeChild(link);
@@ -139,7 +190,7 @@ export default function CustomerInvoice() {
                
             } catch (compressionError) {
                console.error('PDF compression failed:', compressionError);
-               doc.save(`invoice-${invoiceNo}.pdf`);
+               doc.save(` CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`);
                setPdfProgress('Invoice downloaded (compression skipped)');
                setTimeout(() => setPdfProgress(''), 3000);
                setDownloadingPdf(false);
