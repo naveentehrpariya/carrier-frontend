@@ -10,6 +10,7 @@ import { jsPDF } from "jspdf";
 import Loading from '../../common/Loading';
 import DistanceInMiles from '../../common/DistanceInMiles';
 import html2canvas from "html2canvas";
+import { PDFDocument, PDFName } from 'pdf-lib';
 
 export default function OrderPDF() {
    
@@ -19,11 +20,13 @@ export default function OrderPDF() {
    const {Errors, company} = useContext(UserContext);
    const { id } = useParams();
    const [downloadingPdf, setDownloadingPdf] = useState(false);
+   const [pdfProgress, setPdfProgress] = useState('');
    const pdfRef = useRef();
-   const todaydate = new Date(); 
+   const todaydate = new Date();
 
    const downloadPDF = async () => {
    setDownloadingPdf(true);
+   setPdfProgress('Preparing PDF generation...');
    window.scrollTo(0, 0);
    const element = pdfRef.current;
    const headerElement = document.getElementById("pdf-header-html");
@@ -31,75 +34,197 @@ export default function OrderPDF() {
    if (!element || !headerElement) {
       console.error("Missing content or header element.");
       setDownloadingPdf(false);
+      setPdfProgress('');
       return;
    }
 
-   // Render header to canvas with maximum quality
-   const headerCanvas = await html2canvas(headerElement, {
-      scale: 3,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: null,
-      logging: false,
-      pixelRatio: window.devicePixelRatio || 1,
-      dpi: 300,
-      letterRendering: true,
-   });
-   // Optimize header image with better compression
-   const headerImgData = headerCanvas.toDataURL("image/jpeg", 0.85);
-   const headerHeight = ((headerCanvas.height * 210) / headerCanvas.width)-5; // A4 width scaling (210mm)
-
-   const doc = new jsPDF({
-      unit: "mm",
-      format: "a4",
-      orientation: "portrait",
-      compress: true,
-      precision: 2,
-      userUnit: 1.0,
-   });
-
-   doc.html(element, {
-      callback: function (doc) {
-         const totalPages = doc.internal.getNumberOfPages();
-         const watermarkImg = "/transparent-logo.png";
-         for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-
-            // doc.addImage(headerImgData, "PNG", 0, 0, 210, headerHeight);
-            doc.addImage(headerImgData, "JPEG", 12.5, 0, 195, headerHeight, '', 'MEDIUM'); // x = 12.5mm, width = 185mm to match content
-            doc.addImage(watermarkImg, "PNG", 50, 100, 100, 38, '', 'FAST');
-            // doc.addImage(watermarkImg, "PNG", 50, 180, 100, 38, '', 'FAST');
-         }
-         doc.save(`Order_CMC${order?.serial_no || ''}_Rate_Confirmation.pdf`);
-         setDownloadingPdf(false);
-      },
-      x: 12.5,
-      y: 0,
-      html2canvas: {
-         scale: 0.235,
+   try {
+      setPdfProgress('Rendering header...');
+      // Render header to canvas with balanced compression
+      const headerCanvas = await html2canvas(headerElement, {
+         scale: 4, // Good scale for crisp but not oversized header
          useCORS: true,
          allowTaint: true,
-         backgroundColor: null,
+         backgroundColor: '#ffffff',
          logging: false,
-         imageTimeout: 15000,
-         removeContainer: true,
-         pixelRatio: 1,
-         foreignObjectRendering: false,
-         onclone: function(clonedDoc) {
-            // Optimize fonts and elements for smaller size
-            clonedDoc.querySelectorAll('*').forEach(el => {
-               const style = el.style;
-               if (style.fontWeight === 'bold' || style.fontWeight === '700' || style.fontWeight === '900') {
-                  style.fontWeight = '600'; // Lighter bold for smaller file
+         pixelRatio: 1.0, // Full pixel ratio for clarity
+         quality: 100, // Good quality for clear header
+      });
+      
+      // Better header compression for clarity
+      const headerImgData = headerCanvas.toDataURL("image/jpeg", 1); // Good quality
+      // Calculate proper header height to maintain aspect ratio
+      const headerHeight = Math.min(((headerCanvas.height * 185) / headerCanvas.width), 45); // Proper aspect ratio
+
+      setPdfProgress('Generating PDF with content...');
+      const doc = new jsPDF({
+         unit: "mm",
+         format: "a4",
+         orientation: "portrait",
+         compress: true,
+         precision: 1,
+         userUnit: 1.0,
+      });
+
+      doc.html(element, {
+         callback: async function (doc) {
+            try {
+               setPdfProgress('Adding headers to all pages...');
+               const totalPages = doc.internal.getNumberOfPages();
+               
+               // Add header to all pages for consistency
+               for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                  doc.setPage(pageNum);
+                  doc.addImage(headerImgData, "JPEG", 12.5, 5, 185, Math.min(headerHeight, 40), '', 'FAST'); // Full width header
                }
-            });
-         }
-      },
-      autoPaging: 'text',
-      width: 185,
-      windowWidth: 185,
-      margin: [headerHeight, 0, 20, 0],
-   });
+               // Skip watermark to save space
+               
+               setPdfProgress('Compressing PDF...');
+               
+               // Get PDF as ArrayBuffer for post-compression
+               const pdfArrayBuffer = doc.output('arraybuffer');
+               
+               // Load PDF with pdf-lib for compression
+               const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+               
+               // Apply enhanced compression settings
+               const compressedPdfBytes = await pdfDoc.save({
+                  useObjectStreams: true,
+                  addDefaultPage: false,
+                  objectsPerTick: 2000, // Higher compression
+                  updateFieldAppearances: false,
+                  compress: true,
+                  // Additional optimization flags
+                  linearize: false, // Disable linearization for smaller size
+                  normalizeWhitespace: true // Remove extra whitespace
+               });
+               
+               setPdfProgress('Finalizing download...');
+               
+               // Create blob and download
+               const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
+               const url = URL.createObjectURL(blob);
+               const link = document.createElement('a');
+               link.href = url;
+               link.download = `Order_CMC${order?.serial_no || ''}_Rate_Confirmation.pdf`;
+               document.body.appendChild(link);
+               link.click();
+               document.body.removeChild(link);
+               URL.revokeObjectURL(url);
+               
+               setPdfProgress('PDF downloaded successfully!');
+               setTimeout(() => setPdfProgress(''), 3000);
+               setDownloadingPdf(false);
+               
+            } catch (compressionError) {
+               console.error('PDF compression failed:', compressionError);
+               // Fallback to original PDF if compression fails
+               doc.save(`Order_CMC${order?.serial_no || ''}_Rate_Confirmation.pdf`);
+               setPdfProgress('PDF downloaded (compression skipped)');
+               setTimeout(() => setPdfProgress(''), 3000);
+               setDownloadingPdf(false);
+            }
+         },
+         x: 12.5,
+         y: 0,
+         html2canvas: {
+            scale: 0.23, // Slightly larger scale to show full text
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: null,
+            logging: false,
+            imageTimeout: 12000,
+            removeContainer: true,
+            pixelRatio: 0.8, // Better pixel ratio
+            quality: 0.5, // Better quality for readability
+            foreignObjectRendering: false,
+            onclone: function(clonedDoc) {
+               // Ultra-aggressive compression with proper styling fixes
+               clonedDoc.querySelectorAll('*').forEach(el => {
+                  const style = el.style;
+                  // Simplify fonts but keep structure
+                  style.fontFamily = 'Arial, sans-serif';
+                  style.fontSize = '16px';
+                  // Keep bold text for headings but reduce excessive weights
+                  if (style.fontWeight === '900' || style.fontWeight === 'black') {
+                     style.fontWeight = '700';
+                  } else if (style.fontWeight === '800') {
+                     style.fontWeight = '600';
+                  }
+                  // Font sizes optimized to prevent cutting
+                  if (el.tagName === 'H1') {
+                     style.fontSize = '18px';
+                     style.fontWeight = '700';
+                  } else if (el.tagName === 'H2' || el.tagName === 'H3') {
+                     style.fontSize = '16px';
+                     style.fontWeight = '600';
+                  } else if (el.tagName === 'TH' || el.tagName === 'TD') {
+                     style.padding = '3px';
+                     style.fontSize = '15px';
+                     style.fontWeight = '600';
+                  } else {
+                     style.fontSize = '15px';
+                  }
+                  // Ensure proper line height for all elements
+                  style.lineHeight = '1.6';
+                  // Remove visual effects
+                  style.textShadow = 'none';
+                  style.boxShadow = 'none';
+                  style.backgroundImage = 'none';
+                  style.borderRadius = '0';
+                  // Preserve table borders and full-width layout
+                  if (el.tagName === 'TABLE') {
+                     el.setAttribute('cellpadding', '4');
+                     el.setAttribute('cellspacing', '0');
+                     style.border = '1px solid #999';
+                     style.borderCollapse = 'collapse';
+                     style.width = '100%';
+                     style.tableLayout = 'auto'; // Allow flexible column widths
+                  } else if (el.tagName === 'TD' || el.tagName === 'TH') {
+                     style.border = '1px solid #ccc';
+                     style.padding = '3px';
+                     style.textAlign = 'left';
+                     style.verticalAlign = 'top';
+                     style.wordBreak = 'break-word';
+                     style.height = '30px';
+                     style.lineHeight = '30px';
+                  } else if (el.classList && el.classList.contains('border-b')) {
+                     style.borderBottom = '1px solid #ddd';
+                  }
+                  if (style.padding && parseInt(style.padding) > 12) {
+                     style.padding = '3px';
+                  }
+                  if (style.margin && parseInt(style.margin) > 12) {
+                     style.margin = '2px';
+                  }
+                  // Control container elements width
+                  if (el.classList && (el.classList.contains('grid') || el.classList.contains('flex'))) {
+                     style.width = '100%';
+                     style.maxWidth = '100%';
+                     style.overflow = 'hidden';
+                  }
+                  // Remove effects
+                  style.transform = 'none';
+                  style.transition = 'none';
+               });
+               // Remove ALL images to save maximum space
+               clonedDoc.querySelectorAll('img, svg, .icon, canvas').forEach(el => {
+                  el.style.display = 'none';
+               });
+            } 
+         },
+         autoPaging: 'text',
+         width: 185, // A4 width minus margins
+         windowWidth: 700, // Constrain to prevent overflow
+         margin: [headerHeight + 2, 0, 15, 0], // Reduce margins to prevent text cutting
+      });
+      
+   } catch (error) {
+      console.error('PDF generation failed:', error);
+      setPdfProgress('PDF generation failed');
+      setTimeout(() => setPdfProgress(''), 3000);
+      setDownloadingPdf(false);
+   }
 };
 
 
@@ -130,8 +255,15 @@ export default function OrderPDF() {
          <div className='bg-white p-[30px]'>
             <div className=' max-w-[794px] mx-auto flex justify-between items-center mb-6'>
                <h1 className='text-xl font-bold text-black mb-6 mt-4'>Customer Order #{order?.serial_no}</h1>
-               <div className='flex items-center'>
-                  <button  button className='bg-main px-4 py-2 rounded-xl text-normal test' onClick={downloadPDF} >{downloadingPdf ? "Downloading..." : "Download PDF"}</button>
+               <div className='text-right'>
+                  <button className='bg-main px-4 py-2 rounded-xl text-normal' onClick={downloadPDF} disabled={downloadingPdf}>
+                     {downloadingPdf ? "Generating..." : "Download PDF"}
+                  </button>
+                  {pdfProgress && (
+                     <div className='text-xs text-blue-600 mt-1 max-w-[200px]'>
+                        {pdfProgress}
+                     </div>
+                  )}
                </div>
             </div>
             <div className="relative max-w-[794px] mx-auto p-[40px] bg-white text-sm text-black shadow-md font-sans">
@@ -210,51 +342,46 @@ export default function OrderPDF() {
                
                {/* Employee Information Section */}
                {order?.created_by && (
-                  <div className="border-b pb-4 mb-4">
+                  <div style={{ borderBottom: "1px solid #ddd", paddingBottom: "2rem", marginBottom: "1rem" }}  >
                      <h3 className="text-blue-700 font-bold text-lg mb-2">PROCESSED BY</h3>
-                     <div className="grid grid-cols-2 gap-8">
+                     
+                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                           <p><strong>Employee Name:</strong> 
-                              {order?.created_by?.name ? 
-                                 <Link to={`/employee/detail/${order.created_by._id}`} className='text-blue-600 hover:text-blue-700 font-semibold ml-1'>
-                                    {order.created_by.name}
-                                 </Link>
-                                 : 'N/A'
-                              }
-                           </p>
-                           <p><strong>Employee ID:</strong> {order?.created_by?.corporateID || 'N/A'}</p>
+                           <p className='capitalize pb-3'><strong>Employee Name: </strong> {order?.created_by?.name ? order.created_by.name: 'N/A' } </p>
+                           <p className='pb-3'><strong>Employee ID:</strong> {order?.created_by?.corporateID || 'N/A'}</p>
                         </div>
-                        <div>
-                           <p><strong>Email:</strong> {order?.created_by?.email}</p>
-                           <p><strong>Phone:</strong> {order?.created_by?.phone || 'N/A'}</p>
+                        <div className='ps-[100px]'>
+                           <p className='pb-3'><strong>Email:</strong> {order?.created_by?.email}</p>
+                           <p className='pb-3'><strong>Phone:</strong> {order?.created_by?.phone || 'N/A'}</p>
                         </div>
                      </div>
                   </div>
                )}
+                
 
-               <div className='relative'>
+               <div className='relative mt-6'>
                   {order && order.shipping_details && order.shipping_details.map((s, index) => {
                      return <>
                            <div className="grid grid-cols-2 gap-2 mb-4">
-                              <p className='flex items-center'><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
-                              <p className='flex items-center'><strong>Commodity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                              <p className='capitalize pb-2'><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                              <p className=' pb-2'><strong>Commodity : </strong> {s?.commodity?.value || s?.commodity}</p>
                               {s?.reference && (
-                                 <p className='flex items-center'><strong>Commodity Reference : </strong> {s.reference}</p>
+                                 <p className=''><strong>Commodity Reference : </strong> {s.reference}</p>
                               )}
-                              <p className='flex items-center'><strong>Total Distance : </strong> <DistanceInMiles d={order.totalDistance} /></p>
-                              <p className='flex items-center'><strong>Equipments : </strong> {s?.equipment?.value}</p>
-                              <p className='flex items-center'><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                              <p className=' pb-2'><strong>Total Distance : </strong> <DistanceInMiles d={order.totalDistance} /></p>
+                              <p className=' pb-2'><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                              <p className=' pb-2'><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
                            </div>
 
                            <div className="mb-6">
                               <h3 className="font-semibold mb-2 mt-4 text-lg">Charges</h3>
-                              <table cellPadding={8} align='center' className="w-full border text-normal table-collapse ">
+                              <table cellPadding={8} align='center' className="mt-2 w-full border text-normal table-collapse ">
                                  <thead className="bg-gray-100">
                                     <tr>
-                                       <th className="border text-left">Charge Type</th>
-                                       <th className="border text-left">Comment</th>
-                                       <th className="border text-left">Rate</th>
-                                       <th className="border text-left">Total</th>
+                                       <th className="font-bold border text-left">Charge Type</th>
+                                       <th className="font-bold border text-left">Comment</th>
+                                       <th className="font-bold border text-left">Rate</th>
+                                       <th className="font-bold border text-left">Total</th>
                                     </tr>
                                  </thead>
                                  <tbody>
@@ -318,15 +445,11 @@ export default function OrderPDF() {
                <div className=" leading-snug border-t pt-4">
                   {(() => {
                      const defaultTerms = `Carrier is responsible to confirm the actual weight and count received from the shipper before transit.
-
-Additional fees such as loading/unloading, pallet exchange, etc., are included in the agreed rate.
-
-POD must be submitted within 5 days of delivery.
-
-Freight charges include $100 for MacroPoint tracking. Non-compliance may lead to deduction.
-
-Cross-border shipments require custom stamps or deductions may apply.`;
-                     
+                           Additional fees such as loading/unloading, pallet exchange, etc., are included in the agreed rate.
+                           POD must be submitted within 5 days of delivery.
+                           Freight charges include $100 for MacroPoint tracking. Non-compliance may lead to deduction.
+                           Cross-border shipments require custom stamps or deductions may apply.`;
+                                                
                      const termsToDisplay = company?.rate_confirmation_terms || defaultTerms;
                      
                      return termsToDisplay.split('\n').map((line, index) => (
@@ -338,9 +461,9 @@ Cross-border shipments require custom stamps or deductions may apply.`;
                </div>
                <div className="flex justify-between items-center mt-6">
                <div>
-                  <div className="font-semibold mb-2">Carrier Signature:</div>
+                  <div className="font-semibold mb-2 pb-2">Carrier Signature:</div>
                   <div className="border-b-2 border-black w-64 h-12 mb-2"></div>
-                  <div className="text-sm text-gray-600">Sign here</div>
+                  <div className="text-sm text-gray-600 pb-3">Sign here</div>
                </div>
                <div className="text-right">
                   <div>Date: {(todaydate.getMonth()+1) > 9 ? (todaydate.getMonth()+1) : '0'+(todaydate.getMonth()+1)} / {todaydate.getDate()} /  {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'}</div>

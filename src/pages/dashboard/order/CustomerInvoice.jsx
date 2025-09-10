@@ -9,8 +9,8 @@ import TimeFormat from '../../common/TimeFormat';
 import Currency from '../../common/Currency';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import { PDFDocument } from 'pdf-lib';
 import Loading from './../../common/Loading';
-import DebugCompanyData from '../../../components/DebugCompanyData';
 
 export default function CustomerInvoice() {
    const [loading, setLoading] = useState(true);
@@ -18,6 +18,7 @@ export default function CustomerInvoice() {
    const {Errors, company} = useContext(UserContext);
    const { id } = useParams();
    const [downloadingPdf, setDownloadingPdf] = useState(false);
+   const [pdfProgress, setPdfProgress] = useState('');
    const pdfRef = useRef();
    const todaydate = new Date();
 
@@ -57,104 +58,172 @@ export default function CustomerInvoice() {
 
    const downloadPDF = async () => {
    setDownloadingPdf(true);
+   setPdfProgress('Preparing invoice generation...');
    window.scrollTo(0,0);
 
    const element = pdfRef.current;
-   if (!element) {
-      setDownloadingPdf(false);
-      return;
-   }
-
    const headerElement = document.getElementById("pdf-header-html");
 
    if (!element || !headerElement) {
       console.error("Missing content or header element.");
       setDownloadingPdf(false);
+      setPdfProgress('');
       return;
    }
 
-   // Render header to canvas with maximum quality
-   const headerCanvas = await html2canvas(headerElement, {
-      scale: 3,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: null,
-      logging: false,
-      pixelRatio: window.devicePixelRatio || 1,
-      dpi: 300,
-      letterRendering: true,
-   });
-   // Optimize header image with better compression
-   const headerImgData = headerCanvas.toDataURL("image/jpeg", 0.85);
-   const headerHeight = ((headerCanvas.height * 210) / headerCanvas.width)-5; // A4 width scaling (210mm)
-
- 
-   const doc = new jsPDF({
-   unit: 'mm',
-   format: 'a4',
-   orientation: 'portrait',
-   compress: true,
-   precision: 2,
-   userUnit: 1.0,
-   });
-   doc.html(pdfRef.current, {
-      callback: function (doc) {
-         const totalPages = doc.internal.getNumberOfPages();
-         const watermarkImg = "/transparent-logo.png";
-         for (let i = 1; i <= totalPages; i++) {
-            doc.setPage(i);
-
-            // doc.addImage(headerImgData, "PNG", 0, 0, 210, headerHeight);
-            doc.addImage(headerImgData, "JPEG", 12.5, 0, 185, headerHeight, '', 'MEDIUM'); // x = 12.5mm, width = 185mm to match content
-            doc.addImage(watermarkImg, "PNG", 50, 110, 100, 38, '', 'FAST');
-            // doc.addImage(watermarkImg, "PNG", 50, 180, 100, 38, '', 'FAST');
-         }
-         doc.save(`invoice-${invoiceNo}.pdf`);
-         setDownloadingPdf(false);
-      },
-      x: 12.5,
-      y: 0,
-      html2canvas: { 
-         scale: 0.236, 
+   try {
+      setPdfProgress('Rendering header...');
+      // Render header to canvas with extreme compression
+      const headerCanvas = await html2canvas(headerElement, {
+         scale: 3, // Ultra-small scale for tiny file size
          useCORS: true,
          allowTaint: true,
          backgroundColor: null,
          logging: false,
-         imageTimeout: 15000,
-         removeContainer: true,
-         pixelRatio: 1,
-         foreignObjectRendering: false,
-         onclone: function(clonedDoc) {
-            // Optimize fonts and elements for smaller size
-            clonedDoc.querySelectorAll('*').forEach(el => {
-               const style = el.style;
-               if (style.fontWeight === 'bold' || style.fontWeight === '700' || style.fontWeight === '900') {
-                  style.fontWeight = '600'; // Lighter bold for smaller file
-               }
-            });
-         }
-      },
-      autoPaging: 'text',
-      width: 185,
-      windowWidth: 794,
-      margin: [headerHeight, 0, 20, 0],    // Must match export container's pixel width
-   });
+         pixelRatio: 1, // Very low pixel ratio
+         quality: 50, // Very low quality for small size
+      });
+      
+      // Ultra-aggressive header compression
+      const headerImgData = headerCanvas.toDataURL("image/jpeg"); // Maximum compression
+      const headerHeight = ((headerCanvas.height * 210) / headerCanvas.width)+5;
 
+      setPdfProgress('Generating invoice content...');
+      const doc = new jsPDF({
+         unit: 'mm',
+         format: 'a4',
+         orientation: 'portrait',
+         compress: true,
+         precision: 2,
+         userUnit: 1.0,
+      });
+      
+      doc.html(pdfRef.current, {
+         callback: async function (doc) {
+            try {
+               setPdfProgress('Adding headers to all pages...');
+               const totalPages = doc.internal.getNumberOfPages();
+               
+               // Add header to all pages for consistency
+               for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                  doc.setPage(pageNum);
+                  doc.addImage(headerImgData, "JPEG", 12.5, 5, 185, Math.min(headerHeight, 40), '', 'FAST');
+               }
+               setPdfProgress('Compressing PDF...');
+               const pdfArrayBuffer = doc.output('arraybuffer');
+               const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+               const compressedPdfBytes = await pdfDoc.save({
+                  useObjectStreams: true,
+                  addDefaultPage: false,
+                  objectsPerTick: 1000, 
+                  updateFieldAppearances: false,
+                  compress: true
+               });
+               
+               setPdfProgress('Finalizing download...');
+               
+               // Create blob and download
+               const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
+               const url = URL.createObjectURL(blob);
+               const link = document.createElement('a');
+               link.href = url;
+               link.download = `invoice-${invoiceNo}.pdf`;
+               document.body.appendChild(link);
+               link.click();
+               document.body.removeChild(link);
+               URL.revokeObjectURL(url);
+               
+               setPdfProgress('Invoice downloaded successfully!');
+               setTimeout(() => setPdfProgress(''), 3000);
+               setDownloadingPdf(false);
+               
+            } catch (compressionError) {
+               console.error('PDF compression failed:', compressionError);
+               doc.save(`invoice-${invoiceNo}.pdf`);
+               setPdfProgress('Invoice downloaded (compression skipped)');
+               setTimeout(() => setPdfProgress(''), 3000);
+               setDownloadingPdf(false);
+            }
+         },
+         x: 12.5,
+         y: 0,
+         html2canvas: {
+            scale: 0.235, // Moderate scale for size control
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: null,
+            logging: false,
+            imageTimeout: 12000,
+            removeContainer: true,
+            pixelRatio: 0.8, // Moderate pixel ratio
+            quality: 0.5, // Moderate quality for size control
+            foreignObjectRendering: false,
+            onclone: function(clonedDoc) {
+               // Moderate optimizations targeting 200-500KB file size
+               clonedDoc.querySelectorAll('*').forEach(el => {
+                  const style = el.style;
+                  style.fontFamily = 'Arial, sans-serif';
+                  if (style.fontWeight === '900' || style.fontWeight === 'black') {
+                     style.fontWeight = '600';
+                  } else if (style.fontWeight === '700' || style.fontWeight === 'bold') {
+                     style.fontWeight = '500';
+                  }
+                  style.textShadow = 'none';
+                  style.boxShadow = 'none';
+                  style.backgroundImage = 'none';
+                  style.borderRadius = '0';
+                  if (style.border && style.border !== 'none') {
+                     style.border = '1px solid #ccc';
+                  }
+                  if (style.padding && parseInt(style.padding) > 12) {
+                     style.padding = '6px';
+                  }
+                  if (style.margin && parseInt(style.margin) > 12) {
+                     style.margin = '4px';
+                  }
+                  style.transform = 'none';
+                  style.transition = 'none';
+               });
+
+               clonedDoc.querySelectorAll('img, svg, .icon, canvas').forEach(el => {
+                  el.style.display = 'none';
+               });
+            }
+         },
+         autoPaging: 'text',
+         width: 185,
+         windowWidth: 794,
+         margin: [headerHeight-10, 0, 20, 0],
+      });
+      
+   } catch (error) {
+      console.error('PDF generation failed:', error);
+      setPdfProgress('PDF generation failed');
+      setTimeout(() => setPdfProgress(''), 3000);
+      setDownloadingPdf(false);
+   }
 };
 
 
    return (
       <AuthLayout>
-         <DebugCompanyData />
+         
          {loading ? <Loading /> :
             <div className="boltable bg-white">
 
             <div className="relative max-w-[794px] mx-auto pt-[30px] p-[10px] bg-white text-sm text-black">
                <div className='flex justify-between items-center'>
                   <h1 className='text-xl font-bold text-black mb-6 mt-4'>Order INVOICE #{order?.serial_no}</h1>
-                  <button className='bg-main px-4 py-2 rounded-xl text-sm' onClick={downloadPDF} >
-                     {downloadingPdf ? "Downloading..." : "Download PDF"}
-                  </button>
+                  <div className='text-right'>
+                     <button className='bg-main px-4 py-2 rounded-xl text-sm' onClick={downloadPDF} disabled={downloadingPdf}>
+                        {downloadingPdf ? "Generating..." : "Download PDF"}
+                     </button>
+                     {pdfProgress && (
+                        <div className='text-xs text-blue-600 mt-1 max-w-[200px]'>
+                           {pdfProgress}
+                        </div>
+                     )}
+                  </div>
                </div>
 
                <div className="flex justify-between items-center border-b pb-4 mb-4">
@@ -214,7 +283,7 @@ export default function CustomerInvoice() {
 
                   <div>
                      
-                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", borderBottom: "1px solid #ddd", paddingBottom: "1rem", marginBottom: "1rem" }}>
+                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", borderBottom: "1px solid #ddd", paddingBottom: "2rem", marginBottom: "1rem" }}>
                         <div>
                            <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>BILL TO</h3>
                            <p style={{ color: "#111" }}>{order?.customer?.name} {order?.customer?.customerCode ? `(Ref No: ${order?.customer?.customerCode})` : '' }</p>
@@ -232,7 +301,7 @@ export default function CustomerInvoice() {
                      
                      {/* Employee Information Section */}
                      {order?.created_by && (
-                        <div style={{ borderBottom: "1px solid #ddd", paddingBottom: "1rem", marginBottom: "1rem" }}>
+                        <div style={{ borderBottom: "1px solid #ddd", paddingBottom: "2rem", marginBottom: "1rem" }}>
                            <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>PROCESSED BY</h3>
                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
                               <div>
@@ -256,7 +325,7 @@ export default function CustomerInvoice() {
                      <div>
                         {order && order.shipping_details && order.shipping_details.map((s, index) => (
                            <div key={index}>
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "1rem" }}>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "2rem" }}>
                                  <div>
                                     <p className='flex items-center'><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
                                     <p className='flex items-center'><strong>Commodity : </strong> {s?.commodity?.value || s?.commodity}</p>
@@ -330,7 +399,7 @@ export default function CustomerInvoice() {
                         </table>
                      </div>
 
-                     <p className='mt-8 mb-4'>Please send remittance to - 
+                     <p className='mt-24 pt-24 mb-4'>Please send remittance to - 
                         <a className='text-blue-600' href={`mailto:${company?.remittance_primary_email || company.email || ''}`}>
                            {company?.remittance_primary_email || company.email || ''}
                         </a>
