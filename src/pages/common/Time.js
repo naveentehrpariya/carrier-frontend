@@ -1,7 +1,8 @@
 export default function Time() {
    const customdate = (date) =>{
       if(date){
-         return new Date(date).toLocaleDateString('en-US', {
+         // Use user's local timezone instead of hardcoded 'en-US'
+         return new Date(date).toLocaleDateString(undefined, {
             year: 'numeric',
             month: 'long',
             day: 'numeric',

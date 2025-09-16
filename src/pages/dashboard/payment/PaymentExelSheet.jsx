@@ -20,7 +20,8 @@ export default function PaymentExelSheet({data, type, title}) {
          return "N/A"
       }
       const date = new Date(dateString);
-      let formattedDate =  date.toLocaleString('en-US', {
+      // Use user's local timezone instead of hardcoded 'en-US'
+      let formattedDate =  date.toLocaleString(undefined, {
          year: 'numeric',
          month: 'long',
          day: 'numeric',
@@ -31,7 +32,7 @@ export default function PaymentExelSheet({data, type, title}) {
             minute: 'numeric',
             second: 'numeric',
          };
-         formattedDate += ' ' + date.toLocaleString('en-US', timeOptions);
+         formattedDate += ' ' + date.toLocaleString(undefined, timeOptions);
       }
       return formattedDate;
    }

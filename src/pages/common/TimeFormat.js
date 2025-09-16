@@ -16,7 +16,8 @@ const useHumanReadableDate = (dateString, includeTime) => {
       }),
     };
 
-    const formattedDate = date.toLocaleString('en-US', options);
+    // Use user's local timezone instead of hardcoded 'en-US'
+    const formattedDate = date.toLocaleString(undefined, options);
     setHumanReadableDate(formattedDate);
   }, [dateString, includeTime]);
 
