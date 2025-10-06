@@ -1,83 +1,237 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import loginbg from "../../img/login-bg.png";
 import { UserContext } from "../../context/AuthProvider";
+import { useAuth } from '../../context/MultiTenantAuthProvider';
+import { useMultiTenant } from '../../context/MultiTenantProvider';
 import toast from "react-hot-toast";
 import Logotext from "../common/Logotext";
 import Api from "../../api/Api";
 import CheckLogin from "./CheckLogin";
 
 export default function Login() {
-    const {Errors, login, user, setIsAuthenticated, setUser} = useContext(UserContext);
+    const {Errors, login: legacyLogin, user, setIsAuthenticated, setUser} = useContext(UserContext);
+    const { login: multiTenantLogin, isAuthenticated, loading: authLoading, isSuperAdminUser } = useAuth();
+    const { tenant, isSuperAdmin, tenantLoading } = useMultiTenant();
     function LoginForm(){
-      const inputFields = [
-        { type:"text", name :"corporateID", label: "Corporate ID" },
-        { type:"email", name :"email", label: "Email" },
-        { type:"text", name :"password", label: "Password" },
-      ];
+      const hasNavigated = useRef(false);
+      const navigate = useNavigate();
+      
+      // Get tenant from URL params immediately
+      const getInitialCorporateID = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tenantParam = urlParams.get('tenant');
         
+        if (tenant?.subdomain && !isSuperAdmin) {
+          return tenant.subdomain;
+        } else if (isSuperAdmin) {
+          return "admin";
+        } else if (tenantParam) {
+          return tenantParam;
+        }
+        return "";
+      };
+
       const [data, setData] = useState({
-        corporateID: "",
+        corporateID: getInitialCorporateID(),
         email: "",
         password: "",
       });
+
+      // Check if we have tenant context from URL or system
+      const hasTenantContext = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tenantParam = urlParams.get('tenant');
+        return tenant?.subdomain || isSuperAdmin || tenantParam;
+      };
+
+      const inputFields = [
+        { 
+          type: "text", 
+          name: "corporateID", 
+          label: "Corporate ID",
+          readonly: hasTenantContext(), // Make readonly if tenant detected
+          placeholder: data.corporateID || "Enter Corporate ID"
+        },
+        { type:"email", name :"email", label: "Email" },
+        { type:"text", name :"password", label: "Password" },
+      ];
+
+      // Update corporateID when tenant context changes or from URL params
+      useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const tenantParam = urlParams.get('tenant');
+        
+        setData(prev => {
+          let newCorporateID = prev.corporateID;
+          
+          if (tenant?.subdomain && !isSuperAdmin && prev.corporateID !== tenant.subdomain) {
+            newCorporateID = tenant.subdomain;
+          } else if (isSuperAdmin && prev.corporateID !== "admin") {
+            newCorporateID = "admin";
+          } else if (tenantParam && prev.corporateID !== tenantParam && !tenant?.subdomain && !isSuperAdmin) {
+            newCorporateID = tenantParam;
+          }
+          
+          // Only update if there's an actual change
+          if (newCorporateID !== prev.corporateID) {
+            return { ...prev, corporateID: newCorporateID };
+          }
+          
+          return prev;
+        });
+      }, [tenant?.subdomain, isSuperAdmin]);
 
       const handleinput = (e) => {
         setData({ ...data, [e.target.name]: e.target.value});
       }
 
       const [loading, setLoading] = useState(false);
-      const navigate = useNavigate();
-      function handleLogin(e) {
+      const handleLogin = async (e) => {
         e.preventDefault();
-        if (data.email === "" || data.password === "" || data.corporateID === "") {
-          toast.error("All fields are required.");
-          return false
+        if (data.email === "" || data.password === "") {
+          toast.error("Email and password are required.");
+          return false;
         }
+
         setLoading(true);
-        const resp = Api.post(`/user/login`, data);
-        resp.then((res) => {
-          setLoading(false);
-          if(res.data.status){
-            // if(res.data.user.role !== '1'){
-              toast.success(res.data.message);
-              // Store token in localStorage for persistence
-              localStorage.setItem('token', res.data.token);
-              // Use the login function from AuthProvider
-              login(res.data.user, res.data.company);
-              navigate("/home");
-            // } else {
-            //   toast.error("Invalid credentials. Please try again.");
-            // }
-          } else { 
-            toast.error(res.data.message);
+        
+        try {
+          // Determine if this should be a super admin login
+          const isAttemptingSuperAdmin = isSuperAdmin || data.corporateID === 'admin';
+          
+          const result = await multiTenantLogin(
+            data.email,
+            data.password,
+            isAttemptingSuperAdmin ? null : data.corporateID,
+            isAttemptingSuperAdmin
+          );
+          
+          if (result.success) {
+            console.log('Login result:', result.data);
+            
+            // Check the actual response to determine redirect
+            const { isSuperAdmin: responseIsSuperAdmin } = result.data;
+            
+            if (responseIsSuperAdmin) {
+              console.log('Redirecting to super admin dashboard');
+              navigate('/super-admin');
+            } else {
+              console.log('Redirecting to company dashboard');
+              navigate('/home');
+            }
           }
-        }).catch((err) => {
+        } catch (error) {
+          console.error('Login error:', error);
+        } finally {
           setLoading(false);
-          Errors(err);
-        });
+        }
       }
   
-      useEffect(()=>{
-        if(user && user._id){
+      // Unified authentication navigation check
+      useEffect(() => {
+        // Prevent navigation during loading or if already navigated
+        if (authLoading || hasNavigated.current) {
+          console.log('🚫 Skipping navigation - loading or already navigated:', { authLoading, hasNavigated: hasNavigated.current });
+          return;
+        }
+        
+        console.log('🔍 Navigation check:', {
+          isAuthenticated,
+          user: user?.email,
+          isSuperAdmin,
+          isSuperAdminUser,
+          authLoading
+        });
+        
+        // Only navigate if we have a clear authentication state
+        if (isAuthenticated && user) {
+          hasNavigated.current = true;
+          
+          console.log('✅ User authenticated, determining redirect...');
+          
+          // Check both isSuperAdmin (from URL/context) and isSuperAdminUser (from auth response)
+          if (isSuperAdmin || isSuperAdminUser) {
+            console.log('🔥 Navigating to super admin dashboard');
+            navigate('/super-admin');
+          } else {
+            console.log('🏢 Navigating to company dashboard');
+            navigate('/home');
+          }
+        }
+        // Legacy fallback - only if multi-tenant auth shows no user but legacy auth does
+        else if (user && user._id && !isAuthenticated && !authLoading) {
+          hasNavigated.current = true;
+          console.log('📜 Legacy navigation to /home');
           navigate('/home');
-        } 
-      },[user]);
+        }
+      }, [authLoading, isAuthenticated, user, isSuperAdmin, isSuperAdminUser, navigate]);
+      
+      // Reset navigation flag when authentication state changes
+      useEffect(() => {
+        if (!isAuthenticated && !user) {
+          hasNavigated.current = false;
+        }
+      }, [isAuthenticated, user]);
 
     return (
       <>
       {/* <CheckLogin redirect={true} /> */}
       <form onSubmit={handleLogin} >
           {inputFields.map((field, index) => (
-            <>
-            <label className="mt-4 mb-0 block">{field.label}</label>
-            <input required key={index} name={field.name} onChange={handleinput} type={field.type} placeholder={field.label} className="input" />
-            </>
+            <div key={index}>
+              <label className="mt-4 mb-0 block">
+                {field.label}
+                {field.readonly && (
+                  <span className="ml-2 text-xs text-green-400">(Auto-detected)</span>
+                )}
+              </label>
+              <input 
+                required 
+                name={field.name} 
+                onChange={handleinput} 
+                type={field.type} 
+                placeholder={field.placeholder || field.label}
+                value={data[field.name] || ''}
+                readOnly={field.readonly}
+                className={`input ${field.readonly ? 'bg-gray-700 cursor-not-allowed' : ''}`}
+              />
+            </div>
           ))}
           <div className="mt-2 flex justify-center lg:justify-start">
             <button type="submit" onClick={handleLogin} className="btn md mt-6 px-[50px] w-full lg:w-auto main-btn text-black font-bold">{loading ? "Logging in..." : "Submit"}</button>
           </div>
         </form>
+        
+        {/* Login Help Section */}
+        <div className="mt-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
+          <div className="text-sm text-gray-300">
+            <p className="font-semibold text-white mb-2">
+              {isSuperAdmin ? '🔥 Super Admin Access' : 
+               tenant ? `🏢 ${tenant.name || tenant.subdomain} Portal` : 
+               '🏢 Multi-Tenant Login'}
+            </p>
+            
+            {isSuperAdmin ? (
+              <div className="space-y-1">
+                <p><strong>Corporate ID:</strong> admin</p>
+                <p><strong>Demo:</strong> admin@gmail.com / 12345678</p>
+                <p className="text-red-400 text-xs">⚠️ System-wide access</p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <p><strong>Corporate ID:</strong> {tenant?.subdomain || 'your-company-id'}</p>
+                <p><strong>Admin:</strong> admin@{tenant?.subdomain || 'company'}.com / password123</p>
+                <p><strong>User:</strong> user@{tenant?.subdomain || 'company'}.com / password123</p>
+                {!tenant && (
+                  <p className="text-blue-400 text-xs">
+                    💡 Access via: abc.company.com or localhost:3000?tenant=abc
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
       </>
     );
     }

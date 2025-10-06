@@ -3,10 +3,21 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import PrivateRoute from './components/PrivateRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
+import SuperAdminRoute from './components/SuperAdminRoute';
+import DashboardRouter from './components/DashboardRouter';
+import MultiTenantProvider from './context/MultiTenantProvider';
+import MultiTenantAuthProvider from './context/MultiTenantAuthProvider';
 import UserContextProvider from './context/AuthProvider';
 import Error404 from './404';
 import Overview from './pages/dashboard/Overview';
 import Login from './pages/auth/LogIn';
+import MultiTenantLogin from './pages/auth/MultiTenantLogin';
+import SuperAdminLogin from './pages/auth/SuperAdminLogin';
+import TenantDashboard from './pages/tenant-admin/TenantDashboard';
+import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard';
+import AllTenantsManagement from './pages/super-admin/AllTenantsManagement';
+import AddNewTenant from './pages/super-admin/AddNewTenant';
+import AuthDebug from './pages/debug/AuthDebug';
 import Carriers from './pages/dashboard/carrier/Carriers';
 import Customers from './pages/dashboard/customer/Customers';
 import Orders from './pages/dashboard/order/Orders';
@@ -23,19 +34,73 @@ import PaymentLists from './pages/dashboard/payment/PaymentLists';
 import CarrierDetail from './pages/dashboard/carrier/CarrierDetail';
 import EmployeeDetail from './pages/dashboard/employees/EmployeeDetail';
 import Unauthorized from './components/Unauthorized';
+import SuperAdminProfile from './pages/super-admin/SuperAdminProfile';
+import UserProfile from './pages/tenant-admin/UserProfile';
 
 function App() {
   return (
-    <UserContextProvider>
+    <MultiTenantProvider>
+      <MultiTenantAuthProvider>
+        <UserContextProvider>
         <div className="App">
               <BrowserRouter>
                 <div className="routes">
                   <Routes>
                     {/* Public routes */}
                     <Route path="/login" element={<Login />} />
+                    <Route path="/multitenant-login" element={<MultiTenantLogin />} />
+                    <Route path="/super-admin/login" element={<SuperAdminLogin />} />
                     <Route path="/" element={<Login />} />
+                    <Route path="/debug-auth" element={<AuthDebug />} />
+
+                    {/* Tenant Admin Dashboard - Now unified with regular employee dashboard */}
+                    <Route path="/tenant-admin" element={
+                      <RoleBasedRoute allowedRoles={[3]}>
+                        <TenantDashboard />
+                      </RoleBasedRoute>
+                    } />
+                    
+                    {/* User Profile */}
+                    <Route path="/profile" element={
+                      <PrivateRoute>
+                        <UserProfile />
+                      </PrivateRoute>
+                    } />
+
+                    {/* Super Admin Dashboard */}
+                    <Route path="/super-admin" element={
+                      <SuperAdminRoute>
+                        <SuperAdminDashboard />
+                      </SuperAdminRoute>
+                    } />
+                    
+                    {/* All Tenants Management */}
+                    <Route path="/super-admin/tenants" element={
+                      <SuperAdminRoute>
+                        <AllTenantsManagement />
+                      </SuperAdminRoute>
+                    } />
+                    
+                    /* Add New Tenant */
+                    <Route path="/super-admin/add-tenant" element={
+                      <SuperAdminRoute>
+                        <AddNewTenant />
+                      </SuperAdminRoute>
+                    } />
+                    
+                    {/* Super Admin Profile */}
+                    <Route path="/super-admin/profile" element={
+                      <SuperAdminRoute>
+                        <SuperAdminProfile />
+                      </SuperAdminRoute>
+                    } />
  
                     <Route path="/home" element={
+                      <PrivateRoute>
+                        <DashboardRouter />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/overview" element={
                       <PrivateRoute>
                         <Overview />
                       </PrivateRoute>
@@ -151,7 +216,9 @@ function App() {
                 }}
               />
         </div>
-    </UserContextProvider>
+        </UserContextProvider>
+      </MultiTenantAuthProvider>
+    </MultiTenantProvider>
   );
 }
 

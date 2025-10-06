@@ -2,6 +2,7 @@ import * as React from "react";
 import CheckLogin from "../pages/auth/CheckLogin";
 import Logo from "../pages/common/Logo";
 import { UserContext } from "../context/AuthProvider";
+import { useAuth } from "../context/MultiTenantAuthProvider";
 import TimeCounter from "../pages/common/TimeCounter";
 import {Helmet} from "react-helmet";
 import Sidebar from "./Sidebar";
@@ -13,10 +14,21 @@ import { TbLogout } from "react-icons/tb";
 export default function AuthLayout({children, heading}) {
 
   const {user} = React.useContext(UserContext);
+  const { user: multiTenantUser, logout: multiTenantLogout } = useAuth();
+  
+  // Use multi-tenant user if available, fallback to legacy user
+  const currentUser = multiTenantUser || user;
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    window.location.href = "/login";
+  const handleLogout = async () => {
+    console.log('🎯 AuthLayout logout clicked');
+    if (multiTenantLogout) {
+      console.log('🎤 Using multiTenantLogout in AuthLayout');
+      await multiTenantLogout();
+    } else {
+      console.log('🔄 Using legacy logout in AuthLayout');
+      localStorage.removeItem("token");
+      window.location.href = "/login";
+    }
   };
   
   // const [windowWidth, setWindowWidth] = React.useState(window && window.innerWidth);
@@ -38,14 +50,14 @@ export default function AuthLayout({children, heading}) {
   }
 
   const roleChecker = () =>{
-    if(user?.role === 1){
-      return user?.position ||'Employee'
+    if(currentUser?.role === 1){
+      return currentUser?.position ||'Employee'
     }
-    else if(user?.role === 2){
-      return user?.position ||'Accountant'
+    else if(currentUser?.role === 2){
+      return currentUser?.position ||'Accountant'
     }
-    else if(user?.role === 3){
-      return user?.position ||'Adminstrator'
+    else if(currentUser?.role === 3){
+      return currentUser?.position ||'Adminstrator'
     }
   }
   return (
@@ -66,11 +78,11 @@ export default function AuthLayout({children, heading}) {
               <div className="hidden md:flex items-center">
                 <div><HiOutlineUserCircle color="white"  size='2.5rem'/></div>
                 <div className="text-start me-4 ps-2">
-                  <h2 className="capitalize font-bold text-white">{user?.name}</h2>
+                  <h2 className="capitalize font-bold text-white">{currentUser?.name}</h2>
                   <p className="capitalize text-sm mt-[-3px] text-gray-400">{roleChecker()}</p>
                 </div>
               </div>
-              <button className="hidden md:flex" onClick={logout} ><TbLogout color="#fff" className='me-2' size={'2rem'} /></button>
+              <button className="hidden md:flex" onClick={handleLogout} ><TbLogout color="#fff" className='me-2' size={'2rem'} /></button>
               
               <button onClick={showSidebar} className="sidebar-toggle text-base leading-6 whitespace-nowrap text-neutral-400">
                 <span className="" ></span>
@@ -82,7 +94,7 @@ export default function AuthLayout({children, heading}) {
             
           </header>
           <div className="flex w-full overflow-hidden">
-            <Sidebar  logout={logout}  toggle={toggle} />
+            <Sidebar  logout={handleLogout}  toggle={toggle} />
             <div className="content md:max-h-[100vh] overflow-y-auto lg:w-[calc(100%-300px)] p-6 md:p-8 !pt-[120px]   lg:!pt-[150px] w-full" >
                 {children} 
             </div>

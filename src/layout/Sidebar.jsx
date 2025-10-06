@@ -8,42 +8,67 @@ import { VscGraphLine } from "react-icons/vsc";
 import { FaUsers } from "react-icons/fa";
 import { MdOutlineLogout } from "react-icons/md";
 import { UserContext } from '../context/AuthProvider';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { useAuth } from '../context/MultiTenantAuthProvider';
+import { useMultiTenant } from '../context/MultiTenantProvider';
+import { useLocation } from 'react-router-dom';
 import { TbListDetails } from "react-icons/tb";
 import { MdOutlineDocumentScanner } from "react-icons/md";
 import { IoMdAddCircle } from "react-icons/io";
- import { HiOutlineUserCircle } from "react-icons/hi2";
+import { HiOutlineUserCircle } from "react-icons/hi2";
+import { FaCrown } from "react-icons/fa";
+import { MdAdminPanelSettings } from "react-icons/md";
+import { BsPersonGear } from "react-icons/bs";
 import Api from '../api/Api';
 
 export default function Sidebar({toggle}) {
 
   const location = useLocation();
   const {user}  = useContext(UserContext);
+  const { user: multiTenantUser, logout: multiTenantLogout } = useAuth();
+  const { isSuperAdmin, tenant } = useMultiTenant();
+  
+  // Use multi-tenant user if available, fallback to legacy user
+  const currentUser = multiTenantUser || user;
 
-  const logout = () => {
-    Api.get('/user/logout')
-      .then((res) => {
+  const handleLogout = async () => {
+    console.log('💲 Logout button clicked');
+    console.log('🔍 Available logout function:', !!multiTenantLogout);
+    
+    if (multiTenantLogout) {
+      console.log('🎤 Using multiTenantLogout');
+      await multiTenantLogout();
+    } else {
+      console.log('🔄 Using fallback legacy logout');
+      // Fallback to legacy logout
+      try {
+        const res = await Api.get('/user/logout');
         if(res.data.status){
           localStorage.removeItem("token");
           window.location.href = "/login";
         } else {
           console.error("Logout failed:", res.data.message);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         console.error("Logout error:", err);
-      });
+        // Force redirect even if API fails
+        localStorage.clear();
+        window.location.href = "/login";
+      }
+    }
   }
 
   const roleChecker = () =>{
-    if(user?.role === 1){
-      return user?.position ||'Employee'
+    if (isSuperAdmin) {
+      return 'Super Administrator';
     }
-    else if(user?.role === 2){
-      return user?.position ||'Accountant'
+    if(currentUser?.role === 1){
+      return currentUser?.position ||'Employee'
     }
-    else if(user?.role === 3){
-      return user?.position ||'Adminstrator'
+    else if(currentUser?.role === 2){
+      return currentUser?.position ||'Accountant'
+    }
+    else if(currentUser?.role === 3){
+      return currentUser?.position ||'Adminstrator'
     }
   }
 
@@ -55,7 +80,7 @@ export default function Sidebar({toggle}) {
         <div className=" flex md:hidden items-center mb-8">
           <div><HiOutlineUserCircle color="white"  size='2.5rem'/></div>
           <div className="text-start me-4 ps-2">
-            <h2 className="capitalize font-bold text-white">{user?.name}</h2>
+            <h2 className="capitalize font-bold text-white">{currentUser?.name}</h2>
             <p className="capitalize text-sm mt-[-3px] text-gray-400">{roleChecker()}</p>
           </div>
         </div>
@@ -64,9 +89,33 @@ export default function Sidebar({toggle}) {
           <li>
             <Link className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${location.pathname === '/home' || location.pathname === '/' ? "bg-main !text-black hover:!text-white" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/home'} ><MdOutlineSpaceDashboard className='me-2' size={'1.4rem'} /> Dashboard 
             </Link>
-          </li> 
+          </li>
 
-          {user?.is_admin === 1 || user?.role === 1 ? 
+          {/* Super Admin Dashboard Link */}
+          {isSuperAdmin && (
+            <li>
+              <Link className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${location.pathname === '/super-admin' ? "bg-main !text-black hover:!text-white" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/super-admin'} ><FaCrown className='me-2' size={'1.4rem'} /> Super Admin
+              </Link>
+            </li>
+          )}
+
+          {/* Super Admin Profile Link */}
+          {isSuperAdmin && (
+            <li>
+              <Link className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${location.pathname === '/super-admin/profile' ? "bg-main !text-black hover:!text-white" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/super-admin/profile'} ><BsPersonGear className='me-2' size={'1.4rem'} /> Profile Settings
+              </Link>
+            </li>
+          )}
+
+          {/* Tenant Admin Dashboard Link */}
+          {currentUser?.role === 3 && tenant && !isSuperAdmin && (
+            <li>
+              <Link className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${location.pathname === '/tenant-admin' ? "bg-main !text-black hover:!text-white" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/tenant-admin'} ><MdAdminPanelSettings className='me-2' size={'1.4rem'} /> Tenant Admin
+              </Link>
+            </li>
+          )}
+
+          {currentUser?.is_admin === 1 || currentUser?.role === 1 || currentUser?.role === 3 ?
           <>
             <li>
               <Link className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${location.pathname === '/order/add' ? "bg-main !text-black hover:!text-white" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/order/add'} ><IoMdAddCircle className='me-2' size={'1.4rem'} /> Add New Order 
@@ -85,9 +134,9 @@ export default function Sidebar({toggle}) {
             </Link>
             </li>
           </>
-          : "" } 
+          : "" }
 
-          {user?.is_admin === 1  ?
+          {currentUser?.is_admin === 1 || currentUser?.role === 3 ?
           <>
             <li>
               <Link className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${location.pathname === '/employees' ? "bg-main !text-black hover:!text-white" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/employees'} ><FaUsers className='me-2' size={'1.4rem'} />Employees 
@@ -101,22 +150,30 @@ export default function Sidebar({toggle}) {
           : ''
           }
 
-          {user?.is_admin === 1 || user?.role === 2 ?
+          {currentUser?.is_admin === 1 || currentUser?.role === 2 || currentUser?.role === 3 ?
             <li>
               <Link className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${location.pathname === '/accounts/orders' ? "bg-main !text-black hover:!text-white" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/accounts/orders'} ><VscGraphLine className='me-2' size={'1.4rem'} /> Accounting 
-            </Link>
+              </Link>
             </li> 
           : "" }
 
-          {user?.role === 3 ?
+          {currentUser?.role === 3 ?
             <li>
               <Link className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${location.pathname === '/company/details' ? "bg-main !text-black hover:!text-white" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/company/details'} ><TbListDetails className='me-2' size={'1.4rem'} /> Company Details 
             </Link>
             </li> 
           : "" }
+          
+          {/* User Profile Link - visible to all authenticated users except super admin */}
+          {currentUser && !isSuperAdmin && (
+            <li>
+              <Link className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${location.pathname === '/profile' ? "bg-main !text-black hover:!text-white" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/profile'} ><BsPersonGear className='me-2' size={'1.4rem'} /> Profile Settings
+            </Link>
+            </li>
+          )}
         
           <li>
-            <button className='hover:!bg-[#131313] hover:text-white focus:!text-white text-gray-200 w-full mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' onClick={logout} ><MdOutlineLogout className='me-2' size={'1.4rem'} /> Logout 
+            <button className='hover:!bg-[#131313] hover:text-white focus:!text-white text-gray-200 w-full mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' onClick={handleLogout} ><MdOutlineLogout className='me-2' size={'1.4rem'} /> Logout
             </button>
           </li>
         </ul>

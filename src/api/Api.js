@@ -10,12 +10,13 @@ function getToken(){
 
 let Api = axios.create({
   baseURL: host === 'localhost:3000' ? 'http://localhost:8080' : APP_URL,
+  withCredentials: true, // Enable cookies for authentication
   headers: {
     'Accept': 'application/json',
     'Authorization': `Bearer ${getToken()}`,
     'Access-Control-Allow-Origin': '*'
   }
-}); 
+});
 
 Api.interceptors.request.use(
   async (config) => {

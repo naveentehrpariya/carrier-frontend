@@ -1,9 +1,9 @@
-import React, { useContext } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { UserContext } from '../context/AuthProvider';
+import { useAuth } from '../context/MultiTenantAuthProvider';
 
 const PrivateRoute = ({ children, requiredPermission = null, requiredRole = null }) => {
-  const { isAuthenticated, user, loading } = useContext(UserContext);
+  const { isAuthenticated, user, loading, hasPermission } = useAuth();
 
   // Show loading while checking authentication status
   if (loading) {
@@ -14,21 +14,18 @@ const PrivateRoute = ({ children, requiredPermission = null, requiredRole = null
     );
   }
 
-  // // Redirect to login if not authenticated
-  // if (!isAuthenticated || !user) {
-  //   return <Navigate to="/login" replace />;
-  // }
+  // Redirect to login if not authenticated
+  if (!isAuthenticated || !user) {
+    return <Navigate to="/login" replace />;
+  }
 
   // Check role-based access if requiredRole is specified
   if (requiredRole && user.role !== requiredRole) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  if (requiredPermission) {
-    const userPermissions = user.permissions || [];
-    if (!userPermissions.includes(requiredPermission)) {
-      return <Navigate to="/unauthorized" replace />;
-    }
+  if (requiredPermission && !hasPermission(requiredPermission)) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
   // User is authenticated and has required permissions, render the component
