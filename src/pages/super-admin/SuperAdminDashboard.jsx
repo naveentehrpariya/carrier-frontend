@@ -3,14 +3,9 @@ import {
   BuildingOfficeIcon,
   UsersIcon,
   ChartBarIcon,
-  CogIcon,
-  PlusIcon,
-  EyeIcon,
   CheckCircleIcon,
   XCircleIcon,
   ExclamationTriangleIcon,
-  ArrowRightOnRectangleIcon,
-  UserCircleIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../../context/MultiTenantAuthProvider';
@@ -18,6 +13,7 @@ import { useMultiTenant } from '../../context/MultiTenantProvider';
 import Api from '../../api/Api';
 import TenantManagement from '../../components/TenantManagement';
 import SuperAdminLayout from '../../layout/SuperAdminLayout';
+import Loader from '../../components/Loader';
 
 export default function SuperAdminDashboard() {
   const [dashboardData, setDashboardData] = useState(null);
@@ -29,25 +25,17 @@ export default function SuperAdminDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
-  }, [selectedPeriod]); // fetchDashboardData is stable and doesn't need to be in deps
+  }, [selectedPeriod]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
 
-      console.log('📊 SuperAdmin Dashboard: Fetching dashboard data...');
       const [overview, analytics, tenants] = await Promise.all([
         Api.get('/api/super-admin/overview'),
         Api.get(`/api/super-admin/analytics?period=${selectedPeriod}`),
         Api.get('/api/super-admin/tenants?limit=10')
       ]);
-
-      console.log('📊 Dashboard Overview Response:', overview.data);
-      console.log('📊 Dashboard Analytics Response:', analytics.data);
-      console.log('📊 Dashboard Tenants Response:', tenants.data);
-      console.log('📊 Tenants data type:', typeof tenants.data.data);
-      console.log('📊 Tenants data array check:', Array.isArray(tenants.data.data));
-      console.log('📊 Tenants data content:', tenants.data.data);
 
       // Parse API responses more flexibly
       const parsedData = {
@@ -56,7 +44,6 @@ export default function SuperAdminDashboard() {
         tenants: tenants.data?.data || tenants.data?.tenants || tenants.data || []
       };
       
-      console.log('🔧 Parsed dashboard data:', parsedData);
       setDashboardData(parsedData);
 
     } catch (error) {
@@ -112,7 +99,6 @@ export default function SuperAdminDashboard() {
     let loadingToast = null;
     
     try {
-      // Handle different tenant ID field names
       const tenantId = tenant.tenantId || tenant._id || tenant.id;
       
       if (!tenant) {
@@ -121,10 +107,8 @@ export default function SuperAdminDashboard() {
         return;
       }
       
-      // If no tenantId, try to use subdomain to find the tenant
       if (!tenantId && tenant.subdomain) {
         console.log('No tenantId found, trying to use subdomain:', tenant.subdomain);
-        // For now, just navigate directly using subdomain
         navigateToTenant(tenant.subdomain);
         return;
       }
@@ -140,12 +124,8 @@ export default function SuperAdminDashboard() {
         return;
       }
       
-      // Debug current authentication state
-      console.log('=== DEBUG: Before emulation ===');
-      console.log('Tenant to emulate:', tenant);
       debugAuth();
       
-      // Show loading toast only when actually accessing tenant
       loadingToast = toast.loading(`Accessing ${tenant.name} environment...`, { duration: 3000 });
       
       // Use emulation API to properly authenticate and navigate
@@ -168,14 +148,7 @@ export default function SuperAdminDashboard() {
       toast.error('Failed to access tenant environment');
     }
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-red-600"></div>
-      </div>
-    );
-  }
+ 
 
   const { overview, analytics, tenants } = dashboardData || {};
 
@@ -200,6 +173,10 @@ export default function SuperAdminDashboard() {
 
   return (
     <SuperAdminLayout heading="Super Admin Dashboard">
+
+      {loading ?
+      <Loader /> : ''
+      }
       {/* Dashboard Header */}
       <div className="md:flex justify-between items-center mb-6">
         <div>

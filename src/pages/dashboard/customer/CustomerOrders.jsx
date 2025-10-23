@@ -114,7 +114,7 @@ export default function CustomerOrders({isRecent, customerID, customer, carrier,
                                  <th className='p-2 border border-gray-700  text-start'>Amount</th>
                                  <th className='p-2 border border-gray-700  text-start'>Status</th>
                                  <th className='p-2 border border-gray-700  text-start'>Method</th>
-                                 <th className='p-2 border border-gray-700  text-start'>Note</th>
+                                 <th className='p-2 border border-gray-700  text-start'>Payment Date</th>
                               </tr>
                            </thead>
                               {lists.map((item, index) => {
@@ -125,7 +125,7 @@ export default function CustomerOrders({isRecent, customerID, customer, carrier,
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start'><Currency amount={item?.total_amount} currency={item?.revenue_currency || 'cad'} /></td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start '> <Badge title={true} status={item?.customer_payment_status} text={``} /></td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start'>{item.customer_payment_method || 'N/A'}</td>
-                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'>{item?.customer_payment_date ? <TimeFormat date={item?.customer_payment_date || "--"} /> : 'N/A'}</td>
+                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'>{item?.customer_payment_date ? <TimeFormat date={item?.customer_payment_date || "--"} /> : '- - -'}</td>
                                     </tr>
                                  )
                               })}

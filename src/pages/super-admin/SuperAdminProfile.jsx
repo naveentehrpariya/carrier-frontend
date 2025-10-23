@@ -169,14 +169,14 @@ export default function SuperAdminProfile() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Profile Information */}
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg">
+                    <div className="bg-dark3 border border-gray-700 rounded-[30px] shadow-lg">
                         <div className="p-6">
                             <div className="flex items-center mb-6">
                                 <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                                    <span className="text-white font-bold text-xl">
+                                    <span className="text-white font-bold text-xl capitalize">
                                         {user.name ? user.name.charAt(0).toUpperCase() : 'SA'}
                                     </span>
-                                </div>
+                                </div> 
                                 <div className="ml-4">
                                     <h2 className="text-xl font-semibold text-white">
                                         {user.name || 'Super Admin'}
@@ -208,7 +208,7 @@ export default function SuperAdminProfile() {
                     </div>
 
                     {/* Update Email */}
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg">
+                    <div className="bg-dark3 border border-gray-700 rounded-[30px] shadow-lg">
                         <div className="p-6">
                             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                                 <svg className="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,7 +247,7 @@ export default function SuperAdminProfile() {
 
                 {/* Update Password */}
                 <div className="mt-8">
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg">
+                    <div className="bg-dark3 border border-gray-700 rounded-[30px] shadow-lg">
                         <div className="p-6">
                             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                                 <svg className="w-5 h-5 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -16,7 +16,6 @@ export default function SuperAdminSidebar({ toggle, logout }) {
         id='super-admin-sidebar' 
         className='mobilesidebar sticky top-0 pt-[140px] p-8 bg-dark border-r max-h-[100vh] overflow-auto pb-22 w-full max-w-[300px] min-w-[300px] border-gray-800'
       >
-        {/* Mobile User Info */}
         <div className="flex md:hidden items-center mb-8">
           <div><HiOutlineUserCircle color="white" size='2.5rem'/></div>
           <div className="text-start me-4 ps-2">
@@ -26,7 +25,6 @@ export default function SuperAdminSidebar({ toggle, logout }) {
         </div>
 
         <ul>
-          {/* Super Admin Dashboard */}
           <li>
             <Link 
               className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${
@@ -38,7 +36,6 @@ export default function SuperAdminSidebar({ toggle, logout }) {
             </Link>
           </li>
 
-          {/* All Tenants Management */}
           <li>
             <Link 
               className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${
@@ -50,7 +47,6 @@ export default function SuperAdminSidebar({ toggle, logout }) {
             </Link>
           </li>
 
-          {/* Add New Tenant */}
           <li>
             <Link 
               className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${
@@ -62,7 +58,6 @@ export default function SuperAdminSidebar({ toggle, logout }) {
             </Link>
           </li>
 
-          {/* Logout */}
           <li>
             <button 
               className='hover:!bg-[#131313] hover:text-white focus:!text-white text-gray-200 w-full mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl bg-dark flex items-center' 

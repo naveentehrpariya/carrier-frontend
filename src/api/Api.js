@@ -1,6 +1,5 @@
 import axios from 'axios';
-// const APP_URL = process.env.APP_URL || "https://carrier-backend-drab.vercel.app/";
-const APP_URL = "https://logistikore.com/api";
+const APP_URL = process.env.APP_URL;
 const host = window.location.host;
 
 function getToken(){
@@ -9,7 +8,7 @@ function getToken(){
 }
 
 let Api = axios.create({
-  baseURL: host === 'localhost:3000' ? 'http://localhost:8080' : APP_URL,
+  baseURL: APP_URL ? APP_URL : 'http://localhost:8080',
   withCredentials: true, // Enable cookies for authentication
   headers: {
     'Accept': 'application/json',

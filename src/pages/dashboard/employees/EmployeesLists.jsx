@@ -57,6 +57,7 @@ export default function EmployeesLists() {
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Corporate ID</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Address</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone/Email</th>
+                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Documents</th>
                   <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
                </tr>
                {lists && lists.map((c, index) => {

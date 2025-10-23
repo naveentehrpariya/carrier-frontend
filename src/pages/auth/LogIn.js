@@ -61,10 +61,8 @@ export default function Login() {
       useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const tenantParam = urlParams.get('tenant');
-        
         setData(prev => {
           let newCorporateID = prev.corporateID;
-          
           if (tenant?.subdomain && !isSuperAdmin && prev.corporateID !== tenant.subdomain) {
             newCorporateID = tenant.subdomain;
           } else if (isSuperAdmin && prev.corporateID !== "admin") {
@@ -72,12 +70,9 @@ export default function Login() {
           } else if (tenantParam && prev.corporateID !== tenantParam && !tenant?.subdomain && !isSuperAdmin) {
             newCorporateID = tenantParam;
           }
-          
-          // Only update if there's an actual change
           if (newCorporateID !== prev.corporateID) {
             return { ...prev, corporateID: newCorporateID };
           }
-          
           return prev;
         });
       }, [tenant?.subdomain, isSuperAdmin]);
@@ -93,30 +88,24 @@ export default function Login() {
           toast.error("Email and password are required.");
           return false;
         }
-
         setLoading(true);
-        
         try {
-          // Determine if this should be a super admin login
           const isAttemptingSuperAdmin = isSuperAdmin || data.corporateID === 'admin';
-          
           const result = await multiTenantLogin(
             data.email,
             data.password,
             isAttemptingSuperAdmin ? null : data.corporateID,
             isAttemptingSuperAdmin
           );
-          
           if (result.success) {
             console.log('Login result:', result.data);
-            
-            // Check the actual response to determine redirect
             const { isSuperAdmin: responseIsSuperAdmin } = result.data;
-            
             if (responseIsSuperAdmin) {
+              toast.success('Redirecting to super admin dashboard');
               console.log('Redirecting to super admin dashboard');
               navigate('/super-admin');
             } else {
+              toast.success('Redirecting to company dashboard');
               console.log('Redirecting to company dashboard');
               navigate('/home');
             }
@@ -143,8 +132,6 @@ export default function Login() {
           isSuperAdminUser,
           authLoading
         });
-        
-        // Only navigate if we have a clear authentication state
         if (isAuthenticated && user) {
           hasNavigated.current = true;
           
@@ -152,9 +139,11 @@ export default function Login() {
           
           // Check both isSuperAdmin (from URL/context) and isSuperAdminUser (from auth response)
           if (isSuperAdmin || isSuperAdminUser) {
+            toast.success('🔥 Navigating to super admin dashboard');
             console.log('🔥 Navigating to super admin dashboard');
             navigate('/super-admin');
           } else {
+            toast.success('🏢 Navigating to company dashboard');
             console.log('🏢 Navigating to company dashboard');
             navigate('/home');
           }
@@ -204,7 +193,7 @@ export default function Login() {
         </form>
         
         {/* Login Help Section */}
-        <div className="mt-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
+        {/* <div className="mt-6 p-4 bg-gray-800 rounded-lg border border-gray-700">
           <div className="text-sm text-gray-300">
             <p className="font-semibold text-white mb-2">
               {isSuperAdmin ? '🔥 Super Admin Access' : 
@@ -231,7 +220,7 @@ export default function Login() {
               </div>
             )}
           </div>
-        </div>
+        </div> */}
       </>
     );
     }

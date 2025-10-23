@@ -169,22 +169,22 @@ export default function UserProfile() {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Profile Information */}
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg">
+                    <div className="bg-dark border border-gray-700 rounded-[30px] shadow-lg">
                         <div className="p-6">
                             <div className="flex items-center mb-6">
-                                <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center">
-                                    <span className="text-white font-bold text-xl">
+                                <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-[15px] md:rounded-[20px] flex items-center justify-center">
+                                    <span className="capitalize text-white font-bold text-xl">
                                         {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
                                     </span>
                                 </div>
                                 <div className="ml-4">
-                                    <h2 className="text-xl font-semibold text-white">
+                                    <h2 className="text-md font-semibold text-white capitalize">
                                         {user.name || 'User'}
                                     </h2>
-                                    <p className="text-gray-400">
+                                    <p className="text-gray-400 text-sm my-1">
                                         {user.email}
                                     </p>
-                                    <span className="inline-block px-2 py-1 bg-blue-600 text-blue-100 text-xs rounded-full mt-1">
+                                    <span className="inline-block px-2 py-1 bg-blue-600 text-blue-100 text-[10px] rounded-full mt-1">
                                         {user.is_admin ? 'Tenant Admin' : 'User'}
                                     </span>
                                 </div>
@@ -220,7 +220,7 @@ export default function UserProfile() {
                     </div>
 
                     {/* Update Email */}
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg">
+                    <div className="bg-dark border border-gray-700 rounded-[30px] shadow-lg">
                         <div className="p-6">
                             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                                 <svg className="w-5 h-5 mr-2 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -231,7 +231,7 @@ export default function UserProfile() {
                             
                             <form onSubmit={handleUpdateEmail} className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                                    <label className="block text-sm font-medium text-gray-300 mb-1">
                                         Email Address
                                     </label>
                                     <input
@@ -239,7 +239,7 @@ export default function UserProfile() {
                                         name="email"
                                         value={emailForm.email}
                                         onChange={handleEmailChange}
-                                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                        className="input-sm"
                                         placeholder="Enter new email address"
                                         required
                                     />
@@ -248,7 +248,7 @@ export default function UserProfile() {
                                 <button
                                     type="submit"
                                     disabled={emailLoading}
-                                    className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors duration-200"
+                                    className="btn sm text-black m-auto"
                                 >
                                     {emailLoading ? 'Updating...' : 'Update Email'}
                                 </button>
@@ -259,7 +259,7 @@ export default function UserProfile() {
 
                 {/* Update Password */}
                 <div className="mt-8">
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-lg">
+                    <div className="bg-dark border border-gray-700 rounded-[30px] shadow-lg">
                         <div className="p-6">
                             <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                                 <svg className="w-5 h-5 mr-2 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -271,7 +271,7 @@ export default function UserProfile() {
                             <form onSubmit={handleUpdatePassword}>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        <label className="block text-sm font-medium text-gray-300 mb-1">
                                             New Password
                                         </label>
                                         <input
@@ -279,18 +279,18 @@ export default function UserProfile() {
                                             name="password"
                                             value={passwordForm.password}
                                             onChange={handlePasswordChange}
-                                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                                            className="input-sm"
                                             placeholder="Enter new password"
                                             minLength="8"
                                             required
                                         />
-                                        <p className="text-xs text-gray-400 mt-1">
+                                        <p className="text-xs  text-gray-400 mt-2">
                                             Password must be at least 8 characters long
                                         </p>
                                     </div>
                                     
                                     <div className="md:col-span-2">
-                                        <label className="block text-sm font-medium text-gray-300 mb-2">
+                                        <label className="block text-sm font-medium text-gray-300 mb-1">
                                             Confirm New Password
                                         </label>
                                         <input
@@ -298,7 +298,7 @@ export default function UserProfile() {
                                             name="confirmPassword"
                                             value={passwordForm.confirmPassword}
                                             onChange={handlePasswordChange}
-                                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                                            className="input-sm"
                                             placeholder="Confirm new password"
                                             required
                                         />
@@ -308,7 +308,7 @@ export default function UserProfile() {
                                         <button
                                             type="submit"
                                             disabled={passwordLoading}
-                                            className="px-6 py-2 bg-yellow-600 hover:bg-yellow-700 disabled:bg-yellow-800 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors duration-200"
+                                            className="btn text-black"
                                         >
                                             {passwordLoading ? 'Updating...' : 'Update Password'}
                                         </button>

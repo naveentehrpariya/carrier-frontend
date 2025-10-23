@@ -1,8 +1,7 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import Popup from '../../common/Popup';
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-import Currency from '../../common/Currency';
 
 export default function OrderExel({data, text, orderStatus}) {
     

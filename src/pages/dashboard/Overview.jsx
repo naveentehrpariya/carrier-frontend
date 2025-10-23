@@ -26,14 +26,16 @@ export default function Overview() {
   const [adminData, setAdminData] = useState(null);
   const [carriersData, setCarriersData] = useState([]);
   const [customersData, setCustomersData] = useState([]);
-  
+  const [topListLoading,setTopListLoading] = useState(true);
   useEffect(() => { 
     // Fetch regular overview data
     Api.get('/overview').then((res) => {
       if (res.data.status === true) {
         setLists(res.data.lists);
+        setTopListLoading(false)
       }
     }).catch((err) => {
+      setTopListLoading(false)
       console.log(err);
     });
     
@@ -43,16 +45,18 @@ export default function Overview() {
         Api.get('/api/tenant-admin/info').catch(() => ({ data: { data: null } })),
         Api.get('/api/tenant-admin/analytics?period=30d').catch(() => ({ data: { data: null } })),
         Api.get('/api/tenant-admin/usage').catch(() => ({ data: { data: null } })),
-        Api.get('/carriers').catch(() => ({ data: { carriers: [] } })),
-        Api.get('/customers').catch(() => ({ data: { customers: [] } }))
-      ]).then(([tenantInfo, analytics, usage, carriers, customers]) => {
+        // Api.get('/carriers').catch(() => ({ data: { carriers: [] } })),
+        // Api.get('/customers').catch(() => ({ data: { customers: [] } }))
+      ]).then(([tenantInfo, analytics, usage,
+        //  carriers, customers
+        ]) => {
         setAdminData({
           tenantInfo: tenantInfo.data.data,
           analytics: analytics.data.data,
           usage: usage.data.data
         });
-        setCarriersData(carriers.data.carriers || carriers.data.lists || []);
-        setCustomersData(customers.data.customers || customers.data.lists || []);
+        // setCarriersData(carriers.data.carriers || carriers.data.lists || []);
+        // setCustomersData(customers.data.customers || customers.data.lists || []);
       }).catch((err) => {
         console.log('Admin data fetch error:', err);
       });
@@ -61,7 +65,7 @@ export default function Overview() {
 
   return (
       <AuthLayout> 
-         <h2 className='text-gray-200 font-bold text-2xl md:text-3xl lg:text-4xl mb-8'>
+         <h2 className='text-gray-200 font-bold text-2xl md:text-3xl lg:text-4xl mb-4'>
            Welcome to {currentUser?.company?.name || tenant?.name}
            {isAdmin && <span className='text-lg text-blue-400 ml-2'>(Admin)</span>}
          </h2>
@@ -80,22 +84,37 @@ export default function Overview() {
 
          </div>
          <div className='total-leads mt-4 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'>
-            {lists && lists.map((item, index) => {
-               return <>
-               <Link to={item.link} className={`hover:!bg-[#131313] hover:border-gray-800 lead border border-gray-700 rounded-[30px] p-[20px] md:p-[25px]`}>
-                  <h2 className='text-gray-300 mb-1 text-normal md:text-xl'>{item.title}</h2>
-                  <div className='cals flex items-center justify-start mb-3 mt-4'> 
-                     {item.icon === 'van' ?
-                        <TbTruckDelivery className='text-5xl text-gray-400 me-4' />
-                        :
-                        <FaRegCreditCard className='text-4xl text-gray-400 me-4' />
-                     }
-                     <h2 className='font-bold text-white text-4xl  '>{item.data}</h2>
-                  </div>
-                     <div className='bg-[#D278D5] h-[3px] !mt-4 w-[40px]'></div>
-               </Link>
-               </>
-            })}
+           
+             {topListLoading ?
+              // Add 8 boxes when loadind
+              <>
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div key={index} className='bg-[#131313] lead border border-gray-300 border-gray-700 rounded-[30px] p-[20px] md:p-[25px] min-h-[100px]  md:min-h-[170px] opacity-[0.7] animate animate-pulse'>
+                 <div className='bg-gray-700 w-[60%] p-2 rounded-xl'></div>
+                 <div className='bg-gray-700 mt-4 w-[90%] p-2 rounded-xl'></div>
+                </div>
+              ))}
+              </>
+             :
+             <>
+              {lists && lists.map((item, index) => {
+                return <>
+                <Link to={item.link} className={`hover:!bg-[#131313] hover:border-gray-800 lead border border-gray-700 rounded-[30px] p-[20px] md:p-[25px]`}>
+                    <h2 className='text-gray-300 mb-1 text-normal md:text-xl'>{item.title}</h2>
+                    <div className='cals flex items-center justify-start mb-3 mt-4'> 
+                      {item.icon === 'van' ?
+                          <TbTruckDelivery className='text-5xl text-gray-400 me-4' />
+                          :
+                          <FaRegCreditCard className='text-4xl text-gray-400 me-4' />
+                      }
+                      <h2 className='font-bold text-white text-4xl  '>{item.data}</h2>
+                    </div>
+                      <div className='bg-[#D278D5] h-[3px] !mt-4 w-[40px]'></div>
+                </Link>
+                </>
+              })}
+             </>
+             } 
          </div>
 
          {/* Admin Features Section */}
@@ -183,175 +202,6 @@ export default function Overview() {
                </div>
              </div>
 
-             {/* Admin Charts Row */}
-             <div className='admin-charts mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6'>
-               
-               {/* Orders by Status */}
-               <div className='admin-chart bg-gray-900 border border-gray-700 rounded-[20px] p-6'>
-                 <h3 className='text-white text-lg font-medium mb-4 border-b border-gray-700 pb-3'>
-                   Orders by Status
-                 </h3>
-                 {adminData?.analytics?.charts?.ordersByStatus?.length > 0 ? (
-                   <div className='space-y-4'>
-                     {adminData.analytics.charts.ordersByStatus.map((item, index) => (
-                       <div key={index} className='flex items-center justify-between'>
-                         <div className='flex items-center'>
-                           <div className={`w-3 h-3 rounded-full mr-3 ${
-                             index % 4 === 0 ? 'bg-blue-500' :
-                             index % 4 === 1 ? 'bg-green-500' :
-                             index % 4 === 2 ? 'bg-yellow-500' : 'bg-red-500'
-                           }`}></div>
-                           <span className='text-sm font-medium text-white capitalize'>
-                             {item.status}
-                           </span>
-                         </div>
-                         <span className='text-sm text-gray-400'>
-                           {item.count}
-                         </span>
-                       </div>
-                     ))}
-                   </div>
-                 ) : (
-                   <div className='text-center text-gray-400 py-8'>
-                     No order data available
-                   </div>
-                 )}
-               </div>
-
-               {/* Recent Orders */}
-               <div className='admin-chart bg-gray-900 border border-gray-700 rounded-[20px] p-6'>
-                 <h3 className='text-white text-lg font-medium mb-4 border-b border-gray-700 pb-3'>
-                   Recent Orders
-                 </h3>
-                 {adminData?.analytics?.recentOrders?.length > 0 ? (
-                   <div className='space-y-4'>
-                     {adminData.analytics.recentOrders.slice(0, 5).map((order, index) => (
-                       <div key={index} className='flex items-center justify-between'>
-                         <div>
-                           <div className='text-sm font-medium text-white'>
-                             Order #{order.order_number || order._id?.slice(-6)}
-                           </div>
-                           <div className='text-sm text-gray-400'>
-                             {order.customer?.name}
-                           </div>
-                         </div>
-                         <div className='text-right'>
-                           <div className='text-sm font-medium text-white'>
-                             ${order.total_amount?.toLocaleString() || '0'}
-                           </div>
-                           <div className={`text-xs px-2 py-1 rounded-full ${
-                             order.order_status === 'delivered' ? 'bg-green-900 text-green-300 border border-green-700' :
-                             order.order_status === 'in_transit' ? 'bg-blue-900 text-blue-300 border border-blue-700' :
-                             order.order_status === 'pending' ? 'bg-yellow-900 text-yellow-300 border border-yellow-700' :
-                             'bg-gray-800 text-gray-300 border border-gray-600'
-                           }`}>
-                             {order.order_status}
-                           </div>
-                         </div>
-                       </div>
-                     ))}
-                   </div>
-                 ) : (
-                   <div className='text-center text-gray-400 py-8'>
-                     No recent orders
-                   </div>
-                 )}
-               </div>
-
-             </div>
-
-             {/* Carriers and Customers Row */}
-             <div className='admin-data mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6'>
-               
-               {/* Carriers Section */}
-               <div className='carriers-section bg-gray-900 border border-gray-700 rounded-[20px] p-6'>
-                 <div className='flex justify-between items-center mb-4 border-b border-gray-700 pb-3'>
-                   <h3 className='text-white text-lg font-medium'>Carriers</h3>
-                   <Link to='/carriers' className='text-blue-400 hover:text-blue-300 text-sm'>
-                     View All ({carriersData.length})
-                   </Link>
-                 </div>
-                 {carriersData.length > 0 ? (
-                   <div className='space-y-4'>
-                     {carriersData.slice(0, 5).map((carrier, index) => (
-                       <div key={index} className='flex items-center justify-between hover:bg-gray-800 p-2 rounded-lg transition-colors'>
-                         <div className='flex items-center'>
-                           <div className='w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mr-3'>
-                             <TbTruckDelivery className='h-4 w-4 text-white' />
-                           </div>
-                           <div>
-                             <div className='text-sm font-medium text-white'>
-                               {carrier.name || carrier.company_name}
-                             </div>
-                             <div className='text-xs text-gray-400'>
-                               {carrier.mc_code || carrier.email}
-                             </div>
-                           </div>
-                         </div>
-                         <div className='text-right'>
-                           <div className={`text-xs px-2 py-1 rounded-full ${
-                             carrier.status === 'active' ? 'bg-green-900 text-green-300 border border-green-700' :
-                             carrier.status === 'inactive' ? 'bg-red-900 text-red-300 border border-red-700' :
-                             'bg-gray-800 text-gray-300 border border-gray-600'
-                           }`}>
-                             {carrier.status || 'active'}
-                           </div>
-                         </div>
-                       </div>
-                     ))}
-                   </div>
-                 ) : (
-                   <div className='text-center text-gray-400 py-8'>
-                     <TbTruckDelivery className='h-12 w-12 mx-auto mb-2 text-gray-500' />
-                     <p>No carriers found</p>
-                   </div>
-                 )}
-               </div>
-
-               {/* Customers Section */}
-               <div className='customers-section bg-gray-900 border border-gray-700 rounded-[20px] p-6'>
-                 <div className='flex justify-between items-center mb-4 border-b border-gray-700 pb-3'>
-                   <h3 className='text-white text-lg font-medium'>Customers</h3>
-                   <Link to='/customers' className='text-green-400 hover:text-green-300 text-sm'>
-                     View All ({customersData.length})
-                   </Link>
-                 </div>
-                 {customersData.length > 0 ? (
-                   <div className='space-y-4'>
-                     {customersData.slice(0, 5).map((customer, index) => (
-                       <div key={index} className='flex items-center justify-between hover:bg-gray-800 p-2 rounded-lg transition-colors'>
-                         <div className='flex items-center'>
-                           <div className='w-8 h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mr-3'>
-                             <FaRegCreditCard className='h-3 w-3 text-white' />
-                           </div>
-                           <div>
-                             <div className='text-sm font-medium text-white'>
-                               {customer.name || customer.company_name}
-                             </div>
-                             <div className='text-xs text-gray-400'>
-                               {customer.email || customer.phone}
-                             </div>
-                           </div>
-                         </div>
-                         <div className='text-right'>
-                           <div className='text-xs text-gray-400'>
-                             {customer.city && customer.state ? `${customer.city}, ${customer.state}` : 'Location N/A'}
-                           </div>
-                         </div>
-                       </div>
-                     ))}
-                   </div>
-                 ) : (
-                   <div className='text-center text-gray-400 py-8'>
-                     <FaRegCreditCard className='h-12 w-12 mx-auto mb-2 text-gray-500' />
-                     <p>No customers found</p>
-                   </div>
-                 )}
-               </div>
-
-             </div>
-
-             {/* Usage Warnings */}
              {adminData?.usage?.warnings && (adminData.usage.warnings.nearUserLimit || adminData.usage.warnings.nearOrderLimit) && (
                <div className='usage-warnings mb-6'>
                  <div className='bg-yellow-900 border border-yellow-700 rounded-[20px] p-4'>
@@ -380,30 +230,30 @@ export default function Overview() {
              )}
 
              {/* Quick Admin Actions */}
-             <div className='admin-actions'>
+             <div className='admin-actions pt-8'>
                <h3 className='text-white text-xl mb-4'>Quick Actions</h3>
                <div className='flex flex-wrap gap-3'>
-                 <Link to='/carriers' className='admin-action-btn bg-blue-800 hover:bg-blue-700 text-white px-4 py-2 rounded-lg border border-blue-600 transition-colors flex items-center'>
+                 <Link to='/carriers' className='admin-action-btn !rounded-[10px] bg-blue-800 hover:bg-blue-700 text-white px-4 py-2 rounded-lg border border-blue-600 transition-colors flex items-center'>
                    <TbTruckDelivery className='h-4 w-4 mr-2' />
                    Manage Carriers
                  </Link>
-                 <Link to='/customers' className='admin-action-btn bg-green-800 hover:bg-green-700 text-white px-4 py-2 rounded-lg border border-green-600 transition-colors flex items-center'>
+                 <Link to='/customers' className='admin-action-btn !rounded-[10px] bg-green-800 hover:bg-green-700 text-white px-4 py-2 rounded-lg border border-green-600 transition-colors flex items-center'>
                    <FaRegCreditCard className='h-3 w-3 mr-2' />
                    Manage Customers
                  </Link>
-                 <Link to='/employees' className='admin-action-btn bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 transition-colors'>
+                 <Link to='/employees' className='admin-action-btn !rounded-[10px] bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 transition-colors'>
                    Manage Employees
                  </Link>
-                 <Link to='/orders' className='admin-action-btn bg-purple-800 hover:bg-purple-700 text-white px-4 py-2 rounded-lg border border-purple-600 transition-colors'>
+                 <Link to='/orders' className='admin-action-btn !rounded-[10px] bg-purple-800 hover:bg-purple-700 text-white px-4 py-2 rounded-lg border border-purple-600 transition-colors'>
                    View All Orders
                  </Link>
-                 <Link to='/commodity-and-equipments' className='admin-action-btn bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 transition-colors'>
+                 <Link to='/commodity-and-equipments' className='admin-action-btn !rounded-[10px] bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 transition-colors'>
                    Equipment & Commodities
                  </Link>
-                 <Link to='/accounts/orders' className='admin-action-btn bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 transition-colors'>
+                 <Link to='/accounts/orders' className='admin-action-btn !rounded-[10px] bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 transition-colors'>
                    Account Reports
                  </Link>
-                 <Link to='/company/details' className='admin-action-btn bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 transition-colors'>
+                 <Link to='/company/details' className='admin-action-btn !rounded-[10px] bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg border border-gray-600 transition-colors'>
                    Company Settings
                  </Link>
                </div>

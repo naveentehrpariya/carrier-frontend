@@ -55,7 +55,7 @@ export default function SuperAdminLayout({ children, heading }) {
     <>
       <Helmet>
         <meta charSet="utf-8" />
-        <title>{heading ? `${heading} | ` : ''}Super Admin | Cross Miles Carrier</title>
+        <title>{heading ? `${heading} | ` : ''} Super Admin</title>
         <link rel="canonical" href={window.location.href || ""} />
       </Helmet>
       
