@@ -8,6 +8,7 @@ import DashboardRouter from './components/DashboardRouter';
 import MultiTenantProvider from './context/MultiTenantProvider';
 import MultiTenantAuthProvider from './context/MultiTenantAuthProvider';
 import UserContextProvider from './context/AuthProvider';
+import { SidebarCountsProvider } from './context/SidebarCountsContext';
 import Error404 from './404';
 import Overview from './pages/dashboard/Overview';
 import Login from './pages/auth/LogIn';
@@ -41,8 +42,9 @@ function App() {
   return (
     <MultiTenantProvider>
       <MultiTenantAuthProvider>
-        <UserContextProvider>
-        <div className="App">
+        <SidebarCountsProvider>
+          <UserContextProvider>
+            <div className="App">
               <BrowserRouter>
                 <div className="routes">
                   <Routes>
@@ -217,6 +219,7 @@ function App() {
               />
         </div>
         </UserContextProvider>
+        </SidebarCountsProvider>
       </MultiTenantAuthProvider>
     </MultiTenantProvider>
   );

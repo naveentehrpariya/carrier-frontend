@@ -30,4 +30,26 @@ Api.interceptors.request.use(
   }
 );
 
+// Emit a global refresh event for sidebar counts after relevant mutations
+Api.interceptors.response.use(
+  (response) => {
+    try {
+      const method = (response?.config?.method || '').toLowerCase();
+      const url = response?.config?.url || '';
+      const isMutating = ['post', 'put', 'patch', 'delete'].includes(method);
+      const touchesCounters = /(\/order|\/customer|\/carriers|\/user)/.test(url);
+      const ok = response?.data && (response.data.status === true || response.status < 400);
+      if (isMutating && touchesCounters && ok && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('sidebar-counts:refresh', { detail: { url, method } }));
+      }
+    } catch (e) {
+      // ignore
+    }
+    return response;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 export default Api;

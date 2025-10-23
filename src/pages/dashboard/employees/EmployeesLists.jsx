@@ -70,8 +70,7 @@ export default function EmployeesLists() {
                            </Link>
                            <Badge title={true} status={c.status} />
                         </div>
-                        <p className='whitespace-nowrap text-[12px]'>Joined On : <TimeFormat date={c.createdAt || "--"} /> </p>
-                        <button className={` ${c.role ===  '2' ? "bg-main text-white" : "bg-blue-600 text-white"} text-[10px]  p-[1px] px-[10px] rounded-[20px] mt-2 `}>{c.role === '2' ? "Accountant" : "Employee"} {c?.position ? `(${c.position})` : ""}</button>
+                        <button className={` ${c.role ===  '2' ? "text-main" : "text-blue-400"} text-[12px] text-start rounded-[20px] mt-2 `}>{c.role === '2' ? "Accountant" : "Employee"} {c?.position ? `(${c.position})` : ""}</button>
                      </td>
                      
                      <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
@@ -92,6 +91,7 @@ export default function EmployeesLists() {
                      </td>
                      <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
                         <EmployeeDocuments employee={c} />
+                        <p className='whitespace-nowrap text-[12px]'>Added On : <TimeFormat date={c.createdAt || "--"} /> </p>
                      </td>
                      <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
                            <div className='flex items-center gap-2'>
