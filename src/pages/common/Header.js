@@ -40,7 +40,6 @@ export default function Header() {
                               :
                            <>
                            <Link to="/login" className="hidden md:block text-main hover:text-white font-medium rounded-lg text-[20px] px-4 py-2 mr-2">Login</Link>
-                           <Button to='/signup' text="Get Started" classes={'hidden sm:flex '} ></Button>
                            </>
                         }
                         

@@ -1,6 +1,6 @@
 import axios from 'axios';
-const APP_URL = process.env.APP_URL;
-const host = window.location.host;
+
+const APP_URL = process.env.REACT_APP_API_URL || process.env.APP_URL || 'http://localhost:8080';
 
 function getToken(){
   const data = localStorage && localStorage.getItem('token');
@@ -8,8 +8,8 @@ function getToken(){
 }
 
 let Api = axios.create({
-  baseURL: APP_URL ? APP_URL : 'http://localhost:8080',
-  withCredentials: true, // Enable cookies for authentication
+  baseURL: APP_URL,
+  withCredentials: true,
   headers: {
     'Accept': 'application/json',
     'Authorization': `Bearer ${getToken()}`,
@@ -23,6 +23,30 @@ Api.interceptors.request.use(
       if (token !== null) {
           config.headers.Authorization = `Bearer ${token}`;
       }
+      // Inject tenant context header globally if available
+      try {
+        const raw = localStorage.getItem('tenantContext');
+        let headerSet = false;
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          const isSuperAdmin = !!parsed.isSuperAdmin;
+          const tenant = parsed.tenant || {};
+          const tenantId = tenant.id || tenant.subdomain || null;
+          if (tenantId && !isSuperAdmin) {
+            config.headers['X-Tenant-ID'] = tenantId;
+            headerSet = true;
+          }
+        }
+        // Fallback: use URL ?tenant param if header not set
+        if (!headerSet && typeof window !== 'undefined') {
+          const tenantParam = new URLSearchParams(window.location.search).get('tenant');
+          if (tenantParam) {
+            config.headers['X-Tenant-ID'] = tenantParam;
+          }
+        }
+      } catch (e) {
+        // ignore parsing errors
+      }
       return config; 
   },
   (error) => {
@@ -30,7 +54,6 @@ Api.interceptors.request.use(
   }
 );
 
-// Emit a global refresh event for sidebar counts after relevant mutations
 Api.interceptors.response.use(
   (response) => {
     try {

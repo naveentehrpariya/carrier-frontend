@@ -18,7 +18,9 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
     reason: '',
     newPlan: '',
     newStatus: '',
-    notes: ''
+    notes: '',
+    maxUsers: '',
+    maxOrders: ''
   });
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
 
@@ -33,7 +35,9 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
         reason: '',
         newPlan: tenant?.subscription?.plan || '',
         newStatus: getTargetStatus(),
-        notes: ''
+        notes: '',
+        maxUsers: tenant?.settings?.maxUsers ?? '',
+        maxOrders: tenant?.settings?.maxOrders ?? ''
       });
     }
   }, [isOpen, actionType, tenant]);
@@ -239,7 +243,20 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
           break;
         
         case 'edit':
-          response = await Api.put(`/api/super-admin/tenants/${tenant._id}`, payload);
+          // basic validation for limits
+          if (formData.maxUsers !== '' && Number(formData.maxUsers) < 0) {
+            toast.error('Allowed users must be 0 or more');
+            break;
+          }
+          if (formData.maxOrders !== '' && Number(formData.maxOrders) < 0) {
+            toast.error('Allowed orders must be 0 or more');
+            break;
+          }
+          response = await Api.put(`/api/super-admin/tenants/${tenant.tenantId}/settings`, {
+            maxUsers: formData.maxUsers === '' ? undefined : Number(formData.maxUsers),
+            maxOrders: formData.maxOrders === '' ? undefined : Number(formData.maxOrders),
+            notes: formData.notes
+          });
           break;
         
         default:
@@ -376,6 +393,40 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   placeholder="Add any additional notes..."
                 />
+              </div>
+            )}
+
+            {/* Edit settings */}
+            {actionType === 'edit' && (
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Allowed users
+                  </label>
+                  <input
+                    type="number"
+                    name="maxUsers"
+                    min="0"
+                    value={formData.maxUsers}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="e.g., 25"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Allowed orders
+                  </label>
+                  <input
+                    type="number"
+                    name="maxOrders"
+                    min="0"
+                    value={formData.maxOrders}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="e.g., 1000"
+                  />
+                </div>
               </div>
             )}
 

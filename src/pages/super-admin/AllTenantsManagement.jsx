@@ -293,8 +293,8 @@ export default function AllTenantsManagement() {
           _id: 'mock-2',
           name: 'Sample Logistics Inc',
           subdomain: 'sample-logistics',
-          status: 'trial',
-          subscription: { plan: 'starter', status: 'trial' },
+          status: 'active',
+          subscription: { plan: 'starter', status: 'active' },
           userCount: 3,
           orderCount: 15,
           revenue: 1500,
@@ -422,28 +422,25 @@ export default function AllTenantsManagement() {
           localStorage.setItem('tenant_emulation_data', JSON.stringify({
             tenant: response.data.tenant,
             timestamp: Date.now(),
-            superAdmin: true
+            superAdmin: false
           }));
         }
         
         toast.success(`Successfully authenticated for ${tenant.name}`);
         
-        // Always use our custom tenant URL format (API redirectUrl is pointing to wrong location)
-        const subdomain = tenant.subdomain;
-        let targetUrl;
+        // Use the backend-generated redirectUrl which includes the correct tenant parameter
+        let targetUrl = response.data.redirectUrl;
         
-        // For local development, always use localhost:3000 without subdomain
-        // because you're not running subdomain routing locally
+        // For local development, ensure we're using the correct tenant parameter format
         const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
         
         if (isLocalDev) {
-          // Local development - use simple localhost URL (no tenant parameter needed)
-          // The token will handle the authentication and tenant context
-          targetUrl = `http://localhost:3000/home`;
-        } else {
-          // Production - use subdomain format
-          const domain = tenant.domain || 'spennypiggy.co';
-          targetUrl = `http://${tenant.fullDomain || (subdomain + '.' + domain)}/home`;
+          // Backend generates: http://localhost:3000?tenant=subdomain
+          // We want to navigate to the home page with tenant context
+          if (targetUrl.includes('?tenant=')) {
+            // Replace the base path to go to /home instead of root
+            targetUrl = targetUrl.replace('http://localhost:3000?', 'http://localhost:3000/home?');
+          }
         }
         
         console.log('🔗 Environment detection:', {
@@ -453,8 +450,8 @@ export default function AllTenantsManagement() {
           tenantDomain: tenant.domain,
           tenantFullDomain: tenant.fullDomain
         });
-        console.log('🔗 Generated target URL:', targetUrl);
-        console.log('🔗 API redirectUrl (ignored):', response.data.redirectUrl);
+        console.log('🔗 Backend redirectUrl:', response.data.redirectUrl);
+        console.log('🔗 Final target URL:', targetUrl);
         
         // Add auth token as URL parameter for immediate access
         const urlWithToken = `${targetUrl}${targetUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(response.data.token)}`;
@@ -667,7 +664,6 @@ export default function AllTenantsManagement() {
                 >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
-                  <option value="trial">Trial</option>
                   <option value="suspended">Suspended</option>
                   <option value="pending">Pending</option>
                 </select>
@@ -785,10 +781,10 @@ export default function AllTenantsManagement() {
                         <div className="space-y-1">
                           <div className="flex items-center">
                             <UserGroupIcon className="h-4 w-4 mr-1" />
-                            {tenant.userCount || 0} users
+                            {tenant.usage?.users ?? 0} users
                           </div>
                           <div className="text-xs text-gray-400">
-                            {tenant.orderCount || 0} orders
+                            {tenant.usage?.orders ?? 0} orders
                           </div>
                         </div>
                       </td>

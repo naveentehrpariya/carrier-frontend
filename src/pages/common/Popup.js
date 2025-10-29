@@ -13,6 +13,7 @@ export default function Popup({btnclasses, iconcolor, btntext, size, children, s
     if (action === "close") {
       setOpen(false)
     }
+    console.log("action",action)
   }, [action]);
 
   return (

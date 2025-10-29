@@ -12,6 +12,7 @@ import { SidebarCountsProvider } from './context/SidebarCountsContext';
 import Error404 from './404';
 import Overview from './pages/dashboard/Overview';
 import Login from './pages/auth/LogIn';
+import CMCHomepage from './pages/CMCHomepage';
 import MultiTenantLogin from './pages/auth/MultiTenantLogin';
 import SuperAdminLogin from './pages/auth/SuperAdminLogin';
 import TenantDashboard from './pages/tenant-admin/TenantDashboard';
@@ -38,6 +39,8 @@ import Unauthorized from './components/Unauthorized';
 import SuperAdminProfile from './pages/super-admin/SuperAdminProfile';
 import UserProfile from './pages/tenant-admin/UserProfile';
 
+import SubscriptionPlans from './pages/super-admin/SubscriptionPlans';
+
 function App() {
   return (
     <MultiTenantProvider>
@@ -52,8 +55,10 @@ function App() {
                     <Route path="/login" element={<Login />} />
                     <Route path="/multitenant-login" element={<MultiTenantLogin />} />
                     <Route path="/super-admin/login" element={<SuperAdminLogin />} />
-                    <Route path="/" element={<Login />} />
+                    <Route path="/" element={<CMCHomepage />} />
                     <Route path="/debug-auth" element={<AuthDebug />} />
+
+
 
                     {/* Tenant Admin Dashboard - Now unified with regular employee dashboard */}
                     <Route path="/tenant-admin" element={
@@ -73,6 +78,13 @@ function App() {
                     <Route path="/super-admin" element={
                       <SuperAdminRoute>
                         <SuperAdminDashboard />
+                      </SuperAdminRoute>
+                    } />
+                    
+                    {/* Super Admin Plans */}
+                    <Route path="/super-admin/plans" element={
+                      <SuperAdminRoute>
+                        <SubscriptionPlans />
                       </SuperAdminRoute>
                     } />
                     

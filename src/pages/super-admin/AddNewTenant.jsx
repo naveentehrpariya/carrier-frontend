@@ -17,6 +17,8 @@ import Api from '../../api/Api';
 export default function AddNewTenant() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [plans, setPlans] = useState([]);
   const [formData, setFormData] = useState({
     companyName: '',
     companySlug: '',
@@ -25,20 +27,12 @@ export default function AddNewTenant() {
     adminPhone: '',
     adminPassword: '',
     confirmPassword: '',
-    subscriptionPlan: 'starter',
-    status: 'active',
-    trialDays: 30
+    subscriptionPlan: ''
   });
 
   const [errors, setErrors] = useState({});
   const [slugAvailable, setSlugAvailable] = useState(null);
   const [checkingSlug, setCheckingSlug] = useState(false);
-
-  const subscriptionPlans = [
-    { id: 'starter', name: 'Starter', price: '$29/month', features: 'Basic features, up to 10 users' },
-    { id: 'professional', name: 'Professional', price: '$79/month', features: 'Advanced features, up to 50 users' },
-    { id: 'enterprise', name: 'Enterprise', price: '$199/month', features: 'All features, unlimited users' }
-  ];
 
   // Auto-generate slug from company name
   useEffect(() => {
@@ -53,6 +47,38 @@ export default function AddNewTenant() {
       setFormData(prev => ({ ...prev, companySlug: slug }));
     }
   }, [formData.companyName]);
+
+  // Fetch active subscription plans
+  useEffect(() => {
+    const fetchPlans = async () => {
+      setPlansLoading(true);
+      try {
+        const res = await Api.get('/api/super-admin/subscription-plans');
+        let fetchedPlans = [];
+        // Support both response shapes
+        if (Array.isArray(res.data)) {
+          fetchedPlans = res.data;
+        } else if (Array.isArray(res.data?.plans)) {
+          fetchedPlans = res.data.plans;
+        } else if (Array.isArray(res.data?.data?.plans)) {
+          fetchedPlans = res.data.data.plans;
+        } else if (Array.isArray(res.data?.data)) {
+          fetchedPlans = res.data.data;
+        }
+        setPlans(fetchedPlans);
+        // Preselect first plan
+        if (fetchedPlans.length > 0) {
+          setFormData(prev => ({ ...prev, subscriptionPlan: fetchedPlans[0].slug }));
+        }
+      } catch (error) {
+        console.error('Failed to load plans', error);
+        toast.error('Failed to load pricing plans');
+      } finally {
+        setPlansLoading(false);
+      }
+    };
+    fetchPlans();
+  }, []);
 
   // Check slug availability
   useEffect(() => {
@@ -93,11 +119,7 @@ export default function AddNewTenant() {
     if (!formData.adminName.trim()) newErrors.adminName = 'Admin name is required';
     if (!formData.adminEmail.trim()) newErrors.adminEmail = 'Admin email is required';
     if (!/\S+@\S+\.\S+/.test(formData.adminEmail)) newErrors.adminEmail = 'Please enter a valid email';
-    if (!formData.adminPassword) newErrors.adminPassword = 'Password is required';
-    if (formData.adminPassword.length < 6) newErrors.adminPassword = 'Password must be at least 6 characters';
-    if (formData.adminPassword !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
+    if (!formData.subscriptionPlan) newErrors.subscriptionPlan = 'Please select a pricing plan';
     if (slugAvailable === false) newErrors.companySlug = 'This slug is already taken';
 
     setErrors(newErrors);
@@ -114,17 +136,22 @@ export default function AddNewTenant() {
 
     setLoading(true);
     try {
-      const response = await Api.post('/api/super-admin/tenants', {
-        companyName: formData.companyName.trim(),
-        companySlug: formData.companySlug.trim(),
+      const payload = {
+        name: formData.companyName.trim(),
+        subdomain: formData.companySlug.trim(),
         adminName: formData.adminName.trim(),
         adminEmail: formData.adminEmail.trim(),
         adminPhone: formData.adminPhone.trim(),
-        adminPassword: formData.adminPassword,
-        subscriptionPlan: formData.subscriptionPlan,
-        status: formData.status,
-        trialDays: formData.trialDays
-      });
+        subscriptionPlan: formData.subscriptionPlan, // send slug
+        companyInfo: {
+          name: formData.companyName.trim(),
+          address: '',
+          phone: formData.adminPhone.trim(),
+          email: formData.adminEmail.trim()
+        }
+      };
+
+      const response = await Api.post('/api/super-admin/tenants', payload);
 
       if (response.data.status) {
         toast.success('Tenant created successfully!');
@@ -134,10 +161,64 @@ export default function AddNewTenant() {
       }
     } catch (error) {
       console.error('Error creating tenant:', error);
-      if (error.response?.status === 409) {
+      const status = error.response?.status;
+      const data = error.response?.data || {};
+      const apiMessage = data.message;
+      const apiErrors = data.errors;
+
+      if (status === 409) {
         toast.error('A tenant with this name or slug already exists');
+        setErrors(prev => ({
+          ...prev,
+          companySlug: prev.companySlug || 'This slug is already taken'
+        }));
+      } else if (Array.isArray(apiErrors) && apiErrors.length) {
+        apiErrors.slice(0, 3).forEach((err) => {
+          const msg = typeof err === 'string' ? err : err?.message || err?.msg || apiMessage;
+          if (msg) toast.error(String(msg));
+          if (typeof msg === 'string') {
+            if (/subdomain|slug/i.test(msg)) {
+              setErrors(prev => ({ ...prev, companySlug: msg }));
+            } else if (/company name|name/i.test(msg)) {
+              setErrors(prev => ({ ...prev, companyName: msg }));
+            }
+          }
+        });
       } else {
-        toast.error(error.response?.data?.message || 'Failed to create tenant');
+        // broader fallbacks to ensure we surface actual server issue
+        let candidateMsg =
+           (typeof data === 'string' && data) ||
+           apiMessage ||
+           (typeof data?.error === 'string' && data.error) ||
+           (typeof data?.title === 'string' && `${data.title}: ${error.message || ''}`) ||
+           error.message ||
+           (status === 0 && 'Network error - cannot reach backend');
+ 
+         // If the server returned an HTML error page, extract the meaningful text
+         if (typeof candidateMsg === 'string' && /<!DOCTYPE|<html|<pre/i.test(candidateMsg)) {
+           const preMatch = candidateMsg.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i);
+           const content = preMatch ? preMatch[1] : candidateMsg;
+           const text = content
+             .replace(/<br\s*\/?>(?=\s*|$)/gi, '\n')
+             .replace(/<[^>]*>/g, ' ')
+             .replace(/&nbsp;/gi, ' ')
+             .replace(/\s+/g, ' ')
+             .trim();
+           const errMatch = text.match(/Error:\s*([^\n]+)/i);
+           candidateMsg = errMatch ? `Error: ${errMatch[1].trim()}` : text.slice(0, 200);
+         }
+ 
+         const fallbackMsg = candidateMsg || 'Failed to create tenant';
+ 
+         toast.error(fallbackMsg);
+ 
+         if (typeof fallbackMsg === 'string') {
+           if (/subdomain|slug/i.test(fallbackMsg)) {
+             setErrors(prev => ({ ...prev, companySlug: fallbackMsg }));
+           } else if (/company name|name/i.test(fallbackMsg)) {
+             setErrors(prev => ({ ...prev, companyName: fallbackMsg }));
+           }
+         }
       }
     } finally {
       setLoading(false);
@@ -193,7 +274,7 @@ export default function AddNewTenant() {
                 </label>
                 <div className="relative">
                   <input
-                    type="text"
+                    type="text" disabled
                     name="companySlug"
                     value={formData.companySlug}
                     onChange={handleInputChange}
@@ -275,9 +356,10 @@ export default function AddNewTenant() {
                 />
               </div>
 
+              {/* Password fields can be optionally used later; backend generates temp password */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Admin Password *
+                  Admin Password (optional)
                 </label>
                 <input
                   type="password"
@@ -287,12 +369,11 @@ export default function AddNewTenant() {
                   className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3 focus:shadow-0 focus:outline-0 focus:border-main"
                   placeholder="Enter password"
                 />
-                {errors.adminPassword && <p className="mt-1 text-sm text-red-400">{errors.adminPassword}</p>}
               </div>
 
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Confirm Password *
+                  Confirm Password (optional)
                 </label>
                 <input
                   type="password"
@@ -302,7 +383,6 @@ export default function AddNewTenant() {
                   className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3 focus:shadow-0 focus:outline-0 focus:border-main"
                   placeholder="Confirm password"
                 />
-                {errors.confirmPassword && <p className="mt-1 text-sm text-red-400">{errors.confirmPassword}</p>}
               </div>
             </div>
           </div>
@@ -314,30 +394,37 @@ export default function AddNewTenant() {
               <h2 className="text-xl font-semibold text-white">Subscription & Settings</h2>
             </div>
             
+            {/* Pricing Plans */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              {subscriptionPlans.map((plan) => (
+              {plansLoading && (
+                <div className="col-span-3 text-gray-400">Loading plans...</div>
+              )}
+              {!plansLoading && plans.length === 0 && (
+                <div className="col-span-3 text-gray-400">No active plans found</div>
+              )}
+              {!plansLoading && plans.map((plan) => (
                 <div
-                  key={plan.id}
+                  key={plan._id || plan.slug}
                   className={`p-4 border rounded-[15px] cursor-pointer transition-colors ${
-                    formData.subscriptionPlan === plan.id
+                    formData.subscriptionPlan === plan.slug
                       ? 'border-main bg-main/10'
                       : 'border-gray-700 hover:border-gray-600'
                   }`}
-                  onClick={() => setFormData(prev => ({ ...prev, subscriptionPlan: plan.id }))}
+                  onClick={() => setFormData(prev => ({ ...prev, subscriptionPlan: plan.slug }))}
                 >
                   <div className="flex items-center mb-2">
                     <input
                       type="radio"
                       name="subscriptionPlan"
-                      value={plan.id}
-                      checked={formData.subscriptionPlan === plan.id}
+                      value={plan.slug}
+                      checked={formData.subscriptionPlan === plan.slug}
                       onChange={() => {}}
                       className="mr-2"
                     />
                     <h3 className="text-white font-semibold">{plan.name}</h3>
                   </div>
-                  <p className="text-main font-medium text-sm">{plan.price}</p>
-                  <p className="text-gray-400 text-xs mt-1">{plan.features}</p>
+                  <p className="text-main font-medium text-sm">Max Users: {plan?.limits?.maxUsers ?? '-'}</p>
+                  <p className="text-gray-400 text-xs mt-1">{plan.description}</p>
                 </div>
               ))}
             </div>
@@ -347,32 +434,11 @@ export default function AddNewTenant() {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Initial Status
                 </label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3 focus:shadow-0 focus:outline-0 focus:border-main"
-                >
-                  <option value="active">Active</option>
-                  <option value="trial">Trial</option>
-                  <option value="pending">Pending</option>
-                  <option value="suspended">Suspended</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Trial Days (if trial)
-                </label>
                 <input
-                  type="number"
-                  name="trialDays"
-                  value={formData.trialDays}
-                  onChange={handleInputChange}
-                  min="1"
-                  max="90"
-                  className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3 focus:shadow-0 focus:outline-0 focus:border-main"
-                  placeholder="30"
+                  type="text"
+                  value="Active"
+                  disabled
+                  className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3"
                 />
               </div>
             </div>

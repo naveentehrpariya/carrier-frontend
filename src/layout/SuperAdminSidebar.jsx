@@ -39,6 +39,17 @@ export default function SuperAdminSidebar({ toggle, logout }) {
           <li>
             <Link 
               className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${
+                location.pathname === '/super-admin/plans' ? "bg-main !text-black hover:!text-white" : 'bg-dark'
+              } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl flex items-center`} 
+              to={'/super-admin/plans'}
+            >
+              <BuildingOfficeIcon className='me-2 h-5 w-5' /> Manage Pricing Plans
+            </Link>
+          </li>
+
+          <li>
+            <Link 
+              className={`hover:!bg-[#131313] hover:text-white focus:!text-white ${
                 location.pathname === '/super-admin/tenants' ? "bg-main !text-black hover:!text-white" : 'bg-dark'
               } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl flex items-center`} 
               to={'/super-admin/tenants'}

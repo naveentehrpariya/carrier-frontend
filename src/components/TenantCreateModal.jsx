@@ -163,12 +163,63 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
       }
     } catch (error) {
       console.error('Error creating tenant:', error);
+      const status = error.response?.status;
+      const data = error.response?.data || {};
+      const apiMessage = data.message;
+      const apiErrors = data.errors;
       
-      if (error.response?.status === 409) {
-        toast.error('Company name or subdomain already exists');
-      } else {
-        toast.error(error.response?.data?.message || 'Failed to create tenant');
-      }
+      if (status === 409) {
+         toast.error('Company name or subdomain already exists');
+         setErrors(prev => ({
+           ...prev,
+           subdomain: prev.subdomain || 'Subdomain is already in use'
+         }));
+       } else if (Array.isArray(apiErrors) && apiErrors.length) {
+          apiErrors.slice(0, 3).forEach((err) => {
+            const msg = typeof err === 'string' ? err : err?.message || err?.msg || apiMessage;
+            if (msg) toast.error(String(msg));
+            if (typeof msg === 'string') {
+              if (/subdomain|slug/i.test(msg)) {
+                setErrors(prev => ({ ...prev, subdomain: msg }));
+              } else if (/company name|name/i.test(msg)) {
+                setErrors(prev => ({ ...prev, name: msg }));
+              }
+            }
+          });
+        } else {
+          let candidateMsg =
+            (typeof data === 'string' && data) ||
+            apiMessage ||
+            (typeof data?.error === 'string' && data.error) ||
+            (typeof data?.title === 'string' && `${data.title}: ${error.message || ''}`) ||
+            error.message ||
+            (status === 0 && 'Network error - cannot reach backend');
+
+          if (typeof candidateMsg === 'string' && /<!DOCTYPE|<html|<pre/i.test(candidateMsg)) {
+            const preMatch = candidateMsg.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i);
+            const content = preMatch ? preMatch[1] : candidateMsg;
+            const text = content
+              .replace(/<br\s*\/?>(?=\s*|$)/gi, '\n')
+              .replace(/<[^>]*>/g, ' ')
+              .replace(/&nbsp;/gi, ' ')
+              .replace(/\s+/g, ' ')
+              .trim();
+            const errMatch = text.match(/Error:\s*([^\n]+)/i);
+            candidateMsg = errMatch ? `Error: ${errMatch[1].trim()}` : text.slice(0, 200);
+          }
+
+          const fallbackMsg = candidateMsg || 'Failed to create tenant';
+
+          toast.error(fallbackMsg);
+
+          if (typeof fallbackMsg === 'string') {
+            if (/subdomain|slug/i.test(fallbackMsg)) {
+              setErrors(prev => ({ ...prev, subdomain: fallbackMsg }));
+            } else if (/company name|name/i.test(fallbackMsg)) {
+              setErrors(prev => ({ ...prev, name: fallbackMsg }));
+            }
+          }
+        }
     } finally {
       setLoading(false);
     }
@@ -281,7 +332,6 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="trial">Trial</option>
                     <option value="active">Active</option>
                     <option value="suspended">Suspended</option>
                   </select>

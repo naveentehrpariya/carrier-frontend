@@ -59,6 +59,16 @@ export default function MultiTenantAuthProvider(props) {
               setUser(parsedEmulationData.tenant);
               setIsSuperAdminUser(parsedEmulationData.superAdmin || false);
               
+              // Initialize tenant context for API calls
+              try {
+                const tenantCtx = {
+                  tenant: parsedEmulationData.tenant,
+                  isSuperAdmin: false,
+                  isEmulating: true
+                };
+                localStorage.setItem('tenantContext', JSON.stringify(tenantCtx));
+              } catch (e) {}
+              
               // Clean up emulation data after use
               localStorage.removeItem('tenant_emulation_token');
               localStorage.removeItem('tenant_emulation_data');
@@ -84,12 +94,25 @@ export default function MultiTenantAuthProvider(props) {
           console.log('🔑 Found token in URL, using for authentication');
           localStorage.setItem('token', urlToken);
           
-          // Remove token from URL for security
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, document.title, newUrl);
+          // If a tenant param is present, force tenant mode and seed context
+          const tenantParam = urlParams.get('tenant');
+          if (tenantParam) {
+            setIsSuperAdminUser(false);
+            try {
+              localStorage.setItem('tenantContext', JSON.stringify({
+                tenant: { subdomain: tenantParam },
+                isSuperAdmin: false,
+                isEmulating: true
+              }));
+            } catch (e) {}
+          }
           
-          // We'll continue with normal auth check using this token
+          // Preserve ?tenant in URL while removing token
+          urlParams.delete('token');
+          const newUrl = `${window.location.pathname}?${urlParams.toString()}${window.location.hash || ''}`;
+          window.history.replaceState({}, '', newUrl);
         }
+        
         
         // Check if we have stored data or just got a token from URL
         const currentToken = localStorage.getItem('token');
@@ -218,56 +241,28 @@ export default function MultiTenantAuthProvider(props) {
   const logout = async (navigateCallback = null) => {
     console.log('🔒 Starting logout process...');
     
-    // Check if the current user is ACTUALLY a super admin
-    // Must have BOTH: super admin user privileges AND super admin URL context
-    const wasSuperAdmin = isSuperAdminUser && isSuperAdmin;
-    
-    console.log('🔍 Logout user type check:', {
-      isSuperAdminUser: isSuperAdminUser,
-      isSuperAdmin: isSuperAdmin,
-      wasSuperAdmin: wasSuperAdmin,
-      userEmail: user?.email,
-      userRole: user?.role,
-      url: window.location.href
-    });
-    
-    setIsAuthenticated(false);
-    setUser(null);
-    setCompany(null);
-    setIsSuperAdminUser(false);
-    
-    // Clear all persisted data
-    const storageKeys = [
-      'token', 'user', 'company', 'tenant', 'isSuperAdmin', 'tenantContext'
-    ];
-    
-    storageKeys.forEach(key => {
-      localStorage.removeItem(key);
-      sessionStorage.removeItem(key);
-    });
-
-    // Clear tenant context
-    clearTenantContext();
-    
-    // Attempt to clear server-side session/cookie
     try {
-      await Api.get('/user/logout');
-      console.log('✅ Server logout successful');
+      const response = await Api.post('/user/logout');
+      if (response) {
+        // Clear all auth-related storage
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('company');
+        localStorage.removeItem('isSuperAdmin');
+        
+        setIsAuthenticated(false);
+        setUser(null);
+        setCompany(null);
+        setIsSuperAdminUser(false);
+        
+        toast.success(response.data.message || 'Logout successful');
+        
+        if (navigateCallback) navigateCallback();
+      }
     } catch (error) {
-      console.log('⚠️ Logout API call failed (but local logout successful):', error.message);
+      console.error('Logout error:', error);
+      toast.error(error.response?.data?.message || 'Logout failed');
     }
-    
-    // Navigate to appropriate login page based on ACTUAL user type
-    const redirectPath = wasSuperAdmin ? '/super-admin/login' : '/login';
-    console.log(`🏡 User was super admin: ${wasSuperAdmin}, redirecting to ${redirectPath}...`);
-    
-    if (navigateCallback && typeof navigateCallback === 'function') {
-      navigateCallback(redirectPath);
-    } else {
-      window.location.href = redirectPath;
-    }
-    
-    toast.success('Logged out successfully');
   };
 
   // Check if current user is super admin

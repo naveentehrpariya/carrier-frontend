@@ -92,9 +92,9 @@ export default function SuperAdminLogin() {
             <div className="side-image w-full hidden lg:block lg:max-w-[50%]">
                 <img src={loginbg} className="img-fluid block m-3 rounded-[30px]" alt="loginimage" />
             </div>
-            <div className="w-full h-screen flex lg:block items-center lg:items-auto lg:h-auto lg:max-w-[50%]">
-                <div className="max-h-[100vh] py-6 overflow-auto">
-                    <div className="w-full py-8 max-w-[390px] lg:max-w-[600px] m-auto lg:py-0 px-8 lg:px-5 text-slate-500">
+            <div className="w-full h-screen flex lg:block items-center lg:items-auto w-full lg:h-auto lg:max-w-[50%]">
+                <div className="max-h-[100vh] py-6 overflow-auto w-full">
+                    <div className="w-full py-8 max-w-[400px] lg:max-w-[600px] m-auto lg:py-0 px-8 lg:px-5 text-slate-500">
                         <div className="flex items-center justify-center lg:justify-start">
                             <Link to="/" className="text-3xl font-mono font-bold text-red-500 drunk lowercase">
                                 <Logotext />
