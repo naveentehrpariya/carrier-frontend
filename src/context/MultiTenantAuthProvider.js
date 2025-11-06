@@ -2,6 +2,7 @@ import { createContext, useState, useEffect, useContext } from "react";
 import { toast } from "react-hot-toast";
 import Api from '../api/Api';
 import { useMultiTenant } from './MultiTenantProvider';
+import safeStorage, { safeSessionStorage } from '../utils/safeStorage';
 
 export const AuthContext = createContext(); 
 
@@ -24,98 +25,73 @@ export default function MultiTenantAuthProvider(props) {
 
   // Check for existing authentication on component mount
   useEffect(() => {
+    // IMPORTANT: Handle URL token SYNCHRONOUSLY before any async operations
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlToken = urlParams.get('token');
+    const tenantParam = urlParams.get('tenant');
+    
+    if (urlToken) {
+      console.log('🔑 [SYNC] Found token in URL, storing immediately');
+      console.log('Token (first 30 chars):', urlToken.substring(0, 30));
+      safeStorage.setItem('token', urlToken);
+      console.log('✅ Token stored in safeStorage');
+      
+      if (tenantParam) {
+        console.log('🎭 [SYNC] Emulation detected, setting up tenant context');
+        console.log('Tenant param:', tenantParam);
+        const emulationUser = {
+          _id: 'emulation-' + tenantParam,
+          name: 'Super Admin (Emulating)',
+          email: 'emulating@superadmin.local',
+          role: 3,
+          tenantId: tenantParam,
+          isEmulating: true
+        };
+        safeStorage.setItem('user', JSON.stringify(emulationUser));
+        safeStorage.setItem('tenantContext', JSON.stringify({
+          tenant: { tenantId: tenantParam, subdomain: tenantParam },
+          isSuperAdmin: false,
+          isEmulating: true
+        }));
+        console.log('✅ User and tenant context stored');
+      }
+      
+      // Clean URL and reload to ensure all components use the new token
+      urlParams.delete('token');
+      const newUrl = `${window.location.pathname}?${urlParams.toString()}${window.location.hash || ''}`;
+      console.log('🔄 About to reload page with URL:', newUrl);
+      console.log('🔄 Current URL:', window.location.href);
+      
+      // Set a flag so we know we've already reloaded
+      if (!safeSessionStorage.getItem('emulation_reloaded')) {
+        safeSessionStorage.setItem('emulation_reloaded', 'true');
+        console.log('🔄 RELOADING NOW...');
+        window.location.href = newUrl; // Force reload
+        return; // Stop execution
+      } else {
+        console.log('⚠️ Already reloaded once, skipping reload to prevent loop');
+        safeSessionStorage.removeItem('emulation_reloaded');
+      }
+    }
+    
     const checkAuth = async () => {
       try {
         console.log('🔍 Checking authentication state...');
         
         // Try to get stored token first (for backward compatibility)
-        const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-        const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
-        const companyData = localStorage.getItem('company') || sessionStorage.getItem('company');
-        const superAdminData = localStorage.getItem('isSuperAdmin') || sessionStorage.getItem('isSuperAdmin');
+        const token = safeStorage.getItem('token') || safeSessionStorage.getItem('token');
+        const userData = safeStorage.getItem('user') || safeSessionStorage.getItem('user');
+        const companyData = safeStorage.getItem('company') || safeSessionStorage.getItem('company');
+        const superAdminData = safeStorage.getItem('isSuperAdmin') || safeSessionStorage.getItem('isSuperAdmin');
         
         console.log('🔑 Stored auth data:', { hasToken: !!token, hasUser: !!userData });
         
-        // Check for tenant emulation token first (from super admin view)
-        const emulationToken = localStorage.getItem('tenant_emulation_token');
-        const emulationData = localStorage.getItem('tenant_emulation_data');
-        if (emulationToken && emulationData) {
-          try {
-            console.log('🔑 Found tenant emulation token, using it for auth');
-            const parsedEmulationData = JSON.parse(emulationData);
-            
-            // Verify the emulation data is still valid (not too old)
-            const tokenAge = Date.now() - parsedEmulationData.timestamp;
-            const maxAge = 30000; // 30 seconds
-            
-            if (tokenAge < maxAge) {
-              console.log('✅ Emulation token is valid, setting up authentication');
-              
-              // Set the token for API calls
-              localStorage.setItem('token', emulationToken);
-              
-              // Use the tenant data from emulation
-              setIsAuthenticated(true);
-              setUser(parsedEmulationData.tenant);
-              setIsSuperAdminUser(parsedEmulationData.superAdmin || false);
-              
-              // Initialize tenant context for API calls
-              try {
-                const tenantCtx = {
-                  tenant: parsedEmulationData.tenant,
-                  isSuperAdmin: false,
-                  isEmulating: true
-                };
-                localStorage.setItem('tenantContext', JSON.stringify(tenantCtx));
-              } catch (e) {}
-              
-              // Clean up emulation data after use
-              localStorage.removeItem('tenant_emulation_token');
-              localStorage.removeItem('tenant_emulation_data');
-              
-              toast.success('Successfully accessed tenant environment');
-              return;
-            } else {
-              console.log('⚠️ Emulation token expired, cleaning up');
-              localStorage.removeItem('tenant_emulation_token');
-              localStorage.removeItem('tenant_emulation_data');
-            }
-          } catch (emulationError) {
-            console.error('❌ Error processing emulation data:', emulationError);
-            localStorage.removeItem('tenant_emulation_token');
-            localStorage.removeItem('tenant_emulation_data');
-          }
-        }
+        // Clean up any stale emulation tokens that might interfere
+        safeStorage.removeItem('tenant_emulation_token');
+        safeStorage.removeItem('tenant_emulation_data');
         
-        // Check URL for token parameter (alternative method)
-        const urlParams = new URLSearchParams(window.location.search);
-        const urlToken = urlParams.get('token');
-        if (urlToken) {
-          console.log('🔑 Found token in URL, using for authentication');
-          localStorage.setItem('token', urlToken);
-          
-          // If a tenant param is present, force tenant mode and seed context
-          const tenantParam = urlParams.get('tenant');
-          if (tenantParam) {
-            setIsSuperAdminUser(false);
-            try {
-              localStorage.setItem('tenantContext', JSON.stringify({
-                tenant: { subdomain: tenantParam },
-                isSuperAdmin: false,
-                isEmulating: true
-              }));
-            } catch (e) {}
-          }
-          
-          // Preserve ?tenant in URL while removing token
-          urlParams.delete('token');
-          const newUrl = `${window.location.pathname}?${urlParams.toString()}${window.location.hash || ''}`;
-          window.history.replaceState({}, '', newUrl);
-        }
-        
-        
-        // Check if we have stored data or just got a token from URL
-        const currentToken = localStorage.getItem('token');
+        // Check if we have stored data from synchronous token setup
+        const currentToken = safeStorage.getItem('token');
         if (currentToken && userData) {
           try {
             const parsedUser = JSON.parse(userData);
@@ -131,9 +107,9 @@ export default function MultiTenantAuthProvider(props) {
           } catch (parseError) {
             console.error('❌ Error parsing stored user data:', parseError);
             // Clear corrupted data
-            localStorage.removeItem('user');
-            localStorage.removeItem('company');
-            localStorage.removeItem('isSuperAdmin');
+            safeStorage.removeItem('user');
+            safeStorage.removeItem('company');
+            safeStorage.removeItem('isSuperAdmin');
           }
         }
         
@@ -168,8 +144,7 @@ export default function MultiTenantAuthProvider(props) {
         email,
         password,
         isSuperAdmin: isAdmin,
-        ...(tenantId && !isAdmin && { tenantId }),
-        ...(tenantId && isAdmin && { corporateID: tenantId })
+        ...(tenantId && !isAdmin && { tenantId })
       };
 
       const response = await Api.post('/user/multitenant-login', loginData);
@@ -185,12 +160,12 @@ export default function MultiTenantAuthProvider(props) {
         });
         
         // Store authentication data
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(userData));
-        localStorage.setItem('isSuperAdmin', JSON.stringify(userIsSuperAdmin || false));
+        safeStorage.setItem('token', token);
+        safeStorage.setItem('user', JSON.stringify(userData));
+        safeStorage.setItem('isSuperAdmin', JSON.stringify(userIsSuperAdmin || false));
         
         if (tenantData) {
-          localStorage.setItem('tenant', JSON.stringify(tenantData));
+          safeStorage.setItem('tenant', JSON.stringify(tenantData));
         }
 
         // Update state
@@ -206,7 +181,7 @@ export default function MultiTenantAuthProvider(props) {
         
         if (userData.company) {
           setCompany(userData.company);
-          localStorage.setItem('company', JSON.stringify(userData.company));
+          safeStorage.setItem('company', JSON.stringify(userData.company));
         }
 
         toast.success(response.data.message || 'Login successful!');
@@ -234,21 +209,21 @@ export default function MultiTenantAuthProvider(props) {
     if (companyData) setCompany(companyData);
     
     // Persist authentication data
-    localStorage.setItem('user', JSON.stringify(userData));
-    if (companyData) localStorage.setItem('company', JSON.stringify(companyData));
+    safeStorage.setItem('user', JSON.stringify(userData));
+    if (companyData) safeStorage.setItem('company', JSON.stringify(companyData));
   };
 
   const logout = async (navigateCallback = null) => {
     console.log('🔒 Starting logout process...');
     
     try {
-      const response = await Api.post('/user/logout');
+      const response = await Api.get('/user/logout');
       if (response) {
         // Clear all auth-related storage
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('company');
-        localStorage.removeItem('isSuperAdmin');
+        safeStorage.removeItem('token');
+        safeStorage.removeItem('user');
+        safeStorage.removeItem('company');
+        safeStorage.removeItem('isSuperAdmin');
         
         setIsAuthenticated(false);
         setUser(null);
@@ -278,7 +253,7 @@ export default function MultiTenantAuthProvider(props) {
   // Get user permissions
   const getUserPermissions = () => {
     if (checkSuperAdminAccess()) {
-      return ['super_admin', 'all_permissions'];
+      return ['super_admin'];
     }
     
     if (checkTenantAdminAccess()) {
@@ -296,10 +271,14 @@ export default function MultiTenantAuthProvider(props) {
     return rolePermissions[user?.role] || ['basic_access'];
   };
 
-  // Check specific permission
+  // Check specific permission (super admins have all permissions)
   const hasPermission = (permission) => {
+    if (checkSuperAdminAccess()) {
+      return true; // Super admins have all permissions
+    }
+    
     const userPermissions = getUserPermissions();
-    return userPermissions.includes(permission) || userPermissions.includes('all_permissions');
+    return userPermissions.includes(permission) || userPermissions.includes('full_access');
   };
 
   // Error handler

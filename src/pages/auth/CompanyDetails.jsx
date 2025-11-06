@@ -3,21 +3,13 @@ import toast from 'react-hot-toast';
 import { UserContext } from '../../context/AuthProvider';
 import Api from '../../api/Api';
 import AuthLayout from '../../layout/AuthLayout';
+import safeStorage from '../../utils/safeStorage';
 
 export default function CompanyDetails({ fetchLists, classes, text}){
 
    const [action, setaction] = useState();
    const {Errors, company, setcompany} = useContext(UserContext);
-
-    const defaultTerms = `Carrier is responsible to confirm the actual weight and count received from the shipper before transit.
-
-Additional fees such as loading/unloading, pallet exchange, etc., are included in the agreed rate.
-
-POD must be submitted within 5 days of delivery.
-
-Freight charges include $100 for MacroPoint tracking. Non-compliance may lead to deduction.
-
-Cross-border shipments require custom stamps or deductions may apply.`;
+ 
 
     const [data, setData] = useState({
       phone: company?.phone || "",
@@ -30,7 +22,7 @@ Cross-border shipments require custom stamps or deductions may apply.`;
       routing_number: company?.routing_number || "",
       remittance_primary_email: company?.remittance_primary_email || "",
       remittance_secondary_email: company?.remittance_secondary_email || "",
-      rate_confirmation_terms: company?.rate_confirmation_terms || defaultTerms,
+      rate_confirmation_terms: company?.rate_confirmation_terms || '',
     });
 
     useEffect(() => {
@@ -46,7 +38,7 @@ Cross-border shipments require custom stamps or deductions may apply.`;
           routing_number: company?.routing_number || "",
           remittance_primary_email: company?.remittance_primary_email || "",
           remittance_secondary_email: company?.remittance_secondary_email || "",
-          rate_confirmation_terms: company?.rate_confirmation_terms || defaultTerms,
+          rate_confirmation_terms: company?.rate_confirmation_terms || '',
         });
       }
     }, [company]);
@@ -101,8 +93,8 @@ Cross-border shipments require custom stamps or deductions may apply.`;
             console.log('Manually updated company context:', updatedCompany);
             setcompany(updatedCompany);
             
-            // Also update localStorage if that's where company data is stored
-            localStorage.setItem('company', JSON.stringify(updatedCompany));
+            // Also update safeStorage if that's where company data is stored
+            safeStorage.setItem('company', JSON.stringify(updatedCompany));
           }
           
         } else {

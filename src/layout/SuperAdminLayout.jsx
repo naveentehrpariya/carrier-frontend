@@ -6,6 +6,7 @@ import Logo from "../pages/common/Logo";
 import SuperAdminSidebar from "./SuperAdminSidebar";
 import { TbLogout } from "react-icons/tb";
 import { HiOutlineUserCircle } from "react-icons/hi2";
+import safeStorage from "../utils/safeStorage";
 
 export default function SuperAdminLayout({ children, heading }) {
   const { user: multiTenantUser, logout: multiTenantLogout } = useAuth();
@@ -26,7 +27,7 @@ export default function SuperAdminLayout({ children, heading }) {
       await multiTenantLogout();
     } else {
       console.log('🔄 Using legacy logout in SuperAdminLayout');
-      localStorage.removeItem("token");
+      safeStorage.removeItem("token");
       window.location.href = "/login";
     }
   };
@@ -34,7 +35,7 @@ export default function SuperAdminLayout({ children, heading }) {
   // Check if user has super admin permissions
   const isSuperAdminUser = React.useMemo(() => {
     // Check stored super admin status
-    const storedSuperAdminStatus = localStorage.getItem('isSuperAdmin');
+    const storedSuperAdminStatus = safeStorage.getItem('isSuperAdmin');
     
     try {
       const parsedStatus = storedSuperAdminStatus ? JSON.parse(storedSuperAdminStatus) : false;
@@ -89,7 +90,7 @@ export default function SuperAdminLayout({ children, heading }) {
           
           <div className="flex w-full overflow-hidden">
             <SuperAdminSidebar logout={handleLogout} toggle={toggle} />
-            <div className="content md:max-h-[100vh] overflow-y-auto lg:w-[calc(100%-300px)] p-6 md:p-8 !pt-[120px] lg:!pt-[150px] w-full">
+            <div className="content !pb-[100px] md:max-h-[100vh] overflow-y-auto lg:w-[calc(100%-300px)] p-6 md:p-8 !pt-[120px] lg:!pt-[150px] w-full">
               {children}
             </div>
           </div>

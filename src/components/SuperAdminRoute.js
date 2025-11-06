@@ -25,8 +25,8 @@ const SuperAdminRoute = ({ children }) => {
 
   // Redirect to login if not authenticated
   if (!user) {
-    console.log('No user found, redirecting to login');
-    return <Navigate to="/login" replace />;
+    console.log('No user found, redirecting to multitenant-login');
+    return <Navigate to="/multitenant-login" replace />;
   }
 
   // Check both URL-based and auth-based super admin status

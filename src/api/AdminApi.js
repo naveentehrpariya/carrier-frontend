@@ -1,9 +1,10 @@
 import axios from 'axios';
+import safeStorage from '../utils/safeStorage';
 const APP_URL = "https://serverrai.runstream.co";
 // const APP_URL = "http://localhost:8080";
 
 function getToken(){
-  const data = localStorage && localStorage.getItem('admintoken');
+  const data = safeStorage.getItem('admintoken');
   return data;
 }
 

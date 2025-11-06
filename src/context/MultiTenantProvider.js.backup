@@ -1,0 +1,417 @@
+import { createContext, useState, useEffect, useContext } from 'react';
+import { toast } from 'react-hot-toast';
+import Api from '../api/Api';
+
+export const MultiTenantContext = createContext();
+
+export const useMultiTenant = () => {
+  const context = useContext(MultiTenantContext);
+  if (!context) {
+    throw new Error('useMultiTenant must be used within a MultiTenantProvider');
+  }
+  return context;
+};
+export default function MultiTenantProvider({ children }) {
+  const [tenant, setTenant] = useState(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [tenantLoading, setTenantLoading] = useState(true);
+  const [tenantError, setTenantError] = useState(null);
+
+  // Resolve tenant from URL or query params
+  useEffect(() => {
+    resolveTenantFromURL();
+  }, []);
+
+  const resolveTenantFromURL = () => {
+    try {
+      const hostname = window.location.hostname;
+      const urlParams = new URLSearchParams(window.location.search);
+      const tenantParam = urlParams.get('tenant');
+      
+      let resolvedTenant = null;
+      let resolvedIsSuperAdmin = false;
+
+      // Development mode - check for tenant parameter
+      if (hostname === 'localhost') {
+        if (tenantParam === 'admin') {
+          resolvedIsSuperAdmin = true;
+          resolvedTenant = { 
+            id: 'super-admin', 
+            name: 'Super Admin', 
+            tenantId: 'admin',
+            isSuperAdmin: true 
+          };
+        } else if (tenantParam) {
+          resolvedTenant = { 
+            tenantId: tenantParam,
+            id: tenantParam,
+            name: tenantParam.charAt(0).toUpperCase() + tenantParam.slice(1)
+          };
+        }
+      } else {
+        // Production mode - resolve from subdomain
+        const subdomainMatch = hostname.match(/^([^.]+)\./); 
+        if (subdomainMatch) {
+          const subdomain = subdomainMatch[1];
+          if (subdomain === 'admin') {
+            resolvedIsSuperAdmin = true;
+            resolvedTenant = { 
+              id: 'super-admin', 
+              name: 'Super Admin', 
+              tenantId: 'admin',
+              isSuperAdmin: true 
+            };
+          } else {
+            resolvedTenant = { 
+              tenantId: subdomain,
+              id: subdomain,
+              name: subdomain.charAt(0).toUpperCase() + subdomain.slice(1)
+            };
+          }
+        }
+      }
+
+      setTenant(resolvedTenant);
+      setIsSuperAdmin(resolvedIsSuperAdmin);
+      setTenantLoading(false);
+
+      // Store tenant info for API calls
+      if (resolvedTenant) {
+        localStorage.setItem('tenantContext', JSON.stringify({
+          tenant: resolvedTenant,
+          isSuperAdmin: resolvedIsSuperAdmin
+        }));
+      }
+
+    } catch (error) {
+      console.error('Error resolving tenant:', error);
+      setTenantError('Failed to resolve tenant context');
+      setTenantLoading(false);
+    }
+  };
+
+  // Fetch detailed tenant information
+  const fetchTenantInfo = async (tenantId = null) => {
+    try {
+      if (isSuperAdmin) return; // Super admin doesn't need tenant info
+      
+      const targetTenantId = tenantId || tenant?.tenantId || tenant?.id;
+      if (!targetTenantId) return;
+
+      const response = await Api.get(`/api/tenant-admin/info`, {
+        params: { tenantId: targetTenantId }
+      });
+
+      if (response.data.status) {
+        const tenantInfo = response.data.data.tenant;
+        setTenant(prevTenant => ({
+          ...prevTenant,
+          ...tenantInfo,
+          id: tenantInfo.tenantId
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching tenant info:', error);
+      if (error.response?.status === 404) {
+        setTenantError('Company not found');
+      } else {
+        setTenantError('Failed to load company information');
+      }
+    }
+  };
+
+  // Switch tenant (for super admin)
+  const switchTenant = async (newTenantId) => {
+    if (!isSuperAdmin) {
+      toast.error('Only super admins can switch tenants');
+      return false;
+    }
+
+    try {
+      setTenantLoading(true);
+      
+      // Fetch tenant info
+      const response = await Api.get(`/api/super-admin/tenants/${newTenantId}`);
+      
+      if (response.data.status) {
+        const tenantInfo = response.data.data.tenant;
+        setTenant({
+          ...tenantInfo,
+          id: tenantInfo.tenantId
+        });
+        
+        localStorage.setItem('tenantContext', JSON.stringify({
+          tenant: tenantInfo,
+          isSuperAdmin: true
+        }));
+        
+        toast.success(`Switched to ${tenantInfo.name}`);
+        return true;
+      }
+    } catch (error) {
+      console.error('Error switching tenant:', error);
+      toast.error('Failed to switch tenant');
+      return false;
+    } finally {
+      setTenantLoading(false);
+    }
+  };
+
+  // Emulate tenant (for super admin with authentication)
+  const emulateTenant = async (tenantId) => {
+    if (!isSuperAdmin) {
+      toast.error('Only super admins can emulate tenants');
+      return false;
+    }
+
+    try {
+      setTenantLoading(true);
+      
+      // Debug logging
+      const token = localStorage.getItem('token');
+      console.log('=== EMULATION DEBUG ===');
+      console.log('TenantId to emulate:', tenantId);
+      console.log('Token available:', !!token);
+      console.log('Token length:', token?.length);
+      console.log('isSuperAdmin:', isSuperAdmin);
+      
+      // Call the emulate tenant API
+      console.log('Making API call to /api/super-admin/emulate-tenant...');
+      const response = await Api.post('/api/super-admin/emulate-tenant', {
+        tenantId: tenantId
+      });
+      
+      console.log('API Response:', response.status, response.data);
+      
+      if (response.data.status) {
+        const { tenant, token, redirectUrl } = response.data;
+        
+        // Update the token in localStorage
+        localStorage.setItem('token', token);
+        
+        // Create emulation user data that will be compatible with the tenant
+        const emulationUser = {
+          _id: 'emulation-user-' + tenant.tenantId,
+          name: 'Super Admin (Emulating)',
+          email: 'superadmin@emulating.local',
+          role: 3, // Admin role
+          tenantId: tenant.tenantId,
+          isTenantAdmin: true,
+          isEmulating: true,
+          originalSuperAdmin: true
+        };
+        
+        // Save emulation user data
+        localStorage.setItem('user', JSON.stringify(emulationUser));
+        localStorage.setItem('isSuperAdmin', JSON.stringify(false)); // Not in super admin mode when emulating
+        
+        // Update tenant context
+        setTenant({
+          ...tenant,
+          id: tenant.tenantId
+        });
+        
+        localStorage.setItem('tenantContext', JSON.stringify({
+          tenant: tenant,
+          isSuperAdmin: false, // We're now in tenant mode
+          isEmulating: true
+        }));
+        
+        toast.success(`Now emulating ${tenant.name}`);
+        
+        // Navigate to the tenant URL
+        window.location.href = redirectUrl;
+        return true;
+      }
+    } catch (error) {
+      console.error('Error emulating tenant:', error);
+      console.error('Error details:', error.response?.data);
+      
+      if (error.response?.status === 401) {
+        toast.error('Authentication failed. Please log in again.');
+      } else if (error.response?.status === 404) {
+        toast.error('Tenant not found.');
+      } else {
+        toast.error('Failed to emulate tenant: ' + (error.response?.data?.message || error.message));
+      }
+      return false;
+    } finally {
+      setTenantLoading(false);
+    }
+  };
+
+  // Debug authentication
+  const debugAuth = () => {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    const tenantContext = localStorage.getItem('tenantContext');
+    
+    console.log('=== AUTH DEBUG ===');
+    console.log('Token:', token ? 'Present' : 'Missing');
+    console.log('User:', user ? JSON.parse(user) : 'Missing');
+    console.log('Tenant Context:', tenantContext ? JSON.parse(tenantContext) : 'Missing');
+    console.log('isSuperAdmin:', isSuperAdmin);
+    console.log('==================');
+  };
+
+  // Stop tenant emulation
+  const stopEmulation = async () => {
+    try {
+      setTenantLoading(true);
+      
+      // Call the stop emulation API
+      const response = await Api.post('/api/super-admin/stop-emulation');
+      
+      if (response.data.status) {
+        const { token, redirectUrl } = response.data;
+        
+        // Update the token
+        localStorage.setItem('token', token);
+        
+        // Restore original super admin user data
+        // TODO: In a real app, this should be stored during emulation start
+        const superAdminUser = {
+          _id: 'super-admin-user',
+          name: 'Super Admin',
+          email: 'admin@yourcompany.com',
+          role: 'super_admin',
+          isSuperAdmin: true
+        };
+        
+        localStorage.setItem('user', JSON.stringify(superAdminUser));
+        localStorage.setItem('isSuperAdmin', JSON.stringify(true));
+        
+        // Clear tenant context and restore super admin context
+        setTenant({
+          id: 'super-admin', 
+          name: 'Super Admin', 
+          tenantId: 'admin',
+          isSuperAdmin: true 
+        });
+        setIsSuperAdmin(true);
+        
+        localStorage.setItem('tenantContext', JSON.stringify({
+          tenant: { 
+            id: 'super-admin', 
+            name: 'Super Admin', 
+            tenantId: 'admin',
+            isSuperAdmin: true 
+          },
+          isSuperAdmin: true,
+          isEmulating: false
+        }));
+        
+        toast.success('Returned to Super Admin dashboard');
+        
+        // Navigate back to super admin
+        window.location.href = redirectUrl;
+        return true;
+      }
+    } catch (error) {
+      console.error('Error stopping emulation:', error);
+      toast.error('Failed to return to Super Admin dashboard');
+      return false;
+    } finally {
+      setTenantLoading(false);
+    }
+  };
+
+  // Get tenant-aware API instance
+  const getTenantApi = () => {
+    const api = Api;
+    
+    // Add tenant context to requests
+    api.interceptors.request.use(
+      (config) => {
+        if (tenant && !isSuperAdmin) {
+          config.headers['X-Tenant-ID'] = tenant.id || tenant.subdomain;
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    return api;
+  };
+
+  // Navigate to tenant URL
+  const navigateToTenant = (tenantSubdomain) => {
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    const currentPort = window.location.port;
+    
+    if (hostname === 'localhost') {
+      // Use the current port instead of hardcoded 3000
+      const port = currentPort || '3000';
+      window.location.href = `${protocol}//localhost:${port}?tenant=${tenantSubdomain}`;
+    } else {
+      const domain = hostname.replace(/^[^.]+\./, ''); // Remove current subdomain
+      window.location.href = `${protocol}//${tenantSubdomain}.${domain}`;
+    }
+  };
+
+  // Navigate to super admin
+  const navigateToSuperAdmin = () => {
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    const currentPort = window.location.port;
+    
+    if (hostname === 'localhost') {
+      // Use the current port instead of hardcoded 3000
+      const port = currentPort || '3000';
+      window.location.href = `${protocol}//localhost:${port}?tenant=admin`;
+    } else {
+      const domain = hostname.replace(/^[^.]+\./, ''); // Remove current subdomain
+      window.location.href = `${protocol}//admin.${domain}`;
+    }
+  };
+
+  // Clear tenant context
+  const clearTenantContext = () => {
+    setTenant(null);
+    setIsSuperAdmin(false);
+    setTenantError(null);
+    localStorage.removeItem('tenantContext');
+  };
+
+  // Check if user can access current tenant
+  const canAccessTenant = (user) => {
+    if (isSuperAdmin) return true; // Super admin can access any tenant
+    if (!tenant || !user) return false;
+    return user.tenantId === tenant.id;
+  };
+
+  const values = {
+    // State
+    tenant,
+    isSuperAdmin,
+    tenantLoading,
+    tenantError,
+    
+    // Actions
+    fetchTenantInfo,
+    switchTenant,
+    emulateTenant,
+    stopEmulation,
+    navigateToTenant,
+    navigateToSuperAdmin,
+    clearTenantContext,
+    canAccessTenant,
+    getTenantApi,
+    debugAuth,
+    
+    // Utilities
+    isMultiTenant: true,
+    tenantContext: {
+      subdomain: tenant?.subdomain,
+      name: tenant?.name,
+      id: tenant?.id
+    }
+  };
+
+  return (
+    <MultiTenantContext.Provider value={values}>
+      {children}
+    </MultiTenantContext.Provider>
+  );
+}

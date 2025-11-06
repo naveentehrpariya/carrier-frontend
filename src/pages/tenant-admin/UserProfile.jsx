@@ -2,12 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/MultiTenantAuthProvider';
 import toast from 'react-hot-toast';
 import AuthLayout from '../../layout/AuthLayout';
+import safeStorage from '../../utils/safeStorage';
+import Api from '../../api/Api';
 
 export default function UserProfile() {
     const { user, updateProfile } = useAuth();
     const [loading, setLoading] = useState(false);
     const [emailLoading, setEmailLoading] = useState(false);
     const [passwordLoading, setPasswordLoading] = useState(false);
+    const [subscriptionData, setSubscriptionData] = useState(null);
+    const [subscriptionLoading, setSubscriptionLoading] = useState(true);
     
     // Form states
     const [emailForm, setEmailForm] = useState({
@@ -20,12 +24,39 @@ export default function UserProfile() {
         confirmPassword: ''
     });
 
-    // Initialize email form with user data
+    // Fetch subscription data
+    const fetchSubscriptionData = async () => {
+        if (!user || (!user.isTenantAdmin && user.role !== 3)) {
+            console.log('🙅‍♂️ User is not tenant admin, skipping subscription fetch');
+            setSubscriptionLoading(false);
+            return;
+        }
+
+        try {
+            console.log('🚀 Fetching subscription data for user:', user.name);
+            const response = await Api.get('/api/tenant-admin/subscription');
+            console.log('📊 Subscription API response:', response.data);
+            
+            if (response.data.status) {
+                console.log('✅ Setting subscription data:', response.data.data.subscription);
+                setSubscriptionData(response.data.data.subscription);
+            } else {
+                console.error('❌ Failed to fetch subscription data:', response.data.message);
+            }
+        } catch (error) {
+            console.error('⚠️ Error fetching subscription data:', error);
+        } finally {
+            setSubscriptionLoading(false);
+        }
+    };
+
+    // Initialize email form with user data and fetch subscription
     useEffect(() => {
         if (user) {
             setEmailForm({
                 email: user.email || ''
             });
+            fetchSubscriptionData();
         }
     }, [user]);
 
@@ -59,19 +90,11 @@ export default function UserProfile() {
         setEmailLoading(true);
         
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/auth/edit_user/${user._id}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    email: emailForm.email
-                })
+            const response = await Api.post(`/api/auth/edit_user/${user._id}`, {
+                email: emailForm.email
             });
 
-            const data = await response.json();
+            const data = response.data;
             
             if (data.status) {
                 toast.success('Email updated successfully!');
@@ -111,20 +134,12 @@ export default function UserProfile() {
         setPasswordLoading(true);
         
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/auth/change-password`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    id: user._id,
-                    password: passwordForm.password
-                })
+            const response = await Api.post('/api/auth/change-password', {
+                id: user._id,
+                password: passwordForm.password
             });
 
-            const data = await response.json();
+            const data = response.data;
             
             if (data.status) {
                 toast.success('Password updated successfully!');
@@ -256,6 +271,101 @@ export default function UserProfile() {
                         </div>
                     </div>
                 </div>
+
+                {/* Subscription Information - Only for Tenant Admins */}
+                {(user.isTenantAdmin || user.role === 3) && (
+                    <div className="mt-8">
+                        <div className="bg-dark border border-gray-700 rounded-[30px] shadow-lg">
+                            <div className="p-6">
+                                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                                    <svg className="w-5 h-5 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Subscription Details
+                                </h3>
+                                
+                                {subscriptionLoading ? (
+                                    <div className="flex items-center justify-center h-32">
+                                        <div className="text-gray-400">Loading subscription details...</div>
+                                    </div>
+                                ) : subscriptionData ? (
+                                    <div className="space-y-6">
+                                        {/* Plan Information */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <h4 className="text-sm font-medium text-gray-300 mb-2">Current Plan</h4>
+                                                <div className="flex items-center">
+                                                    <span className="text-lg font-semibold text-white">{subscriptionData.planName}</span>
+                                                    <span className={`ml-3 px-2 py-1 text-xs rounded-full ${
+                                                        subscriptionData.isActive ? 'bg-green-600 text-green-100' : 'bg-red-600 text-red-100'
+                                                    }`}>
+                                                        {subscriptionData.status}
+                                                    </span>
+                                                </div>
+                                                <p className="text-gray-400 text-sm mt-1">{subscriptionData.planDescription}</p>
+                                            </div>
+                                            
+                                            <div>
+                                                <h4 className="text-sm font-medium text-gray-300 mb-2">Billing</h4>
+                                                <p className="text-white capitalize">{subscriptionData.billingCycle}</p>
+                                                {subscriptionData.daysUntilRenewal && (
+                                                    <p className="text-gray-400 text-sm mt-1">
+                                                        {subscriptionData.daysUntilRenewal} days until renewal
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Usage Statistics */}
+                                        <div>
+                                            <h4 className="text-sm font-medium text-gray-300 mb-3">Usage & Limits</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                {Object.entries(subscriptionData.usage).map(([key, usage]) => (
+                                                    <div key={key} className="bg-gray-800 rounded-lg p-3">
+                                                        <div className="flex justify-between items-center mb-2">
+                                                            <span className="text-sm text-gray-300 capitalize">{key}</span>
+                                                            <span className="text-sm text-white">
+                                                                {usage.current} / {usage.limit === 999999 ? '∞' : usage.limit}
+                                                            </span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-700 rounded-full h-2">
+                                                            <div 
+                                                                className={`h-2 rounded-full ${
+                                                                    usage.percentage > 90 ? 'bg-red-500' : 
+                                                                    usage.percentage > 75 ? 'bg-yellow-500' : 'bg-green-500'
+                                                                }`}
+                                                                style={{ width: `${Math.min(usage.percentage, 100)}%` }}
+                                                            ></div>
+                                                        </div>
+                                                        {usage.percentage > 100 && (
+                                                            <p className="text-red-400 text-xs mt-1">Over limit by {usage.percentage - 100}%</p>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Plan Features */}
+                                        <div>
+                                            <h4 className="text-sm font-medium text-gray-300 mb-3">Plan Features</h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {subscriptionData.planFeatures.map((feature, index) => (
+                                                    <span key={index} className="px-3 py-1 bg-blue-600 text-blue-100 text-xs rounded-full">
+                                                        {feature.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="text-center py-8">
+                                        <p className="text-gray-400">No subscription information available</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Update Password */}
                 <div className="mt-8">

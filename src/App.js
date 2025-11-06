@@ -1,5 +1,5 @@
 import './App.css';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import PrivateRoute from './components/PrivateRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
@@ -11,10 +11,8 @@ import UserContextProvider from './context/AuthProvider';
 import { SidebarCountsProvider } from './context/SidebarCountsContext';
 import Error404 from './404';
 import Overview from './pages/dashboard/Overview';
-import Login from './pages/auth/LogIn';
 import CMCHomepage from './pages/CMCHomepage';
 import MultiTenantLogin from './pages/auth/MultiTenantLogin';
-import SuperAdminLogin from './pages/auth/SuperAdminLogin';
 import TenantDashboard from './pages/tenant-admin/TenantDashboard';
 import SuperAdminDashboard from './pages/super-admin/SuperAdminDashboard';
 import AllTenantsManagement from './pages/super-admin/AllTenantsManagement';
@@ -52,12 +50,11 @@ function App() {
                 <div className="routes">
                   <Routes>
                     {/* Public routes */}
-                    <Route path="/login" element={<Login />} />
+                    <Route path="/login" element={<Navigate to="/multitenant-login" replace />} />
                     <Route path="/multitenant-login" element={<MultiTenantLogin />} />
-                    <Route path="/super-admin/login" element={<SuperAdminLogin />} />
+                    <Route path="/super-admin/login" element={<Navigate to="/multitenant-login" replace />} />
                     <Route path="/" element={<CMCHomepage />} />
                     <Route path="/debug-auth" element={<AuthDebug />} />
-
 
 
                     {/* Tenant Admin Dashboard - Now unified with regular employee dashboard */}

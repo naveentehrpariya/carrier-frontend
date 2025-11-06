@@ -20,6 +20,7 @@ import { MdAdminPanelSettings } from "react-icons/md";
 import { BsPersonGear } from "react-icons/bs";
 import Api from '../api/Api';
 import { useSidebarCounts } from '../context/SidebarCountsContext';
+import safeStorage from '../utils/safeStorage';
 
 export default function Sidebar({toggle}) {
 
@@ -46,7 +47,7 @@ export default function Sidebar({toggle}) {
       try {
         const res = await Api.get('/user/logout');
         if(res.data.status){
-          localStorage.removeItem("token");
+          safeStorage.removeItem("token");
           window.location.href = "/login";
         } else {
           console.error("Logout failed:", res.data.message);
@@ -54,7 +55,7 @@ export default function Sidebar({toggle}) {
       } catch (err) {
         console.error("Logout error:", err);
         // Force redirect even if API fails
-        localStorage.clear();
+        safeStorage.clear();
         window.location.href = "/login";
       }
     }
@@ -80,7 +81,10 @@ export default function Sidebar({toggle}) {
   return (
     <>
       {/* <button  className='text-white text-4xl absolute top-3 z-[99999] bg-black px-4 py-3 rounded-xl right-3'>&times;</button> */}
-      <div id='sidebar' className='mobilesidebar sticky top-0 pt-[140px] p-8 bg-dark border-r max-h-[100vh] overflow-auto pb-22 w-full max-w-[300px]  min-w-[300px] border-gray-800'>
+      <div id='sidebar' className='mobilesidebar sticky 
+      top-0 pt-[140px] p-8 bg-dark border-r 
+      max-h-[100vh]
+       overflow-auto pb-22 w-full max-w-[300px]  min-w-[300px] border-gray-800'>
         {/* <h2 className='mb-3 text-sm uppercase text-gray-400'>Main Menu</h2> */}
         <div className=" flex md:hidden items-center mb-8">
           <div><HiOutlineUserCircle color="white"  size='2.5rem'/></div>

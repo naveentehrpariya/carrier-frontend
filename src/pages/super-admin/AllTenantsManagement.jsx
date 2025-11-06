@@ -414,18 +414,6 @@ export default function AllTenantsManagement() {
         console.log('✅ Tenant emulation successful!');
         console.log('🔑 Response data:', response.data);
         
-        // Store the authentication data for the new tab
-        if (response.data.token) {
-          console.log('🔑 Storing auth token for cross-tab access');
-          // Store auth data that can be accessed by the new tab
-          localStorage.setItem('tenant_emulation_token', response.data.token);
-          localStorage.setItem('tenant_emulation_data', JSON.stringify({
-            tenant: response.data.tenant,
-            timestamp: Date.now(),
-            superAdmin: false
-          }));
-        }
-        
         toast.success(`Successfully authenticated for ${tenant.name}`);
         
         // Use the backend-generated redirectUrl which includes the correct tenant parameter
@@ -459,13 +447,6 @@ export default function AllTenantsManagement() {
         
         // Open the new tab
         window.open(urlWithToken, '_blank');
-        
-        // Clean up stored data after a delay
-        setTimeout(() => {
-          localStorage.removeItem('tenant_emulation_token');
-          localStorage.removeItem('tenant_emulation_data');
-          console.log('🧹 Cleaned up temporary auth data');
-        }, 10000); // Clean up after 10 seconds
       } else {
         console.error('❌ Tenant emulation failed - API returned success=false');
         console.error('❌ Response data:', response.data);
@@ -570,32 +551,32 @@ export default function AllTenantsManagement() {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-dark2 text-white rounded-2xl border border-gray-600">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <BuildingOfficeIcon className="h-6 w-6 text-gray-400" />
+                  <BuildingOfficeIcon className="h-12 w-12 text-gray-400" />
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Tenants</dt>
-                    <dd className="text-2xl font-semibold text-gray-900">{totalTenants}</dd>
+                    <dt className="text-normal font-medium text-gray-300 truncate">Total Tenants</dt>
+                    <dd className="text-2xl font-semibold text-gray-100">{totalTenants}</dd>
                   </dl>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-dark2 text-white rounded-2xl border border-gray-600">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <CheckCircleIcon className="h-6 w-6 text-green-500" />
+                  <CheckCircleIcon className="h-12 w-12 text-green-500" />
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Active</dt>
-                    <dd className="text-2xl font-semibold text-gray-900">
+                    <dt className="text-normal font-medium text-gray-300 truncate">Active</dt>
+                    <dd className="text-2xl font-semibold text-gray-100">
                       {tenants.filter(t => t.status === 'active').length}
                     </dd>
                   </dl>
@@ -604,16 +585,16 @@ export default function AllTenantsManagement() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-dark2 text-white rounded-2xl border border-gray-600">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <ClockIcon className="h-6 w-6 text-blue-500" />
+                  <ClockIcon className="h-12 w-12 text-blue-500" />
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Trial</dt>
-                    <dd className="text-2xl font-semibold text-gray-900">
+                    <dt className="text-normal font-medium text-gray-300 truncate">Trial</dt>
+                    <dd className="text-2xl font-semibold text-gray-100">
                       {tenants.filter(t => t.status === 'trial').length}
                     </dd>
                   </dl>
@@ -622,16 +603,16 @@ export default function AllTenantsManagement() {
             </div>
           </div>
 
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-dark2 text-white rounded-2xl border border-gray-600">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <XCircleIcon className="h-6 w-6 text-red-500" />
+                  <XCircleIcon className="h-12 w-12 text-red-500" />
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Suspended</dt>
-                    <dd className="text-2xl font-semibold text-gray-900">
+                    <dt className="text-normal font-medium text-gray-300 truncate">Suspended</dt>
+                    <dd className="text-2xl font-semibold text-gray-100">
                       {tenants.filter(t => t.status === 'suspended').length}
                     </dd>
                   </dl>
@@ -642,8 +623,8 @@ export default function AllTenantsManagement() {
         </div>
 
         {/* Filters and Search */}
-        <div className="bg-white shadow rounded-lg mb-6">
-          <div className="px-6 py-4 border-b border-gray-200">
+        <div className="mt-12 rounded-xl mb-6">
+          <div className="">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
               <div className="flex items-center space-x-4">
                 <div className="relative">
@@ -653,15 +634,16 @@ export default function AllTenantsManagement() {
                     placeholder="Search tenants..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 w-64"
+                    className="bg-dark1 pl-10 pr-4 py-3 border border-gray-700 
+                    rounded-xl text-normal focus:outline-none focus:ring-2 
+                    focus:ring-red-500 focus:border-red-500 w-64"
                   />
                 </div>
                 
                 <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                >
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="bg-dark1 text-white px-4 py-3 border border-gray-700 rounded-xl text-normal focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" >
                   <option value="all">All Status</option>
                   <option value="active">Active</option>
                   <option value="suspended">Suspended</option>
@@ -671,17 +653,16 @@ export default function AllTenantsManagement() {
                 <select
                   value={planFilter}
                   onChange={(e) => setPlanFilter(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                >
-                  <option value="all">All Plans</option>
-                  <option value="starter">Starter</option>
-                  <option value="professional">Professional</option>
-                  <option value="enterprise">Enterprise</option>
+                  className="bg-dark1 text-white px-4 py-3 border border-gray-700 rounded-xl text-normal focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" >
+                    <option value="all">All Plans</option>
+                    <option value="starter">Starter</option>
+                    <option value="professional">Professional</option>
+                    <option value="enterprise">Enterprise</option>
                 </select>
               </div>
 
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-500">Sort by:</span>
+                <span className="text-sm text-gray-200">Sort by:</span>
                 <select
                   value={`${sortBy}-${sortOrder}`}
                   onChange={(e) => {
@@ -689,14 +670,13 @@ export default function AllTenantsManagement() {
                     setSortBy(field);
                     setSortOrder(order);
                   }}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                >
-                  <option value="createdAt-desc">Newest First</option>
-                  <option value="createdAt-asc">Oldest First</option>
-                  <option value="name-asc">Name A-Z</option>
-                  <option value="name-desc">Name Z-A</option>
-                  <option value="revenue-desc">Highest Revenue</option>
-                  <option value="revenue-asc">Lowest Revenue</option>
+                  className="bg-dark1 text-white px-4 py-3 border border-gray-700 rounded-xl text-normal focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500" >
+                    <option value="createdAt-desc">Newest First</option>
+                    <option value="createdAt-asc">Oldest First</option>
+                    <option value="name-asc">Name A-Z</option>
+                    <option value="name-desc">Name Z-A</option>
+                    <option value="revenue-desc">Highest Revenue</option>
+                    <option value="revenue-asc">Lowest Revenue</option>
                 </select>
               </div>
             </div>
@@ -704,7 +684,7 @@ export default function AllTenantsManagement() {
         </div>
 
         {/* Tenants Table */}
-        <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className=" rounded-[20px] overflow-hidden border border-gray-800">
           {loading ? (
             <div className="p-12 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
@@ -712,40 +692,40 @@ export default function AllTenantsManagement() {
             </div>
           ) : tenants.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+              <table className="bg-black min-w-full  ">
+                <thead className="bg-dark1">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
                       Company
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
                       Status & Plan
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
                       Users & Orders
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {/* <th className="px-6 py-3 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
                       Revenue
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    </th> */}
+                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
                       Last Active
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-sm font-medium text-gray-300 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className=" divide-y divide-gray-800 ">
                   {tenants.map((tenant) => (
-                    <tr key={tenant._id} className="hover:bg-gray-50">
+                    <tr key={tenant._id} className="hover:bg-gray-900">
                       {/* Company Info */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <BuildingOfficeIcon className="h-6 w-6 text-gray-600" />
+                            <BuildingOfficeIcon className="h-12 w-12 text-gray-600" />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">
+                            <div className="text-sm font-medium text-white">
                               {tenant.name}
                             </div>
                             <div className="text-sm text-gray-500">
@@ -756,6 +736,10 @@ export default function AllTenantsManagement() {
                                 {tenant.admin.name} • {tenant.admin.email}
                               </div>
                             )}
+                            <span className={`mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(tenant.status)}`}>
+                              {getStatusIcon(tenant.status)}
+                              <span className="ml-1 capitalize">{tenant.status}</span>
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -763,12 +747,8 @@ export default function AllTenantsManagement() {
                       {/* Status & Plan */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="space-y-2">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(tenant.status)}`}>
-                            {getStatusIcon(tenant.status)}
-                            <span className="ml-1 capitalize">{tenant.status}</span>
-                          </span>
                           <div>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPlanBadgeColor(tenant.subscription?.plan)}`}>
+                            <span className={`inline-flex uppercase items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPlanBadgeColor(tenant.subscription?.plan)}`}>
                               <CreditCardIcon className="h-3 w-3 mr-1" />
                               {tenant.subscription?.plan || 'No Plan'}
                             </span>
@@ -790,12 +770,12 @@ export default function AllTenantsManagement() {
                       </td>
 
                       {/* Revenue */}
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      {/* <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
                           {formatCurrency(tenant.revenue)}
                         </div>
                         <div className="text-xs text-gray-500">Total revenue</div>
-                      </td>
+                      </td> */}
 
                       {/* Last Active */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">

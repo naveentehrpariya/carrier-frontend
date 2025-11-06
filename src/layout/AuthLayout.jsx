@@ -10,6 +10,7 @@ import { TbUserSquareRounded } from "react-icons/tb";
 import { TbLogout } from "react-icons/tb";
  import { HiOutlineUserCircle } from "react-icons/hi2";
 import { Link } from "react-router-dom";
+import safeStorage from "../utils/safeStorage";
 
 
 export default function AuthLayout({children, heading}) {
@@ -27,7 +28,7 @@ export default function AuthLayout({children, heading}) {
       await multiTenantLogout();
     } else {
       console.log('🔄 Using legacy logout in AuthLayout');
-      localStorage.removeItem("token");
+      safeStorage.removeItem("token");
       window.location.href = "/login";
     }
   };
@@ -93,9 +94,9 @@ export default function AuthLayout({children, heading}) {
             </div>
             
           </header>
-          <div className="flex w-full overflow-hidden">
+          <div className="flex w-full  ">
             <Sidebar  logout={handleLogout}  toggle={toggle} />
-            <div className="content md:max-h-[100vh] overflow-y-auto lg:w-[calc(100%-300px)] p-6 md:p-8 !pt-[120px]   lg:!pt-[150px] w-full" >
+            <div className="content lg:w-[calc(100%-300px)] p-6 md:p-8 !pt-[100px] md:!pt-[130px] lg:!pt-[140px]  w-full max-h-[100vh] overflow-hidden overflow-y-auto" >
                 {children} 
             </div>
           </div>

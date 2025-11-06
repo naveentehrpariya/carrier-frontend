@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import Endpoints from '../../api/Endpoints';
 import Button from '../common/Button';
+import safeStorage from '../../utils/safeStorage';
 export default function VerifyEmail(){
 
   const [loading, setLoading] = useState(false);
@@ -52,7 +53,7 @@ export default function VerifyEmail(){
   },[]);
 
   const goback = () => { 
-    localStorage.removeItem("token");
+    safeStorage.removeItem("token");
     window.location.href = "/signup";
   }
 

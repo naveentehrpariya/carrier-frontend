@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/MultiTenantAuthProvider';
 import toast from 'react-hot-toast';
 import AuthLayout from '../../layout/AuthLayout';
+import safeStorage from '../../utils/safeStorage';
+import Api from '../../api/Api';
 
 export default function SuperAdminProfile() {
     const { user, updateProfile } = useAuth();
@@ -59,19 +61,11 @@ export default function SuperAdminProfile() {
         setEmailLoading(true);
         
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/auth/edit_user/${user._id}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    email: emailForm.email
-                })
+            const response = await Api.post(`/api/auth/edit_user/${user._id}`, {
+                email: emailForm.email
             });
 
-            const data = await response.json();
+            const data = response.data;
             
             if (data.status) {
                 toast.success('Email updated successfully!');
@@ -111,20 +105,12 @@ export default function SuperAdminProfile() {
         setPasswordLoading(true);
         
         try {
-            const response = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/auth/change-password`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                credentials: 'include',
-                body: JSON.stringify({
-                    id: user._id,
-                    password: passwordForm.password
-                })
+            const response = await Api.post('/api/auth/change-password', {
+                id: user._id,
+                password: passwordForm.password
             });
 
-            const data = await response.json();
+            const data = response.data;
             
             if (data.status) {
                 toast.success('Password updated successfully!');

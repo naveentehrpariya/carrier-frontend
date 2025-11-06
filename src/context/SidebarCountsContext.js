@@ -35,7 +35,7 @@ export function SidebarCountsProvider({ children }) {
         tenantApi.get('/overview'),
         tenantApi.get('/customer/listings?limit=1'),
         tenantApi.get('/carriers/listings?limit=1'),
-        tenantApi.get('/user/staff-listing?limit=1'),
+        tenantApi.get('/user/employeesLisiting?limit=1'),
       ]);
 
       setCounts({

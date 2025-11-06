@@ -1,7 +1,6 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import { toast } from 'react-hot-toast';
 import Api from '../api/Api';
-import safeStorage from '../utils/safeStorage';
 
 export const MultiTenantContext = createContext();
 
@@ -22,7 +21,7 @@ export default function MultiTenantProvider({ children }) {
   // Helper functions for localStorage management
   const loadTenantContext = () => {
     try {
-      const raw = safeStorage.getItem('tenantContext');
+      const raw = localStorage.getItem('tenantContext');
       return raw ? JSON.parse(raw) : null;
     } catch (error) {
       console.warn('Failed to parse tenantContext:', error);
@@ -31,26 +30,26 @@ export default function MultiTenantProvider({ children }) {
   };
 
   const saveTenantContext = (context) => {
-    safeStorage.setItem('tenantContext', JSON.stringify(context));
+    localStorage.setItem('tenantContext', JSON.stringify(context));
   };
 
   const saveEmulationBackup = () => {
     const backup = {
-      token: safeStorage.getItem('token'),
-      user: safeStorage.getItem('user'),
+      token: localStorage.getItem('token'),
+      user: localStorage.getItem('user'),
       timestamp: new Date().toISOString()
     };
-    safeStorage.setItem('emulationBackup', JSON.stringify(backup));
+    localStorage.setItem('emulationBackup', JSON.stringify(backup));
   };
 
   const restoreEmulationBackup = () => {
     try {
-      const backup = JSON.parse(safeStorage.getItem('emulationBackup') || '{}');
+      const backup = JSON.parse(localStorage.getItem('emulationBackup') || '{}');
       if (backup.token) {
-        safeStorage.setItem('token', backup.token);
+        localStorage.setItem('token', backup.token);
       }
       if (backup.user) {
-        safeStorage.setItem('user', backup.user);
+        localStorage.setItem('user', backup.user);
       }
       return backup;
     } catch (error) {
@@ -60,7 +59,7 @@ export default function MultiTenantProvider({ children }) {
   };
 
   const clearEmulationBackup = () => {
-    safeStorage.removeItem('emulationBackup');
+    localStorage.removeItem('emulationBackup');
   };
 
   // Initialize tenant context on mount
@@ -173,7 +172,7 @@ export default function MultiTenantProvider({ children }) {
         const { tenant: tenantData, token, redirectUrl } = response.data;
         
         // Update token in localStorage
-        safeStorage.setItem('token', token);
+        localStorage.setItem('token', token);
         
         // Create minimal emulation user
         const emulationUser = {
@@ -187,7 +186,7 @@ export default function MultiTenantProvider({ children }) {
           originalSuperAdmin: true
         };
         
-        safeStorage.setItem('user', JSON.stringify(emulationUser));
+        localStorage.setItem('user', JSON.stringify(emulationUser));
         
         // Update tenant context
         const newContext = {
@@ -252,7 +251,7 @@ export default function MultiTenantProvider({ children }) {
         const backup = restoreEmulationBackup();
         if (!backup) {
           // Fallback to API response
-          safeStorage.setItem('token', token);
+          localStorage.setItem('token', token);
           
           const superAdminUser = {
             _id: 'super-admin-user',
@@ -261,7 +260,7 @@ export default function MultiTenantProvider({ children }) {
             role: 'super_admin',
             isSuperAdmin: true
           };
-          safeStorage.setItem('user', JSON.stringify(superAdminUser));
+          localStorage.setItem('user', JSON.stringify(superAdminUser));
         }
         
         // Clear emulation context
@@ -300,10 +299,10 @@ export default function MultiTenantProvider({ children }) {
 
   // Debug authentication (sanitized)
   const debugAuth = () => {
-    const token = safeStorage.getItem('token');
-    const user = safeStorage.getItem('user');
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
     const tenantContext = loadTenantContext();
-    const emulationBackup = safeStorage.getItem('emulationBackup');
+    const emulationBackup = localStorage.getItem('emulationBackup');
     
     const debugInfo = {
       hasToken: !!token,
@@ -343,7 +342,7 @@ export default function MultiTenantProvider({ children }) {
     <MultiTenantContext.Provider value={value}>
       {/* Emulation banner */}
       {isEmulating && tenant && (
-        <div className="bg-yellow-600 absolute bottom-0 left-0 right-0 z-10 text-white px-4 py-2 text-center text-sm font-medium">
+        <div className="bg-yellow-600 absolute bottom-0 left-0 right-0 text-white px-4 py-2 text-center text-sm font-medium">
           <span>🎭 Emulating: {tenant.name}</span>
           <button 
             onClick={stopEmulation}

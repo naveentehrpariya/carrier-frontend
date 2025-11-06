@@ -34,8 +34,8 @@ const PrivateRoute = ({ children }) => {
   
   // Redirect to login if not authenticated or no user data
   if (!isAuthenticated || !user) {
-    console.log('🔒 PrivateRoute redirecting to login - not authenticated or no user');
-    return <Navigate to="/login" replace />;
+    console.log('🔒 PrivateRoute redirecting to multitenant-login - not authenticated or no user');
+    return <Navigate to="/multitenant-login" replace />;
   }
   
   // Check if user belongs to current tenant (skip this check for now to avoid complexity)

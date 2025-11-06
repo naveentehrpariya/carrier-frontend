@@ -5,6 +5,7 @@ import { UserContext } from '../../context/AuthProvider';
 import { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
+import safeStorage, { safeSessionStorage } from '../../utils/safeStorage';
 
 export default function AuthDebug() {
   const navigate = useNavigate();
@@ -32,8 +33,8 @@ export default function AuthDebug() {
   const clearAllAuth = () => {
     const keys = ['token', 'user', 'company', 'admin', 'tenant', 'isSuperAdmin', 'tenantContext'];
     keys.forEach(key => {
-      localStorage.removeItem(key);
-      sessionStorage.removeItem(key);
+      safeStorage.removeItem(key);
+      safeSessionStorage.removeItem(key);
     });
     toast.success('All authentication data cleared!');
     window.location.reload();
@@ -43,8 +44,12 @@ export default function AuthDebug() {
     const keys = ['token', 'user', 'company', 'admin', 'tenant', 'isSuperAdmin', 'tenantContext'];
     const stored = {};
     keys.forEach(key => {
-      const value = localStorage.getItem(key) || sessionStorage.getItem(key);
-      stored[key] = value ? JSON.parse(value) : null;
+      const value = safeStorage.getItem(key) || safeSessionStorage.getItem(key);
+      try {
+        stored[key] = value ? JSON.parse(value) : null;
+      } catch (e) {
+        stored[key] = value; // Store as string if not valid JSON
+      }
     });
     return stored;
   };

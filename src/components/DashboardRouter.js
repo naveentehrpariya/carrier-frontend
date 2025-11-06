@@ -19,7 +19,7 @@ const DashboardRouter = () => {
 
   // Redirect to login if not authenticated
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/multitenant-login" replace />;
   }
 
   // Route super admins to super admin dashboard

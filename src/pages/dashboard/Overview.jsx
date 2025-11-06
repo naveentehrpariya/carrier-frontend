@@ -12,11 +12,23 @@ import { useContext } from 'react';
 import { UserContext } from '../../context/AuthProvider';
 import { useAuth } from '../../context/MultiTenantAuthProvider';
 import { useMultiTenant } from '../../context/MultiTenantProvider';
+import safeStorage from '../../utils/safeStorage';
 
 export default function Overview() {
   const { user: authUser } = useAuth(); // Multi-tenant auth user
   const { user } = useContext(UserContext); // Legacy user context
   const { tenant } = useMultiTenant();
+  
+  // Debug logging
+  console.log('Overview Debug:', {
+    tenant,
+    authUser,
+    legacyUser: user,
+    url: window.location.href,
+    token: safeStorage.getItem('token')?.substring(0, 20) + '...',
+    tenantContext: safeStorage.getItem('tenantContext'),
+    isEmulating: safeStorage.getItem('emulationBackup')
+  });
   
   // Use multi-tenant auth user if available, fallback to legacy
   const currentUser = authUser || user;
@@ -45,18 +57,16 @@ export default function Overview() {
         Api.get('/api/tenant-admin/info').catch(() => ({ data: { data: null } })),
         Api.get('/api/tenant-admin/analytics?period=30d').catch(() => ({ data: { data: null } })),
         Api.get('/api/tenant-admin/usage').catch(() => ({ data: { data: null } })),
-        // Api.get('/carriers').catch(() => ({ data: { carriers: [] } })),
-        // Api.get('/customers').catch(() => ({ data: { customers: [] } }))
-      ]).then(([tenantInfo, analytics, usage,
-        //  carriers, customers
-        ]) => {
+        Api.get('/carriers/listings').catch(() => ({ data: { carriers: [] } })),
+        Api.get('/customer/listings').catch(() => ({ data: { customers: [] } }))
+      ]).then(([tenantInfo, analytics, usage, carriers, customers]) => {
         setAdminData({
           tenantInfo: tenantInfo.data.data,
           analytics: analytics.data.data,
           usage: usage.data.data
         });
-        // setCarriersData(carriers.data.carriers || carriers.data.lists || []);
-        // setCustomersData(customers.data.customers || customers.data.lists || []);
+        setCarriersData(carriers.data.carriers || carriers.data.lists || []);
+        setCustomersData(customers.data.customers || customers.data.lists || []);
       }).catch((err) => {
         console.log('Admin data fetch error:', err);
       });
@@ -66,7 +76,7 @@ export default function Overview() {
   return (
       <AuthLayout> 
          <h2 className='text-gray-200 font-bold text-2xl md:text-3xl lg:text-4xl mb-4'>
-           Welcome to {currentUser?.company?.name || tenant?.name}
+           Welcome to {adminData?.tenantInfo?.tenant?.name || currentUser?.company?.name || tenant?.name}
            {isAdmin && <span className='text-lg text-blue-400 ml-2'>(Admin)</span>}
          </h2>
          {isAdmin && (
@@ -84,8 +94,7 @@ export default function Overview() {
 
          </div>
          <div className='total-leads mt-4 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'>
-           
-             {topListLoading ?
+             {topListLoading ? 
               // Add 8 boxes when loadind
               <>
               {Array.from({ length: 8 }).map((_, index) => (
@@ -130,7 +139,7 @@ export default function Overview() {
                <div className='admin-card border border-gray-700 rounded-[30px] p-[20px] md:p-[25px] bg-gradient-to-br from-gray-900 to-gray-800'>
                  <h3 className='text-gray-300 mb-1 text-normal md:text-lg'>Company Info</h3>
                  <div className='mt-4'>
-                   <p className='text-white text-sm'>{currentUser?.company?.name || tenant?.name}</p>
+                   <p className='text-white text-sm'>{adminData?.tenantInfo?.tenant?.name || currentUser?.company?.name || tenant?.name}</p>
                    <p className='text-gray-400 text-xs mt-1'>Tenant Admin</p>
                  </div>
                  <div className='bg-blue-500 h-[3px] mt-4 w-[40px]'></div>

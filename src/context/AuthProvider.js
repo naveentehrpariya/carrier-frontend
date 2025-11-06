@@ -3,7 +3,8 @@
 
 import { createContext, useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
-export const UserContext = createContext(); 
+import safeStorage, { safeSessionStorage } from '../utils/safeStorage';
+export const UserContext = createContext();
 
 export default function UserContextProvider(props) {
   
@@ -16,11 +17,11 @@ export default function UserContextProvider(props) {
   // Check for existing authentication on component mount
   useEffect(() => {
     const checkAuth = () => {
-      // Check if user is logged in (you can check localStorage, sessionStorage, or make API call)
-      const token = localStorage.getItem('token') || sessionStorage.getItem('token');
-      const userData = localStorage.getItem('user') || sessionStorage.getItem('user');
-      const companyData = localStorage.getItem('company') || sessionStorage.getItem('company');
-      const adminData = localStorage.getItem('admin') || sessionStorage.getItem('admin');
+      // Check if user is logged in (you can check safeStorage, safeSessionStorage, or make API call)
+      const token = safeStorage.getItem('token') || safeSessionStorage.getItem('token');
+      const userData = safeStorage.getItem('user') || safeSessionStorage.getItem('user');
+      const companyData = safeStorage.getItem('company') || safeSessionStorage.getItem('company');
+      const adminData = safeStorage.getItem('admin') || safeSessionStorage.getItem('admin');
       
       if (token && userData) {
         setIsAuthenticated(true);
@@ -41,9 +42,9 @@ export default function UserContextProvider(props) {
     if (adminData) setAdmin(adminData);
     
     // Persist authentication data
-    localStorage.setItem('user', JSON.stringify(userData));
-    if (companyData) localStorage.setItem('company', JSON.stringify(companyData));
-    if (adminData) localStorage.setItem('admin', JSON.stringify(adminData));
+    safeStorage.setItem('user', JSON.stringify(userData));
+    if (companyData) safeStorage.setItem('company', JSON.stringify(companyData));
+    if (adminData) safeStorage.setItem('admin', JSON.stringify(adminData));
   };
 
   const logout = () => {
@@ -53,14 +54,14 @@ export default function UserContextProvider(props) {
     setAdmin(null);
     
     // Clear persisted data
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('company');
-    localStorage.removeItem('admin');
-    sessionStorage.removeItem('token');
-    sessionStorage.removeItem('user');
-    sessionStorage.removeItem('company');
-    sessionStorage.removeItem('admin');
+    safeStorage.removeItem('token');
+    safeStorage.removeItem('user');
+    safeStorage.removeItem('company');
+    safeStorage.removeItem('admin');
+    safeSessionStorage.removeItem('token');
+    safeSessionStorage.removeItem('user');
+    safeSessionStorage.removeItem('company');
+    safeSessionStorage.removeItem('admin');
   };
 
   function Errors(error) { 

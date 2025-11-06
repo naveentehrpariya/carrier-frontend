@@ -23,6 +23,11 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
     maxOrders: ''
   });
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  
+  // Debug effect to monitor subscriptionPlans changes
+  useEffect(() => {
+    console.log('🔍 subscriptionPlans changed:', subscriptionPlans.length, subscriptionPlans);
+  }, [subscriptionPlans]);
 
   useEffect(() => {
     if (isOpen && (actionType === 'changePlan' || actionType === 'activate')) {
@@ -43,30 +48,36 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
   }, [isOpen, actionType, tenant]);
 
   const fetchSubscriptionPlans = async () => {
+    console.log('🚀 fetchSubscriptionPlans called');
     try {
+      console.log('📋 Making API call to /api/super-admin/subscription-plans');
       const response = await Api.get('/api/super-admin/subscription-plans');
       console.log('📋 Subscription plans response:', response.data);
       
       if (response.data.status) {
-        const plans = response.data.data || response.data.plans || [];
-        console.log('📋 Setting plans:', plans, 'isArray:', Array.isArray(plans));
-        setSubscriptionPlans(Array.isArray(plans) ? plans : []);
+        // The API returns: { status: true, data: { plans: [...] } }
+        const plans = response.data.data?.plans || [];
+        console.log('📋 Setting plans:', plans, 'isArray:', Array.isArray(plans), 'length:', plans.length);
+        const validPlans = Array.isArray(plans) ? plans : [];
+        console.log('📋 Valid plans to set:', validPlans.length);
+        setSubscriptionPlans(validPlans);
       } else {
         console.log('⚠️ API returned status false, using fallback plans');
         // Fallback to default plans
         setSubscriptionPlans([
-          { _id: 'starter', slug: 'starter', name: 'Starter', price: 29 },
-          { _id: 'professional', slug: 'professional', name: 'Professional', price: 99 },
-          { _id: 'enterprise', slug: 'enterprise', name: 'Enterprise', price: 299 }
+          { _id: 'starter', slug: 'starter', name: 'Starter', limits: { maxUsers: 5, maxOrders: 500 } },
+          { _id: 'professional', slug: 'professional', name: 'Professional', limits: { maxUsers: 15, maxOrders: 2000 } },
+          { _id: 'enterprise', slug: 'enterprise', name: 'Enterprise', limits: { maxUsers: 0, maxOrders: 0 } }
         ]);
       }
     } catch (error) {
       console.error('Error fetching subscription plans:', error);
+      console.log('🔄 Using fallback plans due to error');
       // Fallback to default plans on error
       setSubscriptionPlans([
-        { _id: 'starter', slug: 'starter', name: 'Starter', price: 29 },
-        { _id: 'professional', slug: 'professional', name: 'Professional', price: 99 },
-        { _id: 'enterprise', slug: 'enterprise', name: 'Enterprise', price: 299 }
+        { _id: 'starter', slug: 'starter', name: 'Starter', limits: { maxUsers: 5, maxOrders: 500 } },
+        { _id: 'professional', slug: 'professional', name: 'Professional', limits: { maxUsers: 15, maxOrders: 2000 } },
+        { _id: 'enterprise', slug: 'enterprise', name: 'Enterprise', limits: { maxUsers: 0, maxOrders: 0 } }
       ]);
     }
   };
@@ -228,8 +239,10 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
           break;
         
         case 'changePlan':
-          response = await Api.put(`/api/super-admin/tenants/${tenant._id}/plan`, {
-            plan: formData.newPlan,
+          // Use tenantId and the correct endpoint format
+          const tenantIdentifier = tenant.tenantId || tenant._id;
+          response = await Api.put(`/api/super-admin/tenants/${tenantIdentifier}/plan`, {
+            planSlug: formData.newPlan, // Backend expects planSlug (the slug of the subscription plan)
             reason: formData.reason,
             notes: formData.notes
           });
@@ -352,11 +365,15 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
                   required
                 >
                   <option value="">Select a plan</option>
-                  {subscriptionPlans.map((plan) => (
-                    <option key={plan._id || plan.slug} value={plan.slug}>
-                      {plan.name} - ${plan.price}/month
-                    </option>
-                  ))}
+                  {subscriptionPlans.length === 0 ? (
+                    <option value="" disabled>Loading plans...</option>
+                  ) : (
+                    subscriptionPlans.map((plan) => (
+                      <option key={plan._id || plan.slug} value={plan.slug}>
+                        {plan.name}{plan.limits ? ` (${plan.limits.maxUsers} users, ${plan.limits.maxOrders} orders)` : ''}
+                      </option>
+                    ))
+                  )}
                 </select>
               </div>
             )}

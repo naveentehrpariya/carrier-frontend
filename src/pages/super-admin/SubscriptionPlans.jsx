@@ -29,6 +29,9 @@ export default function SubscriptionPlans() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [deletingPlan, setDeletingPlan] = useState(null);
+  const [deleteConfirmInput, setDeleteConfirmInput] = useState('');
 
   const [form, setForm] = useState({
     name: '',
@@ -114,6 +117,107 @@ export default function SubscriptionPlans() {
       setSubmitting(false);
       setAction("close")
     }
+  };
+
+  const startEdit = (plan) => {
+    setEditingPlan(plan);
+    setForm({
+      name: plan.name,
+      slug: plan.slug,
+      description: plan.description || '',
+      isActive: plan.isActive,
+      limits: {
+        maxUsers: plan.limits?.maxUsers || 10,
+        maxOrders: plan.limits?.maxOrders || 1000,
+        maxCustomers: plan.limits?.maxCustomers || 1000,
+        maxCarriers: plan.limits?.maxCarriers || 500
+      },
+      featuresInput: Array.isArray(plan.features) ? plan.features.join(', ') : ''
+    });
+  };
+
+  const updatePlan = async (e) => {
+    e && e.preventDefault();
+    if (!editingPlan) return;
+    
+    setSubmitting(true);
+    setError('');
+    try {
+      const features = form.featuresInput
+        .split(',')
+        .map(f => f.trim())
+        .filter(Boolean);
+
+      const payload = {
+        name: form.name,
+        slug: form.slug,
+        description: form.description,
+        isActive: form.isActive,
+        limits: {
+          maxUsers: Number(form.limits.maxUsers),
+          maxOrders: Number(form.limits.maxOrders),
+          maxCustomers: Number(form.limits.maxCustomers),
+          maxCarriers: Number(form.limits.maxCarriers)
+        },
+        features
+      };
+
+      console.log('Frontend: Updating plan with payload:', payload);
+      console.log('Frontend: Plan ID:', editingPlan._id);
+      
+      const res = await Api.put(`/api/super-admin/subscription-plans/${editingPlan._id}`, payload);
+      console.log('Frontend: Update response:', res.data);
+      if (res.data.status) {
+        setEditingPlan(null);
+        resetForm();
+        await fetchPlans();
+        toast.success('Plan updated successfully');
+      }
+    } catch (e) {
+      setError(e?.response?.data?.message || 'Failed to update plan');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const startDelete = (plan) => {
+    setDeletingPlan(plan);
+    setDeleteConfirmInput('');
+  };
+
+  const deletePlan = async () => {
+    if (!deletingPlan || deleteConfirmInput !== deletingPlan.slug) {
+      setError('Please type the plan slug to confirm deletion');
+      return;
+    }
+
+    setSubmitting(true);
+    setError('');
+    try {
+      await Api.delete(`/api/super-admin/subscription-plans/${deletingPlan._id}`);
+      setDeletingPlan(null);
+      setDeleteConfirmInput('');
+      await fetchPlans();
+      toast.success('Plan deleted successfully');
+    } catch (e) {
+      const errorMsg = e?.response?.data?.message || 'Failed to delete plan';
+      setError(errorMsg);
+      toast.error(errorMsg);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const cancelEdit = () => {
+    setEditingPlan(null);
+    resetForm();
+    setError('');
+  };
+
+  const cancelDelete = () => {
+    setDeletingPlan(null);
+    setDeleteConfirmInput('');
+    setError('');
   };
 
    
@@ -221,11 +325,202 @@ export default function SubscriptionPlans() {
                     ))}
                   </ul>
                 )}
+                
+                {/* Action buttons */}
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => startEdit(p)}
+                    className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => startDelete(p)}
+                    className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         )}
 
+        {/* Edit Plan Modal */}
+        {editingPlan && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-900 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white text-xl font-semibold">Edit Plan: {editingPlan.name}</h3>
+                <button onClick={cancelEdit} className="text-gray-400 hover:text-white">
+                  ✕
+                </button>
+              </div>
+              
+              {error && (
+                <div className="mb-4 text-red-400 text-sm">{error}</div>
+              )}
+              
+              <form onSubmit={updatePlan}>
+                <div className="space-y-4">
+                  <Field label="Name">
+                    <input 
+                      className="input-sm" 
+                      value={form.name} 
+                      onChange={e => onChange('name', e.target.value)} 
+                      required 
+                    />
+                  </Field>
+                  
+                  <Field label="Slug">
+                    <input 
+                      className="input-sm" 
+                      value={form.slug} 
+                      onChange={e => onChange('slug', e.target.value)} 
+                      required 
+                    />
+                    <p className="text-xs text-gray-400 mt-1">Warning: Changing slug may affect URLs and integrations</p>
+                  </Field>
+                  
+                  <Field label="Description">
+                    <textarea 
+                      className="input-sm" 
+                      value={form.description} 
+                      onChange={e => onChange('description', e.target.value)}
+                      rows={3}
+                    />
+                  </Field>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Field label="Max Users">
+                      <input 
+                        type="number" 
+                        className="input-sm" 
+                        value={form?.limits?.maxUsers ?? ''} 
+                        onChange={e => onLimitChange('maxUsers', e.target.value)} 
+                        min="0" 
+                      />
+                    </Field>
+                    <Field label="Max Orders">
+                      <input 
+                        type="number" 
+                        className="input-sm" 
+                        value={form?.limits?.maxOrders ?? ''} 
+                        onChange={e => onLimitChange('maxOrders', e.target.value)} 
+                        min="0" 
+                      />
+                    </Field>
+                    <Field label="Max Customers">
+                      <input 
+                        type="number" 
+                        className="input-sm" 
+                        value={form?.limits?.maxCustomers ?? ''} 
+                        onChange={e => onLimitChange('maxCustomers', e.target.value)} 
+                        min="0" 
+                      />
+                    </Field>
+                    <Field label="Max Carriers">
+                      <input 
+                        type="number" 
+                        className="input-sm" 
+                        value={form?.limits?.maxCarriers ?? ''} 
+                        onChange={e => onLimitChange('maxCarriers', e.target.value)} 
+                        min="0" 
+                      />
+                    </Field>
+                  </div>
+                  
+                  <Field label="Features (comma-separated)">
+                    <input 
+                      className="input-sm" 
+                      value={form.featuresInput} 
+                      onChange={e => onChange('featuresInput', e.target.value)} 
+                      placeholder="analytics, priority-support, custom-reports" 
+                    />
+                  </Field>
+                  
+                  <div className="flex gap-4">
+                    <Toggle 
+                      label="Active" 
+                      checked={form.isActive} 
+                      onChange={(checked) => onChange('isActive', checked)} 
+                    />
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex items-center justify-end gap-2">
+                  <button 
+                    type="button" 
+                    onClick={cancelEdit} 
+                    className="px-4 py-2 text-gray-300 bg-gray-700 rounded hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={submitting} 
+                    className="btn"
+                  >
+                    {submitting ? 'Updating…' : 'Update Plan'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Plan Modal */}
+        {deletingPlan && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-900 rounded-lg p-6 w-full max-w-md">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white text-xl font-semibold">Delete Plan</h3>
+                <button onClick={cancelDelete} className="text-gray-400 hover:text-white">
+                  ✕
+                </button>
+              </div>
+              
+              <div className="mb-4">
+                <p className="text-gray-300 mb-2">
+                  Are you sure you want to delete the plan <strong className="text-white">{deletingPlan.name}</strong>?
+                </p>
+                <p className="text-red-400 text-sm mb-4">
+                  This action cannot be undone.
+                </p>
+                
+                <Field label={`Type "${deletingPlan.slug}" to confirm:`}>
+                  <input 
+                    className="input-sm" 
+                    value={deleteConfirmInput} 
+                    onChange={e => setDeleteConfirmInput(e.target.value)}
+                    placeholder={deletingPlan.slug}
+                  />
+                </Field>
+                
+                {error && (
+                  <div className="mt-2 text-red-400 text-sm">{error}</div>
+                )}
+              </div>
+              
+              <div className="flex items-center justify-end gap-2">
+                <button 
+                  type="button" 
+                  onClick={cancelDelete} 
+                  className="px-4 py-2 text-gray-300 bg-gray-700 rounded hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={deletePlan}
+                  disabled={submitting || deleteConfirmInput !== deletingPlan.slug}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {submitting ? 'Deleting…' : 'Delete Plan'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
          
       </div>
     </SuperAdminLayout>
