@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react'
+import { createPortal } from 'react-dom';
 import AddNotes from '../accounts/AddNotes';
 import Popup from '../../common/Popup';
 import { UserContext } from '../../../context/AuthProvider';
@@ -12,9 +13,12 @@ import Badge from '../../common/Badge';
 import { FaLock } from "react-icons/fa";
 import { FaLockOpen } from "react-icons/fa6";
 import Loading from '../../common/Loading';
-export default function OrderView({order, text, fetchLists, btnclasses}){ 
+export default function OrderView({order, text, fetchLists, btnclasses, isOpen, onToggle}){ 
 
    const [open, setOpen] = useState(false);
+   const isControlled = isOpen !== undefined && onToggle !== undefined;
+   const actualOpen = isControlled ? isOpen : open;
+   const handleToggle = isControlled ? onToggle : () => setOpen(!open);
    const {Errors, user} = useContext(UserContext);
    const [files, setFiles] = useState([]);
    const [paymentLogs, setPaymentLogs] = useState([]);
@@ -38,10 +42,20 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
    }
 
    useEffect(() => {
-      if(open){
+      if(actualOpen){
          fetchFiless();
+         // Add body class to disable tooltips globally
+         document.body.classList.add('sidebar-open');
+      } else {
+         // Remove body class when sidebar closes
+         document.body.classList.remove('sidebar-open');
       }
-   },[open]);
+      
+      // Cleanup on unmount
+      return () => {
+         document.body.classList.remove('sidebar-open');
+      };
+   },[actualOpen]);
 
 
    const getMime = (type) => {
@@ -261,11 +275,52 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
 
    return <>
       <div className='orderSider'>
-         <button onClick={(e)=>setOpen(true)} className={btnclasses}>{text ? text : "View All Notes"}</button>
-         <div className={`sider ${open ? 'ordersidebar open' : 'ordersidebar close'} w-full h-screen overflow-auto fixed top-0 right-0 bg-dark1 p-8 z-[9999] pt-[20px] max-w-[500px]`}>
+         <button 
+            onClick={(e) => {
+               e.preventDefault();
+               e.stopPropagation();
+               handleToggle();
+            }} 
+            className={`${btnclasses} cursor-pointer`}
+            type="button"
+         >
+            {text ? text : "View All Notes"}
+         </button>
+         
+         {/* Render sidebar using portal to ensure it's outside any scrollable containers */}
+         {actualOpen && createPortal(
+            <>
+               {/* Overlay */}
+               <div 
+                  className="fixed inset-0 bg-black bg-opacity-50 z-[9998]" 
+                  onClick={() => isControlled ? onToggle() : setOpen(false)}
+                  style={{
+                     position: 'fixed',
+                     top: 0,
+                     left: 0,
+                     width: '100vw',
+                     height: '100vh',
+                     zIndex: 9998
+                  }}
+               />
+               
+               <div 
+                  className={`sider ordersidebar open w-full h-screen overflow-auto bg-dark1 p-8 pt-[20px] max-w-[500px]`} 
+                  style={{
+                     position: 'fixed',
+                     top: 0,
+                     right: 0,
+                     width: '100%',
+                     maxWidth: '500px',
+                     height: '100vh',
+                     zIndex: 9999,
+                     transform: 'translateX(0)',
+                     transition: 'transform 0.3s ease-in-out'
+                  }}
+               >
             <div className='flex justify-between items-center'>
                <h2 className='text-white text-2xl'><strong>CMC#{order?.serial_no}</strong> Order Details</h2>
-               <button className='text-3xl text-white mb-3' onClick={(e)=>setOpen(false)} >&times;</button>
+               <button className='text-3xl text-white mb-3' onClick={(e)=> isControlled ? onToggle() : setOpen(false)} >&times;</button>
             </div>
 
             <div className="flex mt-6 justify-between items-center">
@@ -351,7 +406,10 @@ export default function OrderView({order, text, fetchLists, btnclasses}){
                   }   
                </div>
             }
-         </div> 
+               </div>
+            </>,
+            document.body
+         )}
       </div>
    </>
 }

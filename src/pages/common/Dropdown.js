@@ -29,11 +29,11 @@ export default function Dropdown({ children, classes, text,iconsize }) {
         {open &&
           createPortal(
             <div
-              className="absolute z-50 mt-2 w-56 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none"
+              className="fixed z-[9999] mt-2 w-56 rounded-md bg-white shadow-lg ring-1 ring-black/5 focus:outline-none"
               role="menu"
               aria-orientation="vertical"
               style={{
-                position: 'absolute',
+                position: 'fixed',
                 top: `${dropdownPosition.top+30}px`,
                 left: `${dropdownPosition.left}px`,
               }}

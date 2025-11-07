@@ -1,6 +1,9 @@
 @tailwind base;@tailwind components;@tailwind utilities;.tooltip{@apply invisible absolute;}
 .has-tooltip:hover .tooltip{@apply visible z-50;}
-body{--main:#a091ff;--main-fade:rgba(255,91,91,1);--dark:#02000D;--dark1:#06131C;--dark2:rgba(255,255,255,0.05);--dark3:#213848;}
+body{--main:#a091ff;--main-fade:rgba(255,91,91,1);--dark:#02000D;--dark1:#06131C;--dark2:rgba(255,255,255,0.05);
+  --dark3:#213848;
+  --dark4:#0b0b0b;
+}
 
 ::-webkit-scrollbar{width:5px;border-radius:10px;}
 ::-webkit-scrollbar-thumb{background-color:#888;border-radius:10px;}
@@ -19,6 +22,7 @@ body{background:var(--dark);font-family:'productsans';}
 .bg-dark1{background:var(--dark1);}
 .bg-dark2{background:var(--dark2);}
 .bg-dark3{background:var(--dark3);}
+.bg-dark4{background:var(--dark4);}
 .text-main{color:var(--main);}
 .font-mona{font-family:'monasans','sans-serif';}
 .font-mona-i{font-family:'monasans-italic','sans-serif';}
@@ -129,10 +133,61 @@ select{-webkit-appearance:none;-moz-appearance:none;appearance:none;}
 .ordersidebar.close {
   transform: translateX(100%);
   transition: transform 0.3s ease-in-out;
+  position: fixed !important;
 }
 .ordersidebar.open {
   transform: translateX(0);
   transition: transform 0.3s ease-in-out;
+  position: fixed !important;
+}
+
+/* Ensure sidebar stays fixed during scrolling */
+.ordersidebar {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  height: 100vh !important;
+  overflow-y: auto !important;
+  z-index: 9999 !important;
+}
+
+/* Prevent tooltip hover on order cards when sidebar is open */
+.order-card-container.sidebar-active .tooltipwrap:hover .tooltip {
+  display: none !important;
+}
+
+.order-card-container.sidebar-active .tooltipwrap:hover + .tooltip-content {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+/* Disable all tooltips globally when sidebar is open */
+body.sidebar-open .tooltipwrap:hover .tooltip {
+  display: none !important;
+}
+
+body.sidebar-open .tooltipwrap:hover + .tooltip-content {
+  display: none !important;
+  opacity: 0 !important;
+}
+
+body.sidebar-open .has-tooltip:hover .tooltip {
+  display: none !important;
+}
+
+/* Prevent body scroll when sidebar is open */
+body.sidebar-open {
+  overflow: hidden;
+}
+
+/* Ensure sidebar is always on top and truly fixed */
+.ordersidebar {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  height: 100vh !important;
+  z-index: 9999 !important;
+  transform: translateX(0) !important;
 }
 
 
