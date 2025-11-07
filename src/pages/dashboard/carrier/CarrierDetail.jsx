@@ -28,7 +28,7 @@ export default function CarrierDetail() {
 
    useEffect(() => {
       fetchOrder();
-   }, []);
+   }, [id]);
 
   return (
       <AuthLayout> 

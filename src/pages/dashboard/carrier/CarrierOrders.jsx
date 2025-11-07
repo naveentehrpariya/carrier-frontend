@@ -11,45 +11,52 @@ import TimeFormat from '../../common/TimeFormat';
 import CarrierPaymentExel from './CarrierPaymentExel';
 
 export default function CarrierOrders({isRecent, carrierID, customer, carrier, sortby, title}) {
-   const [loading, setLoading] = useState(true);
-   const [lists, setLists] = useState([]);
+   const [loadingOrders, setLoadingOrders] = useState(true);
+   const [ordersList, setOrdersList] = useState([]);
+   const [loadingPayments, setLoadingPayments] = useState(true);
+   const [paymentsList, setPaymentsList] = useState([]);
    const {Errors, user} = useContext(UserContext);
 
    const fetchLists = (value) => {
-      setLoading(true);
-      const resp = Api.get(`/order/listings?${value ?`search=${value}` : ''}${carrierID ?`&carrier_id=${carrierID}` : ''} ${sortby ?`&sortby=${sortby}` : ''}`);
+      setLoadingOrders(true);
+      // Build query string properly
+      const qs = [
+         value ? `search=${encodeURIComponent(value)}` : '',
+         carrierID ? `carrier_id=${encodeURIComponent(String(carrierID).trim())}` : '',
+         sortby ? `sort=${encodeURIComponent(sortby)}` : ''
+      ].filter(Boolean).join('&');
+      
+      const resp = Api.get(`/order/listings?${qs}`);
       resp.then((res) => {
-         setLoading(false);
+         setLoadingOrders(false);
          if (res.data.status === true) {
             let orderslists = res.data.orders || [];
             if(isRecent){
-               orderslists  = orderslists.slice(0, 5);
+               orderslists = orderslists.slice(0, 5);
             }
-            setLists(orderslists);
+            setOrdersList(orderslists);
          } else {
-            setLists([]);
+            setOrdersList([]);
          }
-         setLoading(false);
       }).catch((err) => {
-         setLoading(false);
+         setLoadingOrders(false);
          Errors(err);
       });
    }
 
-
-   const [loadingPayments, setLoadingPayments] = useState(true);
    const fetchPayments = () => {
-      setLoading(true);
-      const resp = Api.get(`/payments/listings?${carrierID ?`&carrier_id=${carrierID}` : ''}`);
+      setLoadingPayments(true);
+      const qs = [carrierID ? `carrier_id=${encodeURIComponent(String(carrierID).trim())}` : ''].filter(Boolean).join('&');
+      
+      const resp = Api.get(`/payments/listings?${qs}`);
       resp.then((res) => {
          setLoadingPayments(false);
          if (res.data.status === true) {
-            let orderslists = res.data.orders || [];
-            setLists(orderslists);
+            let paymentslists = res.data.orders || [];
+            setPaymentsList(paymentslists);
          } else {
-            setLists([]);
+            setPaymentsList([]);
          }
-         setLoadingPayments(false);
       }).catch((err) => {
          setLoadingPayments(false);
          Errors(err);
@@ -59,7 +66,7 @@ export default function CarrierOrders({isRecent, carrierID, customer, carrier, s
    useEffect(() => {
       fetchLists();
       fetchPayments();
-   },[customer, carrier]);
+   },[customer, carrier, carrierID]);
 
    const debounceRef = useRef(null);
    const [searching, setSearching] = useState(false);
@@ -78,16 +85,21 @@ export default function CarrierOrders({isRecent, carrierID, customer, carrier, s
    return (
          <> 
             <div className='md:flex justify-between items-center'>
-               <h2 className='text-white text-2xl mb-4 md:mb-0'>{title ? title : "Orders"}</h2>
+               <div>
+                  <h2 className='text-white text-2xl mb-1 md:mb-0'>{title ? title : "Orders"}</h2>
+                  {user && Number(user.role) === 1 && (
+                     <p className='text-gray-400 text-sm mb-4 md:mb-0'>Showing only orders created by you</p>
+                  )}
+               </div>
                <div className='sm:flex items-center justify-between md:justify-end'>
                   <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search order' className='text-white min-w-[250px] w-full md:w-auto bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
                </div>
             </div>
-            {loading ? <Loading />
+            {loadingOrders ? <Loading />
                :
                <>
-               {lists && lists.length > 0 ? 
-                  <OrderItem lists={lists} fetchLists={fetchLists} />
+               {ordersList && ordersList.length > 0 ? 
+                  <OrderItem lists={ordersList} fetchLists={fetchLists} />
                   : 
                   <Nocontent text="No orders found" />
                }
@@ -96,13 +108,18 @@ export default function CarrierOrders({isRecent, carrierID, customer, carrier, s
 
             {/* Payments status */}
             <div className='flex justify-between items-center mt-12 '>
-               <h2 className='text-white text-2xl mb-4 md:mb-0'>Carrier Payments</h2>
-               <CarrierPaymentExel  carrier={carrier} data={lists} />
+               <div>
+                  <h2 className='text-white text-2xl mb-1 md:mb-0'>Carrier Payments</h2>
+                  {user && Number(user.role) === 1 && (
+                     <p className='text-gray-400 text-sm mb-4 md:mb-0'>Showing only payments for orders created by you</p>
+                  )}
+               </div>
+               <CarrierPaymentExel  carrier={carrier} data={paymentsList} />
             </div>
                      {loadingPayments ? <Loading />
                         :
                         <>
-                        {lists && lists.length > 0 ? 
+                        {paymentsList && paymentsList.length > 0 ?
                         <>
                         <div className='bg-dark text-white border border-gray-700 mt-4 !rounded-xl overflow-x-auto'>
                            <table className='w-full '>
@@ -116,7 +133,7 @@ export default function CarrierOrders({isRecent, carrierID, customer, carrier, s
                                  <th className='p-2 border border-gray-700  text-start'>Note</th>
                               </tr>
                            </thead>
-                              {lists.map((item, index) => {
+                              {paymentsList.map((item, index) => {
                                  return (
                                     <tr key={index}>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-center'>{index + 1}</td>

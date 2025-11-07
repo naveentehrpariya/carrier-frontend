@@ -69,6 +69,11 @@ export default function AuthLayout({children, heading}) {
          <title>{heading ? `${heading} | ` : '' } Cross Miles Carrier </title>
          <link rel="canonical" href={window.location.href || ""} />
       </Helmet>
+      <style>{`
+        body { 
+          overflow:hidden;
+        }
+      `}</style>
       <CheckLogin  />
       {toggle ? <div onClick={showSidebar} className="fixed top-0 left-0 w-full h-full bg-[#0009] blur z-[9999]"></div> : ''}
       <div className="auth-wrap flex justify-between max-lg:flex-wrap">
@@ -96,7 +101,7 @@ export default function AuthLayout({children, heading}) {
           </header>
           <div className="flex w-full  ">
             <Sidebar  logout={handleLogout}  toggle={toggle} />
-            <div className="content lg:w-[calc(100%-300px)] p-6 md:p-8 !pt-[100px] md:!pt-[130px] lg:!pt-[140px]  w-full max-h-[100vh] overflow-hidden overflow-y-auto" >
+            <div className="content lg:w-[calc(100%-300px)] p-6 md:p-8 !pt-[100px] md:!pt-[130px] lg:!pt-[140px] !pb-[100px] w-full max-h-[100vh] overflow-hidden overflow-y-auto" >
                 {children} 
             </div>
           </div>

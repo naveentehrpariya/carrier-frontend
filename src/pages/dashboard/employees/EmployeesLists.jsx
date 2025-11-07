@@ -1,16 +1,12 @@
 import React, { useContext, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom';
 import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
 import AuthLayout from '../../../layout/AuthLayout';
-import TimeFormat from '../../common/TimeFormat';
 import AddEmployee from './AddEmployee';
-import Loading from '../../common/Loading';
-import Dropdown from '../../common/Dropdown';
-import SuspandAccount from './SuspandAccount';
-import Badge from '../../common/Badge';
-import ChangePassword from './ChangePassword';
 import EmployeeDocuments from './EmployeeDocuments';
+import EmployeeCard from '../../../components/employees/EmployeeCard';
+import { EmployeeGridSkeleton } from '../../../components/employees/EmployeeCardSkeleton';
+import EmptyEmployeeState from '../../../components/employees/EmptyEmployeeState';
 export default function EmployeesLists() {
 
 
@@ -19,6 +15,16 @@ export default function EmployeesLists() {
    const [showDocuments, setShowDocuments] = useState(false);
    const [selectedEmployee, setSelectedEmployee] = useState(null);
    const {Errors} = useContext(UserContext);
+
+   const handleOpenDocuments = (employee) => {
+      setSelectedEmployee(employee);
+      setShowDocuments(true);
+   };
+
+   const handleCloseDocuments = () => {
+      setShowDocuments(false);
+      // Keep selectedEmployee for potential caching benefits
+   };
 
    const fetchLists = () => {
       setLoading(true);
@@ -48,80 +54,33 @@ export default function EmployeesLists() {
             <AddEmployee fetchLists={fetchLists} />
          </div>
 
-         {loading ? <Loading />
-         :
-         <div className='recent-orders overflow-x-auto mt-6 border border-gray-900 rounded-[30px]'>
-            <table className='w-full p-2' cellPadding={'20'}>
-               <tr>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Name</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Corporate ID</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Address</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Phone/Email</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Documents</th>
-                  <th className='text-sm text-start text-gray-400 uppercase border-b border-gray-900'>Action</th>
-               </tr>
-               {lists && lists.map((c, index) => {
-                  return <tr key={`carriew-${index}`}>
-
-                     <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
-                        <div className='whitespace-nowrap flex items-center gap-2'>
-                           <Link to={`/employee/detail/${c._id}`} className='text-blue-400 hover:text-blue-300 font-semibold transition-colors'>
-                              {c.name}
-                           </Link>
-                           <Badge title={true} status={c.status} />
-                        </div>
-                        <button className={` ${c.role ===  '2' ? "text-main" : "text-blue-400"} text-[12px] text-start rounded-[20px] mt-2 `}>{c.role === '2' ? "Accountant" : "Employee"} {c?.position ? `(${c.position})` : ""}</button>
-                     </td>
-                     
-                     <td className='text-sm text-start text-gray-200  border-b border-gray-900'>
-                        <p>ID : {c.corporateID}</p>
-                        <p className='whitespace-nowrap'>Commision : {c.staff_commision ? `${c.staff_commision}%` : "N/A"}</p>
-                     </td>
-                    
-                     <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
-                        <div class='has-tooltip line-clamp-2 min-w-[100px] max-w-[300px]'>
-                              <span class='tooltip rounded shadow-xl p-2 bg-gray-100 text-black -mt-8 max-w-[200px] '>{c.country || ""} {c.address || ''}</span>
-                              {c.country || ""} {c.address || ''}
-                        </div>
-                     </td>
-                     
-                     <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
-                        <p>{c?.phone ? <a href={`tel:${c?.phone}`}>{c?.phone}</a>  : ""}</p>
-                        <p>{c?.email ? <a href={`mailto:${c?.email}`}>{c?.email}</a>  : ""}</p>
-                     </td>
-                     <td className='text-sm text-start text-gray-200 border-b border-gray-900'>
-                        <EmployeeDocuments employee={c} />
-                        <p className='whitespace-nowrap text-[12px]'>Added On : <TimeFormat date={c.createdAt || "--"} /> </p>
-                     </td>
-                     <td className='text-sm text-start text-gray-200 capitalize border-b border-gray-900'>
-                           <div className='flex items-center gap-2'>
-                              {/* <Link 
-                                 to={`/employee/detail/${c._id}`} 
-                                 className='bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-lg text-xs transition-colors'
-                              >
-                                 View Details
-                              </Link> */}
-                              <Dropdown>
-                                 <li className='list-none text-sm'>
-                                    <AddEmployee text="Edit" classes="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block" item={c} fetchLists={fetchLists} />
-                                 </li>
-                                 <li className='list-none text-sm'>
-                                    <SuspandAccount text="Change Account Status" item={c} fetchLists={fetchLists} />
-                                 </li>
-                                 <li className='list-none text-sm'>
-                                    <ChangePassword text="Change Password" item={c} fetchLists={fetchLists} />
-                                 </li>
-                              </Dropdown>
-                           </div>
-                     </td>
- 
-
-                  </tr>
-               })}
-            </table>
-         
+         <div className='mt-8'>
+            {loading ? (
+               <EmployeeGridSkeleton />
+            ) : lists && lists.length > 0 ? (
+               <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
+                  {lists.map((employee, index) => (
+                     <EmployeeCard
+                        key={`employee-${employee._id || index}`}
+                        employee={employee}
+                        onOpenDocuments={handleOpenDocuments}
+                        fetchLists={fetchLists}
+                     />
+                  ))}
+               </div>
+            ) : (
+               <EmptyEmployeeState fetchLists={fetchLists} />
+            )}
          </div>
-         }
+
+         {/* Conditionally render EmployeeDocuments modal */}
+         {showDocuments && selectedEmployee && (
+            <EmployeeDocuments 
+               employee={selectedEmployee} 
+               isOpen={showDocuments}
+               onClose={handleCloseDocuments}
+            />
+         )}
       </AuthLayout>
   )
 }
