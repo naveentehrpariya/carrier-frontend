@@ -68,7 +68,7 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
 
   return (
     <>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={`${classes} p-3  w-full text-start rounded-xl text-gray-700 whitespace-nowrap flex items-center`} btntext={text || "Update Status"} >
+      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={`${classes} p-3  w-full text-start rounded-xl text-gray-700 whitespace-nowrap flex items-center !cursor-pointer`} btntext={text || "Update Status"} >
          <h2 className='text-white font-bold text-xl'>Update {type === 1 ? 'Customer' : 'Carrier'} Payment Status</h2>
          <div className='grid sm:grid-cols-2 gap-4'>
             <div className='input-item'>

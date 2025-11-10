@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   LuPackage, 
@@ -19,15 +19,17 @@ import UpdatePaymentStatus from '../../pages/dashboard/accounts/UpdatePaymentSta
 import LockOrder from '../../pages/dashboard/order/LockOrder';
 import RemoveOrder from '../../pages/dashboard/order/RemoveOrder';
 import DistanceInMiles from '../../pages/common/DistanceInMiles';
+import { UserContext } from '../../context/AuthProvider';
+import { getOrderNumber } from '../../utils/orderPrefix';
 
 export default function OrderTimelineCard({ order, user, fetchLists, activeQuickViewId, setActiveQuickViewId }) {
-  // Get order serial number with proper fallback
-  const getOrderNumber = () => {
-    return `CMC${order.serial_no || order._id?.slice(-6) || "000000"}`;
-  };
+  const { company } = useContext(UserContext);
+  
+  // Get tenant-specific order number
+  const orderNumber = getOrderNumber(order, user, company, null);
 
   return (
-    <div className={`order-card-container bg-gray-900 border border-gray-800 rounded-[30px] p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:ring-1 hover:ring-gray-700 focus-within:ring-1 focus-within:ring-gray-700 ${activeQuickViewId ? 'sidebar-active' : ''}`}>
+    <div className={`order-card-container bg-gray-900 border border-gray-800 rounded-[30px] p-4 md:p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:ring-1 hover:ring-gray-700 focus-within:ring-1 focus-within:ring-gray-700 ${activeQuickViewId ? 'sidebar-active' : ''}`}>
       {/* Header Section */}
       <div className="mb-4">
         {/* Order Number and Lock Status */}
@@ -42,7 +44,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                 className="text-lg font-semibold text-gray-100 hover:text-blue-400 transition-colors flex items-center gap-2"
               >
                 {order.lock ? <FaLock className="text-red-600" size={14} /> : <FaLockOpen className="text-gray-400" size={14} />}
-                {getOrderNumber()}
+                {orderNumber}
               </Link>
               <p className="text-sm text-gray-400">
                 <TimeFormat date={order.createdAt || "--"} />
@@ -103,7 +105,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
         {/* Customer & Carrier Info */}
         <div className="grid md:grid-cols-2 gap-4">
           {/* Customer */}
-          <div className="border-t border-gray-800 pt-3">
+          <div className="bg-gray-800/30 rounded-xl p-3 border border-gray-800">
             <h4 className="text-sm font-medium text-gray-300 flex items-center gap-2 mb-2">
               <LuUser size={16} />
               Customer
@@ -124,7 +126,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                   {(user?.is_admin || user?.role === 2) ? (
                     <UpdatePaymentStatus 
                       order={order}
-                      classes={`!p-0 ${order?.lock ? 'disabled-order' : ''}`}
+                      classes={`!p-0 !cursor-pointer ${order?.lock ? 'disabled-order' : ''}`}
                       pstatus={order.customer_payment_status}
                       pmethod={order.payment_method}
                       pnotes={order.customer_payment_notes}
@@ -157,7 +159,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
           </div>
 
           {/* Carrier */}
-          <div className="border-t border-gray-800 pt-3">
+          <div className="bg-gray-800/30 rounded-xl p-3 border border-gray-800">
             <h4 className="text-sm font-medium text-gray-300 flex items-center gap-2 mb-2">
               <LuTruck size={16} />
               Carrier
@@ -178,16 +180,15 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                   {(user?.is_admin || user?.role === 2) ? (
                     <UpdatePaymentStatus 
                       order={order}
-                      classes={`!p-0 ${order?.lock ? 'disabled-order' : ''}`}
+                      classes={`!p-0 !cursor-pointer ${order?.lock ? 'disabled-order' : ''}`}
                       pstatus={order.carrier_payment_status}
                       pmethod={order.carrier_payment_method}
                       pnotes={order.carrier_payment_notes}
                       text={<Badge 
+                        classes='cursor-pointer'
                         tooltipcontent={order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ? `Carrier payment status currently in pending and not approve by admin yet.` :''}
-                        approved={order?.carrier_payment_approved_by_admin}
-                        date={order?.carrier_payment_date || ""} 
-                        title={true} 
-                        status={order?.carrier_payment_status} 
+                        approved={order?.carrier_payment_approved_by_admin} date={order?.carrier_payment_date || ""} 
+                        title={true}  status={order?.carrier_payment_status} 
                         text={order?.carrier_payment_status === 'paid' ? ` (${order?.carrier_payment_method})` :''}
                       />}
                       paymentType={2} 
@@ -197,6 +198,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                     />
                   ) : (
                     <Badge 
+                     classes='cursor-pointer'
                       tooltipcontent={order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ? `Carrier payment status currently in pending and not approve by admin yet.` :''}
                       approved={order?.carrier_payment_approved_by_admin}
                       date={order?.carrier_payment_date || ""} 

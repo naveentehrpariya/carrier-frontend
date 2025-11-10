@@ -16,12 +16,13 @@ import { UserContext } from '../../../context/AuthProvider';
 import LockOrder from '../order/LockOrder';
 import Nocontent from '../../common/NoContent';
 import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
+import { getOrderNumber } from '../../../utils/orderPrefix';
 
 export default function AccountOrders() {
 
    const [loading, setLoading] = useState(true);
    const [lists, setLists] = useState([]);
-   const {Errors, user} = useContext(UserContext);
+   const {Errors, user, company} = useContext(UserContext);
 
    const fetchLists = (search) => {
       setLoading(true);
@@ -82,7 +83,7 @@ export default function AccountOrders() {
                      {lists && lists.map((c, index) => {
                         return <tr key={`carriew-${index}`}>
                            <td className='text-sm text-start text-gray-400 capitalize border-b border-gray-900'>
-                              <Link to={`/view/order/${c._id}`} className=' text-main uppercase text-[14px] m-auto flex items-center  rounded-[20px]'  > {c.lock ? <FaLock color='red' className='me-1' /> : <FaLockOpen className='me-1' />} CMC{c.serial_no} </Link>
+                              <Link to={`/view/order/${c._id}`} className=' text-main uppercase text-[14px] m-auto flex items-center  rounded-[20px]'  > {c.lock ? <FaLock color='red' className='me-1' /> : <FaLockOpen className='me-1' />} {getOrderNumber(c, user, company, null)} </Link>
                               <p className='flex items-center'>Status :<Badge title={true} status={c.order_status} /> </p>
                               <p className='text-gray-500 text-[12px]'><TimeFormat date={c.createdAt || "--"} /> </p>
                            </td> 

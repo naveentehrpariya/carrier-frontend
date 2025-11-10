@@ -13,13 +13,17 @@ import Badge from '../../common/Badge';
 import { FaLock } from "react-icons/fa";
 import { FaLockOpen } from "react-icons/fa6";
 import Loading from '../../common/Loading';
+import { getOrderNumber } from '../../../utils/orderPrefix';
 export default function OrderView({order, text, fetchLists, btnclasses, isOpen, onToggle}){ 
 
    const [open, setOpen] = useState(false);
    const isControlled = isOpen !== undefined && onToggle !== undefined;
    const actualOpen = isControlled ? isOpen : open;
    const handleToggle = isControlled ? onToggle : () => setOpen(!open);
-   const {Errors, user} = useContext(UserContext);
+   const {Errors, user, company} = useContext(UserContext);
+   
+   // Get tenant-specific order number
+   const orderNumber = getOrderNumber(order, user, company, null);
    const [files, setFiles] = useState([]);
    const [paymentLogs, setPaymentLogs] = useState([]);
    const [fetching, setFeching] = useState(false);
@@ -319,7 +323,7 @@ export default function OrderView({order, text, fetchLists, btnclasses, isOpen, 
                   }}
                >
             <div className='flex justify-between items-center'>
-               <h2 className='text-white text-2xl'><strong>CMC#{order?.serial_no}</strong> Order Details</h2>
+               <h2 className='text-white text-2xl'><strong>{orderNumber}</strong> Order Details</h2>
                <button className='text-3xl text-white mb-3' onClick={(e)=> isControlled ? onToggle() : setOpen(false)} >&times;</button>
             </div>
 

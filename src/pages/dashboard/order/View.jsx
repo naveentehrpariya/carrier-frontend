@@ -20,13 +20,14 @@ import LockOrder from './LockOrder';
 import UpdateOrderStatus from '../accounts/UpdateOrderStatus';
 import { LuDownload } from "react-icons/lu";
 import RemoveOrder from './RemoveOrder';
+import { getOrderNumber } from '../../../utils/orderPrefix';
 
 export default function ViewOrder() {
    
    const [order, setOrder] = useState([]);
    const [paymentLogs, setPaymentLogs] = useState([]);
    const [loading, setLoading] = useState(true);
-   const {Errors,user} = useContext(UserContext);
+   const {Errors,user, company} = useContext(UserContext);
    const { id } = useParams();
    
    const fetchOrder = () => {
@@ -53,7 +54,7 @@ export default function ViewOrder() {
 
    return <AuthLayout>
       <div className='flex justify-between items-center'>
-         <h1 className='text-2xl font-bold text-white mb-6 mt-4'> Order CMC{order?.serial_no}</h1>
+         <h1 className='text-2xl font-bold text-white mb-6 mt-4'> Order {getOrderNumber(order, user, company, null)}</h1>
          {/* <button className='bg-main px-4 py-2 rounded-xl'>Edit Order</button> */}
          <div className='flex items-center ps-3'>
             <Link to={`/order/detail/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Carrier Sheet</Link>
@@ -111,7 +112,7 @@ export default function ViewOrder() {
             <div  className='text-white m-auto'>
                <div className='py-3 mt-3 pt-4'>
                   <ul className='grid grid-cols-4 gap-2'>
-                     <li className=''><strong className='text-gray-400 '> Order No. # :</strong> <p className='flex mt-1'>{order?.lock ? <FaLock className='me-1 text-red-500' /> : <FaLockOpen className='me-1' />} CMC{order?.serial_no}</p> </li>
+                     <li className=''><strong className='text-gray-400 '> Order No. # :</strong> <p className='flex mt-1'>{order?.lock ? <FaLock className='me-1 text-red-500' /> : <FaLockOpen className='me-1' />} {getOrderNumber(order, user, company, null)}</p> </li>
                      <li className=''><strong className='text-gray-400'>Order Created Date :</strong> <p><TimeFormat date={order?.createdAt} /></p> </li>
                      <li className=''><strong className='text-gray-400'>Order Status :</strong> <p><Badge title={true} status={order?.order_status} /></p> </li>
                      <li className=''><strong className='text-gray-400'>Total Distance :</strong> <p><DistanceInMiles d={order.totalDistance} /></p> </li>
