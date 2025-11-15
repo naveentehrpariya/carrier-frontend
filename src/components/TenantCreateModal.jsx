@@ -3,10 +3,13 @@ import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import Api from '../api/Api';
+import TenantCredentialsModal from './TenantCredentialsModal';
 
 export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [existingData, setExistingData] = useState({ names: [], slugs: [], subdomains: [] });
+  const [credentials, setCredentials] = useState(null);
+  const [showCredsModal, setShowCredsModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     subdomain: '',
@@ -155,9 +158,27 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
       const response = await Api.post('/api/super-admin/tenants', formData);
       
       if (response.data.status) {
-        toast.success('Tenant created successfully!');
+        const { tenant, credentials: apiCreds, tempPassword } = response.data.data || {};
+        
+        // Extract credentials with fallbacks
+        const resolvedEmail = apiCreds?.email || formData.adminEmail;
+        const resolvedPassword = apiCreds?.password || tempPassword;
+        const resolvedUrl = tenant?.url || apiCreds?.url;
+        
+        // Set up credentials for modal
+        setCredentials({
+          email: resolvedEmail,
+          password: resolvedPassword,
+          url: resolvedUrl
+        });
+        
+        // Call onSuccess to refresh the tenant list, but don't close yet
         onSuccess(response.data.data);
-        handleClose();
+        
+        // Show the credentials modal
+        setShowCredsModal(true);
+        
+        toast.success('Tenant created successfully!');
       } else {
         toast.error(response.data.message || 'Failed to create tenant');
       }
@@ -168,6 +189,44 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
       const apiMessage = data.message;
       const apiErrors = data.errors;
       
+      // Handle user-friendly API error messages first
+      if (apiMessage && typeof apiMessage === 'string') {
+        // Check if it's a duplicate email error
+        if (apiMessage.includes('Email address') && apiMessage.includes('already in use')) {
+          toast.error(apiMessage);
+          setErrors(prev => ({
+            ...prev,
+            adminEmail: apiMessage
+          }));
+          return;
+        }
+        
+        // Check if it's a subdomain error
+        if (apiMessage.includes('Subdomain') && apiMessage.includes('already taken')) {
+          toast.error(apiMessage);
+          setErrors(prev => ({
+            ...prev,
+            subdomain: apiMessage
+          }));
+          return;
+        }
+        
+        // Check if it's a company name error
+        if (apiMessage.includes('Company name') && apiMessage.includes('already exists')) {
+          toast.error(apiMessage);
+          setErrors(prev => ({
+            ...prev,
+            name: apiMessage
+          }));
+          return;
+        }
+        
+        // Display any other user-friendly message
+        toast.error(apiMessage);
+        return;
+      }
+      
+      // Fallback to legacy error handling
       if (status === 409) {
          toast.error('Company name or subdomain already exists');
          setErrors(prev => ({
@@ -245,10 +304,18 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
       }
     });
     setErrors({});
+    setCredentials(null);
+    setShowCredsModal(false);
     onClose();
+  };
+  
+  const handleCredentialsModalClose = () => {
+    setShowCredsModal(false);
+    handleClose();
   };
 
   return (
+    <>
     <Dialog open={isOpen} onClose={handleClose} className="relative z-50">
       <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
       
@@ -510,5 +577,16 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
         </DialogPanel>
       </div>
     </Dialog>
+
+    {/* Render the credentials modal outside the main dialog to avoid z-index issues */}
+    {showCredsModal && credentials && (
+      <TenantCredentialsModal
+        isOpen={showCredsModal}
+        onClose={handleCredentialsModalClose}
+        credentials={credentials}
+        companyName={formData.name}
+      />
+    )}
+    </>
   );
 }

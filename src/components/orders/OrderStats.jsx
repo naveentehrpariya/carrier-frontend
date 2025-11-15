@@ -42,7 +42,7 @@ export default function OrderStats({ orders, isSearching, searchTerm, orderStatu
   return (
     <div className="mb-6 space-y-4">
       {/* Main Stats Row */}
-      <div className="bg-gray-900 border border-gray-800 rounded-[30px] p-4">
+      <div className="bg-dark4 border border-gray-800 rounded-[30px] p-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gray-800 text-gray-300 rounded-full flex items-center justify-center">
@@ -120,7 +120,7 @@ export default function OrderStats({ orders, isSearching, searchTerm, orderStatu
       {!isSearching && !orderStatus && !paymentStatus && totalOrders > 0 && (
         <div className="grid md:grid-cols-3 gap-4">
           {/* Revenue */}
-          <div className="bg-gray-900 border border-gray-800 rounded-[30px] p-4">
+          <div className="bg-dark4 border border-gray-800 rounded-[30px] p-4">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center">
                 <LuDollarSign size={16} className="text-green-600" />
@@ -136,7 +136,7 @@ export default function OrderStats({ orders, isSearching, searchTerm, orderStatu
           </div>
 
           {/* Carrier Costs */}
-          <div className="bg-gray-900 border border-gray-800 rounded-[30px] p-4">
+          <div className="bg-dark4 border border-gray-800 rounded-[30px] p-4">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center">
                 <LuTruck size={16} className="text-orange-600" />
@@ -152,7 +152,7 @@ export default function OrderStats({ orders, isSearching, searchTerm, orderStatu
           </div>
 
           {/* Profit */}
-          <div className="bg-gray-900 border border-gray-800 rounded-[30px] p-4">
+          <div className="bg-dark4 border border-gray-800 rounded-[30px] p-4">
             <div className="flex items-center gap-3 mb-2">
               <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center">
                 <LuTrendingUp size={16} className={profit >= 0 ? 'text-blue-600' : 'text-red-600'} />
@@ -171,7 +171,7 @@ export default function OrderStats({ orders, isSearching, searchTerm, orderStatu
 
       {/* Payment Status Breakdown (only when not filtering by payment) */}
       {!isSearching && !paymentStatus && totalOrders > 0 && (
-        <div className="bg-gray-900 border border-gray-800 rounded-[30px] p-4">
+        <div className="bg-dark4 border border-gray-800 rounded-[30px] p-4">
           <h4 className="text-gray-300 font-medium mb-3 flex items-center gap-2">
             <LuDollarSign size={16} />
             Payment Status Overview

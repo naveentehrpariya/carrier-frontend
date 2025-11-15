@@ -1,10 +1,6 @@
 import axios from 'axios';
 import safeStorage from '../utils/safeStorage';
-
-const APP_URL =  'http://localhost:8080';
-// const APP_URL = 'https://logistikore.com/api';
-// const APP_URL = process.env.REACT_APP_API_URL || process.env.APP_URL || 'http://localhost:8080';
-
+const APP_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 function getToken(){
   const data = safeStorage.getItem('token');
   return data; 
@@ -91,7 +87,6 @@ Api.interceptors.request.use(
     } else if (debugApi) {
       console.log('ℹ️ API: No tenant ID - super admin context');
     }
-    
     return config;
   },
   (error) => {

@@ -29,11 +29,11 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
   const orderNumber = getOrderNumber(order, user, company, null);
 
   return (
-    <div className={`order-card-container bg-gray-900 border border-gray-800 rounded-[30px] p-4 md:p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:ring-1 hover:ring-gray-700 focus-within:ring-1 focus-within:ring-gray-700 ${activeQuickViewId ? 'sidebar-active' : ''}`}>
+    <div className={`order-card-container bg-dark4 border border-gray-800 rounded-[30px] p-4 md:p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:ring-1 hover:ring-gray-700 focus-within:ring-1 focus-within:ring-gray-700 ${activeQuickViewId ? 'sidebar-active' : ''}`}>
       {/* Header Section */}
       <div className="mb-4">
         {/* Order Number and Lock Status */}
-        <div className="flex items-center justify-between mb-2">
+        <div className="md:flex  items-center justify-between mb-2">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-gray-800 text-gray-300 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0">
               <LuPackage size={20} />
@@ -41,22 +41,24 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
             <div>
               <Link 
                 to={`/view/order/${order._id}`}
-                className="text-lg font-semibold text-gray-100 hover:text-blue-400 transition-colors flex items-center gap-2"
+                className="items-centertext-lg font-semibold text-gray-100 hover:text-blue-400 transition-colors flex items-center gap-2"
               >
                 {order.lock ? <FaLock className="text-red-600" size={14} /> : <FaLockOpen className="text-gray-400" size={14} />}
-                {orderNumber}
+                {orderNumber} <Badge  status={order.order_status} />
               </Link>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-gray-400 flex items-center gap-2">
                 <TimeFormat date={order.createdAt || "--"} />
+                <span className="text-gray-500">•</span>
+                <span className="text-xs text-gray-400">Docs: {order?.documents_count ?? 0}</span>
               </p>
             </div>
           </div>
           
           {/* Status and Creator */}
-          <div className="text-right">
-            <Badge title={true} status={order.order_status} />
+          <div className="pt-4 flex text-start md:text-right gap-2">
+            
             {order.created_by?.name && (
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-sm text-gray-500">
                 Created by: <Link to={`/employee/detail/${order.created_by._id}`} className="text-blue-400 hover:text-blue-300">{order.created_by.name}</Link>
               </p>
             )}
@@ -69,10 +71,10 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
         {/* Order Summary Row */}
         <div className="grid md:grid-cols-3 gap-4">
           {/* Distance */}
-          <div className="bg-gray-800/30 rounded-xl p-3 border border-gray-800">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="flex  gap-2 items-center bg-gray-800/30 rounded-xl p-3 border border-gray-800">
+            <div className="flex gap-2 items-center ">
               <LuMapPin size={14} className="text-gray-400" />
-              <span className="text-xs text-gray-400 uppercase tracking-wide">Distance</span>
+              <span className="text-sm text-gray-400 uppercase tracking-wide">Distance : </span>
             </div>
             <div className="text-sm font-bold text-gray-200">
               <DistanceInMiles d={order?.totalDistance} />
@@ -80,10 +82,10 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
           </div>
 
           {/* Customer Amount */}
-          <div className="bg-gray-800/30 rounded-xl p-3 border border-gray-800">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="flex gap-2 items-center bg-gray-800/30 rounded-xl p-3 border border-gray-800">
+            <div className="flex items-center gap-2 ">
               <LuDollarSign size={14} className="text-green-600" />
-              <span className="text-xs text-gray-400 uppercase tracking-wide">Revenue</span>
+              <span className="text-sm text-gray-400 uppercase tracking-wide">Revenue : </span>
             </div>
             <div className="text-sm font-bold text-green-600">
               <Currency amount={order?.total_amount} currency={order?.revenue_currency || 'cad'} />
@@ -91,10 +93,10 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
           </div>
 
           {/* Carrier Cost */}
-          <div className="bg-gray-800/30 rounded-xl p-3 border border-gray-800">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="flex gap-2 items-center bg-gray-800/30 rounded-xl p-3 border border-gray-800">
+            <div className="flex items-center gap-2">
               <LuTruck size={14} className="text-orange-600" />
-              <span className="text-xs text-gray-400 uppercase tracking-wide">Cost</span>
+              <span className="text-sm text-gray-400 uppercase tracking-wide">Cost</span>
             </div>
             <div className="text-sm font-bold text-orange-600">
               <Currency amount={order?.carrier_amount} currency={order?.revenue_currency || 'cad'} />
@@ -115,7 +117,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                 <span className="text-xs text-gray-400">Name</span>
                 <Link 
                   to={`/customer/detail/${order.customer?._id}`}
-                  className="text-sm text-blue-400 hover:text-blue-300 font-medium"
+                  className="text-sm text-blue-400 hover:text-blue-300 font-medium text-right"
                 >
                   {order.customer?.name || "--"} ({order.customer?.customerCode || "--"})
                 </Link>
@@ -169,7 +171,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                 <span className="text-xs text-gray-400">Name</span>
                 <Link 
                   to={`/carrier/detail/${order.carrier?._id}`}
-                  className="text-sm text-blue-400 hover:text-blue-300 font-medium"
+                  className="text-sm text-blue-400 hover:text-blue-300 font-medium text-right"
                 >
                   {order.carrier?.name || "--"} (MC{order.carrier?.mc_code || "--"})
                 </Link>
@@ -215,7 +217,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
       </div>
 
       {/* Actions Footer */}
-      <div className="flex items-center justify-between pt-4 border-t border-gray-800">
+      <div className="flex items-center justify-between">
         {/* Quick View */}
         <OrderView 
           text={
@@ -233,6 +235,16 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
         {/* Actions Menu */}
         <div className="flex items-center gap-2">
           <Dropdown>
+            {(user?.is_admin === 1 || user?.role === 1) && (
+              <li className={`list-none text-sm ${order.lock ? "disabled" : ""}`}>
+                  <Link 
+                    className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${order.lock ? 'opacity-50 pointer-events-none' : ''}`}
+                    to={`/edit/order/${order._id}`}
+                  >
+                    {order.lock ? <FaLock size={12} className='me-1 inline' /> : ""} Edit Order
+                  </Link>
+                </li>
+            )}
             {(user?.is_admin === 1 || user?.role === 2) && (
               <>
                 <li className={`list-none text-sm ${order.lock ? "disabled" : ""}`}>
@@ -247,11 +259,13 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                     fetchLists={fetchLists}
                   />
                 </li>
+                
                 {user?.is_admin === 1 && (
                   <>
                     <li className='list-none text-sm'>
                       <LockOrder order={order} fetchLists={fetchLists} />
                     </li>
+
                     {order.lock ? (
                       <li className={`list-none text-sm ${order.lock ? "disabled" : ""}`}>
                         <Link 
@@ -268,6 +282,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                     )}
                   </>
                 )}
+
                 <li className={`list-none text-sm ${order.lock ? "disabled" : ""}`}>
                   <UpdatePaymentStatus 
                     pstatus={order.customer_payment_status}
@@ -287,14 +302,8 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                     fetchLists={fetchLists}
                   />
                 </li>
-                <li className={`list-none text-sm ${order.lock ? "disabled" : ""}`}>
-                  <Link 
-                    className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${order.lock ? 'opacity-50 pointer-events-none' : ''}`}
-                    to={`/edit/order/${order._id}`}
-                  >
-                    {order.lock ? <FaLock size={12} className='me-1 inline' /> : ""} Edit Order
-                  </Link>
-                </li>
+                
+                
               </>
             )}
             <li className='list-none text-sm'>
