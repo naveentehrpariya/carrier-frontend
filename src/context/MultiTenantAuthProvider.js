@@ -25,20 +25,13 @@ export default function MultiTenantAuthProvider(props) {
 
   // Check for existing authentication on component mount
   useEffect(() => {
-    // IMPORTANT: Handle URL token SYNCHRONOUSLY before any async operations
     const urlParams = new URLSearchParams(window.location.search);
     const urlToken = urlParams.get('token');
     const tenantParam = urlParams.get('tenant');
-    
+
     if (urlToken) {
-      console.log('🔑 [SYNC] Found token in URL, storing immediately');
-      console.log('Token (first 30 chars):', urlToken.substring(0, 30));
       safeStorage.setItem('token', urlToken);
-      console.log('✅ Token stored in safeStorage');
-      
       if (tenantParam) {
-        console.log('🎭 [SYNC] Emulation detected, setting up tenant context');
-        console.log('Tenant param:', tenantParam);
         const emulationUser = {
           _id: 'emulation-' + tenantParam,
           name: 'Super Admin (Emulating)',
@@ -53,27 +46,15 @@ export default function MultiTenantAuthProvider(props) {
           isSuperAdmin: false,
           isEmulating: true
         }));
-        console.log('✅ User and tenant context stored');
       }
-      
-      // Clean URL and reload to ensure all components use the new token
       urlParams.delete('token');
-      const newUrl = `${window.location.pathname}?${urlParams.toString()}${window.location.hash || ''}`;
-      console.log('🔄 About to reload page with URL:', newUrl);
-      console.log('🔄 Current URL:', window.location.href);
-      
-      // Set a flag so we know we've already reloaded
-      if (!safeSessionStorage.getItem('emulation_reloaded')) {
-        safeSessionStorage.setItem('emulation_reloaded', 'true');
-        console.log('🔄 RELOADING NOW...');
-        window.location.href = newUrl; // Force reload
-        return; // Stop execution
-      } else {
-        console.log('⚠️ Already reloaded once, skipping reload to prevent loop');
-        safeSessionStorage.removeItem('emulation_reloaded');
-      }
+      const qs = urlParams.toString();
+      const cleanedUrl = `${window.location.pathname}${qs ? `?${qs}` : ''}${window.location.hash || ''}`;
+      try {
+        window.history.replaceState({}, '', cleanedUrl);
+      } catch {}
     }
-    
+
     const checkAuth = async () => {
       try {
         console.log('🔍 Checking authentication state...');
@@ -131,7 +112,6 @@ export default function MultiTenantAuthProvider(props) {
       }
     };
     
-    // Only run once on mount
     checkAuth();
   }, []); // Empty dependency array to prevent re-runs
 
