@@ -36,10 +36,9 @@ import EmployeeDetail from './pages/dashboard/employees/EmployeeDetail';
 import Unauthorized from './components/Unauthorized';
 import SuperAdminProfile from './pages/super-admin/SuperAdminProfile';
 import UserProfile from './pages/tenant-admin/UserProfile';
-
 import SubscriptionPlans from './pages/super-admin/SubscriptionPlans';
 
-function App() {
+export default function App() {
   return (
     <MultiTenantProvider>
       <MultiTenantAuthProvider>
@@ -233,5 +232,3 @@ function App() {
     </MultiTenantProvider>
   );
 }
-
-export default App;

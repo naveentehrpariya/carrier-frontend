@@ -4,7 +4,12 @@ const useHumanReadableDate = (dateString, includeTime) => {
   const [humanReadableDate, setHumanReadableDate] = useState("");
 
   useEffect(() => {
-    const date = new Date(dateString);
+    if (!dateString) {
+      setHumanReadableDate("");
+      return;
+    }
+    const isDateOnly = typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+    const date = isDateOnly ? new Date(`${dateString}T00:00:00Z`) : new Date(dateString);
     const options = {
       year: 'numeric',
       month: 'long',
@@ -14,9 +19,9 @@ const useHumanReadableDate = (dateString, includeTime) => {
         minute: 'numeric',
         second: 'numeric',
       }),
+      ...(isDateOnly && { timeZone: 'UTC' })
     };
 
-    // Use user's local timezone instead of hardcoded 'en-US'
     const formattedDate = date.toLocaleString(undefined, options);
     setHumanReadableDate(formattedDate);
   }, [dateString, includeTime]);

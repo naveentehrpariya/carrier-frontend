@@ -15,7 +15,7 @@ export default function EquipmentLists() {
       } else {
         setLoading(true);
       }
-      const resp = Api.get(`/equipmentLists`);
+      const resp = Api.get(`/api/tenant/equipmentLists`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
@@ -39,7 +39,7 @@ export default function EquipmentLists() {
    const [adding, setAdding] = useState(false);
    const addEquipment = () => {
       setAdding(true);
-      const addC = Api.post(`/addEquipment`, {value:inputValue});
+      const addC = Api.post(`/api/tenant/addEquipment`, {value:inputValue});
       addC.then((res) => {
         if(input.current) input.current.value = '';
         if (res.data.status === true) {
@@ -60,7 +60,7 @@ export default function EquipmentLists() {
 
 
    const removeEquipment = (value) => {
-      const addC = Api.post(`/removeEquipment`, {id:value});
+      const addC = Api.post(`/api/tenant/removeEquipment`, {id:value});
       addC.then((res) => {
         if (res.data.status === true) {
           toast.success(res.data.message);

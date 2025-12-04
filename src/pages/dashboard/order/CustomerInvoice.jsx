@@ -277,7 +277,7 @@ export default function CustomerInvoice() {
                   </div>
                </div>
 
-               <div className="flex justify-between items-center border-b pb-4 mb-4">
+               <div className="flex justify-between items-center pb-4 mb-4">
                         <div>
                            <h2 className='mb-2 text-3xl ' style={{ fontWeight: 700, fontSize: "2rem", color: "#111" }}>INVOICE</h2>
                            <p className='text-lg'><strong>{company?.address || ''}</strong></p>
@@ -286,7 +286,9 @@ export default function CustomerInvoice() {
                         </div>
                         <div style={{ textAlign: "right", paddingTop: "1.5rem" }}>
                            <Logotext black={true} />
-                           <div style={{ color: "#444" }}>Invoice # {invoiceNo}</div>
+                           <div style={{ color: "#444"}}>Invoice # {invoiceNo}</div>
+                        <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>Date: {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getDate() > 9 ? todaydate.getDate() : '0' + todaydate.getDate()}  / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'} </div>
+
                         </div>
                      </div>
                </div>
@@ -318,7 +320,7 @@ export default function CustomerInvoice() {
                      boxSizing: "border-box",
                      backgroundColor: "white",
                   }}>
-                  <div className="flex justify-between items-center border-b pb-4 mb-4">
+                  <div className="flex justify-between items-center pb-4 mb-4">
                      <div>
                         <h2 style={{ fontWeight: 900, fontSize: "2rem", color: "#111" }}>INVOICE</h2>
                         <p className='text-lg'><strong>{company?.address || ''}</strong></p>
@@ -327,7 +329,8 @@ export default function CustomerInvoice() {
                      </div>
                      <div style={{ textAlign: "right", paddingTop: "1.5rem" }}>
                         <Logotext black={true} />
-                        <div className='text-lg' style={{ color: "#444" }}>Invoice # {invoiceNo}</div>
+                        <div className='text-lg' style={{ color: "#444", fontSize: "14px" }}>Invoice # {invoiceNo}</div>
+                        <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>Date: {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getDate() > 9 ? todaydate.getDate() : '0' + todaydate.getDate()}  / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'} </div>
                      </div>
                   </div>
                </div>
@@ -352,7 +355,7 @@ export default function CustomerInvoice() {
                      
                      {/* Employee Information Section */}
                      {order?.created_by && (
-                        <div style={{ borderBottom: "1px solid #ddd", paddingBottom: "2rem", marginBottom: "1rem" }}>
+                        <div style={{  paddingBottom: "2rem", marginBottom: "1rem" }}>
                            <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>PROCESSED BY</h3>
                            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
                               <div>
@@ -373,17 +376,48 @@ export default function CustomerInvoice() {
                            </div>
                         </div>
                      )}
+                     <div style={{marginBottom: "2rem",  paddingBottom: "1rem"}}>
+                        <table  cellPadding={8} className='bg-white'  style={{ width: "100%", textAlign: "left", borderCollapse: "collapse" }} border="1">
+                           <thead>
+                              <tr>
+                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Charges</th>
+                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Notes</th>
+                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Rate</th>
+                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Amount</th>
+                              </tr>
+                           </thead>
+                           <tbody>
+                              {order && order.revenue_items && order.revenue_items.map((r, idx) => (
+                                 <tr key={idx}>
+                                    <td className='border'>{r?.revenue_item}</td>
+                                    <td className='border text-left text-[14px] max-w-[200px]'>{r?.note}</td>
+                                    <td className='border text-left'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</td>
+                                    <td className='border text-left'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
+                                 </tr>
+
+                              ))}
+                              <tr>
+                                 <td colSpan={2} align='left' className='border' ><strong style={{ color: "#111" }}></strong></td>
+                                 <td  align='left' className='border bg-gray-100' ><strong style={{ color: "#111" }}>Total</strong></td>
+                                 <td   align='left' className='border bg-gray-100'  style={{ fontWeight: 700, color: "#111" }}>
+                                    <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} />
+                                 </td>
+                              </tr>
+                           </tbody>
+                        </table>
+                     </div>
+
                      <div>
                         {order && order.shipping_details && order.shipping_details.map((s, index) => (
-                           <div key={index}>
+                           <div style={{}} key={index}>
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "2rem" }}>
                                  <div>
-                                    <p className='flex items-center'><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
-                                    <p className='flex items-center'><strong>Commodity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                                    <p className='flex mb-2 items-center'><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
+                                    <p className='flex mb-2 items-center'><strong>Commodity : </strong> {s?.commodity?.value || s?.commodity}</p>
                                  </div>
                                  <div>
-                                    <p className='flex items-center'><strong>Equipments : </strong> {s?.equipment?.value}</p>
-                                    <p className='flex items-center'><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                                    <p className='flex mb-2 items-center'><strong>Equipments : </strong> {s?.equipment?.value}</p>
+                                    <p className='flex mb-2 items-center'><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
                                  </div>
                               </div>
                               <div style={{ marginBottom: "2rem" }}>
@@ -419,45 +453,18 @@ export default function CustomerInvoice() {
                         ))}
                      </div>
                      
-                     <div style={{marginTop: "2rem", borderTop: "1px solid #eee", paddingTop: "1rem"}}>
-                        <table  cellPadding={8} className='bg-white'  style={{ width: "100%", textAlign: "left", borderCollapse: "collapse" }} border="1">
-                           <thead>
-                              <tr>
-                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Charges</th>
-                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Notes</th>
-                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Rate</th>
-                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Amount</th>
-                              </tr>
-                           </thead>
-                           <tbody>
-                              {order && order.revenue_items && order.revenue_items.map((r, idx) => (
-                                 <tr key={idx}>
-                                    <td className='border'>{r?.revenue_item}</td>
-                                    <td className='border text-left text-[14px] max-w-[200px]'>{r?.note}</td>
-                                    <td className='border text-left'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</td>
-                                    <td className='border text-left'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
-                                 </tr>
+                     
 
-                              ))}
-                              <tr>
-                                 <td colSpan={2} align='left' className='border' ><strong style={{ color: "#111" }}></strong></td>
-                                 <td  align='left' className='border bg-gray-100' ><strong style={{ color: "#111" }}>Total</strong></td>
-                                 <td   align='left' className='border bg-gray-100'  style={{ fontWeight: 700, color: "#111" }}>
-                                    <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} />
-                                 </td>
-                              </tr>
-                           </tbody>
-                        </table>
-                     </div>
-
-                     <p className='mt-24 pt-24 mb-4'>Please send remittance to - 
-                        <a className='text-blue-600' href={`mailto:${company?.remittance_primary_email || company.email || ''}`}>
-                           {company?.remittance_primary_email || company.email || ''}
+                     <p className='mt-6 pt-6 mb-4'>
+                        Please send remittance to -
+                        <a
+                           className='text-blue-600 inline-block mt-[-5px]'
+                           href={`mailto:${company?.remittance_primary_email || company?.email || ''}${company?.remittance_secondary_email ? `?cc=${encodeURIComponent(company.remittance_secondary_email)}` : ''}`}
+                        >
+                           {company?.remittance_primary_email || company?.email || ''}
                         </a>
-                        {(company?.remittance_secondary_email) && (
-                           <>, cc <a className='text-blue-600' href={`mailto:${company?.remittance_secondary_email || ''}`}>
-                              {company?.remittance_secondary_email || ''}
-                           </a></>
+                        {company?.remittance_secondary_email && (
+                           <span className='ml-1 text-gray-700'>(cc: {company.remittance_secondary_email})</span>
                         )}
                      </p>
                      <div className='bank-details'>
@@ -472,7 +479,7 @@ export default function CustomerInvoice() {
 
                      </div>
                      <div style={{textAlign: 'right', marginTop: "2rem",marginBottom: "2rem"}}>
-                        <div>Date: {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getDate()}  / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'} </div>
+                        <div>Date: {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getDate() > 9 ? todaydate.getDate() : '0' + todaydate.getDate()}  / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'} </div>
                         <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>
                            INVOICE# {invoiceNo} must appear on all invoices
                         </div>

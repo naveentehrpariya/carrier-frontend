@@ -17,6 +17,7 @@ import {
   ArrowPathIcon,
   ArrowLeftIcon
 } from '@heroicons/react/24/outline';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import Api from '../../api/Api';
 import TenantActionModal from '../../components/TenantActionModal';
@@ -351,11 +352,15 @@ export default function AllTenantsManagement() {
   };
 
   const handleActionComplete = (updatedTenant) => {
-    setTenants(prevTenants => 
-      prevTenants.map(t => 
-        t._id === updatedTenant._id ? { ...t, ...updatedTenant } : t
-      )
-    );
+    if (updatedTenant && updatedTenant.deleted) {
+      setTenants(prevTenants => prevTenants.filter(t => t._id !== updatedTenant._id));
+    } else {
+      setTenants(prevTenants => 
+        prevTenants.map(t => 
+          t._id === updatedTenant._id ? { ...t, ...updatedTenant } : t
+        )
+      );
+    }
     setIsActionModalOpen(false);
     setSelectedTenant(null);
     setActionType(null);
@@ -475,7 +480,8 @@ export default function AllTenantsManagement() {
 
   const getAvailableActions = (tenant) => {
     const actions = [
-      { type: 'view', label: 'View Environment', icon: EyeIcon, color: 'text-blue-600 hover:text-blue-700' }
+      { type: 'view', label: 'View Environment', icon: EyeIcon, color: 'text-blue-600 hover:text-blue-700' },
+      { type: 'details', label: 'Details', icon: MagnifyingGlassIcon, color: 'text-gray-600 hover:text-gray-700' }
     ];
     
     switch (tenant.status) {
@@ -507,6 +513,7 @@ export default function AllTenantsManagement() {
     }
 
     actions.push({ type: 'edit', label: 'Edit Details', icon: PencilSquareIcon, color: 'text-gray-600 hover:text-gray-700' });
+    actions.push({ type: 'hardDelete', label: 'Delete Permanently', icon: TrashIcon, color: 'text-red-600 hover:text-red-700' });
     return actions;
   };
 
@@ -684,7 +691,7 @@ export default function AllTenantsManagement() {
         </div>
 
         {/* Tenants Table */}
-        <div className=" rounded-[20px] overflow-hidden border border-gray-800">
+        <div className="rounded-[24px] overflow-hidden border border-gray-800 bg-dark2">
           {loading ? (
             <div className="p-12 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto"></div>
@@ -692,32 +699,29 @@ export default function AllTenantsManagement() {
             </div>
           ) : tenants.length > 0 ? (
             <div className="overflow-x-auto">
-              <table className="bg-black min-w-full  ">
-                <thead className="bg-dark1">
+              <table className="min-w-full">
+                <thead className="bg-gray-900">
                   <tr>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                       Company
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                       Status & Plan
                     </th>
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
-                      Users & Orders
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                      Created
                     </th>
-                    {/* <th className="px-6 py-3 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
-                      Revenue
-                    </th> */}
-                    <th className="px-6 py-3 text-left text-sm font-medium text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                       Last Active
                     </th>
-                    <th className="px-6 py-3 text-right text-sm font-medium text-gray-300 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className=" divide-y divide-gray-800 ">
+                <tbody className="divide-y divide-gray-800">
                   {tenants.map((tenant) => (
-                    <tr key={tenant._id} className="hover:bg-gray-900">
+                    <tr key={tenant._id} className="hover:bg-gray-900/60 transition-colors">
                       {/* Company Info */}
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
@@ -725,21 +729,18 @@ export default function AllTenantsManagement() {
                             <BuildingOfficeIcon className="h-12 w-12 text-gray-600" />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-white">
+                            <div className="text-sm font-semibold text-white">
                               {tenant.name}
                             </div>
-                            <div className="text-sm text-gray-500">
+                            {/* <div className="text-sm text-gray-500">
                               {tenant.subdomain}
-                            </div>
+                            </div> */}
+                            <div className="mt-2 flex items-center gap-2"><span className="text-[10px] px-2 py-1 rounded-full bg-gray-800 text-gray-300 border border-gray-700">ID: {tenant.tenantId}</span></div>
                             {tenant.admin && (
                               <div className="text-xs text-gray-400">
                                 {tenant.admin.name} • {tenant.admin.email}
                               </div>
                             )}
-                            <span className={`mt-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(tenant.status)}`}>
-                              {getStatusIcon(tenant.status)}
-                              <span className="ml-1 capitalize">{tenant.status}</span>
-                            </span>
                           </div>
                         </div>
                       </td>
@@ -756,17 +757,9 @@ export default function AllTenantsManagement() {
                         </div>
                       </td>
 
-                      {/* Users & Orders */}
+                      {/* Created Date */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <div className="space-y-1">
-                          <div className="flex items-center">
-                            <UserGroupIcon className="h-4 w-4 mr-1" />
-                            {tenant.usage?.users ?? 0} users
-                          </div>
-                          <div className="text-xs text-gray-400">
-                            {tenant.usage?.orders ?? 0} orders
-                          </div>
-                        </div>
+                        {formatDate(tenant.createdAt)}
                       </td>
 
                       {/* Revenue */}
@@ -784,8 +777,8 @@ export default function AllTenantsManagement() {
 
                       {/* Actions */}
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end space-x-2">
-                          {getAvailableActions(tenant).slice(0, 4).map((action) => (
+                        <div className="flex items-center justify-end gap-2">
+                          {getAvailableActions(tenant).map((action) => (
                             <button
                               key={action.type}
                               onClick={() => {
@@ -795,7 +788,7 @@ export default function AllTenantsManagement() {
                                   handleTenantAction(tenant, action.type);
                                 }
                               }}
-                              className={`p-2 rounded-md ${action.color} transition-colors`}
+                              className={`px-3 py-2 rounded-xl bg-gray-800 text-gray-200 hover:bg-gray-700 transition`}
                               title={action.label}
                             >
                               <action.icon className="h-4 w-4" />

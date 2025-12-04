@@ -54,10 +54,10 @@ export default function MultiTenantLogin() {
 
     try {
       const result = await login(
-        formData.email,
+        (formData.email || '').trim().toLowerCase(),
         formData.password,
-        null, // No tenantId needed - backend will auto-detect
-        false // Not explicitly super admin - backend will auto-detect
+        null,
+        false
       );
 
       if (result.success) {

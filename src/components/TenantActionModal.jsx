@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react';
+import Popup from '../pages/common/Popup';
 import { 
   XMarkIcon,
   ExclamationTriangleIcon,
@@ -9,6 +9,7 @@ import {
   CreditCardIcon,
   ClockIcon 
 } from '@heroicons/react/24/outline';
+import { TrashIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import Api from '../api/Api';
 
@@ -23,6 +24,7 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
     maxOrders: ''
   });
   const [subscriptionPlans, setSubscriptionPlans] = useState([]);
+  const [tenantDetails, setTenantDetails] = useState(null);
   
   // Debug effect to monitor subscriptionPlans changes
   useEffect(() => {
@@ -44,6 +46,9 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
         maxUsers: tenant?.settings?.maxUsers ?? '',
         maxOrders: tenant?.settings?.maxOrders ?? ''
       });
+    }
+    if (isOpen && actionType === 'details' && tenant?.tenantId) {
+      fetchTenantDetails();
     }
   }, [isOpen, actionType, tenant]);
 
@@ -79,6 +84,17 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
         { _id: 'professional', slug: 'professional', name: 'Professional', limits: { maxUsers: 15, maxOrders: 2000 } },
         { _id: 'enterprise', slug: 'enterprise', name: 'Enterprise', limits: { maxUsers: 0, maxOrders: 0 } }
       ]);
+    }
+  };
+
+  const fetchTenantDetails = async () => {
+    try {
+      const response = await Api.get(`/api/super-admin/tenants/${tenant.tenantId}`);
+      if (response.data?.status) {
+        setTenantDetails(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching tenant details:', error);
     }
   };
 
@@ -178,6 +194,28 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
           requiresReason: false,
           dangerAction: false
         };
+      case 'details':
+        return {
+          title: 'Tenant Details',
+          description: `Overview for ${tenant?.name}.`,
+          icon: CheckCircleIcon,
+          iconColor: 'text-gray-600',
+          buttonText: 'Close',
+          buttonColor: 'bg-gray-600 hover:bg-gray-700',
+          requiresReason: false,
+          dangerAction: false
+        };
+      case 'hardDelete':
+        return {
+          title: 'Delete Tenant Permanently',
+          description: `This will permanently delete ${tenant?.name} and ALL related data (users, orders, customers, carriers, files, etc.). This action cannot be undone.`,
+          icon: TrashIcon,
+          iconColor: 'text-red-600',
+          buttonText: 'Delete Permanently',
+          buttonColor: 'bg-red-600 hover:bg-red-700',
+          requiresReason: true,
+          dangerAction: true
+        };
       default:
         return {
           title: 'Manage Tenant',
@@ -204,6 +242,10 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
     e.preventDefault();
     
     const config = getActionConfig();
+    if (actionType === 'details') {
+      onClose();
+      return;
+    }
     
     // Validate required fields
     if (config.requiresReason && !formData.reason.trim()) {
@@ -216,6 +258,12 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
       return;
     }
 
+    if (actionType === 'hardDelete') {
+      if ((formData.confirmText || '').trim().toLowerCase() !== (tenant?.tenantId || '').toLowerCase()) {
+        toast.error('Confirmation text does not match tenant ID');
+        return;
+      }
+    }
     setLoading(true);
     try {
       let response;
@@ -271,6 +319,12 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
             notes: formData.notes
           });
           break;
+
+        case 'hardDelete':
+          response = await Api.delete(`/api/super-admin/tenants/${tenant.tenantId}/hard-delete`, {
+            data: { reason: formData.reason }
+          });
+          break;
         
         default:
           throw new Error(`Unknown action type: ${actionType}`);
@@ -278,7 +332,11 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
 
       if (response.data.status) {
         toast.success(response.data.message || `${config.title} completed successfully`);
-        onActionComplete(response.data.data || { ...tenant, ...payload });
+        if (actionType === 'hardDelete') {
+          onActionComplete({ _id: tenant._id, deleted: true });
+        } else {
+          onActionComplete(response.data.data || { ...tenant, ...payload });
+        }
       } else {
         toast.error(response.data.message || `Failed to ${actionType} tenant`);
       }
@@ -304,31 +362,18 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
   if (!isOpen || !tenant || !actionType) return null;
 
   return (
-    <Dialog open={isOpen} onClose={onClose} className="relative z-50">
-      <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-      
-      <div className="fixed inset-0 flex items-center justify-center p-4">
-        <DialogPanel className="mx-auto max-w-md w-full bg-white rounded-lg shadow-xl">
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <div className="flex items-center">
-              <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${
-                config.dangerAction ? 'bg-red-100' : 'bg-green-100'
-              }`}>
-                <config.icon className={`h-6 w-6 ${config.iconColor}`} />
-              </div>
-              <DialogTitle className="ml-3 text-lg font-medium text-gray-900">
-                {config.title}
-              </DialogTitle>
+    <Popup open={isOpen} onClose={onClose} showTrigger={false} bg={'bg-white'} size={'md:max-w-md'}>
+      <div className="mx-auto w-full">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center">
+            <div className={`flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center ${config.dangerAction ? 'bg-red-100' : 'bg-green-100'}`}>
+              <config.icon className={`h-6 w-6 ${config.iconColor}`} />
             </div>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-500"
-            >
-              <XMarkIcon className="h-6 w-6" />
-            </button>
+            <h3 className="ml-3 text-lg font-medium text-gray-900">{config.title}</h3>
           </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
             {/* Description */}
             <p className="text-sm text-gray-600">
               {config.description}
@@ -350,6 +395,23 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
                 </div>
               </div>
             </div>
+
+            {actionType === 'details' && (
+              <div className="bg-gray-50 p-3 rounded-md">
+                <div className="text-xs font-medium text-gray-500 mb-2">Statistics</div>
+                <div className="grid grid-cols-2 gap-3 text-sm text-gray-700">
+                  <div>Created: <span className="text-gray-900">{tenantDetails ? new Date(tenantDetails.tenant?.createdAt).toLocaleString() : '-'}</span></div>
+                  <div>Last Active: <span className="text-gray-900">{tenantDetails ? (tenantDetails.lastActive ? new Date(tenantDetails.lastActive).toLocaleString() : 'Never') : '-'}</span></div>
+                  <div>Users: <span className="text-gray-900">{tenantDetails?.usage?.users ?? '-'}</span></div>
+                  <div>Orders: <span className="text-gray-900">{tenantDetails?.usage?.orders ?? '-'}</span></div>
+                  <div>Customers: <span className="text-gray-900">{tenantDetails?.usage?.customers ?? '-'}</span></div>
+                  <div>Carriers: <span className="text-gray-900">{tenantDetails?.usage?.carriers ?? '-'}</span></div>
+                  <div>Documents: <span className="text-gray-900">{tenantDetails?.usage?.documents ?? '-'}</span></div>
+                  <div>Revenue: <span className="text-gray-900">{tenantDetails?.revenue ?? '-'}</span></div>
+                </div>
+                <div className="mt-3 text-xs text-gray-600">ID: {tenant?.tenantId} • Domain: {tenant?.domain || '—'}</div>
+              </div>
+            )}
 
             {/* Plan Selection */}
             {actionType === 'changePlan' && (
@@ -461,6 +523,25 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
               </div>
             )}
 
+            {actionType === 'hardDelete' && (
+              <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                <p className="text-sm text-red-800">
+                  Type the tenant ID <span className="font-semibold">{tenant?.tenantId}</span> to confirm permanent deletion.
+                </p>
+                <input
+                  type="text"
+                  name="confirmText"
+                  value={formData.confirmText || ''}
+                  onChange={(e) => setFormData(prev => ({ ...prev, confirmText: e.target.value }))}
+                  className="mt-2 w-full px-3 py-2 border border-red-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  placeholder={tenant?.tenantId}
+                />
+                <p className="text-xs text-red-600 mt-2">
+                  All users, orders, customers, carriers, files and settings will be deleted.
+                </p>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
               <button
@@ -479,8 +560,7 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
               </button>
             </div>
           </form>
-        </DialogPanel>
       </div>
-    </Dialog>
+    </Popup>
   );
 }

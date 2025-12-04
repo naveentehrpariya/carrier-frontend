@@ -14,7 +14,6 @@ import { PDFDocument, PDFName } from 'pdf-lib';
 
 export default function OrderPDF() {
    
-   
    const [loading, setLoading] = useState(true);
    const [order, setOrder] = useState([]);
    const {Errors, company} = useContext(UserContext);
@@ -25,91 +24,99 @@ export default function OrderPDF() {
    const todaydate = new Date();
 
    const downloadPDF = async () => {
-   setDownloadingPdf(true);
-   setPdfProgress('Preparing PDF generation...');
-   window.scrollTo(0, 0);
-   const element = pdfRef.current;
-   const headerElement = document.getElementById("pdf-header-html");
+      setDownloadingPdf(true);
+      setPdfProgress('Preparing PDF generation...');
+      window.scrollTo(0, 0);
+      const element = pdfRef.current;
+      const headerElement = document.getElementById("pdf-header-html");
+      if (!element || !headerElement) {
+         console.error("Missing content or header element.");
+         setDownloadingPdf(false);
+         setPdfProgress('');
+         return;
+      }
+      try {
+         setPdfProgress('Rendering header...');
+         // Render header to canvas with balanced compression
+         const headerCanvas = await html2canvas(headerElement, {
+            scale: 4, // Good scale for crisp but not oversized header
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+            logging: false,
+            pixelRatio: 1.0, // Full pixel ratio for clarity
+            quality: 100, // Good quality for clear header
+         });
+         
+         // Better header compression for clarity
+         const headerImgData = headerCanvas.toDataURL("image/jpeg", 1); // Good quality
+         // Calculate proper header height to maintain aspect ratio
+         const headerHeight = Math.min(((headerCanvas.height * 185) / headerCanvas.width), 45); // Proper aspect ratio
 
-   if (!element || !headerElement) {
-      console.error("Missing content or header element.");
-      setDownloadingPdf(false);
-      setPdfProgress('');
-      return;
-   }
+         setPdfProgress('Generating PDF with content...');
+         const doc = new jsPDF({
+            unit: "mm",
+            format: "a4",
+            orientation: "portrait",
+            compress: true,
+            precision: 1,
+            userUnit: 1.0,
+         });
 
-   try {
-      setPdfProgress('Rendering header...');
-      // Render header to canvas with balanced compression
-      const headerCanvas = await html2canvas(headerElement, {
-         scale: 4, // Good scale for crisp but not oversized header
-         useCORS: true,
-         allowTaint: true,
-         backgroundColor: '#ffffff',
-         logging: false,
-         pixelRatio: 1.0, // Full pixel ratio for clarity
-         quality: 100, // Good quality for clear header
-      });
-      
-      // Better header compression for clarity
-      const headerImgData = headerCanvas.toDataURL("image/jpeg", 1); // Good quality
-      // Calculate proper header height to maintain aspect ratio
-      const headerHeight = Math.min(((headerCanvas.height * 185) / headerCanvas.width), 45); // Proper aspect ratio
-
-      setPdfProgress('Generating PDF with content...');
-      const doc = new jsPDF({
-         unit: "mm",
-         format: "a4",
-         orientation: "portrait",
-         compress: true,
-         precision: 1,
-         userUnit: 1.0,
-      });
-
-      doc.html(element, {
-         callback: async function (doc) {
-            try {
-               setPdfProgress('Adding headers to all pages...');
-               const totalPages = doc.internal.getNumberOfPages();
-               
-               // Add header to all pages for consistency
-               for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-                  doc.setPage(pageNum);
-                  doc.addImage(headerImgData, "JPEG", 12.5, 5, 185, Math.min(headerHeight, 40), '', 'FAST'); // Full width header
+         doc.html(element, {
+            callback: async function (doc) {
+               try {
+                  setPdfProgress('Adding headers to all pages...');
+                  const totalPages = doc.internal.getNumberOfPages();
                   
-                  // Add logo image watermark to each page
-                  try {
-                     // Create watermark from logo element in the header
-                     const logoElement = headerElement.querySelector('img, [class*="logo"], .logotext');
-                     if (logoElement) {
-                        // Render the logo as watermark
-                        const logoCanvas = await html2canvas(logoElement, {
-                           scale: 2,
-                           useCORS: true,
-                           allowTaint: true,
-                           backgroundColor: null,
-                           logging: false
-                        });
-                        
-                        // Create a semi-transparent version for watermark
-                        const watermarkCanvas = document.createElement('canvas');
-                        const watermarkCtx = watermarkCanvas.getContext('2d');
-                        watermarkCanvas.width = logoCanvas.width;
-                        watermarkCanvas.height = logoCanvas.height;
-                        
-                        // Set low opacity for watermark effect
-                        watermarkCtx.globalAlpha = 0.15; // Light watermark
-                        watermarkCtx.drawImage(logoCanvas, 0, 0);
-                        
-                        const logoWatermarkData = watermarkCanvas.toDataURL('image/png');
-                        
-                        // Add logo watermark at multiple positions
-                        const logoSize = 60; // Size in mm
-                        doc.addImage(logoWatermarkData, 'PNG', 30, 120, logoSize, logoSize * 0.5, '', 'FAST');
-                        doc.addImage(logoWatermarkData, 'PNG', 120, 160, logoSize, logoSize * 0.5, '', 'FAST');
-                        doc.addImage(logoWatermarkData, 'PNG', 30, 200, logoSize, logoSize * 0.5, '', 'FAST');
-                     } else {
-                        // Fallback to text watermark if no logo found
+                  // Add header to all pages for consistency
+                  for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                     doc.setPage(pageNum);
+                     doc.addImage(headerImgData, "JPEG", 12.5, 5, 185, Math.min(headerHeight, 40), '', 'FAST'); // Full width header
+                     
+                     // Add logo image watermark to each page
+                     try {
+                        // Create watermark from logo element in the header
+                        const logoElement = headerElement.querySelector('img, [class*="logo"], .logotext');
+                        if (logoElement) {
+                           // Render the logo as watermark
+                           const logoCanvas = await html2canvas(logoElement, {
+                              scale: 2,
+                              useCORS: true,
+                              allowTaint: true,
+                              backgroundColor: null,
+                              logging: false
+                           });
+                           
+                           // Create a semi-transparent version for watermark
+                           const watermarkCanvas = document.createElement('canvas');
+                           const watermarkCtx = watermarkCanvas.getContext('2d');
+                           watermarkCanvas.width = logoCanvas.width;
+                           watermarkCanvas.height = logoCanvas.height;
+                           
+                           // Set low opacity for watermark effect
+                           watermarkCtx.globalAlpha = 0.15; // Light watermark
+                           watermarkCtx.drawImage(logoCanvas, 0, 0);
+                           
+                           const logoWatermarkData = watermarkCanvas.toDataURL('image/png');
+                           
+                           // Add logo watermark at multiple positions
+                           const logoSize = 60; // Size in mm
+                           doc.addImage(logoWatermarkData, 'PNG', 30, 120, logoSize, logoSize * 0.5, '', 'FAST');
+                           doc.addImage(logoWatermarkData, 'PNG', 120, 160, logoSize, logoSize * 0.5, '', 'FAST');
+                           doc.addImage(logoWatermarkData, 'PNG', 30, 200, logoSize, logoSize * 0.5, '', 'FAST');
+                        } else {
+                           // Fallback to text watermark if no logo found
+                           doc.setTextColor(230, 230, 230);
+                           doc.setFontSize(35);
+                           doc.text('CROSS MILES CARRIER', 105, 150, {
+                              angle: 45,
+                              align: 'center'
+                           });
+                        }
+                     } catch (watermarkError) {
+                        console.log('Logo watermark failed, using text fallback:', watermarkError);
+                        // Text fallback
                         doc.setTextColor(230, 230, 230);
                         doc.setFontSize(35);
                         doc.text('CROSS MILES CARRIER', 105, 150, {
@@ -117,165 +124,155 @@ export default function OrderPDF() {
                            align: 'center'
                         });
                      }
-                  } catch (watermarkError) {
-                     console.log('Logo watermark failed, using text fallback:', watermarkError);
-                     // Text fallback
-                     doc.setTextColor(230, 230, 230);
-                     doc.setFontSize(35);
-                     doc.text('CROSS MILES CARRIER', 105, 150, {
-                        angle: 45,
-                        align: 'center'
-                     });
                   }
+                  
+                  setPdfProgress('Compressing PDF...');
+                  
+                  // Get PDF as ArrayBuffer for post-compression
+                  const pdfArrayBuffer = doc.output('arraybuffer');
+                  
+                  // Load PDF with pdf-lib for compression
+                  const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+                  
+                  // Apply enhanced compression settings
+                  const compressedPdfBytes = await pdfDoc.save({
+                     useObjectStreams: true,
+                     addDefaultPage: false,
+                     objectsPerTick: 2000, // Higher compression
+                     updateFieldAppearances: false,
+                     compress: true,
+                     // Additional optimization flags
+                     linearize: false, // Disable linearization for smaller size
+                     normalizeWhitespace: true // Remove extra whitespace
+                  });
+                  
+                  setPdfProgress('Finalizing download...');
+                  
+                  // Create blob and download
+                  const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = `Order_CMC${order?.serial_no || ''}_Rate_Confirmation.pdf`;
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                  URL.revokeObjectURL(url);
+                  
+                  setPdfProgress('PDF downloaded successfully!');
+                  setTimeout(() => setPdfProgress(''), 3000);
+                  setDownloadingPdf(false);
+                  
+               } catch (compressionError) {
+                  console.error('PDF compression failed:', compressionError);
+                  // Fallback to original PDF if compression fails
+                  doc.save(`Order_CMC${order?.serial_no || ''}_Rate_Confirmation.pdf`);
+                  setPdfProgress('PDF downloaded (compression skipped)');
+                  setTimeout(() => setPdfProgress(''), 3000);
+                  setDownloadingPdf(false);
                }
-               
-               setPdfProgress('Compressing PDF...');
-               
-               // Get PDF as ArrayBuffer for post-compression
-               const pdfArrayBuffer = doc.output('arraybuffer');
-               
-               // Load PDF with pdf-lib for compression
-               const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
-               
-               // Apply enhanced compression settings
-               const compressedPdfBytes = await pdfDoc.save({
-                  useObjectStreams: true,
-                  addDefaultPage: false,
-                  objectsPerTick: 2000, // Higher compression
-                  updateFieldAppearances: false,
-                  compress: true,
-                  // Additional optimization flags
-                  linearize: false, // Disable linearization for smaller size
-                  normalizeWhitespace: true // Remove extra whitespace
-               });
-               
-               setPdfProgress('Finalizing download...');
-               
-               // Create blob and download
-               const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
-               const url = URL.createObjectURL(blob);
-               const link = document.createElement('a');
-               link.href = url;
-               link.download = `Order_CMC${order?.serial_no || ''}_Rate_Confirmation.pdf`;
-               document.body.appendChild(link);
-               link.click();
-               document.body.removeChild(link);
-               URL.revokeObjectURL(url);
-               
-               setPdfProgress('PDF downloaded successfully!');
-               setTimeout(() => setPdfProgress(''), 3000);
-               setDownloadingPdf(false);
-               
-            } catch (compressionError) {
-               console.error('PDF compression failed:', compressionError);
-               // Fallback to original PDF if compression fails
-               doc.save(`Order_CMC${order?.serial_no || ''}_Rate_Confirmation.pdf`);
-               setPdfProgress('PDF downloaded (compression skipped)');
-               setTimeout(() => setPdfProgress(''), 3000);
-               setDownloadingPdf(false);
-            }
-         },
-         x: 12.5,
-         y: 0,
-         html2canvas: {
-            scale: 0.23, // Slightly larger scale to show full text
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: null,
-            logging: false,
-            imageTimeout: 12000,
-            removeContainer: true,
-            pixelRatio: 0.8, // Better pixel ratio
-            quality: 0.5, // Better quality for readability
-            foreignObjectRendering: false,
-            onclone: function(clonedDoc) {
-               // Ultra-aggressive compression with proper styling fixes
-               clonedDoc.querySelectorAll('*').forEach(el => {
-                  const style = el.style;
-                  // Simplify fonts but keep structure
-                  style.fontFamily = 'Arial, sans-serif';
-                  style.fontSize = '16px';
-                  // Keep bold text for headings but reduce excessive weights
-                  if (style.fontWeight === '900' || style.fontWeight === 'black') {
-                     style.fontWeight = '700';
-                  } else if (style.fontWeight === '800') {
-                     style.fontWeight = '600';
-                  }
-                  // Font sizes optimized to prevent cutting
-                  if (el.tagName === 'H1') {
-                     style.fontSize = '18px';
-                     style.fontWeight = '700';
-                  } else if (el.tagName === 'H2' || el.tagName === 'H3') {
+            },
+            x: 12.5,
+            y: 0,
+            html2canvas: {
+               scale: 0.23, // Slightly larger scale to show full text
+               useCORS: true,
+               allowTaint: true,
+               backgroundColor: null,
+               logging: false,
+               imageTimeout: 12000,
+               removeContainer: true,
+               pixelRatio: 0.8, // Better pixel ratio
+               quality: 0.5, // Better quality for readability
+               foreignObjectRendering: false,
+               onclone: function(clonedDoc) {
+                  // Ultra-aggressive compression with proper styling fixes
+                  clonedDoc.querySelectorAll('*').forEach(el => {
+                     const style = el.style;
+                     // Simplify fonts but keep structure
+                     style.fontFamily = 'Arial, sans-serif';
                      style.fontSize = '16px';
-                     style.fontWeight = '600';
-                  } else if (el.tagName === 'TH' || el.tagName === 'TD') {
-                     style.padding = '3px';
-                     style.fontSize = '15px';
-                     style.fontWeight = '600';
-                  } else {
-                     style.fontSize = '15px';
-                  }
-                  // Ensure proper line height for all elements
-                  style.lineHeight = '1.6';
-                  // Remove visual effects
-                  style.textShadow = 'none';
-                  style.boxShadow = 'none';
-                  style.backgroundImage = 'none';
-                  style.borderRadius = '0';
-                  // Preserve table borders and full-width layout
-                  if (el.tagName === 'TABLE') {
-                     el.setAttribute('cellpadding', '4');
-                     el.setAttribute('cellspacing', '0');
-                     style.border = '1px solid #999';
-                     style.borderCollapse = 'collapse';
-                     style.width = '100%';
-                     style.tableLayout = 'auto'; // Allow flexible column widths
-                  } else if (el.tagName === 'TD' || el.tagName === 'TH') {
-                     style.border = '1px solid #ccc';
-                     style.padding = '3px';
-                     style.textAlign = 'left';
-                     style.verticalAlign = 'top';
-                     style.wordBreak = 'break-word';
-                     style.height = '30px';
-                     style.lineHeight = '30px';
-                  } else if (el.classList && el.classList.contains('border-b')) {
-                     style.borderBottom = '1px solid #ddd';
-                  }
-                  if (style.padding && parseInt(style.padding) > 12) {
-                     style.padding = '3px';
-                  }
-                  if (style.margin && parseInt(style.margin) > 12) {
-                     style.margin = '2px';
-                  }
-                  // Control container elements width
-                  if (el.classList && (el.classList.contains('grid') || el.classList.contains('flex'))) {
-                     style.width = '100%';
-                     style.maxWidth = '100%';
-                     style.overflow = 'hidden';
-                  }
-                  // Remove effects
-                  style.transform = 'none';
-                  style.transition = 'none';
-               });
-               // Remove ALL images to save maximum space
-               clonedDoc.querySelectorAll('img, svg, .icon, canvas').forEach(el => {
-                  el.style.display = 'none';
-               });
-            } 
-         },
-         autoPaging: 'text',
-         width: 185, // A4 width minus margins
-         windowWidth: 700, // Constrain to prevent overflow
-         margin: [headerHeight + 2, 0, 15, 0], // Reduce margins to prevent text cutting
-      });
-      
-   } catch (error) {
-      console.error('PDF generation failed:', error);
-      setPdfProgress('PDF generation failed');
-      setTimeout(() => setPdfProgress(''), 3000);
-      setDownloadingPdf(false);
-   }
-};
+                     // Keep bold text for headings but reduce excessive weights
+                     if (style.fontWeight === '900' || style.fontWeight === 'black') {
+                        style.fontWeight = '700';
+                     } else if (style.fontWeight === '800') {
+                        style.fontWeight = '600';
+                     }
+                     // Font sizes optimized to prevent cutting
+                     if (el.tagName === 'H1') {
+                        style.fontSize = '18px';
+                        style.fontWeight = '700';
+                     } else if (el.tagName === 'H2' || el.tagName === 'H3') {
+                        style.fontSize = '16px';
+                        style.fontWeight = '600';
+                     } else if (el.tagName === 'TH' || el.tagName === 'TD') {
+                        style.padding = '3px';
+                        style.fontSize = '15px';
+                        style.fontWeight = '600';
+                     } else {
+                        style.fontSize = '15px';
+                     }
+                     // Ensure proper line height for all elements
+                     style.lineHeight = '1.6';
+                     // Remove visual effects
+                     style.textShadow = 'none';
+                     style.boxShadow = 'none';
+                     style.backgroundImage = 'none';
+                     style.borderRadius = '0';
+                     // Preserve table borders and full-width layout
+                     if (el.tagName === 'TABLE') {
+                        el.setAttribute('cellpadding', '4');
+                        el.setAttribute('cellspacing', '0');
+                        style.border = '1px solid #999';
+                        style.borderCollapse = 'collapse';
+                        style.width = '100%';
+                        style.tableLayout = 'auto'; // Allow flexible column widths
+                     } else if (el.tagName === 'TD' || el.tagName === 'TH') {
+                        style.border = '1px solid #ccc';
+                        style.padding = '3px';
+                        style.textAlign = 'left';
+                        style.verticalAlign = 'top';
+                        style.wordBreak = 'break-word';
+                        style.height = '30px';
+                        style.lineHeight = '30px';
+                     } else if (el.classList && el.classList.contains('border-b')) {
+                        style.borderBottom = '1px solid #ddd';
+                     }
+                     if (style.padding && parseInt(style.padding) > 12) {
+                        style.padding = '3px';
+                     }
+                     if (style.margin && parseInt(style.margin) > 12) {
+                        style.margin = '2px';
+                     }
+                     // Control container elements width
+                     if (el.classList && (el.classList.contains('grid') || el.classList.contains('flex'))) {
+                        style.width = '100%';
+                        style.maxWidth = '100%';
+                        style.overflow = 'hidden';
+                     }
+                     // Remove effects
+                     style.transform = 'none';
+                     style.transition = 'none';
+                  });
+                  // Remove ALL images to save maximum space
+                  clonedDoc.querySelectorAll('img, svg, .icon, canvas').forEach(el => {
+                     el.style.display = 'none';
+                  });
+               } 
+            },
+            autoPaging: 'text',
+            width: 185, // A4 width minus margins
+            windowWidth: 700, // Constrain to prevent overflow
+            margin: [headerHeight + 2, 0, 15, 0], // Reduce margins to prevent text cutting
+         });
+         
+      } catch (error) {
+         console.error('PDF generation failed:', error);
+         setPdfProgress('PDF generation failed');
+         setTimeout(() => setPdfProgress(''), 3000);
+         setDownloadingPdf(false);
+      }
+   };
 
 
    const fetchOrder = () => {

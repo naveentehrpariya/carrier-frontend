@@ -5,6 +5,7 @@ import Popup from '../common/Popup';
 import toast from 'react-hot-toast';
 import Loading from '../common/Loading';
 import Nocontent from '../common/NoContent';
+ 
 
 function Field({ label, children }) {
   return (
@@ -295,231 +296,111 @@ export default function SubscriptionPlans() {
         ) : plans.length === 0 ? (
           <Nocontent />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {plans.map((p) => (
-              <div key={p._id || p.slug} className="rounded-[30px] bg-gray-700/10 border border-gray-700 p-6">
+              <div key={p._id || p.slug} className="rounded-2xl bg-dark2 border border-gray-800 p-6 hover:border-gray-700 transition-all">
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="text-white font-semibold text-xl">{p.name}</div>
-                    {/* <div className="text-gray-400 text-xs">{p.slug}</div> */}
+                    <div className="text-white font-semibold text-lg">{p.name}</div>
+                    <div className="text-gray-500 text-xs mt-1">{p.slug}</div>
+                    {p.description && <div className="mt-2 text-gray-300 text-sm">{p.description}</div>}
                   </div>
-                  {p.isPopular && <span className="text-xs px-2 py-1 bg-yellow-600 text-black rounded">Popular</span>}
+                  <span className={`px-2 py-1 rounded-full text-xs ${p.isActive ? 'bg-green-700 text-white' : 'bg-gray-700 text-gray-300'}`}>{p.isActive ? 'Active' : 'Inactive'}</span>
                 </div>
-                <div className="mt-3 text-indigo-300 text-xl">Max Users: {p?.limits?.maxUsers ?? '-'}</div>
-                {p.description && <div className="mt-2 text-gray-300 text-sm">{p.description}</div>}
-
-                <div className="mt-3 flex flex-wrap text-gray-300 text-sm">
-                  <div className='me-2 mt-2'>Max Orders: {p?.limits?.maxOrders ?? '—'}</div>
-                  <div className='me-2 mt-2'>Max Customers: {p?.limits?.maxCustomers ?? '—'}</div>
-                  <div className='me-2 mt-2'>Max Carriers: {p?.limits?.maxCarriers ?? '—'}</div>
+                <div className="mt-5 grid grid-cols-4 gap-3">
+                  <div className="text-center bg-gray-800/60 text-gray-200 rounded-xl py-3">
+                    <div className="text-xs text-gray-400">Users</div>
+                    <div className="text-sm font-semibold">{p?.limits?.maxUsers ?? '—'}</div>
+                  </div>
+                  <div className="text-center bg-gray-800/60 text-gray-200 rounded-xl py-3">
+                    <div className="text-xs text-gray-400">Orders</div>
+                    <div className="text-sm font-semibold">{p?.limits?.maxOrders ?? '—'}</div>
+                  </div>
+                  <div className="text-center bg-gray-800/60 text-gray-200 rounded-xl py-3">
+                    <div className="text-xs text-gray-400">Customers</div>
+                    <div className="text-sm font-semibold">{p?.limits?.maxCustomers ?? '—'}</div>
+                  </div>
+                  <div className="text-center bg-gray-800/60 text-gray-200 rounded-xl py-3">
+                    <div className="text-xs text-gray-400">Carriers</div>
+                    <div className="text-sm font-semibold">{p?.limits?.maxCarriers ?? '—'}</div>
+                  </div>
                 </div>
-
-                <div className="mt-3 flex gap-2 text-xs">
-                  <span className={`px-2 py-1 rounded-[30px] ${p.isActive ? 'bg-green-700 text-white' : 'bg-gray-700 text-gray-300'}`}>{p.isActive ? 'Active' : 'Inactive'}</span>
-                  {/* <span className={`px-2 py-1 rounded ${p.isPublic ? 'bg-blue-700 text-white' : 'bg-gray-700 text-gray-300'}`}>{p.isPublic ? 'Public' : 'Private'}</span> */}
-                </div>
-                {Array.isArray(p.features) && p.features.length > 0 && (
-                  <ul className="mt-3 text-sm text-gray-300 list-disc list-inside">
-                    {p.features.slice(0, 5).map((f, idx) => (
-                      <li key={idx}>{f}</li>
-                    ))}
-                  </ul>
-                )}
-                
-                {/* Action buttons */}
-                <div className="mt-4 flex gap-2">
-                  <button
-                    onClick={() => startEdit(p)}
-                    className="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => startDelete(p)}
-                    className="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
-                  >
-                    Delete
-                  </button>
+                <div className="mt-6 flex gap-2 justify-end">
+                  <button onClick={() => startEdit(p)} className="btn px-4 py-2">Edit</button>
+                  <button onClick={() => startDelete(p)} className="px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700">Delete</button>
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Edit Plan Modal */}
         {editingPlan && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-900 rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <Popup open={!!editingPlan} onClose={cancelEdit} showTrigger={false} bg={'bg-gray-900'} size={'md:max-w-2xl'}>
+            <div className="rounded-lg p-6 w-full max-h-[80vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-white text-xl font-semibold">Edit Plan: {editingPlan.name}</h3>
-                <button onClick={cancelEdit} className="text-gray-400 hover:text-white">
-                  ✕
-                </button>
               </div>
-              
-              {error && (
-                <div className="mb-4 text-red-400 text-sm">{error}</div>
-              )}
-              
+              {error && (<div className="mb-4 text-red-400 text-sm">{error}</div>)}
               <form onSubmit={updatePlan}>
                 <div className="space-y-4">
                   <Field label="Name">
-                    <input 
-                      className="input-sm" 
-                      value={form.name} 
-                      onChange={e => onChange('name', e.target.value)} 
-                      required 
-                    />
+                    <input className="input-sm" value={form.name} onChange={e => onChange('name', e.target.value)} required />
                   </Field>
-                  
                   <Field label="Slug">
-                    <input 
-                      className="input-sm" 
-                      value={form.slug} 
-                      onChange={e => onChange('slug', e.target.value)} 
-                      required 
-                    />
-                    <p className="text-xs text-gray-400 mt-1">Warning: Changing slug may affect URLs and integrations</p>
+                    <input className="input-sm" value={form.slug} onChange={e => onChange('slug', e.target.value)} required />
+                    <p className="text-xs text-gray-400 mt-1">Changing slug may affect URLs and integrations</p>
                   </Field>
-                  
                   <Field label="Description">
-                    <textarea 
-                      className="input-sm" 
-                      value={form.description} 
-                      onChange={e => onChange('description', e.target.value)}
-                      rows={3}
-                    />
+                    <textarea className="input-sm" value={form.description} onChange={e => onChange('description', e.target.value)} rows={3} />
                   </Field>
-                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field label="Max Users">
-                      <input 
-                        type="number" 
-                        className="input-sm" 
-                        value={form?.limits?.maxUsers ?? ''} 
-                        onChange={e => onLimitChange('maxUsers', e.target.value)} 
-                        min="0" 
-                      />
+                      <input type="number" className="input-sm" value={form?.limits?.maxUsers ?? ''} onChange={e => onLimitChange('maxUsers', e.target.value)} min="0" />
                     </Field>
                     <Field label="Max Orders">
-                      <input 
-                        type="number" 
-                        className="input-sm" 
-                        value={form?.limits?.maxOrders ?? ''} 
-                        onChange={e => onLimitChange('maxOrders', e.target.value)} 
-                        min="0" 
-                      />
+                      <input type="number" className="input-sm" value={form?.limits?.maxOrders ?? ''} onChange={e => onLimitChange('maxOrders', e.target.value)} min="0" />
                     </Field>
                     <Field label="Max Customers">
-                      <input 
-                        type="number" 
-                        className="input-sm" 
-                        value={form?.limits?.maxCustomers ?? ''} 
-                        onChange={e => onLimitChange('maxCustomers', e.target.value)} 
-                        min="0" 
-                      />
+                      <input type="number" className="input-sm" value={form?.limits?.maxCustomers ?? ''} onChange={e => onLimitChange('maxCustomers', e.target.value)} min="0" />
                     </Field>
                     <Field label="Max Carriers">
-                      <input 
-                        type="number" 
-                        className="input-sm" 
-                        value={form?.limits?.maxCarriers ?? ''} 
-                        onChange={e => onLimitChange('maxCarriers', e.target.value)} 
-                        min="0" 
-                      />
+                      <input type="number" className="input-sm" value={form?.limits?.maxCarriers ?? ''} onChange={e => onLimitChange('maxCarriers', e.target.value)} min="0" />
                     </Field>
                   </div>
-                  
                   <Field label="Features (comma-separated)">
-                    <input 
-                      className="input-sm" 
-                      value={form.featuresInput} 
-                      onChange={e => onChange('featuresInput', e.target.value)} 
-                      placeholder="analytics, priority-support, custom-reports" 
-                    />
+                    <input className="input-sm" value={form.featuresInput} onChange={e => onChange('featuresInput', e.target.value)} placeholder="analytics, priority-support, custom-reports" />
                   </Field>
-                  
                   <div className="flex gap-4">
-                    <Toggle 
-                      label="Active" 
-                      checked={form.isActive} 
-                      onChange={(checked) => onChange('isActive', checked)} 
-                    />
+                    <Toggle label="Active" checked={form.isActive} onChange={(checked) => onChange('isActive', checked)} />
                   </div>
                 </div>
-                
                 <div className="mt-6 flex items-center justify-end gap-2">
-                  <button 
-                    type="button" 
-                    onClick={cancelEdit} 
-                    className="px-4 py-2 text-gray-300 bg-gray-700 rounded hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
-                  <button 
-                    type="submit" 
-                    disabled={submitting} 
-                    className="btn"
-                  >
-                    {submitting ? 'Updating…' : 'Update Plan'}
-                  </button>
+                  <button type="button" onClick={cancelEdit} className="px-4 py-2 text-gray-300 bg-gray-700 rounded hover:bg-gray-600">Cancel</button>
+                  <button type="submit" disabled={submitting} className="btn">{submitting ? 'Updating…' : 'Update Plan'}</button>
                 </div>
               </form>
             </div>
-          </div>
+          </Popup>
         )}
 
-        {/* Delete Plan Modal */}
         {deletingPlan && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-900 rounded-lg p-6 w-full max-w-md">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white text-xl font-semibold">Delete Plan</h3>
-                <button onClick={cancelDelete} className="text-gray-400 hover:text-white">
-                  ✕
-                </button>
-              </div>
-              
+          <Popup open={!!deletingPlan} onClose={cancelDelete} showTrigger={false} bg={'bg-gray-900'} size={'md:max-w-md'}>
+            <div className="rounded-lg p-6 w-full">
               <div className="mb-4">
-                <p className="text-gray-300 mb-2">
-                  Are you sure you want to delete the plan <strong className="text-white">{deletingPlan.name}</strong>?
-                </p>
-                <p className="text-red-400 text-sm mb-4">
-                  This action cannot be undone.
-                </p>
-                
+                <h3 className="text-white text-xl font-semibold mb-2">Delete Plan</h3>
+                <p className="text-gray-300 mb-2">Are you sure you want to delete <strong className="text-white">{deletingPlan.name}</strong>?</p>
+                <p className="text-red-400 text-sm mb-4">This action cannot be undone.</p>
                 <Field label={`Type "${deletingPlan.slug}" to confirm:`}>
-                  <input 
-                    className="input-sm" 
-                    value={deleteConfirmInput} 
-                    onChange={e => setDeleteConfirmInput(e.target.value)}
-                    placeholder={deletingPlan.slug}
-                  />
+                  <input className="input-sm" value={deleteConfirmInput} onChange={e => setDeleteConfirmInput(e.target.value)} placeholder={deletingPlan.slug} />
                 </Field>
-                
-                {error && (
-                  <div className="mt-2 text-red-400 text-sm">{error}</div>
-                )}
+                {error && (<div className="mt-2 text-red-400 text-sm">{error}</div>)}
               </div>
-              
               <div className="flex items-center justify-end gap-2">
-                <button 
-                  type="button" 
-                  onClick={cancelDelete} 
-                  className="px-4 py-2 text-gray-300 bg-gray-700 rounded hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-                <button 
-                  onClick={deletePlan}
-                  disabled={submitting || deleteConfirmInput !== deletingPlan.slug}
-                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? 'Deleting…' : 'Delete Plan'}
-                </button>
+                <button type="button" onClick={cancelDelete} className="px-4 py-2 text-gray-300 bg-gray-700 rounded hover:bg-gray-600">Cancel</button>
+                <button onClick={deletePlan} disabled={submitting || deleteConfirmInput !== deletingPlan.slug} className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed">{submitting ? 'Deleting…' : 'Delete Plan'}</button>
               </div>
             </div>
-          </div>
+          </Popup>
         )}
          
       </div>

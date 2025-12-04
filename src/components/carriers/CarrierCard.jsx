@@ -45,7 +45,7 @@ export default function CarrierCard({
           <div className="min-w-0 flex-1">
             <Link 
               to={`/carrier/detail/${carrier._id}`}
-              className="text-lg font-semibold text-blue-400 hover:text-blue-300 transition-colors leading-tight block truncate focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none rounded"
+              className=" capitalize text-lg font-semibold text-blue-400 hover:text-blue-300 transition-colors leading-tight block truncate focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none rounded"
               aria-label={`View details for ${carrier.name}`}
             >
               {carrier.name}

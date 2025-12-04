@@ -14,7 +14,7 @@ export default function ChargesItems() {
       } else {
         setLoading(true);
       }
-      const resp = Api.get(`/chargesLists`);
+      const resp = Api.get(`/api/tenant/chargesLists`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
@@ -36,7 +36,7 @@ export default function ChargesItems() {
   const [adding, setAdding] = useState(false);
   const addCharge = () => {
     setAdding(true);
-    const addC = Api.post(`/addCharge`, {value:inputValue});
+    const addC = Api.post(`/api/tenant/addCharge`, {value:inputValue});
     addC.then((res) => {
       if(input.current) input.current.value = '';
       if (res.data.status === true) {
@@ -55,7 +55,7 @@ export default function ChargesItems() {
     });
   }
   const removeCharge = (value) => {
-      const addC = Api.post(`/removeCharge`, {id:value});
+      const addC = Api.post(`/api/tenant/removeCharge`, {id:value});
       addC.then((res) => {
         if (res.data.status === true) {
           toast.success(res.data.message);
@@ -85,7 +85,7 @@ export default function ChargesItems() {
                 ))}
              </ul>
              <div className='flex justify-between items-center mt-4'>
-               <input ref={input} defaultValue={inputValue} onChange={(e) => setInputValue(e.target.value)} className='text-white rounded-xl bg-dark1 border border-gray-800 focus:border-gray-600 w-full me-4 p-3' placeholder='Add Equipments' />
+               <input ref={input} defaultValue={inputValue} onChange={(e) => setInputValue(e.target.value)} className='text-white rounded-xl bg-dark1 border border-gray-800 focus:border-gray-600 w-full me-4 p-3' placeholder='Add Charges' />
                <button className='btn text-black whitespace-nowrap' onClick={addCharge} >{adding ? "Adding..." : "Add Charge"}</button>
              </div>
          </div>

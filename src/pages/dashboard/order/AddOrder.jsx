@@ -64,7 +64,7 @@ export default function AddOrder({ isEdit = false }){
     const [revenueItemOptions, setRevenueItemOptions] = useState([]);
     const fetchCharges = () => {
       setLoading(true);
-      const resp = Api.get(`/chargesLists`);
+      const resp = Api.get(`/api/tenant/chargesLists`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
@@ -80,7 +80,7 @@ export default function AddOrder({ isEdit = false }){
     const [equipmentOptions, setequipmentOptions] = useState([]);
     const fetchequipmentOptions = () => {
       setLoading(true);
-      const resp = Api.get(`/equipmentLists`);
+      const resp = Api.get(`/api/tenant/equipmentLists`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
