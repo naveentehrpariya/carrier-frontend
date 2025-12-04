@@ -287,7 +287,7 @@ export default function CustomerInvoice() {
                         <div style={{ textAlign: "right", paddingTop: "1.5rem" }}>
                            <Logotext black={true} />
                            <div style={{ color: "#444"}}>Invoice # {invoiceNo}</div>
-                        <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>Date: {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getDate() > 9 ? todaydate.getDate() : '0' + todaydate.getDate()}  / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'} </div>
+                        <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>Date: <TimeFormat date={todaydate} time={true} /></div>
 
                         </div>
                      </div>
@@ -330,54 +330,32 @@ export default function CustomerInvoice() {
                      <div style={{ textAlign: "right", paddingTop: "1.5rem" }}>
                         <Logotext black={true} />
                         <div className='text-lg' style={{ color: "#444", fontSize: "14px" }}>Invoice # {invoiceNo}</div>
-                        <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>Date: {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getDate() > 9 ? todaydate.getDate() : '0' + todaydate.getDate()}  / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'} </div>
+                        <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>Date: <TimeFormat date={todaydate} time={true} /></div>
                      </div>
                   </div>
                </div>
 
                   <div>
                      
-                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem", borderBottom: "1px solid #ddd", paddingBottom: "2rem", marginBottom: "1rem" }}>
+                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem",  marginBottom: "2rem" }}>
                         <div>
                            <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>BILL TO</h3>
-                           <p style={{ color: "#111" }}>{order?.customer?.name} {order?.customer?.customerCode ? `(Ref No: ${order?.customer?.customerCode})` : '' }</p>
-                           <p>{order?.customer?.address}</p>
-                           <p>Email: {order?.customer?.email}</p>
-                           <p>Phone: {order?.customer?.phone}</p>
+                           <p style={{ color: "#111", textTransform:"capitalize", marginBottom: "0.2rem" }}>{order?.customer?.name} {order?.customer?.customerCode ? `(Ref No: ${order?.customer?.customerCode})` : '' }</p>
+                           <p style={{ marginBottom: "0.2rem" }}>{order?.customer?.address}</p>
+                           <p style={{ marginBottom: "0.2rem" }}>Email: {order?.customer?.email}</p>
+                           <p style={{ marginBottom: "0.2rem" }}>Phone: {order?.customer?.phone}</p>
                         </div>
                         <div>
-                           <p style={{ textTransform: "uppercase", marginTop: "1.3rem" }}> </p>
-                           <p style={{ textTransform: "uppercase" }}>Order Number : #CMC{order?.serial_no}</p>
-                           <p>Invoice Date : <TimeFormat time={true} date={Date.now()} /></p>
-                           <p>Amount : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p>
+                           <p style={{ textTransform: "uppercase", marginTop: "1.3rem", marginBottom: "0.2rem" }}> </p>
+                           <p style={{ textTransform: "uppercase", marginBottom: "0.2rem" }}>Order Number : #CMC{order?.serial_no}</p>
+                           <p style={{ marginBottom: "0.2rem" }}>Invoice Date : <TimeFormat time={true} date={Date.now()} /></p>
+                           <p style={{ marginBottom: "0.2rem" }}>Amount : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p>
                         </div>
                      </div>
                      
-                     {/* Employee Information Section */}
-                     {order?.created_by && (
-                        <div style={{  paddingBottom: "2rem", marginBottom: "1rem" }}>
-                           <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>PROCESSED BY</h3>
-                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
-                              <div>
-                                 <p><strong>Employee Name:</strong> 
-                                    {order?.created_by?.name ? 
-                                       <Link to={`/employee/detail/${order.created_by._id}`} className='text-blue-600 hover:text-blue-700 font-semibold ml-1'>
-                                          {order.created_by.name}
-                                       </Link>
-                                       : 'N/A'
-                                    }
-                                 </p>
-                                 <p><strong>Employee ID:</strong> {order?.created_by?.corporateID || 'N/A'}</p>
-                              </div>
-                              <div>
-                                 <p><strong>Email:</strong> {order?.created_by?.email}</p>
-                                 <p><strong>Phone:</strong> {order?.created_by?.phone || 'N/A'}</p>
-                              </div>
-                           </div>
-                        </div>
-                     )}
+                    
                      <div style={{marginBottom: "2rem",  paddingBottom: "1rem"}}>
-                        <table  cellPadding={8} className='bg-white'  style={{ width: "100%", textAlign: "left", borderCollapse: "collapse" }} border="1">
+                        <table cellPadding={8} className='bg-white' style={{ width:"100%", textAlign:"left", borderCollapse:"collapse" }} border="1">
                            <thead>
                               <tr>
                                  <th className='border bg-gray-100' style={{ color: "#111" }}>Charges</th>
@@ -405,20 +383,37 @@ export default function CustomerInvoice() {
                               </tr>
                            </tbody>
                         </table>
+                        {order?.created_by && (
+                           <div style={{  paddingTop: "1rem", marginTop: "1rem" }}>
+                              <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>PROCESSED BY</h3>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+                                 <div>
+                                    <p>Employee Name :  
+                                       {order?.created_by?.name ? 
+                                             order.created_by.name
+                                          : 'N/A'
+                                       }
+                                    </p>
+                                    <p>Employee ID : {order?.created_by?.corporateID || 'N/A'}</p>
+                                 </div>
+                                 <div>
+                                    <p>Email : {order?.created_by?.email}</p>
+                                    <p>Phone : {order?.created_by?.phone || 'N/A'}</p>
+                                 </div>
+                              </div>
+                           </div>
+                        )}
                      </div>
 
+                     {/* // Shiping details */}
                      <div>
                         {order && order.shipping_details && order.shipping_details.map((s, index) => (
                            <div style={{}} key={index}>
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginBottom: "2rem" }}>
-                                 <div>
-                                    <p className='flex mb-2 items-center'><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
-                                    <p className='flex mb-2 items-center'><strong>Commodity : </strong> {s?.commodity?.value || s?.commodity}</p>
-                                 </div>
-                                 <div>
-                                    <p className='flex mb-2 items-center'><strong>Equipments : </strong> {s?.equipment?.value}</p>
-                                    <p className='flex mb-2 items-center'><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
-                                 </div>
+                              <div style={{ display: "flex", flexWrap: "wrap", marginBottom: "2rem" }}>
+                                    <p style={{marginBottom:'5px', marginRight:"20px"}}>Order No :   #CMC{order?.serial_no ||''}</p>
+                                    <p style={{marginBottom:'5px', marginRight:"20px"}}>Commodity :  {s?.commodity?.value || s?.commodity}</p>
+                                    <p style={{marginBottom:'5px', marginRight:"20px"}}>Equipments :  {s?.equipment?.value}</p>
+                                    <p style={{marginBottom:'5px', marginRight:"20px"}}>Weight :  {s?.weight ||''}{s?.weight_unit ||''}</p>
                               </div>
                               <div style={{ marginBottom: "2rem" }}>
                                  {s.locations && (() => {
@@ -428,7 +423,7 @@ export default function CustomerInvoice() {
                                        if (l.type === 'pickup') {
                                           pickupCount++;
                                           return (
-                                             <div key={idx} style={{ marginBottom: '1rem' }}>
+                                             <div key={idx} style={{ background: "#e1eee8ff", padding: "1rem", borderRadius: "7px", marginBottom: '1rem' }}>
                                                 <h4 style={{ color: "#2563eb", fontWeight: 700 }}>PICK {pickupCount}</h4>
                                                 <p>{l.location}</p>
                                                 <p><TimeFormat time={false} date={l.date} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''}</p>
@@ -479,7 +474,7 @@ export default function CustomerInvoice() {
 
                      </div>
                      <div style={{textAlign: 'right', marginTop: "2rem",marginBottom: "2rem"}}>
-                        <div>Date: {(todaydate.getMonth()+1).toString().padStart(2,'0')} / {todaydate.getDate() > 9 ? todaydate.getDate() : '0' + todaydate.getDate()}  / {todaydate.getFullYear()}  {todaydate.getHours()}:{todaydate.getMinutes().toString().padStart(2,'0')} {todaydate.getHours() >= 12 ? 'PM' : 'AM'} </div>
+                        <div>Date: <TimeFormat date={todaydate} time={true} /></div>
                         <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>
                            INVOICE# {invoiceNo} must appear on all invoices
                         </div>

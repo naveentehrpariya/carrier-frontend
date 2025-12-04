@@ -1,15 +1,31 @@
 import { useState, useEffect } from 'react';
 
-const useHumanReadableDate = (dateString, includeTime) => {
+const useHumanReadableDate = (input, includeTime) => {
   const [humanReadableDate, setHumanReadableDate] = useState("");
 
   useEffect(() => {
-    if (!dateString) {
+    if (input === null || input === undefined || input === "") {
       setHumanReadableDate("");
       return;
     }
-    const isDateOnly = typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString);
-    const date = isDateOnly ? new Date(`${dateString}T00:00:00Z`) : new Date(dateString);
+
+    const isDateOnly = typeof input === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(input);
+    let date;
+    if (input instanceof Date) {
+      date = input;
+    } else if (typeof input === 'number') {
+      date = new Date(input);
+    } else if (isDateOnly) {
+      date = new Date(`${input}T00:00:00Z`);
+    } else {
+      date = new Date(input);
+    }
+
+    if (isNaN(date.getTime())) {
+      setHumanReadableDate("");
+      return;
+    }
+
     const options = {
       year: 'numeric',
       month: 'long',
@@ -24,7 +40,7 @@ const useHumanReadableDate = (dateString, includeTime) => {
 
     const formattedDate = date.toLocaleString(undefined, options);
     setHumanReadableDate(formattedDate);
-  }, [dateString, includeTime]);
+  }, [input, includeTime]);
 
   return humanReadableDate;
 };
