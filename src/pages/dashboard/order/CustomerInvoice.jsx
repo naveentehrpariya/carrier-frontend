@@ -56,7 +56,7 @@ export default function CustomerInvoice() {
       }
    }, [order]);
 
-   const downloadPDF = async () => {
+  const downloadPDF = async () => {
    setDownloadingPdf(true);
    setPdfProgress('Preparing invoice generation...');
    window.scrollTo(0,0);
@@ -98,7 +98,91 @@ export default function CustomerInvoice() {
          userUnit: 1.0,
       });
       
-      doc.html(pdfRef.current, {
+      const a4 = { widthMm: 210, heightMm: 297, contentWidthMm: 185, leftMm: 12.5, topMm: 5, bottomMm: 20 };
+
+      async function renderPagedByCanvas(doc) {
+        const contentEl = pdfRef.current;
+        const rectEl = contentEl.getBoundingClientRect();
+        const keepBlocks = Array.from(contentEl.querySelectorAll('.pdf-keep'));
+        const blockTops = keepBlocks.map(b => {
+          const r = b.getBoundingClientRect();
+          return Math.max(0, r.top - rectEl.top);
+        }).sort((a,b)=>a-b);
+        const canvas = await html2canvas(contentEl, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#ffffff'
+        });
+        const pxPerMm = canvas.width / a4.contentWidthMm;
+        const pageHeightPx = (a4.heightMm - a4.topMm - a4.bottomMm) * pxPerMm;
+        let y = 0; let pageIndex = 0;
+        while (y < canvas.height) {
+          // Determine boundary, align to last block fully fitting
+          let boundary = Math.min(canvas.height, y + pageHeightPx);
+          const fittingBlocks = blockTops.filter(t => t > y && t < boundary);
+          if (fittingBlocks.length > 0) {
+            const lastTop = fittingBlocks[fittingBlocks.length - 1];
+            // Nudge boundary to lastTop if it makes page more natural
+            if (lastTop - y > 100) {
+              boundary = lastTop;
+            }
+          }
+          const sliceHeight = Math.max(100, Math.min(boundary - y, pageHeightPx));
+          const pageCanvas = document.createElement('canvas');
+          pageCanvas.width = canvas.width;
+          pageCanvas.height = sliceHeight;
+          const ctx = pageCanvas.getContext('2d');
+          ctx.drawImage(canvas, 0, y, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
+          const imgData = pageCanvas.toDataURL('image/jpeg', 0.9);
+          if (pageIndex > 0) doc.addPage('a4', 'portrait');
+          // header per page
+          doc.addImage(headerImgData, 'JPEG', a4.leftMm, a4.topMm, a4.contentWidthMm, Math.min(headerHeight, 40), '', 'FAST');
+          const sliceHeightMm = sliceHeight / pxPerMm;
+          doc.addImage(imgData, 'JPEG', a4.leftMm, a4.topMm + Math.min(headerHeight, 40) + 2, a4.contentWidthMm, sliceHeightMm, '', 'FAST');
+          y += sliceHeight;
+          pageIndex += 1;
+        }
+      }
+
+      try {
+        await renderPagedByCanvas(doc);
+        // After manual rendering, proceed with compression & download
+        try {
+          setPdfProgress('Compressing PDF...');
+          const pdfArrayBuffer = doc.output('arraybuffer');
+          const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+          const compressedPdfBytes = await pdfDoc.save({
+            useObjectStreams: true,
+            addDefaultPage: false,
+            objectsPerTick: 1000,
+            updateFieldAppearances: false,
+            compress: true
+          });
+          setPdfProgress('Finalizing download...');
+          const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          setPdfProgress('Invoice downloaded successfully!');
+          setTimeout(() => setPdfProgress(''), 3000);
+          setDownloadingPdf(false);
+        } catch (compressionError) {
+          console.error('PDF compression failed:', compressionError);
+          doc.save(`CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`);
+          setPdfProgress('Invoice downloaded (compression skipped)');
+          setTimeout(() => setPdfProgress(''), 3000);
+          setDownloadingPdf(false);
+        }
+      } catch (errManual) {
+        console.error('Manual pagination failed:', errManual);
+        // Fallback to original html renderer
+        doc.html(pdfRef.current, {
          callback: async function (doc) {
             try {
                setPdfProgress('Adding headers to all pages...');
@@ -236,24 +320,61 @@ export default function CustomerInvoice() {
                   style.transition = 'none';
                });
 
-               clonedDoc.querySelectorAll('img, svg, .icon, canvas').forEach(el => {
-                  el.style.display = 'none';
+               // Ensure sections marked to keep are treated as blocks and not split
+               clonedDoc.querySelectorAll('.pdf-keep').forEach(el => {
+                 el.style.pageBreakInside = 'avoid';
+                 el.style.breakInside = 'avoid';
+                 el.style.display = 'block';
+                 el.style.width = '100%';
+                 el.style.maxWidth = '100%';
+                 el.style.overflow = 'visible';
                });
-            }
+
+               // Heuristic: push near-bottom blocks to next page
+               try {
+                 const contentWidthMm = 185;
+                 const windowWidthPx = 794;
+                 const pxPerMm = windowWidthPx / contentWidthMm;
+                 const topMarginMm = 35;
+                 const bottomMarginMm = 20;
+                 const pageHeightMm = 297 - topMarginMm - bottomMarginMm;
+                 const pageHeightPx = pageHeightMm * pxPerMm;
+                 const rootTop = clonedDoc.body.getBoundingClientRect ? clonedDoc.body.getBoundingClientRect().top : 0;
+                 const keepBlocks = clonedDoc.querySelectorAll('.pdf-keep');
+                 keepBlocks.forEach(block => {
+                   const rect = block.getBoundingClientRect ? block.getBoundingClientRect() : null;
+                   const top = rect ? (rect.top - rootTop) : (block.offsetTop || 0);
+                   const height = rect ? rect.height : (block.offsetHeight || 0);
+                   const posOnPage = top % pageHeightPx;
+                   if (posOnPage + height > pageHeightPx - 20) {
+                     block.style.pageBreakBefore = 'always';
+                     block.style.breakBefore = 'always';
+                   }
+                 });
+               } catch {}
+
+              clonedDoc.querySelectorAll('img, svg, .icon, canvas').forEach(el => {
+                  el.style.display = 'none';
+              });
+          }
          },
-         autoPaging: 'text',
+         pagebreak: {
+           mode: ['css', 'legacy'],
+           avoid: ['.pdf-keep', '.pdf-section', '.pdf-table', '.bank-details']
+         },
+         autoPaging: 'html',
          width: 185,
          windowWidth: 794,
          margin: [headerHeight-10, 0, 20, 0],
-      });
-      
+       });
+      }
    } catch (error) {
       console.error('PDF generation failed:', error);
       setPdfProgress('PDF generation failed');
       setTimeout(() => setPdfProgress(''), 3000);
       setDownloadingPdf(false);
    }
-};
+  };
 
 
    return (
@@ -307,6 +428,13 @@ export default function CustomerInvoice() {
                   className='m-auto'
 
                >
+                  <style>
+                    {`
+                      .pdf-keep { page-break-inside: avoid; break-inside: avoid; }
+                      .pdf-section { page-break-inside: avoid; break-inside: avoid; }
+                      .pdf-table { page-break-inside: avoid; break-inside: avoid; }
+                    `}
+                  </style>
 
 
                <div id="pdf-header-html" 
@@ -335,8 +463,6 @@ export default function CustomerInvoice() {
                   </div>
                </div>
 
-                  <div>
-                     
                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem",  marginBottom: "2rem" }}>
                         <div>
                            <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>BILL TO</h3>
@@ -351,8 +477,8 @@ export default function CustomerInvoice() {
                            <p style={{ marginBottom: "0.2rem" }}>Invoice Date : <TimeFormat time={true} date={Date.now()} /></p>
                            <p style={{ marginBottom: "0.2rem" }}>Amount : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p>
                         </div>
-                     </div>
                      
+                  </div>
                     
                      <div style={{marginBottom: "2rem",  paddingBottom: "1rem"}}>
                         <table cellPadding={8} className='bg-white' style={{ width:"100%", textAlign:"left", borderCollapse:"collapse" }} border="1">
@@ -383,72 +509,69 @@ export default function CustomerInvoice() {
                               </tr>
                            </tbody>
                         </table>
-                        {order?.created_by && (
-                           <div style={{  paddingTop: "1rem", marginTop: "1rem" }}>
-                              <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>PROCESSED BY</h3>
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
-                                 <div>
-                                    <p>Employee Name :  
-                                       {order?.created_by?.name ? 
-                                             order.created_by.name
-                                          : 'N/A'
-                                       }
-                                    </p>
-                                    <p>Employee ID : {order?.created_by?.corporateID || 'N/A'}</p>
-                                 </div>
-                                 <div>
-                                    <p>Email : {order?.created_by?.email}</p>
-                                    <p>Phone : {order?.created_by?.phone || 'N/A'}</p>
-                                 </div>
-                              </div>
-                           </div>
-                        )}
                      </div>
 
-                     {/* // Shiping details */}
-                     <div>
-                        {order && order.shipping_details && order.shipping_details.map((s, index) => (
-                           <div style={{}} key={index}>
-                              <div style={{ display: "flex", flexWrap: "wrap", marginBottom: "2rem" }}>
-                                    <p style={{marginBottom:'5px', marginRight:"20px"}}>Order No :   #CMC{order?.serial_no ||''}</p>
-                                    <p style={{marginBottom:'5px', marginRight:"20px"}}>Commodity :  {s?.commodity?.value || s?.commodity}</p>
-                                    <p style={{marginBottom:'5px', marginRight:"20px"}}>Equipments :  {s?.equipment?.value}</p>
-                                    <p style={{marginBottom:'5px', marginRight:"20px"}}>Weight :  {s?.weight ||''}{s?.weight_unit ||''}</p>
+                     {order?.created_by && (
+                        <div style={{  paddingTop: "1rem", marginTop: "1rem" }}>
+                           <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>PROCESSED BY</h3>
+                           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+                              <div>
+                                 <p>Employee Name :  
+                                    {order?.created_by?.name ? 
+                                          order.created_by.name
+                                       : 'N/A'
+                                    }
+                                 </p>
+                                 <p>Employee ID : {order?.created_by?.corporateID || 'N/A'}</p>
                               </div>
-                              <div style={{ marginBottom: "2rem" }}>
-                                 {s.locations && (() => {
-                                    let pickupCount = 0;
-                                    let stopCount = 0;
-                                    return s.locations.map((l, idx) => {
-                                       if (l.type === 'pickup') {
-                                          pickupCount++;
-                                          return (
-                                             <div key={idx} style={{ background: "#e1eee8ff", padding: "1rem", borderRadius: "7px", marginBottom: '1rem' }}>
-                                                <h4 style={{ color: "#2563eb", fontWeight: 700 }}>PICK {pickupCount}</h4>
-                                                <p>{l.location}</p>
-                                                <p><TimeFormat time={false} date={l.date} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''}</p>
-                                                <p>Ref #: {l.referenceNo}</p>
-                                             </div>
-                                          );
-                                       } else {
-                                          stopCount++;
-                                          return (
-                                             <div key={idx} style={{ background: "#dbeafe", padding: "1rem", borderRadius: "7px", marginBottom: '1rem' }}>
-                                                <h4 style={{ color: "#b91c1c", fontWeight: 700 }}>STOP {stopCount}</h4>
-                                                <p>{l.location}</p>
-                                                <p><TimeFormat date={l.date} time={false} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''}</p>
-                                                <p>Ref #: {l.referenceNo}</p>
-                                             </div>
-                                          );
-                                       }
-                                    });
-                                 })()}
+                              <div>
+                                 <p>Email : {order?.created_by?.email}</p>
+                                 <p>Phone : {order?.created_by?.phone || 'N/A'}</p>
                               </div>
                            </div>
-                        ))}
-                     </div>
-                     
-                     
+                        </div>
+                     )}
+
+                     {/* // Shiping details */}
+                     {order && order.shipping_details && order.shipping_details.map((s, index) => (
+                        <div style={{}} key={index}>
+                           <div style={{ display: "flex", flexWrap: "wrap", marginBottom: "2rem", marginTop: "2rem" }}>
+                                 <p style={{marginBottom:'5px', marginRight:"20px"}}>Order No :   #CMC{order?.serial_no ||''}</p>
+                                 <p style={{marginBottom:'5px', marginRight:"20px"}}>Commodity :  {s?.commodity?.value || s?.commodity}</p>
+                                 <p style={{marginBottom:'5px', marginRight:"20px"}}>Equipments :  {s?.equipment?.value}</p>
+                                 <p style={{marginBottom:'5px', marginRight:"20px"}}>Weight :  {s?.weight ||''}{s?.weight_unit ||''}</p>
+                           </div>
+                           <div style={{ marginBottom: "2rem" }}>
+                              {s.locations && (() => {
+                                 let pickupCount = 0;
+                                 let stopCount = 0;
+                                 return s.locations.map((l, idx) => {
+                                    if (l.type === 'pickup') {
+                                       pickupCount++;
+                                       return (
+                                          <div key={idx} className="pdf-keep" style={{ marginBottom: '1rem' }}>
+                                             <h4 style={{ color: "#2563eb", fontWeight: 700 }}>PICK {pickupCount}</h4>
+                                             <p>{l.location}</p>
+                                             <p><TimeFormat time={false} date={l.date} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''}</p>
+                                             <p>Ref #: {l.referenceNo}</p>
+                                          </div>
+                                       );
+                                    } else {
+                                       stopCount++;
+                                       return (
+                                          <div key={idx} className="pdf-keep" style={{ background: "#dbeafe", padding: "1rem", borderRadius: "7px", marginBottom: '1rem', pageBreakInside: 'avoid' }}>
+                                             <h4 style={{ color: "#b91c1c", fontWeight: 700 }}>STOP {stopCount}</h4>
+                                             <p>{l.location}</p>
+                                             <p><TimeFormat date={l.date} time={false} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''}</p>
+                                             <p>Ref #: {l.referenceNo}</p>
+                                          </div>
+                                       );
+                                    }
+                                 });
+                              })()}
+                           </div>
+                        </div>
+                     ))}
 
                      <p className='mt-6 pt-6 mb-4'>
                         Please send remittance to -
@@ -462,7 +585,7 @@ export default function CustomerInvoice() {
                            <span className='ml-1 text-gray-700'>(cc: {company.remittance_secondary_email})</span>
                         )}
                      </p>
-                     <div className='bank-details'>
+                     <div className='bank-details pdf-keep'>
                         <h3 style={{ color: "#2563eb", fontWeight: 900, }}>NAME OF BANK :- {company?.bank_name || 'ROYAL BANK OF CANADA'}</h3>
                        
                        <div className='p-6 border rounded-2xl mt-4 '>
@@ -479,7 +602,6 @@ export default function CustomerInvoice() {
                            INVOICE# {invoiceNo} must appear on all invoices
                         </div>
                      </div>
-                  </div>
                </div>
             </div>
          }
