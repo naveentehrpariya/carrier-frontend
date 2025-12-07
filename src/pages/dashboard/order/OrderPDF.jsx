@@ -62,79 +62,6 @@ export default function OrderPDF() {
             precision: 1,
             userUnit: 1.0,
          });
-         const a4 = { widthMm: 210, heightMm: 297, contentWidthMm: 185, leftMm: 12.5, topMm: 5, bottomMm: 15 };
-
-         async function renderPagedByCanvas(doc) {
-           const rectEl = element.getBoundingClientRect();
-           const keepBlocks = Array.from(element.querySelectorAll('.pdf-keep'));
-           const blockTops = keepBlocks.map(b => {
-             const r = b.getBoundingClientRect();
-             return Math.max(0, r.top - rectEl.top);
-           }).sort((a,b)=>a-b);
-           const canvas = await html2canvas(element, {
-             scale: 2,
-             useCORS: true,
-             allowTaint: true,
-             backgroundColor: '#ffffff'
-           });
-           const pxPerMm = canvas.width / a4.contentWidthMm;
-           const pageHeightPx = (a4.heightMm - a4.topMm - a4.bottomMm) * pxPerMm;
-           let y = 0; let pageIndex = 0;
-           while (y < canvas.height) {
-             let boundary = Math.min(canvas.height, y + pageHeightPx);
-             const fittingBlocks = blockTops.filter(t => t > y && t < boundary);
-             if (fittingBlocks.length > 0) {
-               const lastTop = fittingBlocks[fittingBlocks.length - 1];
-               if (lastTop - y > 100) boundary = lastTop;
-             }
-             const sliceHeight = Math.max(100, Math.min(boundary - y, pageHeightPx));
-             const pageCanvas = document.createElement('canvas');
-             pageCanvas.width = canvas.width;
-             pageCanvas.height = sliceHeight;
-             const ctx = pageCanvas.getContext('2d');
-             ctx.drawImage(canvas, 0, y, canvas.width, sliceHeight, 0, 0, canvas.width, sliceHeight);
-             const imgData = pageCanvas.toDataURL('image/jpeg', 0.9);
-             if (pageIndex > 0) doc.addPage('a4', 'portrait');
-             doc.addImage(headerImgData, 'JPEG', a4.leftMm, a4.topMm, a4.contentWidthMm, Math.min(headerHeight, 40), '', 'FAST');
-             const sliceHeightMm = sliceHeight / pxPerMm;
-             doc.addImage(imgData, 'JPEG', a4.leftMm, a4.topMm + Math.min(headerHeight, 40) + 2, a4.contentWidthMm, sliceHeightMm, '', 'FAST');
-             y += sliceHeight;
-             pageIndex += 1;
-           }
-         }
-
-         try {
-           await renderPagedByCanvas(doc);
-           // Compression and download retained below
-           setPdfProgress('Compressing PDF...');
-           const pdfArrayBuffer = doc.output('arraybuffer');
-           const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
-           const compressedPdfBytes = await pdfDoc.save({
-              useObjectStreams: true,
-              addDefaultPage: false,
-              objectsPerTick: 2000,
-              updateFieldAppearances: false,
-              compress: true,
-              linearize: false,
-              normalizeWhitespace: true
-           });
-           setPdfProgress('Finalizing download...');
-           const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
-           const url = URL.createObjectURL(blob);
-           const link = document.createElement('a');
-           link.href = url;
-           link.download = `Order_CMC${order?.serial_no || ''}_Rate_Confirmation.pdf`;
-           document.body.appendChild(link);
-           link.click();
-           document.body.removeChild(link);
-           URL.revokeObjectURL(url);
-           setPdfProgress('PDF downloaded successfully!');
-           setTimeout(() => setPdfProgress(''), 3000);
-           setDownloadingPdf(false);
-           return;
-         } catch (manualErr) {
-           console.error('Manual pagination failed, falling back:', manualErr);
-         }
 
          doc.html(element, {
             callback: async function (doc) {
@@ -258,7 +185,7 @@ export default function OrderPDF() {
                pixelRatio: 0.8, // Better pixel ratio
                quality: 0.5, // Better quality for readability
                foreignObjectRendering: false,
-                onclone: function(clonedDoc) {
+               onclone: function(clonedDoc) {
                   // Ultra-aggressive compression with proper styling fixes
                   clonedDoc.querySelectorAll('*').forEach(el => {
                      const style = el.style;
@@ -327,43 +254,13 @@ export default function OrderPDF() {
                      style.transform = 'none';
                      style.transition = 'none';
                   });
-                    // Remove ALL images to save maximum space
-                    clonedDoc.querySelectorAll('img, svg, .icon, canvas').forEach(el => {
-                        el.style.display = 'none';
-                    });
-
-                    // Heuristic: push near-bottom blocks to next page for elements marked pdf-keep
-                    try {
-                      const contentWidthMm = 185;
-                      const windowWidthPx = 700; // windowWidth passed to doc.html
-                      const pxPerMm = windowWidthPx / contentWidthMm;
-                      const topMarginMm = 40;
-                      const bottomMarginMm = 15;
-                      const pageHeightMm = 297 - topMarginMm - bottomMarginMm;
-                      const pageHeightPx = pageHeightMm * pxPerMm;
-                      const rootTop = clonedDoc.body.getBoundingClientRect ? clonedDoc.body.getBoundingClientRect().top : 0;
-                      const keepBlocks = clonedDoc.querySelectorAll('.pdf-keep');
-                      keepBlocks.forEach(block => {
-                        block.style.pageBreakInside = 'avoid';
-                        block.style.breakInside = 'avoid';
-                        block.style.display = 'block';
-                        const rect = block.getBoundingClientRect ? block.getBoundingClientRect() : null;
-                        const top = rect ? (rect.top - rootTop) : (block.offsetTop || 0);
-                        const height = rect ? rect.height : (block.offsetHeight || 0);
-                        const posOnPage = top % pageHeightPx;
-                        if (posOnPage + height > pageHeightPx - 20) {
-                          block.style.pageBreakBefore = 'always';
-                          block.style.breakBefore = 'always';
-                        }
-                      });
-                    } catch {}
-                } 
+                  // Remove ALL images to save maximum space
+                  clonedDoc.querySelectorAll('img, svg, .icon, canvas').forEach(el => {
+                     el.style.display = 'none';
+                  });
+               } 
             },
-            pagebreak: {
-                mode: ['css', 'legacy'],
-                avoid: ['.pdf-keep']
-            },
-            autoPaging: 'html',
+            autoPaging: 'text',
             width: 185, // A4 width minus margins
             windowWidth: 700, // Constrain to prevent overflow
             margin: [headerHeight + 2, 0, 15, 0], // Reduce margins to prevent text cutting
@@ -434,8 +331,8 @@ export default function OrderPDF() {
             </div>
             {/* Header end */}
 
-               <div ref={pdfRef} 
-                style={{
+            <div ref={pdfRef} 
+            style={{
                      width: '794px',
                      minWidth: '794px',
                      maxWidth: '794px',
@@ -445,11 +342,6 @@ export default function OrderPDF() {
                      padding: '10px 10px 10px 10px'
                   }}
                   >
-               <style>
-                 {`
-                   .pdf-keep { page-break-inside: avoid; break-inside: avoid; }
-                 `}
-               </style>
                
                {/* Hidden HTML header for PDF, off-screen */}
                <div id="pdf-header-html" 
@@ -568,7 +460,7 @@ export default function OrderPDF() {
                                        pickupCount = pickupCount+1;
                                        return <>
                                           <>
-                                             <div className="mb-4 pdf-keep" style={{ pageBreakInside: 'avoid' }}>
+                                             <div className="mb-4">
                                                 <h4 className="text-blue-700 font-bold">PICK {pickupCount}</h4>
                                                 <p>{l?.location}</p>
                                                 <p><TimeFormat time={false} date={l?.date} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''} </p>
@@ -578,7 +470,7 @@ export default function OrderPDF() {
                                        </>
                                     } else {
                                        stopCount = stopCount+1;
-                                       return <div className="mb-4 bg-blue-100 p-3 border rounded-md pdf-keep" style={{ pageBreakInside: 'avoid' }}>
+                                       return <div className="mb-4 bg-blue-100 p-3 border rounded-md">
                                        <h4 className="text-red-700 font-bold">STOP {stopCount}</h4>
                                        <p>{l?.location}</p>
                                        <p><TimeFormat time={false} date={l?.date} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''} </p>
