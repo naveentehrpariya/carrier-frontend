@@ -86,7 +86,7 @@ export default function CustomerInvoice() {
       
       // Ultra-aggressive header compression
       const headerImgData = headerCanvas.toDataURL("image/jpeg"); // Maximum compression
-      const headerHeight = ((headerCanvas.height * 210) / headerCanvas.width)+5;
+      const headerHeight = Math.min(((headerCanvas.height * 210) / headerCanvas.width), 35);
 
       setPdfProgress('Generating invoice content...');
       const doc = new jsPDF({
@@ -103,11 +103,12 @@ export default function CustomerInvoice() {
             try {
                setPdfProgress('Adding headers to all pages...');
                const totalPages = doc.internal.getNumberOfPages();
+               const pageHeight = doc.internal.pageSize.getHeight();
                
                // Add header to all pages for consistency
                for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
                   doc.setPage(pageNum);
-                  doc.addImage(headerImgData, "JPEG", 12.5, 5, 185, Math.min(headerHeight, 40), '', 'FAST');
+                  doc.addImage(headerImgData, "JPEG", 12.5, 5, 185, headerHeight, '', 'FAST');
                   
                   // Add logo image watermark to each page
                   try {
@@ -210,6 +211,20 @@ export default function CustomerInvoice() {
             quality: 0.5, // Moderate quality for size control
             foreignObjectRendering: false,
             onclone: function(clonedDoc) {
+               // Apply page break styles to cloned document
+               clonedDoc.querySelectorAll('.bank-details, .remittance-section, .table-section, .processed-by-section, .shipping-detail-item, .location-block, .bill-to-section').forEach(el => {
+                  el.style.pageBreakInside = 'avoid';
+                  el.style.breakInside = 'avoid';
+                  el.style.display = 'block';
+                  el.style.position = 'relative';
+               });
+               
+               // Apply to table specifically
+               clonedDoc.querySelectorAll('.pdf-content table').forEach(el => {
+                  el.style.pageBreakInside = 'avoid';
+                  el.style.breakInside = 'avoid';
+               });
+               
                // Moderate optimizations targeting 200-500KB file size
                clonedDoc.querySelectorAll('*').forEach(el => {
                   const style = el.style;
@@ -244,7 +259,8 @@ export default function CustomerInvoice() {
          autoPaging: 'text',
          width: 185,
          windowWidth: 794,
-         margin: [headerHeight-10, 0, 20, 0],
+         margin: [headerHeight + 5, 0, 20, 0],
+         jsPDF: doc,
       });
       
    } catch (error) {
@@ -258,7 +274,67 @@ export default function CustomerInvoice() {
 
    return (
       <AuthLayout>
-         
+         <style>
+            {`
+               /* Prevent page breaks inside these elements */
+               .pdf-content > div > div,
+               .pdf-content table,
+               .pdf-content .bank-details,
+               .shipping-detail-item,
+               .processed-by-section,
+               .remittance-section,
+               .bill-to-section,
+               .table-section {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  display: block;
+                  orphans: 3;
+                  widows: 3;
+               }
+               
+               /* Keep table rows together */
+               .pdf-content table tr {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+               }
+               
+               .pdf-content table {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+               }
+               
+               /* Add page break before these sections if needed */
+               .bank-details {
+                  page-break-before: auto;
+                  break-before: auto;
+               }
+               
+               /* Ensure pickup/stop location blocks stay together */
+               .location-block {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  display: block;
+               }
+               
+               /* Add spacing and ensure sections stay intact */
+               .table-section {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  margin-bottom: 30px;
+               }
+               
+               .remittance-section {
+                  page-break-inside: avoid !important;
+                  break-inside: avoid !important;
+                  margin-bottom: 20px;
+                  padding-top: 10px;
+               }
+               
+               .shipping-detail-item {
+                  margin-bottom: 25px;
+               }
+            `}
+         </style>
          {loading ? <Loading /> :
             <div className="boltable bg-white">
 
@@ -304,7 +380,7 @@ export default function CustomerInvoice() {
                      fontFamily: 'sans-serif',
                      padding: '10px'
                   }}
-                  className='m-auto'
+                  className='m-auto pdf-content'
 
                >
 
@@ -337,7 +413,7 @@ export default function CustomerInvoice() {
 
                   <div>
                      
-                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem",  marginBottom: "2rem" }}>
+                     <div className="bill-to-section" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem",  marginBottom: "2rem" }}>
                         <div>
                            <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>BILL TO</h3>
                            <p style={{ color: "#111", textTransform:"capitalize", marginBottom: "0.2rem" }}>{order?.customer?.name} {order?.customer?.customerCode ? `(Ref No: ${order?.customer?.customerCode})` : '' }</p>
@@ -354,7 +430,7 @@ export default function CustomerInvoice() {
                      </div>
                      
                     
-                     <div style={{marginBottom: "2rem",  paddingBottom: "1rem"}}>
+                     <div className="table-section" style={{marginBottom: "2rem",  paddingBottom: "1rem"}}>
                         <table cellPadding={8} className='bg-white' style={{ width:"100%", textAlign:"left", borderCollapse:"collapse" }} border="1">
                            <thead>
                               <tr>
@@ -384,7 +460,57 @@ export default function CustomerInvoice() {
                            </tbody>
                         </table>
                         {order?.created_by && (
-                           <div style={{  paddingTop: "1rem", marginTop: "1rem" }}>
+                           <div className="processed-by-section" style={{  paddingTop: "1rem", marginTop: "1rem" }}>
+                              <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>PROCESSED BY</h3>
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
+                                 <div>
+                                    <p>Employee Name :  
+                                       {order?.created_by?.name ? 
+                                             order.created_by.name
+                                          : 'N/A'
+                                       }
+                                    </p>
+                                    <p>Employee ID : {order?.created_by?.corporateID || 'N/A'}</p>
+                                 </div>
+                                 <div>
+                                    <p>Email : {order?.created_by?.email}</p>
+                                    <p>Phone : {order?.created_by?.phone || 'N/A'}</p>
+                                 </div>
+                              </div>
+                           </div>
+                        )}
+                     </div>
+                     <div className="table-section" style={{marginBottom: "2rem",  paddingBottom: "1rem"}}>
+                        <table cellPadding={8} className='bg-white' style={{ width:"100%", textAlign:"left", borderCollapse:"collapse" }} border="1">
+                           <thead>
+                              <tr>
+                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Charges</th>
+                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Notes</th>
+                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Rate</th>
+                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Amount</th>
+                              </tr>
+                           </thead>
+                           <tbody>
+                              {order && order.revenue_items && order.revenue_items.map((r, idx) => (
+                                 <tr key={idx}>
+                                    <td className='border'>{r?.revenue_item}</td>
+                                    <td className='border text-left text-[14px] max-w-[200px]'>{r?.note}</td>
+                                    <td className='border text-left'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</td>
+                                    <td className='border text-left'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
+                                 </tr>
+
+                              ))}
+                              <tr>
+                                 <td colSpan={2} align='left' className='border' ><strong style={{ color: "#111" }}></strong></td>
+                                 <td  align='left' className='border bg-gray-100' ><strong style={{ color: "#111" }}>Total</strong></td>
+                                 <td   align='left' className='border bg-gray-100'  style={{ fontWeight: 700, color: "#111" }}>
+                                    <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} />
+                                 </td>
+                              </tr>
+                           </tbody>
+                        </table>
+                        {order?.created_by && (
+                           <div className="processed-by-section" style={{  paddingTop: "1rem", marginTop: "1rem" }}>
                               <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>PROCESSED BY</h3>
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
                                  <div>
@@ -406,63 +532,24 @@ export default function CustomerInvoice() {
                      </div>
 
                      {/* // Shiping details */}
-                     <div>
-                        {order && order.shipping_details && order.shipping_details.map((s, index) => (
-                           <div style={{}} key={index}>
-                              <div style={{ display: "flex", flexWrap: "wrap", marginBottom: "2rem" }}>
-                                    <p style={{marginBottom:'5px', marginRight:"20px"}}>Order No :   #CMC{order?.serial_no ||''}</p>
-                                    <p style={{marginBottom:'5px', marginRight:"20px"}}>Commodity :  {s?.commodity?.value || s?.commodity}</p>
-                                    <p style={{marginBottom:'5px', marginRight:"20px"}}>Equipments :  {s?.equipment?.value}</p>
-                                    <p style={{marginBottom:'5px', marginRight:"20px"}}>Weight :  {s?.weight ||''}{s?.weight_unit ||''}</p>
-                              </div>
-                              <div style={{ marginBottom: "2rem" }}>
-                                 {s.locations && (() => {
-                                    let pickupCount = 0;
-                                    let stopCount = 0;
-                                    return s.locations.map((l, idx) => {
-                                       if (l.type === 'pickup') {
-                                          pickupCount++;
-                                          return (
-                                             <div key={idx} style={{ background: "#e1eee8ff", padding: "1rem", borderRadius: "7px", marginBottom: '1rem' }}>
-                                                <h4 style={{ color: "#2563eb", fontWeight: 700 }}>PICK {pickupCount}</h4>
-                                                <p>{l.location}</p>
-                                                <p><TimeFormat time={false} date={l.date} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''}</p>
-                                                <p>Ref #: {l.referenceNo}</p>
-                                             </div>
-                                          );
-                                       } else {
-                                          stopCount++;
-                                          return (
-                                             <div key={idx} style={{ background: "#dbeafe", padding: "1rem", borderRadius: "7px", marginBottom: '1rem' }}>
-                                                <h4 style={{ color: "#b91c1c", fontWeight: 700 }}>STOP {stopCount}</h4>
-                                                <p>{l.location}</p>
-                                                <p><TimeFormat date={l.date} time={false} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''}</p>
-                                                <p>Ref #: {l.referenceNo}</p>
-                                             </div>
-                                          );
-                                       }
-                                    });
-                                 })()}
-                              </div>
-                           </div>
-                        ))}
-                     </div>
+                    
                      
                      
 
-                     <p className='mt-6 pt-6 mb-4'>
-                        Please send remittance to -
-                        <a
-                           className='text-blue-600 inline-block mt-[-5px]'
-                           href={`mailto:${company?.remittance_primary_email || company?.email || ''}${company?.remittance_secondary_email ? `?cc=${encodeURIComponent(company.remittance_secondary_email)}` : ''}`}
-                        >
-                           {company?.remittance_primary_email || company?.email || ''}
-                        </a>
-                        {company?.remittance_secondary_email && (
-                           <span className='ml-1 text-gray-700'>(cc: {company.remittance_secondary_email})</span>
-                        )}
-                     </p>
-                     <div className='bank-details'>
+                     <div className='remittance-section'>
+                        <p className='mt-6 pt-6 mb-4'>
+                           Please send remittance to -
+                           <a
+                              className='text-blue-600 inline-block mt-[-5px]'
+                              href={`mailto:${company?.remittance_primary_email || company?.email || ''}${company?.remittance_secondary_email ? `?cc=${encodeURIComponent(company.remittance_secondary_email)}` : ''}`}
+                           >
+                              {company?.remittance_primary_email || company?.email || ''}
+                           </a>
+                           {company?.remittance_secondary_email && (
+                              <span className='ml-1 text-gray-700'>(cc: {company.remittance_secondary_email})</span>
+                           )}
+                        </p>
+                        <div className='bank-details'>
                         <h3 style={{ color: "#2563eb", fontWeight: 900, }}>NAME OF BANK :- {company?.bank_name || 'ROYAL BANK OF CANADA'}</h3>
                        
                        <div className='p-6 border rounded-2xl mt-4 '>
@@ -472,11 +559,12 @@ export default function CustomerInvoice() {
                            <p className='mt-2'> <strong>Routing Number:</strong> {company?.routing_number || ''}</p>
                        </div>
 
-                     </div>
-                     <div style={{textAlign: 'right', marginTop: "2rem",marginBottom: "2rem"}}>
-                        <div>Date: <TimeFormat date={todaydate} time={true} /></div>
-                        <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>
-                           INVOICE# {invoiceNo} must appear on all invoices
+                        </div>
+                        <div style={{textAlign: 'right', marginTop: "2rem",marginBottom: "2rem"}}>
+                           <div>Date: <TimeFormat date={todaydate} time={true} /></div>
+                           <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>
+                              INVOICE# {invoiceNo} must appear on all invoices
+                           </div>
                         </div>
                      </div>
                   </div>
