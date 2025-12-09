@@ -71,16 +71,17 @@ export default function CustomerInvoice() {
 
    try {
      setPdfProgress('Rendering header...');
-     const headerCanvas = await html2canvas(headerElement, {
-       scale: 1,
-       useCORS: true,
-       allowTaint: true,
-       backgroundColor: '#ffffff',
-       logging: false,
-       pixelRatio: 1,
-     });
-     const headerImgData = headerCanvas.toDataURL('image/jpeg', 1);
-     const headerHeight = Math.min(((headerCanvas.height * 185) / headerCanvas.width), 35);
+    const headerCanvas = await html2canvas(headerElement, {
+      scale: 7, // Good scale for crisp but not oversized header
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: '#ffffff',
+      logging: false,
+      pixelRatio: 1.0, // Full pixel ratio for clarity
+       quality: 100, // Good quality for clear header
+    });
+    const headerImgData = headerCanvas.toDataURL('image/jpeg', 2);
+    const headerHeight = Math.min(((headerCanvas.height * 170) / headerCanvas.width), 45);
 
      setPdfProgress('Generating PDF...');
      const doc = new jsPDF({
@@ -97,9 +98,9 @@ export default function CustomerInvoice() {
          try {
            setPdfProgress('Adding headers to pages...');
            const totalPages = doc.internal.getNumberOfPages();
-           for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+           for (let pageNum = 1; pageNum < 2; pageNum++) {
              doc.setPage(pageNum);
-             doc.addImage(headerImgData, 'JPEG', 12.5, 5, 185, Math.min(headerHeight, 40), '', 'FAST');
+             doc.addImage(headerImgData, "JPEG", 12.5, 5, 185, Math.min(headerHeight, 40), '', 'FAST');
            }
 
            setPdfProgress('Compressing PDF...');
@@ -138,51 +139,69 @@ export default function CustomerInvoice() {
        },
        x: 12.5,
        y: 0,
-       html2canvas: {
-         scale: 0.23,
-         useCORS: true,
-         allowTaint: true,
-         backgroundColor: null,
-         logging: false,
-         imageTimeout: 12000,
-         removeContainer: true,
-         pixelRatio: 0.8,
-         quality: 0.5,
-         foreignObjectRendering: false,
-         onclone: function (clonedDoc) {
-           clonedDoc.querySelectorAll('*').forEach(el => {
-             const style = el.style;
-             style.fontFamily = 'Arial, sans-serif';
-             if (style.fontWeight === '900' || style.fontWeight === 'black') {
-               style.fontWeight = '700';
-             } else if (style.fontWeight === '800') {
-               style.fontWeight = '600';
-             }
-             if (el.tagName === 'TH' || el.tagName === 'TD') {
-               style.padding = '4px';
-               style.fontSize = '14px';
-               style.fontWeight = '600';
-             }
-             style.textShadow = 'none';
-             style.boxShadow = 'none';
-             style.backgroundImage = 'none';
-             style.borderRadius = '0';
-           });
-           clonedDoc.querySelectorAll('.pdf-keep, .pdf-section, .pdf-table, .bank-details').forEach(el => {
-             el.style.pageBreakInside = 'avoid';
-             el.style.breakInside = 'avoid';
-             el.style.display = 'block';
-             el.style.width = '100%';
-             el.style.maxWidth = '100%';
-           });
-         }
-       },
-       pagebreak: { mode: ['css', 'legacy'], avoid: ['.pdf-keep', '.pdf-section', '.pdf-table', '.bank-details'] },
-       autoPaging: 'html',
-       width: 185,
-       windowWidth: 794,
-       margin: [headerHeight + 2, 0, 15, 0],
-     });
+      html2canvas: {
+        scale: 0.23,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+        imageTimeout: 12000,
+        removeContainer: true,
+        pixelRatio: 0.8,
+        quality: 0.5,
+        foreignObjectRendering: false,
+        onclone: function (clonedDoc) {
+          clonedDoc.querySelectorAll('*').forEach(el => {
+            const style = el.style;
+            style.fontFamily = 'Arial, sans-serif';
+            // normalize heavy font weights
+            if (style.fontWeight === '900' || style.fontWeight === 'black') {
+              style.fontWeight = '700';
+            } else if (style.fontWeight === '800') {
+              style.fontWeight = '600';
+            }
+            // table formatting for alignment
+            if (el.tagName === 'TABLE') {
+              el.setAttribute('cellpadding', '4');
+              el.setAttribute('cellspacing', '0');
+              style.border = '1px solid #999';
+              style.borderCollapse = 'collapse';
+              style.width = '100%';
+              style.tableLayout = 'auto';
+            } else if (el.tagName === 'TH' || el.tagName === 'TD') {
+              style.border = '1px solid #ccc';
+              style.padding = '6px';
+              style.fontSize = '14px';
+              style.fontWeight = '600';
+              style.textAlign = 'left';
+              style.verticalAlign = 'top';
+              style.lineHeight = '22px';
+              style.height = '22px';
+              style.wordBreak = 'break-word';
+            }
+            // remove visual effects that disturb layout
+            style.textShadow = 'none';
+            style.boxShadow = 'none';
+            style.backgroundImage = 'none';
+            style.borderRadius = '0';
+            style.transform = 'none';
+            style.transition = 'none';
+          });
+          clonedDoc.querySelectorAll('.pdf-keep, .pdf-section, .pdf-table, .bank-details').forEach(el => {
+            el.style.pageBreakInside = 'avoid';
+            el.style.breakInside = 'avoid';
+            el.style.display = 'block';
+            el.style.width = '100%';
+            el.style.maxWidth = '100%';
+          });
+        }
+      },
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['.pdf-keep', '.pdf-section', '.pdf-table', '.bank-details'] },
+      autoPaging: 'html',
+      width: 185,
+      windowWidth: 700,
+      margin: [headerHeight + 2, 0, 15, 0],
+    });
    } catch (error) {
      console.error('PDF generation failed:', error);
      setPdfProgress('PDF generation failed');
@@ -378,7 +397,7 @@ export default function CustomerInvoice() {
                      
                      <div>
                         {order && order.shipping_details && order.shipping_details.map((s, index) => (
-                           <div className="shipping-detail-item" style={{ marginBottom: "3rem", paddingBottom: "2rem", pageBreakInside: "avoid", breakInside: "avoid" }} key={index}>
+                           <div className="shipping-detail-item" style={{   pageBreakInside: "avoid", breakInside: "avoid" }} key={index}>
                               <div style={{ display: "flex", flexWrap: "wrap", marginBottom: "2rem" }}>
                                     <p style={{marginBottom:'5px', marginRight:"20px"}}><p style={{fontWeight: 700, display:'inline-block'}}>Order No :</p>   #CMC{order?.serial_no ||''}</p>
                                     <p style={{marginBottom:'5px', marginRight:"20px"}}><p style={{fontWeight: 700, display:'inline-block'}}>Commodity :</p>  {s?.commodity?.value || s?.commodity}</p>
@@ -419,7 +438,7 @@ export default function CustomerInvoice() {
                      </div>
                      
 
-                     <div className='remittance-section' style={{ marginTop: "3rem", pageBreakInside: "avoid", breakInside: "avoid" }}>
+                     <div className='remittance-section' style={{  pageBreakInside: "avoid", breakInside: "avoid" }}>
                         <p className='mt-6 pt-6 mb-4'>
                            Please send remittance to -
                            <a
