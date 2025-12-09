@@ -11,6 +11,7 @@ import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 import { PDFDocument } from 'pdf-lib';
 import Loading from './../../common/Loading';
+import companyLogoFallback from '../../../img/logo.png';
 
 export default function CustomerInvoice() {
    const [loading, setLoading] = useState(true);
@@ -106,6 +107,14 @@ export default function CustomerInvoice() {
     }
 
     setPdfProgress('Rendering header...');
+    const imgs = Array.from(headerElement.querySelectorAll('img'));
+    await Promise.all(imgs.map(img => new Promise(resolve => {
+      if (!img) return resolve();
+      if (img.complete) return resolve();
+      img.addEventListener('load', resolve);
+      img.addEventListener('error', resolve);
+      setTimeout(resolve, 1200);
+    })));
     const headerCanvas = await html2canvas(headerElement, {
       scale: 4,
       useCORS: true,
@@ -123,10 +132,10 @@ export default function CustomerInvoice() {
         try {
           setPdfProgress('Rendering pages...');
           const totalPages = doc.internal.getNumberOfPages();
-         //  for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-         //    doc.setPage(pageNum);
-         //    doc.addImage(headerImgData, 'JPEG', 12.5, 5, 185, headerHeight, '', 'FAST');
-         //  }
+           for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+             doc.setPage(pageNum);
+             doc.addImage(headerImgData, 'JPEG', 12.5, 5, 185, headerHeight, '', 'FAST');
+           }
 
            setPdfProgress('Compressing PDF...');
            const pdfArrayBuffer = doc.output('arraybuffer');
@@ -225,8 +234,7 @@ export default function CustomerInvoice() {
       autoPaging: 'html',
       width: 185,
       windowWidth: 700,
-      // margin: [headerHeight + 2, 0, 15, 0],
-      margin: [  2, 0, 15, 0],
+      margin: [headerHeight + 2, 0, 15, 0],
     });
   } catch (error) {
     console.error('PDF generation failed:', error);
@@ -295,7 +303,7 @@ export default function CustomerInvoice() {
                   </div>
                </div>
 
-               {/* <div className="flex justify-between items-center pb-4 mb-4">
+               <div className="flex justify-between items-center pb-4 mb-4">
                         <div>
                            <h2 className='mb-2 text-3xl ' style={{ fontWeight: 700, fontSize: "2rem", color: "#111" }}>INVOICE</h2>
                            <p className='text-lg'><strong>{company?.address || ''}</strong></p>
@@ -308,7 +316,7 @@ export default function CustomerInvoice() {
                         <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>Date: <TimeFormat date={todaydate} time={true} /></div>
 
                         </div>
-                     </div> */}
+                     </div>
                </div>
 
               <div
@@ -328,9 +336,13 @@ export default function CustomerInvoice() {
                >
 
 
-               <div id="pdf-header-html" 
+                <div id="pdf-header-html" 
                   style={{
+                     position: "absolute",
+                     top: "-9999px",
+                     left: "-9999px",
                      width: "100%", 
+                     padding: "10px",
                      fontSize: "19px",
                      boxSizing: "border-box",
                      backgroundColor: "white",
@@ -343,13 +355,12 @@ export default function CustomerInvoice() {
                         <p className='text-lg'>PH : {company?.phone}</p>
                      </div>
                      <div style={{ textAlign: "right", paddingTop: "1.5rem" }}>
-                        <Logotext black={true} />
-                        <div className='text-lg' style={{ color: "#444", fontSize: "14px" }}>Invoice # {invoiceNo}</div>
+                           <Logotext black={true} />
+                           <div style={{ color: "#444"}}>Invoice # {invoiceNo}</div>
                         <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>Date: <TimeFormat date={todaydate} time={true} /></div>
                      </div>
                   </div>
-               </div>
-
+               </div>  
                      
                <div className="bill-to-section" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem",  marginBottom: "3rem", pageBreakInside: "avoid", breakInside: "avoid" }}>
                   <div>
@@ -464,7 +475,7 @@ export default function CustomerInvoice() {
                
 
                <div className='remittance-section' style={{  pageBreakInside: "avoid", breakInside: "avoid" }}>
-                  <p className='mt-6 pt-6 mb-4'>
+                  <p className='pt-2 mb-4'>
                      Please send remittance to -
                      <a
                         className='text-blue-600 inline-block mt-[-5px]'
@@ -479,7 +490,7 @@ export default function CustomerInvoice() {
                   <div className='bank-details' style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
                   <h3 style={{ color: "#2563eb", fontWeight: 900, }}>NAME OF BANK :- {company?.bank_name || 'ROYAL BANK OF CANADA'}</h3>
                   
-                  <div className='p-6 border rounded-2xl mt-4 '>
+                  <div className='p-4 border rounded-2xl mt-4 '>
                      <p className=''><strong>Bank Name:</strong> {company?.bank_name || ''}</p>
                      <p className='mt-2'><strong>Account Name:</strong> {company?.account_name || ''}</p>
                      <p className='mt-2'> <strong>Account Number:</strong> {company?.account_number || ''}</p>
