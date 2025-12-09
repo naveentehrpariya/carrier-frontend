@@ -56,254 +56,147 @@ export default function CustomerInvoice() {
       }
    }, [order]);
 
-   const downloadPDF = async () => {
+ const downloadPDF = async () => {
    setDownloadingPdf(true);
-   setPdfProgress('Preparing invoice generation...');
-   window.scrollTo(0,0);
+   setPdfProgress('Preparing PDF...');
+   window.scrollTo(0, 0);
 
    const element = pdfRef.current;
-   const headerElement = document.getElementById("pdf-header-html");
-
+   const headerElement = document.getElementById('pdf-header-html');
    if (!element || !headerElement) {
-      console.error("Missing content or header element.");
-      setDownloadingPdf(false);
-      setPdfProgress('');
-      return;
+     setDownloadingPdf(false);
+     setPdfProgress('');
+     return;
    }
 
    try {
-      setPdfProgress('Rendering header...');
-      // Render header to canvas with extreme compression
-      const headerCanvas = await html2canvas(headerElement, {
-         scale: 3, // Ultra-small scale for tiny file size
+     setPdfProgress('Rendering header...');
+     const headerCanvas = await html2canvas(headerElement, {
+       scale: 1,
+       useCORS: true,
+       allowTaint: true,
+       backgroundColor: '#ffffff',
+       logging: false,
+       pixelRatio: 1,
+     });
+     const headerImgData = headerCanvas.toDataURL('image/jpeg', 1);
+     const headerHeight = Math.min(((headerCanvas.height * 185) / headerCanvas.width), 35);
+
+     setPdfProgress('Generating PDF...');
+     const doc = new jsPDF({
+       unit: 'mm',
+       format: 'a4',
+       orientation: 'portrait',
+       compress: true,
+       precision: 1,
+       userUnit: 1.0,
+     });
+
+     doc.html(element, {
+       callback: async function (doc) {
+         try {
+           setPdfProgress('Adding headers to pages...');
+           const totalPages = doc.internal.getNumberOfPages();
+           for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+             doc.setPage(pageNum);
+             doc.addImage(headerImgData, 'JPEG', 12.5, 5, 185, Math.min(headerHeight, 40), '', 'FAST');
+           }
+
+           setPdfProgress('Compressing PDF...');
+           const pdfArrayBuffer = doc.output('arraybuffer');
+           const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+           const compressedPdfBytes = await pdfDoc.save({
+             useObjectStreams: true,
+             addDefaultPage: false,
+             objectsPerTick: 2000,
+             updateFieldAppearances: false,
+             compress: true,
+             linearize: false,
+             normalizeWhitespace: true,
+           });
+
+           setPdfProgress('Finalizing download...');
+           const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
+           const url = URL.createObjectURL(blob);
+           const link = document.createElement('a');
+           link.href = url;
+           link.download = `CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`;
+           document.body.appendChild(link);
+           link.click();
+           document.body.removeChild(link);
+           URL.revokeObjectURL(url);
+           setPdfProgress('PDF downloaded successfully!');
+           setTimeout(() => setPdfProgress(''), 3000);
+           setDownloadingPdf(false);
+         } catch (compressionError) {
+           console.error('PDF compression failed:', compressionError);
+           doc.save(`CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`);
+           setPdfProgress('PDF downloaded (compression skipped)');
+           setTimeout(() => setPdfProgress(''), 3000);
+           setDownloadingPdf(false);
+         }
+       },
+       x: 12.5,
+       y: 0,
+       html2canvas: {
+         scale: 0.23,
          useCORS: true,
          allowTaint: true,
          backgroundColor: null,
          logging: false,
-         pixelRatio: 1, // Very low pixel ratio
-         quality: 50, // Very low quality for small size
-      });
-      
-      // Ultra-aggressive header compression
-      const headerImgData = headerCanvas.toDataURL("image/jpeg"); // Maximum compression
-      const headerHeight = Math.min(((headerCanvas.height * 210) / headerCanvas.width), 35);
-
-      setPdfProgress('Generating invoice content...');
-      const doc = new jsPDF({
-         unit: 'mm',
-         format: 'a4',
-         orientation: 'portrait',
-         compress: true,
-         precision: 2,
-         userUnit: 1.0,
-      });
-      
-      doc.html(pdfRef.current, {
-         callback: async function (doc) {
-            try {
-               setPdfProgress('Adding headers to all pages...');
-               const totalPages = doc.internal.getNumberOfPages();
-               const pageHeight = doc.internal.pageSize.getHeight();
-               
-               // Add header to all pages for consistency
-               for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
-                  doc.setPage(pageNum);
-                  doc.addImage(headerImgData, "JPEG", 12.5, 5, 185, headerHeight, '', 'FAST');
-                  
-                  // Add logo image watermark to each page
-                  try {
-                     // Create watermark from logo element in the header
-                     const logoElement = headerElement.querySelector('img, [class*="logo"], .logotext');
-                     if (logoElement) {
-                        // Render the logo as watermark
-                        const logoCanvas = await html2canvas(logoElement, {
-                           scale: 2,
-                           useCORS: true,
-                           allowTaint: true,
-                           backgroundColor: null,
-                           logging: false
-                        });
-                        
-                        // Create a semi-transparent version for watermark
-                        const watermarkCanvas = document.createElement('canvas');
-                        const watermarkCtx = watermarkCanvas.getContext('2d');
-                        watermarkCanvas.width = logoCanvas.width;
-                        watermarkCanvas.height = logoCanvas.height;
-                        
-                        // Set low opacity for watermark effect
-                        watermarkCtx.globalAlpha = 0.15; // Light watermark
-                        watermarkCtx.drawImage(logoCanvas, 0, 0);
-                        
-                        const logoWatermarkData = watermarkCanvas.toDataURL('image/png');
-                        
-                        // Add logo watermark at multiple positions
-                        const logoSize = 60; // Size in mm
-                        doc.addImage(logoWatermarkData, 'PNG', 30, 120, logoSize, logoSize * 0.5, '', 'FAST');
-                        doc.addImage(logoWatermarkData, 'PNG', 120, 160, logoSize, logoSize * 0.5, '', 'FAST');
-                        doc.addImage(logoWatermarkData, 'PNG', 30, 200, logoSize, logoSize * 0.5, '', 'FAST');
-                     } else {
-                        // Fallback to text watermark if no logo found
-                        doc.setTextColor(230, 230, 230);
-                        doc.setFontSize(35);
-                        doc.text('CROSS MILES CARRIER', 105, 150, {
-                           angle: 45,
-                           align: 'center'
-                        });
-                     }
-                  } catch (watermarkError) {
-                     console.log('Logo watermark failed, using text fallback:', watermarkError);
-                     // Text fallback
-                     doc.setTextColor(230, 230, 230);
-                     doc.setFontSize(35);
-                     doc.text('CROSS MILES CARRIER', 105, 150, {
-                        angle: 45,
-                        align: 'center'
-                     });
-                  }
-               }
-               setPdfProgress('Compressing PDF...');
-               const pdfArrayBuffer = doc.output('arraybuffer');
-               const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
-               const compressedPdfBytes = await pdfDoc.save({
-                  useObjectStreams: true,
-                  addDefaultPage: false,
-                  objectsPerTick: 1000, 
-                  updateFieldAppearances: false,
-                  compress: true
-               });
-               
-               setPdfProgress('Finalizing download...');
-               
-               // Create blob and download
-               const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
-               const url = URL.createObjectURL(blob);
-               const link = document.createElement('a');
-               link.href = url;
-               link.download = `CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`;
-               document.body.appendChild(link);
-               link.click();
-               document.body.removeChild(link);
-               URL.revokeObjectURL(url);
-               
-               setPdfProgress('Invoice downloaded successfully!');
-               setTimeout(() => setPdfProgress(''), 3000);
-               setDownloadingPdf(false);
-               
-            } catch (compressionError) {
-               console.error('PDF compression failed:', compressionError);
-               doc.save(` CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`);
-               setPdfProgress('Invoice downloaded (compression skipped)');
-               setTimeout(() => setPdfProgress(''), 3000);
-               setDownloadingPdf(false);
-            }
-         },
-         x: 12.5,
-         y: 0,
-         html2canvas: {
-            scale: 0.235, // Moderate scale for size control
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: null,
-            logging: false,
-            imageTimeout: 12000,
-            removeContainer: true,
-            pixelRatio: 0.8, // Moderate pixel ratio
-            quality: 0.5, // Moderate quality for size control
-            foreignObjectRendering: false,
-            onclone: function(clonedDoc) {
-               // Apply page break styles to cloned document
-               clonedDoc.querySelectorAll('.bank-details, .remittance-section, .table-section, .processed-by-section, .shipping-detail-item, .location-block, .bill-to-section').forEach(el => {
-                  el.style.pageBreakInside = 'avoid';
-                  el.style.breakInside = 'avoid';
-                  el.style.display = 'block';
-                  el.style.position = 'relative';
-               });
-               
-               // Apply to table specifically
-               clonedDoc.querySelectorAll('.pdf-content table').forEach(el => {
-                  el.style.pageBreakInside = 'avoid';
-                  el.style.breakInside = 'avoid';
-               });
-               
-               // Moderate optimizations targeting 200-500KB file size
-               clonedDoc.querySelectorAll('*').forEach(el => {
-                  const style = el.style;
-                  style.fontFamily = 'Arial, sans-serif';
-                  if (style.fontWeight === '900' || style.fontWeight === 'black') {
-                     style.fontWeight = '600';
-                  } else if (style.fontWeight === '700' || style.fontWeight === 'bold') {
-                     style.fontWeight = '500';
-                  }
-                  style.textShadow = 'none';
-                  style.boxShadow = 'none';
-                  style.backgroundImage = 'none';
-                  style.borderRadius = '0';
-                  if (style.border && style.border !== 'none') {
-                     style.border = '1px solid #ccc';
-                  }
-                  if (style.padding && parseInt(style.padding) > 12) {
-                     style.padding = '6px';
-                  }
-                  if (style.margin && parseInt(style.margin) > 12) {
-                     style.margin = '4px';
-                  }
-                  style.transform = 'none';
-                  style.transition = 'none';
-               });
-
-               clonedDoc.querySelectorAll('img, svg, .icon, canvas').forEach(el => {
-                  el.style.display = 'none';
-               });
-            }
-         },
-         autoPaging: 'text',
-         width: 185,
-         windowWidth: 794,
-         margin: [headerHeight + 5, 0, 20, 0],
-         jsPDF: doc,
-      });
-      
+         imageTimeout: 12000,
+         removeContainer: true,
+         pixelRatio: 0.8,
+         quality: 0.5,
+         foreignObjectRendering: false,
+         onclone: function (clonedDoc) {
+           clonedDoc.querySelectorAll('*').forEach(el => {
+             const style = el.style;
+             style.fontFamily = 'Arial, sans-serif';
+             if (style.fontWeight === '900' || style.fontWeight === 'black') {
+               style.fontWeight = '700';
+             } else if (style.fontWeight === '800') {
+               style.fontWeight = '600';
+             }
+             if (el.tagName === 'TH' || el.tagName === 'TD') {
+               style.padding = '4px';
+               style.fontSize = '14px';
+               style.fontWeight = '600';
+             }
+             style.textShadow = 'none';
+             style.boxShadow = 'none';
+             style.backgroundImage = 'none';
+             style.borderRadius = '0';
+           });
+           clonedDoc.querySelectorAll('.pdf-keep, .pdf-section, .pdf-table, .bank-details').forEach(el => {
+             el.style.pageBreakInside = 'avoid';
+             el.style.breakInside = 'avoid';
+             el.style.display = 'block';
+             el.style.width = '100%';
+             el.style.maxWidth = '100%';
+           });
+         }
+       },
+       pagebreak: { mode: ['css', 'legacy'], avoid: ['.pdf-keep', '.pdf-section', '.pdf-table', '.bank-details'] },
+       autoPaging: 'html',
+       width: 185,
+       windowWidth: 794,
+       margin: [headerHeight + 2, 0, 15, 0],
+     });
    } catch (error) {
-      console.error('PDF generation failed:', error);
-      setPdfProgress('PDF generation failed');
-      setTimeout(() => setPdfProgress(''), 3000);
-      setDownloadingPdf(false);
+     console.error('PDF generation failed:', error);
+     setPdfProgress('PDF generation failed');
+     setTimeout(() => setPdfProgress(''), 3000);
+     setDownloadingPdf(false);
    }
-};
+ };
 
 
    return (
       <AuthLayout>
          <style>
             {`
-               /* Prevent page breaks inside these elements */
-               .pdf-content > div > div,
-               .pdf-content table,
-               .pdf-content .bank-details,
-               .shipping-detail-item,
-               .processed-by-section,
-               .remittance-section,
-               .bill-to-section,
-               .table-section {
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
-                  display: block;
-                  orphans: 3;
-                  widows: 3;
-               }
                
-               /* Keep table rows together */
-               .pdf-content table tr {
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
-               }
-               
-               .pdf-content table {
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
-               }
-               
-               /* Add page break before these sections if needed */
                .bank-details {
                   page-break-before: auto;
                   break-before: auto;
@@ -314,6 +207,10 @@ export default function CustomerInvoice() {
                   page-break-inside: avoid !important;
                   break-inside: avoid !important;
                   display: block;
+               }
+
+               .table-section th, .table-section td {
+                  padding: 8px; line-height: 24px;
                }
                
                /* Add spacing and ensure sections stay intact */
@@ -343,7 +240,7 @@ export default function CustomerInvoice() {
                   <h1 className='text-xl font-bold text-black mb-6 mt-4'>Order INVOICE #{order?.serial_no}</h1>
                   <div className='text-right'>
                      <button className='bg-main px-4 py-2 rounded-xl text-sm' onClick={downloadPDF} disabled={downloadingPdf}>
-                        {downloadingPdf ? "Generating..." : "Download PDF"}
+                       {downloadingPdf ? "Generating..." : "Download PDF"}
                      </button>
                      {pdfProgress && (
                         <div className='text-xs text-blue-600 mt-1 max-w-[200px]'>
@@ -390,13 +287,13 @@ export default function CustomerInvoice() {
                      position: "absolute",
                      top: "-9999px",
                      left: "-9999px",
-                     width: "794px", 
+                     width: "100%", 
                      padding: "10px",
                      fontSize: "12px",
                      boxSizing: "border-box",
                      backgroundColor: "white",
                   }}>
-                  <div className="flex justify-between items-center pb-4 mb-4">
+                  <div className="flex justify-between items-center pb-4 mb-4" style={{ display:'flex', justifyContent:'space-between', alignItems:'center', paddingBottom:'12px', marginBottom:'12px' }}>
                      <div>
                         <h2 style={{ fontWeight: 900, fontSize: "2rem", color: "#111" }}>INVOICE</h2>
                         <p className='text-lg'><strong>{company?.address || ''}</strong></p>
@@ -413,46 +310,44 @@ export default function CustomerInvoice() {
 
                   <div>
                      
-                     <div className="bill-to-section" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem",  marginBottom: "2rem" }}>
+                     <div className="bill-to-section" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem",  marginBottom: "3rem", pageBreakInside: "avoid", breakInside: "avoid" }}>
                         <div>
                            <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>BILL TO</h3>
-                           <p style={{ color: "#111", textTransform:"capitalize", marginBottom: "0.2rem" }}>{order?.customer?.name} {order?.customer?.customerCode ? `(Ref No: ${order?.customer?.customerCode})` : '' }</p>
-                           <p style={{ marginBottom: "0.2rem" }}>{order?.customer?.address}</p>
-                           <p style={{ marginBottom: "0.2rem" }}>Email: {order?.customer?.email}</p>
-                           <p style={{ marginBottom: "0.2rem" }}>Phone: {order?.customer?.phone}</p>
+                           <p style={{ textTransform: "uppercase", color: "#111", marginBottom: "0.2rem" }}>{order?.customer?.name} {order?.customer?.customerCode ? `(Ref No: ${order?.customer?.customerCode})` : '' }</p>
+                           <p style={{ marginBottom: "0.2rem" }}><p style={{fontWeight: 700, display:'inline-block'}}>Address :</p> {order?.customer?.address}</p>
+                           <p style={{ marginBottom: "0.2rem" }}> <p style={{fontWeight:700, display:'inline-block'}}>Email : </p> {order?.customer?.email}</p>
+                           <p style={{ marginBottom: "0.2rem" }}> <p style={{fontWeight:700, display:'inline-block'}}>Phone : </p> {order?.customer?.phone}</p>
                         </div>
                         <div>
-                           <p style={{ textTransform: "uppercase", marginTop: "1.3rem", marginBottom: "0.2rem" }}> </p>
-                           <p style={{ textTransform: "uppercase", marginBottom: "0.2rem" }}>Order Number : #CMC{order?.serial_no}</p>
-                           <p style={{ marginBottom: "0.2rem" }}>Invoice Date : <TimeFormat time={true} date={Date.now()} /></p>
-                           <p style={{ marginBottom: "0.2rem" }}>Amount : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p>
+                           <p style={{ textTransform: "uppercase", marginTop: "1.3rem", marginBottom: "0.2rem" }}> <p style={{fontWeight:700, display:'inline-block'}}>Order Number : </p> #CMC{order?.serial_no}</p>
+                           <p style={{ marginBottom: "0.2rem" }}> <p style={{fontWeight:700, display:'inline-block'}}>Invoice Date : </p> <TimeFormat time={true} date={Date.now()} /></p>
+                           <p style={{ marginBottom: "0.2rem" }}> <p style={{fontWeight:700, display:'inline-block'}}>Amount : </p> <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p>
                         </div>
                      </div>
                      
                     
-                     <div className="table-section" style={{marginBottom: "2rem",  paddingBottom: "1rem"}}>
+                     <div className="table-section" style={{ paddingBottom: "1rem", pageBreakInside: "avoid", breakInside: "avoid"}}>
                         <table cellPadding={8} className='bg-white' style={{ width:"100%", textAlign:"left", borderCollapse:"collapse" }} border="1">
                            <thead>
-                              <tr>
-                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Charges</th>
-                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Notes</th>
-                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Rate</th>
-                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Amount</th>
+                              <tr className='w-full'>
+                                 <th className='border bg-gray-100' style={{  color: "#111" }}>Charges</th>
+                                 <th className='border bg-gray-100' style={{  color: "#111" }}>Notes</th>
+                                 <th className='border bg-gray-100' style={{  color: "#111" }}>Rate</th>
+                                 <th className='border bg-gray-100' style={{  color: "#111" }}>Amount</th>
                               </tr>
                            </thead>
                            <tbody>
                               {order && order.revenue_items && order.revenue_items.map((r, idx) => (
                                  <tr key={idx}>
-                                    <td className='border'>{r?.revenue_item}</td>
-                                    <td className='border text-left text-[14px] max-w-[200px]'>{r?.note}</td>
-                                    <td className='border text-left'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</td>
-                                    <td className='border text-left'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
+                                    <td style={{lineHeight:'22px', height:'22px', verticalAlign:'middle'}} className='border'>{r?.revenue_item}</td>
+                                    <td style={{lineHeight:'22px', height:'22px', verticalAlign:'middle'}} className='border text-left text-[14px] max-w-[200px]'>{r?.note}</td>
+                                    <td style={{lineHeight:'22px', height:'22px', verticalAlign:'middle'}} className='border text-left'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</td>
+                                    <td style={{lineHeight:'22px', height:'22px', verticalAlign:'middle'}} className='border text-left'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
                                  </tr>
 
                               ))}
                               <tr>
-                                 <td colSpan={2} align='left' className='border' ><strong style={{ color: "#111" }}></strong></td>
-                                 <td  align='left' className='border bg-gray-100' ><strong style={{ color: "#111" }}>Total</strong></td>
+                                 <td colSpan={3} align='left' className='border bg-gray-100' ><strong style={{ color: "#111" }}>Total</strong></td>
                                  <td   align='left' className='border bg-gray-100'  style={{ fontWeight: 700, color: "#111" }}>
                                     <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} />
                                  </td>
@@ -460,7 +355,7 @@ export default function CustomerInvoice() {
                            </tbody>
                         </table>
                         {order?.created_by && (
-                           <div className="processed-by-section" style={{  paddingTop: "1rem", marginTop: "1rem" }}>
+                           <div className="processed-by-section" style={{  paddingTop: "1rem", marginTop: "1rem", pageBreakInside: "avoid", breakInside: "avoid" }}>
                               <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>PROCESSED BY</h3>
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
                                  <div>
@@ -480,63 +375,51 @@ export default function CustomerInvoice() {
                            </div>
                         )}
                      </div>
-                     <div className="table-section" style={{marginBottom: "2rem",  paddingBottom: "1rem"}}>
-                        <table cellPadding={8} className='bg-white' style={{ width:"100%", textAlign:"left", borderCollapse:"collapse" }} border="1">
-                           <thead>
-                              <tr>
-                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Charges</th>
-                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Notes</th>
-                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Rate</th>
-                                 <th className='border bg-gray-100' style={{ color: "#111" }}>Amount</th>
-                              </tr>
-                           </thead>
-                           <tbody>
-                              {order && order.revenue_items && order.revenue_items.map((r, idx) => (
-                                 <tr key={idx}>
-                                    <td className='border'>{r?.revenue_item}</td>
-                                    <td className='border text-left text-[14px] max-w-[200px]'>{r?.note}</td>
-                                    <td className='border text-left'><Currency  onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}*{r?.quantity || 0}</td>
-                                    <td className='border text-left'><Currency amount={r?.rate*r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
-                                 </tr>
-
-                              ))}
-                              <tr>
-                                 <td colSpan={2} align='left' className='border' ><strong style={{ color: "#111" }}></strong></td>
-                                 <td  align='left' className='border bg-gray-100' ><strong style={{ color: "#111" }}>Total</strong></td>
-                                 <td   align='left' className='border bg-gray-100'  style={{ fontWeight: 700, color: "#111" }}>
-                                    <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} />
-                                 </td>
-                              </tr>
-                           </tbody>
-                        </table>
-                        {order?.created_by && (
-                           <div className="processed-by-section" style={{  paddingTop: "1rem", marginTop: "1rem" }}>
-                              <h3 className='text-lg' style={{ color: "#2563eb", fontWeight: 900 }}>PROCESSED BY</h3>
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "2rem" }}>
-                                 <div>
-                                    <p>Employee Name :  
-                                       {order?.created_by?.name ? 
-                                             order.created_by.name
-                                          : 'N/A'
+                     
+                     <div>
+                        {order && order.shipping_details && order.shipping_details.map((s, index) => (
+                           <div className="shipping-detail-item" style={{ marginBottom: "3rem", paddingBottom: "2rem", pageBreakInside: "avoid", breakInside: "avoid" }} key={index}>
+                              <div style={{ display: "flex", flexWrap: "wrap", marginBottom: "2rem" }}>
+                                    <p style={{marginBottom:'5px', marginRight:"20px"}}><p style={{fontWeight: 700, display:'inline-block'}}>Order No :</p>   #CMC{order?.serial_no ||''}</p>
+                                    <p style={{marginBottom:'5px', marginRight:"20px"}}><p style={{fontWeight: 700, display:'inline-block'}}>Commodity :</p>  {s?.commodity?.value || s?.commodity}</p>
+                                    <p style={{marginBottom:'5px', marginRight:"20px"}}><p style={{fontWeight: 700, display:'inline-block'}}>Equipments :</p>  {s?.equipment?.value}</p>
+                                    <p style={{marginBottom:'5px', marginRight:"20px"}}><p style={{fontWeight: 700, display:'inline-block'}}>Weight :</p>  {s?.weight ||''}{s?.weight_unit ||''}</p>
+                              </div>
+                              <div style={{ marginBottom: "2rem" }}>
+                                 {s.locations && (() => {
+                                    let pickupCount = 0;
+                                    let stopCount = 0;
+                                    return s.locations.map((l, idx) => {
+                                       if (l.type === 'pickup') {
+                                          pickupCount++;
+                                          return (
+                                             <div className="location-block" key={idx} style={{ background: "#e1eee8ff", padding: "1rem", borderRadius: "7px", marginBottom: '1rem', pageBreakInside: "avoid", breakInside: "avoid" }}>
+                                                <h4 style={{ color: "#2563eb", fontWeight: 700 }}>PICK {pickupCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat time={false} date={l.date} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''}</p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
+                                       } else {
+                                          stopCount++;
+                                          return (
+                                             <div className="location-block" key={idx} style={{ background: "#dbeafe", padding: "1rem", borderRadius: "7px", marginBottom: '1rem', pageBreakInside: "avoid", breakInside: "avoid" }}>
+                                                <h4 style={{ color: "#b91c1c", fontWeight: 700 }}>STOP {stopCount}</h4>
+                                                <p>{l.location}</p>
+                                                <p><TimeFormat date={l.date} time={false} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''}</p>
+                                                <p>Ref #: {l.referenceNo}</p>
+                                             </div>
+                                          );
                                        }
-                                    </p>
-                                    <p>Employee ID : {order?.created_by?.corporateID || 'N/A'}</p>
-                                 </div>
-                                 <div>
-                                    <p>Email : {order?.created_by?.email}</p>
-                                    <p>Phone : {order?.created_by?.phone || 'N/A'}</p>
-                                 </div>
+                                    });
+                                 })()}
                               </div>
                            </div>
-                        )}
+                        ))}
                      </div>
-
-                     {/* // Shiping details */}
-                    
-                     
                      
 
-                     <div className='remittance-section'>
+                     <div className='remittance-section' style={{ marginTop: "3rem", pageBreakInside: "avoid", breakInside: "avoid" }}>
                         <p className='mt-6 pt-6 mb-4'>
                            Please send remittance to -
                            <a
@@ -549,7 +432,7 @@ export default function CustomerInvoice() {
                               <span className='ml-1 text-gray-700'>(cc: {company.remittance_secondary_email})</span>
                            )}
                         </p>
-                        <div className='bank-details'>
+                        <div className='bank-details' style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
                         <h3 style={{ color: "#2563eb", fontWeight: 900, }}>NAME OF BANK :- {company?.bank_name || 'ROYAL BANK OF CANADA'}</h3>
                        
                        <div className='p-6 border rounded-2xl mt-4 '>
