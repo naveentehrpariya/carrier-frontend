@@ -387,41 +387,24 @@ export default function OrderPDF() {
                   </div>
                </div>
                
-               {/* Employee Information Section */}
-               {order?.created_by && (
-                  <div style={{ borderBottom: "1px solid #ddd", paddingBottom: "2rem", marginBottom: "1rem" }}  >
-                     <h3 className="text-blue-700 font-bold text-lg mb-2">PROCESSED BY</h3>
-                     
-                     <div className="grid grid-cols-2 gap-4">
-                        <div>
-                           <p className='capitalize pb-3'><strong>Employee Name: </strong> {order?.created_by?.name ? order.created_by.name: 'N/A' } </p>
-                           <p className='pb-3'><strong>Employee ID:</strong> {order?.created_by?.corporateID || 'N/A'}</p>
-                        </div>
-                        <div className='ps-[100px]'>
-                           <p className='pb-3'><strong>Email:</strong> {order?.created_by?.email}</p>
-                           <p className='pb-3'><strong>Phone:</strong> {order?.created_by?.phone || 'N/A'}</p>
-                        </div>
-                     </div>
-                  </div>
-               )}
-                
+               
 
                <div className='relative mt-6'>
                   {order && order.shipping_details && order.shipping_details.map((s, index) => {
                      return <>
-                           <div className="grid grid-cols-2 gap-2 mb-4">
-                              <p className='capitalize pb-2'><strong>Order No : </strong> #CMC{order?.serial_no ||''}</p>
-                              <p className=' pb-2'><strong>Commodity : </strong> {s?.commodity?.value || s?.commodity}</p>
+                           <div style={{flexWrap:"wrap"}} className="flex gap-5 mb-4 pb-6 w-full">
+                              <p style={{display:"flex",}} className='capitalize '><p style={{ fontWeight: 700, color: "#111" }} >Order No : </p> #CMC{order?.serial_no ||''}</p>
+                              <p style={{display:"flex"}} className=' '><p style={{ fontWeight: 700, color: "#111" }} >Commodity : </p> {s?.commodity?.value || s?.commodity}</p>
                               {s?.reference && (
-                                 <p className=''><strong>Commodity Reference : </strong> {s.reference}</p>
+                                 <p style={{display:"flex"}} className=''><p style={{ fontWeight: 700, color: "#111" }} >Commodity Reference : </p> {s.reference}</p>
                               )}
-                              <p className=' pb-2'><strong>Total Distance : </strong> <DistanceInMiles d={order.totalDistance} /></p>
-                              <p className=' pb-2'><strong>Equipments : </strong> {s?.equipment?.value}</p>
-                              <p className=' pb-2'><strong>Weight : </strong> {s?.weight ||''}{s?.weight_unit ||''}</p>
+                              <p style={{display:"flex"}} className=' '><p style={{ fontWeight: 700, color: "#111" }} >Total Distance : </p> <DistanceInMiles d={order.totalDistance} /></p>
+                              <p style={{display:"flex"}} className=' '><p style={{ fontWeight: 700, color: "#111" }} >Equipments : </p> {s?.equipment?.value}</p>
+                              <p style={{display:"flex"}} className=' '><p style={{ fontWeight: 700, color: "#111" }} >Weight : </p> {s?.weight ||''}{s?.weight_unit ||''}</p>
                            </div>
 
                            <div className="mb-6">
-                              <h3 className="font-semibold mb-2 mt-4 text-lg">Charges</h3>
+                              <h3 style={{fontSize:"20px", fontWeight: 700, color: "#111"}}  >Charges</h3>
                               <table cellPadding={8} align='center' className="mt-2 w-full border text-normal table-collapse ">
                                  <thead className="bg-gray-100">
                                     <tr>
@@ -441,8 +424,7 @@ export default function OrderPDF() {
                                        </tr>
                                     })}
                                     <tr>
-                                       <td colSpan={2} align='left' className='border' ><strong style={{ color: "#111" }}></strong></td>
-                                       <td  align='left' className='border bg-gray-100' ><strong style={{ color: "#111" }}>Total</strong></td>
+                                       <td   colSpan={3}  align='center' className='border bg-gray-100' ><strong style={{ color: "#111" }}>Total</strong></td>
                                        <td   align='left' className='border bg-gray-100'  style={{ fontWeight: 700, color: "#111" }}>
                                           <Currency amount={order.carrier_revenue_items.reduce((acc, item) => acc + (item.rate * item.quantity), 0)} currency={order?.revenue_currency || 'cad'} />
                                        </td>
@@ -450,6 +432,25 @@ export default function OrderPDF() {
                                  </tbody>
                               </table>
                            </div>
+
+                           {order?.created_by && (
+                              <div style={{ borderBottom: "1px solid #ddd", paddingBottom: "2rem", marginBottom: "1rem" }}  >
+                                 <h3 className="text-blue-700 font-bold text-lg mb-2">PROCESSED BY</h3>
+                                 
+                                 <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                       <p style={{display:"flex"}} className='capitalize pb-3'><p style={{ fontWeight: 700, color: "#111" }} >Employee Name: </p> {order?.created_by?.name ? order.created_by.name: 'N/A' } </p>
+                                       <p style={{display:"flex"}} className='pb-3'><p style={{ fontWeight: 700, color: "#111" }} >Employee ID:</p> {order?.created_by?.corporateID || 'N/A'}</p>
+                                    </div>
+                                    <div className='ps-[100px]'>
+                                       <p style={{display:"flex"}} className='pb-3'><p style={{ fontWeight: 700, color: "#111" }} >Email:</p> {order?.created_by?.email}</p>
+                                       <p style={{display:"flex"}} className='pb-3'><p style={{ fontWeight: 700, color: "#111" }} >Phone:</p> {order?.created_by?.phone || 'N/A'}</p>
+                                    </div>
+                                 </div>
+                              </div>
+                           )}
+                
+
 
                            <div className="mb-6">
                               {s && s.locations && (() => {
@@ -460,7 +461,7 @@ export default function OrderPDF() {
                                        pickupCount = pickupCount+1;
                                        return <>
                                           <>
-                                             <div className="mb-4">
+                                             <div className="mb-4" style={{ background: "#e1eee8ff", padding: "1rem", borderRadius: "7px", marginBottom: '1rem', pageBreakInside: "avoid", breakInside: "avoid" }}>
                                                 <h4 className="text-blue-700 font-bold">PICK {pickupCount}</h4>
                                                 <p>{l?.location}</p>
                                                 <p><TimeFormat time={false} date={l?.date} /> {l?.appointment ?  <b>(Appointment : {l?.appointment})</b>: ''} </p>
