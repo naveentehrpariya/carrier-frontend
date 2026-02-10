@@ -93,88 +93,103 @@ export default function CustomerInvoice() {
       userUnit: 1.0,
     });
     setPdfProgress('Generating PDF...');
-    const canvas = await html2canvas(element, {
-      scale: 0.24,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      logging: false,
-      imageTimeout: 12000,
-      removeContainer: true,
-      pixelRatio: 1.0,
-      foreignObjectRendering: false,
-      onclone: function (clonedDoc) {
+    doc.html(element, {
+      callback: async function (doc) {
         try {
-          const pageWidth = doc.internal.pageSize.getWidth();
-          const pageHeight = doc.internal.pageSize.getHeight();
-          const availableWidth = pageWidth - leftMargin - rightMargin;
-          const availableHeight = pageHeight - topMargin - bottomMargin;
-          const mmToPx = (mm) => (mm * 96) / 25.4;
-          const availableWidthPx = mmToPx(availableWidth);
-          const availableHeightPx = mmToPx(availableHeight);
-          const root = clonedDoc.getElementById('pdf-root');
-          if (root) {
-            const rect = root.getBoundingClientRect();
-            const contentWidthPx = rect.width || (root.scrollWidth || availableWidthPx);
-            const contentHeightPx = rect.height || (root.scrollHeight || availableHeightPx);
-            root.style.transformOrigin = 'top left';
-            root.style.transform = 'none';
-            root.style.zoom = '1';
-            root.style.margin = '0';
-            root.style.padding = '10px';
-            root.style.width = `${availableWidthPx}px`;
-            root.style.maxWidth = `${availableWidthPx}px`;
-            root.style.maxHeight = `${availableHeightPx}px`;
-            root.style.overflow = 'hidden';
-          }
-          clonedDoc.querySelectorAll('.table-section, .remittance-section, .shipping-detail-item, .bill-to-section').forEach(el => {
+          setPdfProgress('Compressing PDF...');
+          const pdfArrayBuffer = doc.output('arraybuffer');
+          const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
+          const compressedPdfBytes = await pdfDoc.save({
+            useObjectStreams: true,
+            addDefaultPage: false,
+            objectsPerTick: 2000,
+            updateFieldAppearances: false,
+            compress: true,
+            linearize: false,
+            normalizeWhitespace: true,
+          });
+          setPdfProgress('Finalizing download...');
+          const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+          setPdfProgress('PDF downloaded successfully!');
+          setTimeout(() => setPdfProgress(''), 3000);
+          setDownloadingPdf(false);
+        } catch (compressionError) {
+          console.error('PDF compression failed:', compressionError);
+          doc.save(`CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`);
+          setPdfProgress('PDF downloaded (compression skipped)');
+          setTimeout(() => setPdfProgress(''), 3000);
+          setDownloadingPdf(false);
+        }
+      },
+      x: leftMargin,
+      y: topMargin,
+      html2canvas: {
+        scale: 0.26,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        logging: false,
+        imageTimeout: 12000,
+        removeContainer: true,
+        pixelRatio: 1.0,
+        quality: 0.5,
+        foreignObjectRendering: false,
+        onclone: function (clonedDoc) {
+          try {
+            const pageWidth = doc.internal.pageSize.getWidth();
+            const pageHeight = doc.internal.pageSize.getHeight();
+            const availableWidth = pageWidth - leftMargin - rightMargin;
+            const availableHeight = pageHeight - topMargin - bottomMargin;
+            const mmToPx = (mm) => (mm * 96) / 25.4;
+            const availableWidthPx = mmToPx(availableWidth);
+            const availableHeightPx = mmToPx(availableHeight);
+            const root = clonedDoc.getElementById('pdf-root');
+            if (root) {
+              const rect = root.getBoundingClientRect();
+              const contentWidthPx = rect.width || (root.scrollWidth || availableWidthPx);
+              const contentHeightPx = rect.height || (root.scrollHeight || availableHeightPx);
+              root.style.transformOrigin = 'top left';
+              root.style.transform = 'none';
+              root.style.zoom = '1';
+              root.style.margin = '0';
+              root.style.padding = '10px';
+              root.style.width = `${availableWidthPx}px`;
+              root.style.maxWidth = `${availableWidthPx}px`;
+              root.style.maxHeight = `${availableHeightPx}px`;
+              root.style.overflow = 'hidden';
+            }
+            clonedDoc.querySelectorAll('.table-section, .remittance-section, .shipping-detail-item, .bill-to-section').forEach(el => {
+              el.style.pageBreakInside = 'avoid';
+              el.style.breakInside = 'avoid';
+              el.style.marginBottom = '10px';
+            });
+          } catch (e) {}
+          clonedDoc.querySelectorAll('svg, .icon, canvas').forEach(el => {
+            el.style.display = 'none';
+          });
+          clonedDoc.querySelectorAll('.pdf-keep, .pdf-section, .pdf-table, .bank-details').forEach(el => {
             el.style.pageBreakInside = 'avoid';
             el.style.breakInside = 'avoid';
-            el.style.marginBottom = '10px';
+            el.style.display = 'block';
+            el.style.width = '100%';
+            el.style.maxWidth = '100%';
           });
-        } catch (e) {}
-        clonedDoc.querySelectorAll('svg, .icon, canvas').forEach(el => {
-          el.style.display = 'none';
-        });
-        clonedDoc.querySelectorAll('.pdf-keep, .pdf-section, .pdf-table, .bank-details').forEach(el => {
-          el.style.pageBreakInside = 'avoid';
-          el.style.breakInside = 'avoid';
-          el.style.display = 'block';
-          el.style.width = '100%';
-          el.style.maxWidth = '100%';
-        });
-      }
+        }
+      },
+      pagebreak: { mode: ['css', 'legacy'], avoid: ['.pdf-keep', '.pdf-section', '.pdf-table', '.bank-details'] },
+      autoPaging: 'html',
+      width: contentWidthMm * pdfScale,
+      windowWidth: contentWidthPx,
+      margin: [topMargin, leftMargin, bottomMargin, rightMargin],
     });
-    const imgData = canvas.toDataURL('image/jpeg', 0.7);
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const availableWidth = pageWidth - leftMargin - rightMargin;
-    const imgHeight = availableWidth * (canvas.height / canvas.width);
-    doc.addImage(imgData, 'JPEG', leftMargin, topMargin, availableWidth, imgHeight, undefined, 'FAST');
-    setPdfProgress('Compressing PDF...');
-    const pdfArrayBuffer = doc.output('arraybuffer');
-    const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
-    const compressedPdfBytes = await pdfDoc.save({
-      useObjectStreams: true,
-      addDefaultPage: false,
-      objectsPerTick: 1000,
-      updateFieldAppearances: false,
-      compress: true,
-      linearize: false,
-      normalizeWhitespace: true,
-    });
-    setPdfProgress('Finalizing download...');
-    const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    setPdfProgress('PDF downloaded successfully!');
-    setTimeout(() => setPdfProgress(''), 3000);
-    setDownloadingPdf(false);
   } catch (error) {
     console.error('PDF generation failed:', error);
     setPdfProgress('PDF generation failed');
@@ -225,11 +240,11 @@ export default function CustomerInvoice() {
             `}
          </style>
          {loading ? <Loading /> :
-            <div className="boltable ">
+            <div className="boltable bg-white ">
 
-            <div className="relative max-w-[794px] mx-auto pt-[30px] p-[10px]  text-normal text-black">
+            <div className="relative max-w-[794px] mx-auto pt-[30px]  text-normal text-black">
                <div className='flex justify-between items-center'>
-                  <h1 className='text-xl font-bold text-black mb-6 mt-4'>Order INVOICE #{order?.serial_no}</h1>
+                  <h1 className='text-xl font-bold text-white mb-6 mt-4'>Order INVOICE #{order?.serial_no}</h1>
                   <div className='text-right'>
                      <button className='bg-main px-4 py-2 rounded-xl text-sm' onClick={downloadPDF} disabled={downloadingPdf}>
                        {downloadingPdf ? "Generating..." : "Download PDF"}
@@ -245,7 +260,7 @@ export default function CustomerInvoice() {
 
               <div id="pdf-root"
                  ref={pdfRef}
-                 style={{ width: '794px', minWidth: '794px', maxWidth: '794px', background: '#fff', color: '#222', fontFamily: 'sans-serif', padding: '10px'}}
+                 style={{ width: '794px', minWidth: '794px', maxWidth: '794px', background: '#fff', color: '#222', fontFamily: 'sans-serif', padding: '0px'}}
                  className='m-auto pdf-content' >
                <div id="pdf-header-html" 
                  style={{
