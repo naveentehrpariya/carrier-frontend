@@ -2,8 +2,9 @@
   "name": "Carrier",
   "version": "0.1.0",
   "private": true,
+  "homepage": ".",
   "dependencies": {
-    "@headlessui/react": "^2.0.3",
+    "@headlessui/reat": "^2.0.3",
     "@heroicons/react": "^2.1.3",
     "@react-google-maps/api": "^2.20.6",
     "@testing-library/jest-dom": "^5.17.0",

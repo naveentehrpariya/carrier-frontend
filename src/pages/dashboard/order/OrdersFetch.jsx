@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import OrderStats from '../../../components/orders/OrderStats';
 import EmptyOrderState from '../../../components/orders/EmptyOrderState';
 import Pagination from '../../common/Pagination';
+import OrderTable from './OrderTable';
 
 export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRecent, customer, sortby, hideAddOrder, title, hideSearch}) {
   const navigate = useNavigate();
@@ -154,11 +155,15 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
             )}
 
             {loading ? 
-               <OrderItem loading={true} />
+               (isRecent ? <OrderItem loading={true} /> : <Loading />)
                :
                <>
                {lists && lists.length > 0 ? 
-                  <OrderItem lists={lists} fetchLists={fetchLists} />
+                  (isRecent ? 
+                     <OrderItem lists={lists} fetchLists={fetchLists} /> 
+                     : 
+                     <OrderTable lists={lists} fetchLists={fetchLists} />
+                  )
                   : 
                   <EmptyOrderState 
                      isFiltering={orderStatus || payementStatus || searching}

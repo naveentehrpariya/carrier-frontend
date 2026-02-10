@@ -58,8 +58,9 @@ export default function ViewOrder() {
          {/* <button className='bg-main px-4 py-2 rounded-xl'>Edit Order</button> */}
          <div className='flex items-center ps-3'>
             <Link to={`/order/detail/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Carrier Sheet</Link>
-            <Link to={`/order/customer/invoice/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Invoice</Link>
-          
+            {user?.role !== 1 && (
+              <Link to={`/order/customer/invoice/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Invoice</Link>
+            )}
             <Dropdown classes={'relative top-1'} iconsize={'30px '}>
             {(user && user.is_admin === 1) || (user && user.role === 2) ?
                <>
@@ -94,9 +95,11 @@ export default function ViewOrder() {
                   </li>
                </> 
             : '' }
-            <li className='list-none text-sm'>
-               <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${order?._id}`}>Download Customer Invoice</Link>
-            </li>
+            {user?.is_admin === 1 && (
+              <li className='list-none text-sm'>
+                <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${order?._id}`}>Download Customer Invoice</Link>
+              </li>
+            )}
             <li className='list-none text-sm'>
                <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${order?._id}`}>Download Carrier Sheet</Link>
             </li>

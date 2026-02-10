@@ -37,6 +37,10 @@ import Unauthorized from './components/Unauthorized';
 import SuperAdminProfile from './pages/super-admin/SuperAdminProfile';
 import UserProfile from './pages/tenant-admin/UserProfile';
 import SubscriptionPlans from './pages/super-admin/SubscriptionPlans';
+import LandingPage from './homepage/LandingPage';
+import Drivers from './pages/dashboard/drivers/Drivers';
+import Trucks from './pages/dashboard/fleet/Trucks';
+import Trailers from './pages/dashboard/fleet/Trailers';
 
 export default function App() {
   return (
@@ -52,7 +56,8 @@ export default function App() {
                     <Route path="/login" element={<Navigate to="/multitenant-login" replace />} />
                     <Route path="/multitenant-login" element={<MultiTenantLogin />} />
                     <Route path="/super-admin/login" element={<Navigate to="/multitenant-login" replace />} />
-                    <Route path="/" element={<CMCHomepage />} />
+                    {/* <Route path="/" element={<CMCHomepage />} /> */}
+                    <Route path="/" element={<LandingPage />} />
                     <Route path="/debug-auth" element={<AuthDebug />} />
 
 
@@ -136,7 +141,7 @@ export default function App() {
                       </PrivateRoute>
                     } />
                     <Route path="/order/customer/invoice/:id" element={
-                      <RoleBasedRoute allowedRoles={[1, 2, 3]}>
+                      <RoleBasedRoute allowedRoles={[3]}>
                         <CustomerInvoice />
                       </RoleBasedRoute>
                     } />
@@ -173,6 +178,21 @@ export default function App() {
                     <Route path="/employees" element={
                       <PrivateRoute>
                         <EmployeesLists />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/drivers" element={
+                      <PrivateRoute>
+                        <Drivers />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/trucks" element={
+                      <PrivateRoute>
+                        <Trucks />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/trailers" element={
+                      <PrivateRoute>
+                        <Trailers />
                       </PrivateRoute>
                     } />
                     <Route path="/employee/detail/:id" element={

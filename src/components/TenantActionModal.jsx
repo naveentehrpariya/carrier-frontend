@@ -12,6 +12,7 @@ import {
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import Api from '../api/Api';
+import TimeFormat from '../pages/common/TimeFormat';
 
 export default function TenantActionModal({ isOpen, onClose, tenant, actionType, onActionComplete }) {
   const [loading, setLoading] = useState(false);
@@ -400,8 +401,8 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
               <div className="bg-gray-50 p-3 rounded-md">
                 <div className="text-xs font-medium text-gray-500 mb-2">Statistics</div>
                 <div className="grid grid-cols-2 gap-3 text-sm text-gray-700">
-                  <div>Created: <span className="text-gray-900">{tenantDetails ? new Date(tenantDetails.tenant?.createdAt).toLocaleString() : '-'}</span></div>
-                  <div>Last Active: <span className="text-gray-900">{tenantDetails ? (tenantDetails.lastActive ? new Date(tenantDetails.lastActive).toLocaleString() : 'Never') : '-'}</span></div>
+                  <div>Created: <span className="text-gray-900">{tenantDetails ? <TimeFormat date={tenantDetails.tenant?.createdAt} time={true} /> : '-'}</span></div>
+                  <div>Last Active: <span className="text-gray-900">{tenantDetails ? (tenantDetails.lastActive ? <TimeFormat date={tenantDetails.lastActive} time={true} /> : 'Never') : '-'}</span></div>
                   <div>Users: <span className="text-gray-900">{tenantDetails?.usage?.users ?? '-'}</span></div>
                   <div>Orders: <span className="text-gray-900">{tenantDetails?.usage?.orders ?? '-'}</span></div>
                   <div>Customers: <span className="text-gray-900">{tenantDetails?.usage?.customers ?? '-'}</span></div>

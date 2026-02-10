@@ -4,6 +4,7 @@ import { LuEye, LuPhone, LuMail, LuMapPin } from "react-icons/lu";
 import Badge from '../../pages/common/Badge';
 import Dropdown from '../../pages/common/Dropdown';
 import AddEmployee from '../../pages/dashboard/employees/AddEmployee';
+import AddDriver from '../../pages/dashboard/drivers/AddDriver';
 import SuspandAccount from '../../pages/dashboard/employees/SuspandAccount';
 import ChangePassword from '../../pages/dashboard/employees/ChangePassword';
 import TimeFormat from '../../pages/common/TimeFormat';
@@ -11,7 +12,8 @@ import TimeFormat from '../../pages/common/TimeFormat';
 export default function EmployeeCard({ 
   employee, 
   onOpenDocuments, 
-  fetchLists 
+  fetchLists,
+  onDeleteRequest
 }) {
   // Generate initials for avatar placeholder
   const getInitials = (name) => {
@@ -24,7 +26,11 @@ export default function EmployeeCard({
 
   // Get role display text and color
   const getRoleInfo = (role) => {
-    if (role === '2') {
+    const r = Number(role);
+    if (r === 0) {
+      return { text: 'Driver', color: 'text-rose-400 bg-rose-500/10 border-rose-500/20' };
+    }
+    if (r === 2) {
       return { text: 'Accountant', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' };
     }
     return { text: 'Employee', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' };
@@ -130,7 +136,7 @@ export default function EmployeeCard({
 
         {/* Added date */}
         <div className="text-sm text-gray-500">
-          Added on : <TimeFormat date={employee.createdAt || "--"} />
+          Added on : <TimeFormat date={employee.createdAt || "--"} time={false} />
         </div>
       </div>
 
@@ -154,13 +160,32 @@ export default function EmployeeCard({
         <div onClick={(e) => e.stopPropagation()}>
           <Dropdown>
             <li className="list-none text-sm">
-              <AddEmployee 
+              {(employee?.role === 0 ? (
+                <AddDriver 
+                  text="Edit" 
+                  classes="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block" 
+                  item={employee} 
+                  fetchLists={fetchLists} 
+                />
+              ) : (
+                <AddEmployee 
                 text="Edit" 
                 classes="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block" 
                 item={employee} 
                 fetchLists={fetchLists} 
-              />
+                />
+              ))}
             </li>
+            {employee?.role === 0 && (
+              <li className="list-none text-sm">
+                <button 
+                  className="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-red-700 block"
+                  onClick={() => onDeleteRequest && onDeleteRequest(employee)}
+                >
+                  Delete Driver
+                </button>
+              </li>
+            )}
             <li className="list-none text-sm">
               <SuspandAccount 
                 text="Change Account Status" 

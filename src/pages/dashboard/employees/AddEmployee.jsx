@@ -5,10 +5,12 @@ import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import countries from './../../common/Countries';
 
-export default function AddEmployee({fetchLists, item, text, classes}){
+export default function AddEmployee({fetchLists, item, text, classes, defaultRole}){
 
     const commisions = Array.from({ length: 100 }, (_, index) => (index + 1) * 1);
-    const [staffType, setStaffType] = useState(item?.role);
+    const [staffType, setStaffType] = useState(
+      typeof defaultRole === 'number' ? defaultRole : (typeof item?.role === 'number' ? item?.role : 1)
+    );
     const [data, setData] = useState({
       name: item?.name || "",
       email: item?.email || "",
@@ -30,9 +32,17 @@ export default function AddEmployee({fetchLists, item, text, classes}){
     const [loading, setLoading] = useState(false);
     const addEmployee = () => {
       if(!item){
-        if(data.email === "" || data.password === "" || data.name === "" || data.role === "" || data.staff_commision === "" || data.phone === "" || data.country === "" || data.address === ""){
-          toast.error("Please fill all the fields");
+        const requiredFields = ['name', 'email', 'phone', 'country', 'address'];
+        const missing = requiredFields.filter(f => !data[f] || String(data[f]).trim() === '');
+        if (missing.length > 0) {
+          toast.error("Please fill all the required fields");
           return false;
+        }
+        if (staffType === 1) {
+          if (!data.staff_commision || String(data.staff_commision).trim() === '') {
+            toast.error("Please choose staff commission");
+            return false;
+          }
         }
       }
       setLoading(true);
@@ -73,21 +83,23 @@ export default function AddEmployee({fetchLists, item, text, classes}){
                <label className="mt-4 mb-0 block text-sm text-gray-400">Email</label>
                <input defaultValue={item?.email} required name='email' onChange={handleinput} type={'email'} placeholder={"Email address"} className="input-sm" />
             </div>
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Staff Commission</label>
-               <select  defaultValue={item?.staff_commision} onChange={handleinput} name='staff_commision' className="input-sm" >
-                <option selected disabled className='text-black'>Choose Commision</option>
-                  {commisions && commisions.map((c, i)=>{
-                    return <option value={c} className='text-black'>{c}% Commision</option>
-                  })}
-               </select>
-            </div>
+            {staffType === 1 && (
+              <div className='input-item'>
+                 <label className="mt-4 mb-0 block text-sm text-gray-400">Staff Commission</label>
+                 <select  defaultValue={item?.staff_commision} onChange={handleinput} name='staff_commision' className="input-sm" >
+                  <option className='text-black' value="">Choose Commission</option>
+                    {commisions && commisions.map((c, i)=>{
+                      return <option key={`comm-${i}`} value={c} className='text-black'>{c}% Commision</option>
+                    })}
+                 </select>
+              </div>
+            )}
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Country</label>
                <select defaultValue={item?.country} onChange={handleinput} name='country' className="input-sm" >
-                <option selected disabled className='text-black'>Choose Country</option>
+                <option className='text-black' value="">Choose Country</option>
                   {countries && countries.map((c, i)=>{
-                    return <option value={c.label} className='text-black'>{c.label}</option>
+                    return <option key={`country-${i}`} value={c.label} className='text-black'>{c.label}</option>
                   })}
                </select>
             </div> 
@@ -116,6 +128,7 @@ export default function AddEmployee({fetchLists, item, text, classes}){
 
           <label className=" mb-2 block text-sm text-gray-400 text-center mt-6">Staff Type</label>
          <div className='flex justify-center'>
+              <button className={`mx-2 ${staffType === 0 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(0)} >Driver</button>
               <button className={`mx-2 ${staffType === 1 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(1)} >Employee</button>
               <button className={`mx-2 ${staffType === 2 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(2)} >Accountant</button>
          </div>

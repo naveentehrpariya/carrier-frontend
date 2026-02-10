@@ -24,22 +24,20 @@ export default function CarrierPaymentExel({data, text, carrier}) {
       if(!dateString){
          return "N/A"
       }
-      const date = new Date(dateString);
-      // Use user's local timezone instead of hardcoded 'en-US'
-      let formattedDate =  date.toLocaleString(undefined, {
+      const isDateOnly = typeof dateString === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateString);
+      const date = isDateOnly ? new Date(`${dateString}T00:00:00Z`) : new Date(dateString);
+      const options = {
          year: 'numeric',
          month: 'long',
          day: 'numeric',
-      });
-      if(includeTime){
-         const timeOptions = {
+         ...(includeTime && {
             hour: 'numeric',
             minute: 'numeric',
             second: 'numeric',
-         };
-         formattedDate += ' ' + date.toLocaleString(undefined, timeOptions);
-      }
-      return formattedDate;
+         }),
+         ...((isDateOnly || !includeTime) && { timeZone: 'UTC' })
+      };
+      return date.toLocaleString(undefined, options);
    }
 
    const downloadExel  = async(t) => {

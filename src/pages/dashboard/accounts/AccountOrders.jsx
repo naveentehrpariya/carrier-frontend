@@ -210,9 +210,11 @@ export default function AccountOrders() {
                                      </li>
                                    </>
                                  ) : ''}
-                                 <li className='list-none text-sm'>
-                                   <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${c._id}`}>Download Customer Invoice</Link>
-                                 </li>
+                                 {user?.role !== 1 && (
+                                   <li className='list-none text-sm'>
+                                     <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${c._id}`}>Download Customer Invoice</Link>
+                                   </li>
+                                 )} 
                                  <li className='list-none text-sm'>
                                    <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${c._id}`}>Download Carrier Sheet</Link>
                                  </li>

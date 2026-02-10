@@ -16,6 +16,7 @@ import {
 import { toast } from 'react-hot-toast';
 import Api from '../api/Api';
 import TenantActionModal from './TenantActionModal';
+import TimeFormat from '../pages/common/TimeFormat';
 
 export default function TenantManagement({ onViewTenant }) {
   const [tenants, setTenants] = useState([]);
@@ -193,14 +194,7 @@ export default function TenantManagement({ onViewTenant }) {
     return actions;
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+ 
 
   const filteredTenants = (Array.isArray(tenants) ? tenants : []).filter(tenant => {
     const matchesSearch = !searchTerm || 
@@ -335,7 +329,7 @@ export default function TenantManagement({ onViewTenant }) {
 
                   {/* Created Date */}
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
-                    {formatDate(tenant.createdAt)}
+                    {tenant.createdAt ? <TimeFormat date={tenant.createdAt} time={false} /> : 'N/A'}
                   </td>
 
                   {/* Actions */}

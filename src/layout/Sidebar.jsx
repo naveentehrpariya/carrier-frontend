@@ -150,6 +150,15 @@ export default function Sidebar({toggle}) {
                 {!isSuperAdmin && (<span className='ml-auto text-xs bg-gray-800 text-gray-300 rounded-full px-3 py-[3px] border border-gray-700'>{loadingCounts ? '...' : counts.employees}</span>)}
               </Link>
             </li>
+            {/* <li>
+              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/drivers' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/drivers'} ><HiOutlineUserCircle className='me-2' size={'1.4rem'} /> Drivers</Link>
+            </li>
+            <li>
+              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/trucks' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/trucks'} ><TbTruckDelivery className='me-2' size={'1.4rem'} /> Trucks</Link>
+            </li>
+            <li>
+              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/trailers' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/trailers'} ><FiBox className='me-2' size={'1.4rem'} /> Trailers</Link>
+            </li> */}
             <li>
               <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/commodity-and-equipments' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/commodity-and-equipments'} ><VscGraphLine className='me-2' size={'1.4rem'} /> Equip & Revenue Items</Link>
             </li>

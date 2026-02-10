@@ -5,6 +5,24 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 import './utils/errorHandler';
 
+// Proactively unregister any existing service workers and clear caches
+if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    try {
+      navigator.serviceWorker.getRegistrations()
+        .then((registrations) => {
+          registrations.forEach((r) => r.unregister());
+        })
+        .catch(() => {});
+      if (typeof caches !== 'undefined') {
+        caches.keys()
+          .then((keys) => keys.forEach((k) => caches.delete(k)))
+          .catch(() => {});
+      }
+    } catch {}
+  });
+}
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>

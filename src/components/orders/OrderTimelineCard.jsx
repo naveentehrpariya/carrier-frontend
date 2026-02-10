@@ -306,14 +306,16 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                 
               </>
             )}
-            <li className='list-none text-sm'>
-              <Link 
-                className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block'
-                to={`/order/customer/invoice/${order._id}`}
-              >
-                Download Customer Invoice
-              </Link>
-            </li>
+            {user?.role !== 1 && (
+              <li className='list-none text-sm'>
+                <Link 
+                  className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block'
+                  to={`/order/customer/invoice/${order._id}`}
+                >
+                  Download Customer Invoice
+                </Link>
+              </li>
+            )}
             <li className='list-none text-sm'>
               <Link 
                 className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block'

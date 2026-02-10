@@ -29,6 +29,8 @@ body{background:var(--dark);font-family:'productsans';}
 .input-field{border:1px solid var(--main);}
 .input:not(select):focus{box-shadow:none;outline:none;background:var(--dark2);}
 .border-main{border:1px solid var(--main);}
+
+ 
 @layer components{
 .btn{@apply px-6 py-2.5 cursor-pointer text-black font-bold bg-main  rounded-[30px] text-sm text-center}
 .md{@apply text-[16px] px-7 py-3 text-center}
@@ -43,6 +45,7 @@ body{background:var(--dark);font-family:'productsans';}
 .input-sm{@apply input px-[20px] py-[15px] rounded-[15px]}
 .box{@apply rounded-[30px] bg-dark1}
 }
+
 .disabled{opacity:0.5;pointer-events:none;cursor:none;}
 .react-select.input__control{margin-top:0.625rem;width:100%;max-width:100%;align-items:flex-start;justify-content:center;white-space:nowrap;border-radius:15px;border-width:1px;padding-left:15px;padding-right:5px;padding-top:11px;padding-bottom:9px;color:#fff;background:var(--dark2);border:1px solid var(--dark3);}
 .react-select.input__single-value{color:#fff !important;}

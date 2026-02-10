@@ -242,7 +242,7 @@ export default function CustomerListItem({
                   )}
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <LuCalendar size={12} />
-                    Added on <TimeFormat date={customer.createdAt || "--"} />
+                    Added on <TimeFormat date={customer.createdAt || "--"} time={false} />
                   </div>
                 </div>
               </div>

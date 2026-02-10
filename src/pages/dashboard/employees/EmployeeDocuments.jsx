@@ -12,7 +12,7 @@ import { UserContext } from '../../../context/AuthProvider';
 const documentsCache = new Map();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
-export default function EmployeeDocuments({ employee, onClose, classes, text, isOpen = false }) {
+export default function EmployeeDocuments({ employee, onClose, classes, text, isOpen = false, entityType = 'employee' }) {
   
     const getMime = (type) => {
       const isImage = type.includes('image');
@@ -340,7 +340,9 @@ export default function EmployeeDocuments({ employee, onClose, classes, text, is
                             })}
                         </div>
                     ) : (
-                        <p className='text-gray-500 text-sm'>No documents found for this employee.</p>
+                        <p className='text-gray-500 text-sm'>
+                          {entityType === 'driver' ? 'No documents found for this driver.' : 'No documents found for this employee.'}
+                        </p>
                     )}
                 </div>
             )}
@@ -353,7 +355,7 @@ export default function EmployeeDocuments({ employee, onClose, classes, text, is
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose}>
                 <div className="bg-black border border-gray-700 rounded-2xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
                     <div className="flex justify-between items-center mb-6">
-                        <h2 className='text-gray-100 text-2xl font-bold'>{employee?.name || 'Employee'} Documents</h2>
+                        <h2 className='text-gray-100 text-2xl font-bold'>{employee?.name || (entityType === 'driver' ? 'Driver' : 'Employee')} Documents</h2>
                         <button 
                             onClick={onClose}
                             className="text-gray-400 hover:text-white text-2xl leading-none"

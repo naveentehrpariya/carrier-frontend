@@ -152,7 +152,7 @@ export default function CarrierCard({
             </div>
             <div className="flex items-center gap-1 text-xs text-gray-500">
               <LuCalendar size={12} />
-              <TimeFormat date={carrier.createdAt || "--"} />
+              <TimeFormat date={carrier.createdAt || "--"} time={false} />
             </div>
           </div>
         </div>

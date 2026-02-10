@@ -23,6 +23,7 @@ import Api from '../../api/Api';
 import TenantActionModal from '../../components/TenantActionModal';
 import TenantCreateModal from '../../components/TenantCreateModal';
 import SuperAdminLayout from '../../layout/SuperAdminLayout';
+import TimeFormat from '../common/TimeFormat';
 
 export default function AllTenantsManagement() {
   const [tenants, setTenants] = useState([]);
@@ -414,26 +415,19 @@ export default function AllTenantsManagement() {
       });
       
       toast.dismiss(loadingToast);
-      
       if (response.data.status) {
         console.log('✅ Tenant emulation successful!');
         console.log('🔑 Response data:', response.data);
-        
         toast.success(`Successfully authenticated for ${tenant.name}`);
-        
-        // Use the backend-generated redirectUrl which includes the correct tenant parameter
         let targetUrl = response.data.redirectUrl;
-        
-        // For local development, ensure we're using the correct tenant parameter format
         const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        
         if (isLocalDev) {
-          // Backend generates: http://localhost:3000?tenant=subdomain
-          // We want to navigate to the home page with tenant context
+          alert('sdfhdf1')
           if (targetUrl.includes('?tenant=')) {
-            // Replace the base path to go to /home instead of root
+            alert('sdfhdf2')
             targetUrl = targetUrl.replace('http://localhost:3000?', 'http://localhost:3000/home?');
           }
+          alert('sdfhdf3')
         }
         
         console.log('🔗 Environment detection:', {
@@ -445,13 +439,14 @@ export default function AllTenantsManagement() {
         });
         console.log('🔗 Backend redirectUrl:', response.data.redirectUrl);
         console.log('🔗 Final target URL:', targetUrl);
-        
-        // Add auth token as URL parameter for immediate access
         const urlWithToken = `${targetUrl}${targetUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(response.data.token)}`;
         console.log('🔗 Final URL with token:', urlWithToken);
-        
-        // Open the new tab
-        window.open(urlWithToken, '_blank');
+        if(isLocalDev){
+          const url = `http:localhost:3000?token=${encodeURIComponent(response.data.token)}`;
+          window.open(url, '_blank');
+        } else { 
+          window.open(urlWithToken, '_blank');
+        }
       } else {
         console.error('❌ Tenant emulation failed - API returned success=false');
         console.error('❌ Response data:', response.data);
@@ -473,8 +468,15 @@ export default function AllTenantsManagement() {
       // Fallback: Just open the tenant URL
       console.log('🔄 Falling back to direct URL access');
       const subdomain = tenant.subdomain;
-      const url = `http://${subdomain}.localhost:3000/login`;
-      window.open(url, '_blank');
+      let domainurl;
+      alert("window.location.href",window.location.href)
+      if(window.location.href == 'localhost'){
+         domainurl = `http://${subdomain}.logistikore.com/login`;
+      } else { 
+         domainurl = `http://localhost:3000/login?tanent=${subdomain}`;
+
+      }
+      window.open(domainurl, '_blank');
     }
   };
 
@@ -517,16 +519,7 @@ export default function AllTenantsManagement() {
     return actions;
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+ 
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
@@ -759,7 +752,7 @@ export default function AllTenantsManagement() {
 
                       {/* Created Date */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(tenant.createdAt)}
+                        {tenant.createdAt ? <TimeFormat date={tenant.createdAt} time={false} /> : 'Never'}
                       </td>
 
                       {/* Revenue */}
@@ -769,13 +762,9 @@ export default function AllTenantsManagement() {
                         </div>
                         <div className="text-xs text-gray-500">Total revenue</div>
                       </td> */}
-
-                      {/* Last Active */}
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(tenant.lastActive)}
+                        {tenant.lastActive ? <TimeFormat date={tenant.lastActive} time={false} /> : 'Never'}
                       </td>
-
-                      {/* Actions */}
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           {getAvailableActions(tenant).map((action) => (
