@@ -81,6 +81,16 @@ export default function OrderTable({ lists, fetchLists }) {
                             </li>
                           </>
                         ) : ''}
+                        {(user?.is_admin === 1 || user?.role === 1 || user?.role === 2) && (
+                          <li className={`list-none text-sm ${order.lock ? "disabled" : ""}`}>
+                            <Link 
+                              className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${order.lock ? 'opacity-50 pointer-events-none' : ''}`} 
+                              to={`/edit/order/${order._id}`}
+                            >
+                              {order.lock ? <FaLock size={12} className='me-1 inline' /> : ""} Edit Order
+                            </Link>
+                          </li>
+                        )}
                         {user?.role !== 1 && (
                           <li className='list-none text-sm'>
                             <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${order._id}`}>Download Customer Invoice</Link>

@@ -208,8 +208,18 @@ export default function AccountOrders() {
                                      <li className={`list-none text-sm ${c.lock ? 'disabled' : ''}`}>
                                        <UpdateOrderStatus text={<>{c.lock ? <FaLock size={12} className='me-1' /> : ''} Update Order Status </>} id={c.id} fetchLists={fetchLists} />
                                      </li>
-                                   </>
-                                 ) : ''}
+                                  </>
+                                ) : ''}
+                                {(user?.is_admin === 1 || user?.role === 1 || user?.role === 2) && (
+                                  <li className={`list-none text-sm ${c.lock ? "disabled" : ""}`}>
+                                    <Link 
+                                      className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${c.lock ? 'opacity-50 pointer-events-none' : ''}`} 
+                                      to={`/edit/order/${c._id}`}
+                                    >
+                                      {c.lock ? <FaLock size={12} className='me-1 inline' /> : ""} Edit Order
+                                    </Link>
+                                  </li>
+                                )}
                                  {user?.role !== 1 && (
                                    <li className='list-none text-sm'>
                                      <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${c._id}`}>Download Customer Invoice</Link>

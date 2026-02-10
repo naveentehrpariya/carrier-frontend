@@ -235,7 +235,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
         {/* Actions Menu */}
         <div className="flex items-center gap-2">
           <Dropdown>
-            {(user?.is_admin === 1 || user?.role === 1) && (
+            {(user?.is_admin === 1 || user?.role === 1 || user?.role === 2) && (
               <li className={`list-none text-sm ${order.lock ? "disabled" : ""}`}>
                   <Link 
                     className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${order.lock ? 'opacity-50 pointer-events-none' : ''}`}

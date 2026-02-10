@@ -2,7 +2,7 @@
   "name": "Carrier",
   "version": "0.1.0",
   "private": true,
-  "homepage": ".",
+  "homepage": "/",
   "dependencies": {
     "@headlessui/reat": "^2.0.3",
     "@heroicons/react": "^2.1.3",
