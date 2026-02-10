@@ -241,7 +241,6 @@ export default function CustomerInvoice() {
          </style>
          {loading ? <Loading /> :
             <div className="boltable bg-white ">
-
             <div className="relative max-w-[794px] mx-auto pt-[30px]  text-normal text-black">
                <div className='flex justify-between items-center'>
                   <h1 className='text-xl font-bold text-white mb-6 mt-4'>Order INVOICE #{order?.serial_no}</h1>
