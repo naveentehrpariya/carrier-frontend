@@ -37,16 +37,16 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
 
    const {Errors, user} = useContext(UserContext);
    const [type, setType] = useState(paymentType);
-   const [method, setmethod] = useState(pmethod || 'cheque');
+   const [method, setmethod] = useState(pmethod || 'Cheque');
    const [status, setStatus] = useState( pstatus || 'pending');
    const [notes, setNotes] = useState( pnotes || '');
    const [action, setaction] = useState();
    const [loading, setLoading] = useState(false);
 
-   const updateStatus = () => {
+  const updateStatus = (approve = false) => {
       setLoading(true);
       const resp = Api.post(`/account/order/update/payment/${id}/${type === 1 ? 'customer' : 'carrier'}`, {
-         status, method, notes 
+         status, method, notes, approve
       });
       resp.then((res) => {
          setLoading(false);
@@ -74,7 +74,7 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Payment Status {pmethod}</label>
                <select defaultValue={status}  onChange={(e)=>setStatus(e.target.value)} name='payment_status' className="focus:outline-0 capitalize input-sm" >
-               <option selected disabled className='text-black capitalize'>Choose Payment Status</option>
+               <option disabled className='text-black capitalize'>Choose Payment Status</option>
                   {statuses && statuses.map((c, i)=>{
                      return <option value={c.name} className='text-black capitalize'>{c.name}</option>
                   })}
@@ -83,7 +83,7 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Payment method</label>
                <select defaultValue={method} onChange={(e)=>setmethod(e.target.value)} name='payment_method' className="focus:outline-0 capitalize input-sm" >
-               <option selected disabled className='text-black'>Choose Payment method</option>
+               <option disabled className='text-black'>Choose Payment method</option>
                   {methods && methods.map((c, i)=>{
                      return <option value={c.name} className='text-black capitalize'>{c.name}</option>
                   })}
@@ -96,14 +96,14 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
 
                 
          {paymentType === 1 && !order?.customer_payment_approved_by_admin && user && user?.is_admin && order?.customer_payment_date ?
-            <div class="bg-red-100 rounded-xl border-t border-b border-red-500  text-red-800 px-4 mt-3 py-3" role="alert">
+            <div className="bg-red-100 rounded-xl border-t border-b border-red-500  text-red-800 px-4 mt-3 py-3" role="alert">
                <p className='capitalize   '>Customer payment status of this order is set to <span className='font-bold'>{status}.</span></p>
                <p className='text-red-400 text-sm capitalize '>Updated By : {order?.customer_payment_updated_by?.name} {order?.customer_payment_updated_by?.position ? `(${order?.customer_payment_updated_by?.position})` : ''} </p>
             </div>
          : ''}
 
          {paymentType === 2 && !order?.carrier_payment_approved_by_admin && user && user?.is_admin && order?.carrier_payment_date ?
-            <div class="bg-red-100 rounded-xl border-t border-b border-red-500  text-red-800 px-4 mt-3 py-3" role="alert">
+            <div className="bg-red-100 rounded-xl border-t border-b border-red-500  text-red-800 px-4 mt-3 py-3" role="alert">
                <p className='capitalize   '>Carrier payment status of this order is set to <span className='font-bold'>{status}.</span></p>
                <p className='text-red-400 text-sm capitalize '>Updated By : {order?.carrier_payment_updated_by?.name} {order?.carrier_payment_updated_by?.position ? `(${order?.carrier_payment_updated_by?.position})` : ''} </p>
             </div>
@@ -124,11 +124,11 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
          <>
             <div className='flex justify-center items-center'>
                {user && user?.is_admin && order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ?
-                     <button onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn !bg-green-600 text-white capitalize font-bold">{loading ? "Updating..." : `Approve ${status} Status`}</button>
+                     <button onClick={() => updateStatus(true)} className="btn md mt-6 px-[50px] main-btn !bg-green-600 text-white capitalize font-bold">{loading ? "Updating..." : `Approve ${status} Status`}</button>
                   :
                   <>
                   {order?.carrier_payment_approved_by_admin &&  user && !user?.is_admin ? '' : 
-                     <button onClick={updateStatus} className={`btn md mt-6 px-[50px] main-btn text-black font-bold`}>{loading ? "Updating..." : "Update"}</button>
+                     <button onClick={() => updateStatus(false)} className={`btn md mt-6 px-[50px] main-btn text-black font-bold`}>{loading ? "Updating..." : "Update"}</button>
                   }
                   </>
                }
@@ -138,12 +138,12 @@ export default function UpdatePaymentStatus({order, id, classes, fetchLists, pay
          <>
          <div className='flex justify-center items-center'>
             {user && user?.is_admin && order?.customer_payment_date && !order?.customer_payment_approved_by_admin ?
-               <button onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn !bg-green-600 text-white capitalize font-bold">{loading ? "Updating..." : `Approve ${status} Status`}</button>
+               <button onClick={() => updateStatus(true)} className="btn md mt-6 px-[50px] main-btn !bg-green-600 text-white capitalize font-bold">{loading ? "Updating..." : `Approve ${status} Status`}</button>
                :
                <>
                {order?.customer_payment_approved_by_admin && user && !user?.is_admin ? ''
                   :
-                  <button  onClick={updateStatus} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Updating..." : "Update"}</button>
+                  <button  onClick={() => updateStatus(false)} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Updating..." : "Update"}</button>
                }
                </>
             }

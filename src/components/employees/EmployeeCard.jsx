@@ -87,6 +87,14 @@ export default function EmployeeCard({
               <span className="text-sm text-blue-400 font-medium">{employee.staff_commision}%</span>
             </div>
           )}
+          {Number(employee?.role) === 0 && employee?.driverProfile && typeof employee.driverProfile.ratePerMile !== 'undefined' && (
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-gray-400 uppercase tracking-wide">Rate/Mile</span>
+              <span className="text-sm text-rose-400 font-medium">
+                ${Number(employee.driverProfile.ratePerMile || 0).toFixed(2)}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Address Group */}
