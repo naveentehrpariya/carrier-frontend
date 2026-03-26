@@ -20,6 +20,22 @@ export default function MultiTenantAuthProvider(props) {
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSuperAdminUser, setIsSuperAdminUser] = useState(false);
+  
+  // New state for module switching
+  const [activeModule, setActiveModule] = useState('outsourcing');
+
+  // Sync activeModule with user's allowedModules
+  useEffect(() => {
+    if (user && Array.isArray(user.allowedModules) && user.allowedModules.length > 0) {
+      // If user is admin, don't reset activeModule based on their individual allowedModules
+      // as they should have access to whatever the plan allows
+      if (user.role === 3 || user.isTenantAdmin) return;
+
+      if (!user.allowedModules.includes(activeModule)) {
+        setActiveModule(user.allowedModules[0]);
+      }
+    }
+  }, [user, activeModule]);
 
   const { tenant, isSuperAdmin, canAccessTenant, clearTenantContext } = useMultiTenant();
 
@@ -73,6 +89,31 @@ export default function MultiTenantAuthProvider(props) {
         
         // Check if we have stored data from synchronous token setup
         const currentToken = safeStorage.getItem('token');
+        if (currentToken) {
+          try {
+            console.log('🔄 Fetching latest profile from server...');
+            const res = await Api.get('/user/profile');
+            if (res.data.status) {
+              const latestUser = res.data.user;
+              const latestCompany = res.data.company;
+              const latestIsSuperAdmin = res.data.user?.userType === 'super_admin' || res.data.user?.userType === 'super_admin_emulating';
+
+              setIsAuthenticated(true);
+              setUser(latestUser);
+              setCompany(latestCompany);
+              setIsSuperAdminUser(latestIsSuperAdmin);
+
+              // Update storage with latest data
+              safeStorage.setItem('user', JSON.stringify(latestUser));
+              if (latestCompany) safeStorage.setItem('company', JSON.stringify(latestCompany));
+              safeStorage.setItem('isSuperAdmin', JSON.stringify(latestIsSuperAdmin));
+              return;
+            }
+          } catch (apiError) {
+            console.warn('⚠️ Profile fetch failed, falling back to stored data:', apiError.message);
+          }
+        }
+
         if (currentToken && userData) {
           try {
             const parsedUser = JSON.parse(userData);
@@ -306,6 +347,8 @@ export default function MultiTenantAuthProvider(props) {
     company,
     loading,
     isSuperAdminUser,
+    activeModule,
+    setActiveModule,
     
     // Authentication actions
     login,

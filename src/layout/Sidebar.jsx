@@ -26,13 +26,24 @@ export default function Sidebar({toggle}) {
 
   const location = useLocation();
   const {user}  = useContext(UserContext);
-  const { user: multiTenantUser, logout: multiTenantLogout } = useAuth();
+  const { user: multiTenantUser, logout: multiTenantLogout, activeModule, setActiveModule } = useAuth();
   const { isSuperAdmin, tenant, getTenantApi } = useMultiTenant();
   // Replace local counts state with context values
   const { counts, loadingCounts } = useSidebarCounts();
   
   // Use multi-tenant user if available, fallback to legacy user
   const currentUser = multiTenantUser || user;
+  
+  // Normalize allowedModules - ensure it's a non-empty array of valid modules
+  const allowedModules = React.useMemo(() => {
+    const raw = Array.isArray(currentUser?.allowedModules) ? currentUser.allowedModules : [];
+    // If empty or invalid, fallback to outsourcing & regular
+    if (raw.length === 0) return ['outsourcing', 'regular'];
+    return raw;
+  }, [currentUser?.allowedModules]);
+  
+  // Local state no longer needed, use context instead
+  // const [activeModule, setActiveModule] = React.useState('outsourcing');
 
   const handleLogout = async () => {
     console.log('💲 Logout button clicked');
@@ -72,7 +83,7 @@ export default function Sidebar({toggle}) {
       return currentUser?.position ||'Accountant'
     }
     else if(currentUser?.role === 3){
-      return currentUser?.position ||'Adminstrator'
+      return currentUser?.position ||'Administrator'
     }
   }
 
@@ -93,95 +104,172 @@ export default function Sidebar({toggle}) {
             <p className="capitalize text-sm mt-[-3px] text-gray-400">{roleChecker()}</p>
           </div>
         </div>
-        <ul>
+        
+        {(allowedModules.length > 1 || currentUser?.role === 3) && !isSuperAdmin && (
+          <div className="mb-6">
+            <div className="w-full bg-[#1B1E27] p-2 rounded-3xl border border-white/5 shadow-inner">
+              <div className="grid grid-cols-1 gap-2">
+                <button
+                  onClick={() => setActiveModule('outsourcing')}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
+                    activeModule === 'outsourcing'
+                      ? 'bg-gradient-to-r from-[#B39CF6] to-[#8B5CF6] text-white shadow-[0_10px_25px_rgba(139,92,246,0.35)] border border-white/10'
+                      : 'bg-[#11131A] text-[#8A8FA3] hover:text-[#EDEFF6] hover:bg-[#181C24] border border-white/5'
+                  }`}
+                >
+                  <div className="min-w-0 text-left">
+                    <div className="text-[10px] font-black uppercase tracking-widest truncate">Outsourcing</div>
+                    <div className={`text-[10px] ${activeModule === 'outsourcing' ? 'text-white/90' : 'text-[#5C6175]'}`}>Carriers</div>
+                  </div>
+                  <div className={`h-2.5 w-2.5 rounded-full ${activeModule === 'outsourcing' ? 'bg-white shadow-[0_0_10px_rgba(255,255,255,0.4)]' : 'bg-[#2B3240]'}`} />
+                </button>
+
+                <button
+                  onClick={() => setActiveModule('regular')}
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
+                    activeModule === 'regular'
+                      ? 'bg-gradient-to-r from-[#B39CF6] to-[#8B5CF6] text-white shadow-[0_10px_25px_rgba(139,92,246,0.35)] border border-white/10'
+                      : 'bg-[#11131A] text-[#8A8FA3] hover:text-[#EDEFF6] hover:bg-[#181C24] border border-white/5'
+                  }`}
+                >
+                  <div className="min-w-0 text-left">
+                    <div className="text-[10px] font-black uppercase tracking-widest truncate">Regular</div>
+                    <div className={`text-[10px] ${activeModule === 'regular' ? 'text-white/90' : 'text-[#5C6175]'}`}>Trucking & Drivers</div>
+                  </div>
+                  <div className={`h-2.5 w-2.5 rounded-full ${activeModule === 'regular' ? 'bg-white shadow-[0_0_10px_rgba(255,255,255,0.4)]' : 'bg-[#2B3240]'}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ul className="space-y-3">
           
-          <li>
-            <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/home' || location.pathname === '/' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/home'} ><MdOutlineSpaceDashboard className='me-2' size={'1.4rem'} /> Dashboard</Link>
-          </li>
+          {/* Universal Admin/Employee items */}
+          {!isSuperAdmin && (
+            <>
+              <li>
+                <Link className={`group transition-all duration-300 ${location.pathname === '/home' || location.pathname === '/' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/home'} >
+                  <MdOutlineSpaceDashboard className={`${location.pathname === '/home' || location.pathname === '/' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                  <span className="font-bold">Dashboard</span>
+                </Link>
+              </li>
+              <li>
+                <Link className={`group transition-all duration-300 ${location.pathname === '/order/add' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/order/add'} >
+                  <IoMdAddCircle className={`${location.pathname === '/order/add' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                  <span className="font-medium">Add New Order</span>
+                </Link>
+              </li>
+              <li>
+                <Link className={`group transition-all duration-300 ${location.pathname === '/orders' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/orders'} >
+                  <FiBox className={`${location.pathname === '/orders' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                  <span className="font-medium">Orders</span>
+                  <span className={`ml-auto text-[11px] font-bold ${location.pathname === '/orders' ? 'bg-white/20 text-white' : 'bg-[#2B3240] text-[#8A8FA3]'} rounded-full px-2.5 py-[2px] transition-colors`}>{loadingCounts ? '...' : counts.orders}</span>
+                </Link>
+              </li> 
+              <li>
+                <Link className={`group transition-all duration-300 ${location.pathname === '/customers' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/customers'} >
+                  <TbUserSquareRounded className={`${location.pathname === '/customers' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                  <span className="font-medium">Customers</span>
+                  <span className={`ml-auto text-[11px] font-bold ${location.pathname === '/customers' ? 'bg-white/20 text-white' : 'bg-[#2B3240] text-[#8A8FA3]'} rounded-full px-2.5 py-[2px] transition-colors`}>{loadingCounts ? '...' : counts.customers}</span>
+                </Link>
+              </li>
+            </>
+          )}
 
-          {/* Super Admin Dashboard Link */}
+          {/* Common Admin items */}
           {isSuperAdmin && (
-            <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/super-admin' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/super-admin'} ><FaCrown className='me-2' size={'1.4rem'} /> Super Admin Dashboard</Link>
-            </li>
+            <>
+              <li>
+                <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/super-admin' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/super-admin'} ><FaCrown className='me-2' size={'1.4rem'} /> Super Admin Dashboard</Link>
+              </li>
+              <li>
+                <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/super-admin/profile' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/super-admin/profile'} ><MdAdminPanelSettings className='me-2' size={'1.4rem'} /> Super Admin Profile</Link>
+              </li>
+            </>
           )}
 
-          {/* Super Admin Profile Link */}
-          {isSuperAdmin && (
-            <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/super-admin/profile' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/super-admin/profile'} ><MdAdminPanelSettings className='me-2' size={'1.4rem'} /> Super Admin Profile</Link>
-            </li>
+          {/* Module-Specific Items (Regular) */}
+          {(isSuperAdmin || activeModule === 'regular') && (
+            <>
+              <li>
+                <Link className={`group transition-all duration-300 ${location.pathname === '/drivers' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/drivers'} >
+                  <HiOutlineUserCircle className={`${location.pathname === '/drivers' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                  <span className="font-medium">Drivers</span>
+                </Link>
+              </li>
+              <li>
+                <Link className={`group transition-all duration-300 ${location.pathname === '/trucks' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/trucks'} >
+                  <TbTruckDelivery className={`${location.pathname === '/trucks' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                  <span className="font-medium">Trucks</span>
+                </Link>
+              </li>
+              <li>
+                <Link className={`group transition-all duration-300 ${location.pathname === '/trailers' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/trailers'} >
+                  <FiBox className={`${location.pathname === '/trailers' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                  <span className="font-medium">Trailers</span>
+                </Link>
+              </li>
+            </>
           )}
 
-          {/* Tenant Admin Dashboard Link */}
-          {currentUser?.role === 3 && tenant && !isSuperAdmin && (
-            <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/tenant-admin' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/tenant-admin'} ><MdAdminPanelSettings className='me-2' size={'1.4rem'} /> Tenant Admin Dashboard</Link>
-            </li>
+          {/* Module-Specific Items (Outsourcing) */}
+          {(isSuperAdmin || activeModule === 'outsourcing') && (
+            <>
+              <li>
+                <Link className={`group transition-all duration-300 ${location.pathname === '/carriers' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/carriers'} >
+                  <TbTruckDelivery className={`${location.pathname === '/carriers' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                  <span className="font-medium">Carriers</span>
+                  <span className={`ml-auto text-[11px] font-bold ${location.pathname === '/carriers' ? 'bg-white/20 text-white' : 'bg-[#2B3240] text-[#8A8FA3]'} rounded-full px-2.5 py-[2px] transition-colors`}>{loadingCounts ? '...' : counts.carriers}</span>
+                </Link>
+              </li>
+            </>
           )}
 
-          {currentUser?.is_admin === 1 || currentUser?.role === 1 || currentUser?.role === 3 ?
-          <>
-            <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/order/add' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/order/add'} ><IoMdAddCircle className='me-2' size={'1.4rem'} /> Add New Order</Link>
-            </li>
-            <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/orders' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/orders'} ><FiBox className='me-2' size={'1.4rem'} /> Orders
-                {!isSuperAdmin && (<span className='ml-auto text-xs bg-gray-800 text-gray-300 rounded-full px-3 py-[3px] border border-gray-700'>{loadingCounts ? '...' : counts.orders}</span>)}
-            </Link>
-            </li> 
-            <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/customers' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/customers'} ><TbUserSquareRounded className='me-2' size={'1.4rem'} /> Customers
-                {!isSuperAdmin && (<span className='ml-auto text-xs bg-gray-800 text-gray-300 rounded-full px-3 py-[3px] border border-gray-700'>{loadingCounts ? '...' : counts.customers}</span>)}
-            </Link>
-            </li> 
-            <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/carriers' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/carriers'} ><TbTruckDelivery className='me-2' size={'1.4rem'} /> Carriers
-                {!isSuperAdmin && (<span className='ml-auto text-xs bg-gray-800 text-gray-300 rounded-full px-3 py-[3px] border border-gray-700'>{loadingCounts ? '...' : counts.carriers}</span>)}
-            </Link>
-            </li>
-          </>
-          : "" }
+          {/* Admin Tools - available if either module active for admins */}
+          {(currentUser?.is_admin === 1 || currentUser?.role === 3) && !isSuperAdmin && (
+            <>
+              <li>
+                <Link className={`group transition-all duration-300 ${location.pathname === '/employees' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/employees'} >
+                  <FaUsers className={`${location.pathname === '/employees' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                  <span className="font-medium">Employees</span>
+                  <span className={`ml-auto text-[11px] font-bold ${location.pathname === '/employees' ? 'bg-white/20 text-white' : 'bg-[#2B3240] text-[#8A8FA3]'} rounded-full px-2.5 py-[2px] transition-colors`}>{loadingCounts ? '...' : counts.employees}</span>
+                </Link>
+              </li>
+              <li>
+                <Link className={`group transition-all duration-300 ${location.pathname === '/commodity-and-equipments' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/commodity-and-equipments'} >
+                  <VscGraphLine className={`${location.pathname === '/commodity-and-equipments' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                  <span className="font-medium">Equip & Revenue Items</span>
+                </Link>
+              </li>
+            </>
+          )}
 
-          {currentUser?.is_admin === 1 || currentUser?.role === 3 ?
-          <>
+          {/* Universal Items */}
+          {(currentUser?.is_admin === 1 || currentUser?.role === 2 || currentUser?.role === 3) && (
             <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/employees' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/employees'} ><FaUsers className='me-2' size={'1.4rem'} /> Employees
-                {!isSuperAdmin && (<span className='ml-auto text-xs bg-gray-800 text-gray-300 rounded-full px-3 py-[3px] border border-gray-700'>{loadingCounts ? '...' : counts.employees}</span>)}
+              <Link className={`group transition-all duration-300 ${location.pathname === '/accounts/orders' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/accounts/orders'} >
+                <MdOutlineDocumentScanner className={`${location.pathname === '/accounts/orders' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                <span className="font-medium">Accounting</span>
               </Link>
-            </li>
-            <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/drivers' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/drivers'} ><HiOutlineUserCircle className='me-2' size={'1.4rem'} /> Drivers</Link>
-            </li>
-            <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/trucks' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/trucks'} ><TbTruckDelivery className='me-2' size={'1.4rem'} /> Trucks</Link>
-            </li>
-            <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/trailers' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/trailers'} ><FiBox className='me-2' size={'1.4rem'} /> Trailers</Link>
-            </li>
-            <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/commodity-and-equipments' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/commodity-and-equipments'} ><VscGraphLine className='me-2' size={'1.4rem'} /> Equip & Revenue Items</Link>
-            </li>
-          </>
-          : ''
-          }
-
-          {currentUser?.is_admin === 1 || currentUser?.role === 2 || currentUser?.role === 3 ?
-            <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/accounts/orders' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/accounts/orders'} ><MdOutlineDocumentScanner className='me-2' size={'1.4rem'} /> Accounting</Link>
             </li> 
-          : "" }
+          )}
 
-          {currentUser?.role === 3 ?
+          {currentUser?.role === 3 && (
             <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/company/details' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/company/details'} ><TbListDetails className='me-2' size={'1.4rem'} /> Company Details</Link>
+              <Link className={`group transition-all duration-300 ${location.pathname === '/company/details' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/company/details'} >
+                <TbListDetails className={`${location.pathname === '/company/details' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                <span className="font-medium">Company Details</span>
+              </Link>
             </li> 
-          : "" }
+          )}
           
-          {/* User Profile Link - visible to all authenticated users except super admin */}
           {currentUser && !isSuperAdmin && (
             <li>
-              <Link className={`hover:!bg-main hover:opacity-[0.8] hover:scale-[1.05] transition-all  ${location.pathname === '/profile' ? "bg-main !text-black" : 'bg-dark'  } text-gray-200 mb-2 py-[13px] px-[13px] border border-gray-900 rounded-2xl  flex items-center`} to={'/profile'} ><BsPersonGear className='me-2' size={'1.4rem'} /> Profile</Link>
+              <Link className={`group transition-all duration-300 ${location.pathname === '/profile' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/profile'} >
+                <BsPersonGear className={`${location.pathname === '/profile' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                <span className="font-medium">Profile</span>
+              </Link>
             </li>
           )}
         

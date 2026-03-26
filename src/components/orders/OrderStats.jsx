@@ -1,6 +1,5 @@
 import React from 'react';
-import { LuPackage, LuTruck, LuCheckCircle, LuClock, LuDollarSign, LuTrendingUp } from "react-icons/lu";
-import Currency from '../../pages/common/Currency';
+import { LuPackage, LuTruck, LuCheckCircle, LuClock, LuDollarSign } from "react-icons/lu";
 
 export default function OrderStats({ orders, isSearching, searchTerm, orderStatus, paymentStatus }) {
   // Calculate statistics
@@ -24,16 +23,6 @@ export default function OrderStats({ orders, isSearching, searchTerm, orderStatu
     }
     return acc;
   }, {});
-
-  const totalRevenue = orders.reduce((sum, order) => {
-    return sum + (parseFloat(order.total_amount) || 0);
-  }, 0);
-
-  const totalCarrierCosts = orders.reduce((sum, order) => {
-    return sum + (parseFloat(order.carrier_amount) || 0);
-  }, 0);
-
-  const profit = totalRevenue - totalCarrierCosts;
 
   if (totalOrders === 0) {
     return null;
@@ -71,7 +60,7 @@ export default function OrderStats({ orders, isSearching, searchTerm, orderStatu
 
         {/* Quick Stats Grid */}
         {!isSearching && !orderStatus && !paymentStatus && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {/* Order Status Stats */}
             <div className="bg-gray-800/30 rounded-xl p-3 border border-gray-800">
               <div className="flex items-center gap-2 mb-2">
@@ -102,72 +91,9 @@ export default function OrderStats({ orders, isSearching, searchTerm, orderStatu
                 {statusCounts.added || 0}
               </div>
             </div>
-
-            <div className="bg-gray-800/30 rounded-xl p-3 border border-gray-800">
-              <div className="flex items-center gap-2 mb-2">
-                <LuDollarSign size={16} className="text-green-600" />
-                <span className="text-xs text-gray-400 uppercase tracking-wide">Revenue</span>
-              </div>
-              <div className="text-lg font-bold text-green-600">
-                <Currency amount={totalRevenue} currency="cad" />
-              </div>
-            </div>
           </div>
         )}
       </div>
-
-      {/* Financial Summary (only show when not filtering) */}
-      {!isSearching && !orderStatus && !paymentStatus && totalOrders > 0 && (
-        <div className="grid md:grid-cols-3 gap-4">
-          {/* Revenue */}
-          <div className="bg-dark4 border border-gray-800 rounded-[30px] p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center">
-                <LuDollarSign size={16} className="text-green-600" />
-              </div>
-              <div>
-                <p className="text-green-600 font-medium">Total Revenue</p>
-                <p className="text-xs text-gray-400">Customer payments</p>
-              </div>
-            </div>
-            <div className="text-xl font-bold text-green-600">
-              <Currency amount={totalRevenue} currency="cad" />
-            </div>
-          </div>
-
-          {/* Carrier Costs */}
-          <div className="bg-dark4 border border-gray-800 rounded-[30px] p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center">
-                <LuTruck size={16} className="text-orange-600" />
-              </div>
-              <div>
-                <p className="text-orange-600 font-medium">Carrier Costs</p>
-                <p className="text-xs text-gray-400">Carrier payments</p>
-              </div>
-            </div>
-            <div className="text-xl font-bold text-orange-600">
-              <Currency amount={totalCarrierCosts} currency="cad" />
-            </div>
-          </div>
-
-          {/* Profit */}
-          <div className="bg-dark4 border border-gray-800 rounded-[30px] p-4">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 bg-gray-800 rounded-lg flex items-center justify-center">
-                <LuTrendingUp size={16} className={profit >= 0 ? 'text-blue-600' : 'text-red-600'} />
-              </div>
-              <div>
-                <p className={`${profit >= 0 ? 'text-blue-600' : 'text-red-600'} font-medium`}>Net Profit</p>
-                <p className="text-xs text-gray-400">Revenue - Costs</p>
-              </div>
-            </div>
-            <div className={`text-xl font-bold ${profit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-              <Currency amount={profit} currency="cad" />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Payment Status Breakdown (only when not filtering by payment) */}
       {!isSearching && !paymentStatus && totalOrders > 0 && (

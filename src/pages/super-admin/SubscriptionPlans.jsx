@@ -40,6 +40,7 @@ export default function SubscriptionPlans() {
     description: '',
     isActive: true,
     limits: { maxUsers: 10, maxOrders: 1000, maxCustomers: 1000, maxCarriers: 500 },
+    allowedModules: ['outsourcing', 'regular'],
     featuresInput: ''
   });
 
@@ -65,6 +66,17 @@ export default function SubscriptionPlans() {
 
   const onChange = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
   const onLimitChange = (key, value) => setForm(prev => ({ ...prev, limits: { ...prev.limits, [key]: value } }));
+  
+  const onModuleToggle = (module) => {
+    setForm(prev => {
+      const current = prev.allowedModules || [];
+      if (current.includes(module)) {
+        return { ...prev, allowedModules: current.filter(m => m !== module) };
+      } else {
+        return { ...prev, allowedModules: [...current, module] };
+      }
+    });
+  };
 
   const resetForm = () => {
     setForm({
@@ -73,6 +85,7 @@ export default function SubscriptionPlans() {
       description: '',
       isActive: true,
       limits: { maxUsers: 10, maxOrders: 1000, maxCustomers: 1000, maxCarriers: 500 },
+      allowedModules: ['outsourcing', 'regular'],
       featuresInput: ''
     });
   };
@@ -98,7 +111,8 @@ export default function SubscriptionPlans() {
           ...(form?.limits?.maxCustomers ? { maxCustomers: Number(form.limits.maxCustomers) } : {}),
           ...(form?.limits?.maxCarriers ? { maxCarriers: Number(form.limits.maxCarriers) } : {})
         },
-        features
+        features,
+        allowedModules: form.allowedModules
       };
 
       const res = await Api.post('/api/super-admin/subscription-plans', payload);
@@ -133,6 +147,7 @@ export default function SubscriptionPlans() {
         maxCustomers: plan.limits?.maxCustomers || 1000,
         maxCarriers: plan.limits?.maxCarriers || 500
       },
+      allowedModules: Array.isArray(plan.allowedModules) ? plan.allowedModules : ['outsourcing'],
       featuresInput: Array.isArray(plan.features) ? plan.features.join(', ') : ''
     });
   };
@@ -160,7 +175,8 @@ export default function SubscriptionPlans() {
           maxCustomers: Number(form.limits.maxCustomers),
           maxCarriers: Number(form.limits.maxCarriers)
         },
-        features
+        features,
+        allowedModules: form.allowedModules
       };
 
       console.log('Frontend: Updating plan with payload:', payload);
@@ -269,6 +285,28 @@ export default function SubscriptionPlans() {
                       </Field> */}
                     </div>
 
+                    <div className="mt-4">
+                      <label className="block text-sm text-gray-300 mb-2">Included Modules</label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={form.allowedModules?.includes('outsourcing')} 
+                            onChange={() => onModuleToggle('outsourcing')}
+                          />
+                          Outsourcing (Carriers)
+                        </label>
+                        <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={form.allowedModules?.includes('regular')} 
+                            onChange={() => onModuleToggle('regular')}
+                          />
+                          Regular (Trucking)
+                        </label>
+                      </div>
+                    </div>
+
                     <div className="mt-6 flex items-center justify-end gap-2">
                       <button type="submit" disabled={submitting} className="btn">
                         {submitting ? 'Creating…' : 'Create Plan'}
@@ -325,6 +363,13 @@ export default function SubscriptionPlans() {
                     <div className="text-sm  font-semibold">{p?.limits?.maxCarriers ?? '—'}</div>
                   </div>
                 </div>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {(p.allowedModules || ['outsourcing', 'regular']).map(m => (
+                    <span key={m} className="px-3 py-1 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-300 font-bold uppercase tracking-wider">
+                      {m === 'outsourcing' ? 'Outsourcing' : 'Regular'}
+                    </span>
+                  ))}
+                </div>
                 <div className="mt-6 flex gap-3 justify-between">
                   <button onClick={() => startEdit(p)} className="w-full rounded-xl btn px-4 text-xs py-2">Edit</button>
                   <button onClick={() => startDelete(p)} className="w-full px-4 py-2 bg-red-600 text-xs text-white rounded-xl hover:bg-red-700">Delete</button>
@@ -370,6 +415,27 @@ export default function SubscriptionPlans() {
                   <Field label="Features (comma-separated)">
                     <input className="input-sm" value={form.featuresInput} onChange={e => onChange('featuresInput', e.target.value)} placeholder="analytics, priority-support, custom-reports" />
                   </Field>
+                  <div className="mt-4">
+                    <label className="block text-sm text-gray-300 mb-2">Included Modules</label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={form.allowedModules?.includes('outsourcing')} 
+                          onChange={() => onModuleToggle('outsourcing')}
+                        />
+                        Outsourcing (Carriers)
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={form.allowedModules?.includes('regular')} 
+                          onChange={() => onModuleToggle('regular')}
+                        />
+                        Regular (Trucking)
+                      </label>
+                    </div>
+                  </div>
                   <div className="flex gap-4">
                     <Toggle label="Active" checked={form.isActive} onChange={(checked) => onChange('isActive', checked)} />
                   </div>

@@ -3,8 +3,10 @@ import AuthLayout from '../../layout/AuthLayout';
 import revanue from '../../img/revenue-graph.png'
 import loads from '../../img/loads-stats.png';
 import { FaRegCreditCard } from "react-icons/fa6";
-
+import { TbUserSquareRounded } from "react-icons/tb";
 import { TbTruckDelivery } from "react-icons/tb";
+import { HiOutlineUserCircle } from "react-icons/hi2";
+import { FiBox } from "react-icons/fi";
 import RecentOrdersLists from './order/RecentOrderLists';
 import Api from '../../api/Api';
 import { Link } from 'react-router-dom';
@@ -15,30 +17,24 @@ import { useMultiTenant } from '../../context/MultiTenantProvider';
 import safeStorage from '../../utils/safeStorage';
 
 export default function Overview() {
-  const { user: authUser } = useAuth(); // Multi-tenant auth user
+  const { user: authUser, activeModule, setActiveModule } = useAuth(); // Multi-tenant auth user
   const { user } = useContext(UserContext); // Legacy user context
   const { tenant } = useMultiTenant();
-  
-  // Debug logging
-  console.log('Overview Debug:', {
-    tenant,
-    authUser,
-    legacyUser: user,
-    url: window.location.href,
-    token: safeStorage.getItem('token')?.substring(0, 20) + '...',
-    tenantContext: safeStorage.getItem('tenantContext'),
-    isEmulating: safeStorage.getItem('emulationBackup')
-  });
   
   // Use multi-tenant auth user if available, fallback to legacy
   const currentUser = authUser || user;
   const isAdmin = currentUser?.role === 3 || currentUser?.isTenantAdmin;
+  const allowedModules = Array.isArray(currentUser?.allowedModules) ? currentUser.allowedModules : ['outsourcing', 'regular'];
   
   const [lists, setLists] = useState([]);
   const [adminData, setAdminData] = useState(null);
   const [carriersData, setCarriersData] = useState([]);
   const [customersData, setCustomersData] = useState([]);
   const [topListLoading,setTopListLoading] = useState(true);
+
+  // Fleet stats (for Trailer module)
+  const [fleetStats, setFleetStats] = useState({ drivers: 0, trucks: 0, trailers: 0 });
+
   useEffect(() => { 
     // Fetch regular overview data
     Api.get('/overview').then((res) => {
@@ -50,6 +46,21 @@ export default function Overview() {
       setTopListLoading(false)
       console.log(err);
     });
+
+    // Fetch fleet stats if Regular module active
+    if (allowedModules.includes('regular')) {
+      Promise.all([
+        Api.get('/drivers/listings').catch(() => ({ data: { lists: [] } })),
+        Api.get('/trucks/listings').catch(() => ({ data: { lists: [] } })),
+        Api.get('/trailers/listings').catch(() => ({ data: { lists: [] } }))
+      ]).then(([drivers, trucks, trailers]) => {
+        setFleetStats({
+          drivers: drivers.data.lists?.length || 0,
+          trucks: trucks.data.lists?.length || 0,
+          trailers: trailers.data.lists?.length || 0
+        });
+      });
+    }
     
     // Fetch admin data if user is admin
     if (isAdmin) {
@@ -71,143 +82,221 @@ export default function Overview() {
         console.log('Admin data fetch error:', err);
       });
     }
-  }, [isAdmin]);
+  }, [isAdmin, allowedModules]);
 
   return (
       <AuthLayout> 
-         <h2 className='text-gray-200 font-bold text-2xl md:text-3xl lg:text-4xl mb-4'>
-           Welcome to {adminData?.tenantInfo?.tenant?.name || currentUser?.company?.name || tenant?.name}
-           {isAdmin && <span className='text-lg text-blue-400 ml-2'>(Admin)</span>}
-         </h2>
-         {isAdmin && (
-           <p className='text-gray-400 mb-8 text-lg'>
-             You have administrative access to manage your company and employees.
-           </p>
-         )}
-         <div className='flex justify-between items-center'>
-            <h2 className='text-white text-2xl'>Overview</h2>
-            {/* <div className='filter'>
-               <button className='text-gray-400 px-[15px] py-[8px] border border-gray-800 rounded-[30px] text-sm ms-2'>Weekly</button>
-               <button className='text-gray-400 px-[15px] py-[8px] border border-gray-800 rounded-[30px] text-sm ms-2'>Monthly</button>
-               <button className='text-gray-400 px-[15px] py-[8px] border border-gray-800 rounded-[30px] text-sm ms-2'>Yearly</button>
-            </div> */}
+         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+           <div>
+             <h2 className='text-[#EDEFF6] font-bold text-3xl md:text-4xl mb-2 flex items-center gap-3'>
+               Welcome to {adminData?.tenantInfo?.tenant?.name || currentUser?.company?.name || tenant?.name}
+               {isAdmin && <span className='text-[14px] bg-[#4EA1FF]/10 text-[#4EA1FF] px-3 py-1 rounded-full border border-[#4EA1FF]/20'>(Admin)</span>}
+             </h2>
+             <p className='text-[#8A8FA3] text-lg'>
+               You have administrative access to manage your company and employees.
+             </p>
+           </div>
 
+           {/* Module Switcher Tabs (Modern UI) */}
+           {allowedModules.length > 1 && (
+             <div className="flex bg-[#1B1E27] p-1.5 rounded-2xl border border-white/5 shadow-inner">
+               <button
+                 onClick={() => setActiveModule('outsourcing')}
+                 className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-6 rounded-xl transition-all duration-300 ${
+                   activeModule === 'outsourcing' ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
+                 }`}
+               >
+                 OUTSOURCING
+               </button>
+               <button
+                 onClick={() => setActiveModule('regular')}
+                 className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-6 rounded-xl transition-all duration-300 ${
+                   activeModule === 'regular' ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
+                 }`}
+               >
+                 REGULAR
+               </button>
+             </div>
+           )}
          </div>
-         <div className='total-leads mt-4 grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3'>
-             {topListLoading ? 
-              // Add 8 boxes when loadind
-              <>
-              {Array.from({ length: 8 }).map((_, index) => (
-                <div key={index} className='bg-[#131313] lead border border-gray-300 border-gray-700 rounded-[30px] p-[20px] md:p-[25px] min-h-[100px]  md:min-h-[170px] opacity-[0.7] animate animate-pulse'>
-                 <div className='bg-gray-700 w-[60%] p-2 rounded-xl'></div>
-                 <div className='bg-gray-700 mt-4 w-[90%] p-2 rounded-xl'></div>
-                </div>
-              ))}
-              </>
-             :
-             <>
-              {lists && lists.map((item, index) => {
-                return <>
-                <Link to={item.link} className={`hover:!bg-[#131313] hover:border-gray-800 lead border border-gray-700 rounded-[30px] p-[20px] md:p-[25px]`}>
-                    <h2 className='text-gray-300 mb-1 text-normal md:text-xl'>{item.title}</h2>
-                    <div className='cals flex items-center justify-start mb-3 mt-4'> 
-                      {item.icon === 'van' ?
-                          <TbTruckDelivery className='text-5xl text-gray-400 me-4' />
-                          :
-                          <FaRegCreditCard className='text-4xl text-gray-400 me-4' />
-                      }
-                      <h2 className='font-bold text-white text-4xl  '>{item.data}</h2>
-                    </div>
-                      <div className='bg-[#D278D5] h-[3px] !mt-4 w-[40px]'></div>
-                </Link>
+
+         <div className='flex justify-between items-center mb-6'>
+            <h2 className='text-[#EDEFF6] text-2xl font-bold tracking-tight'>{activeModule === 'outsourcing' ? 'Outsourcing Overview' : 'Regular Overview'}</h2>
+         </div>
+
+         {activeModule === 'outsourcing' ? (
+           <div className='total-leads mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+               {topListLoading ? 
+                <>
+                {Array.from({ length: 8 }).map((_, index) => (
+                  <div key={index} className='bg-[#11131A] border border-white/5 rounded-[32px] p-8 min-h-[180px] animate-pulse shadow-xl'>
+                   <div className='bg-white/5 w-[50%] h-4 rounded-full mb-6'></div>
+                   <div className='bg-white/5 w-[80%] h-12 rounded-2xl'></div>
+                  </div>
+                ))}
                 </>
-              })}
-             </>
-             } 
-         </div>
+               :
+               <>
+                {lists && lists.map((item, index) => (
+                  <Link key={index} to={item.link} className="group relative bg-[#11131A] hover:bg-[#181C24] border border-white/5 hover:border-[#B39CF6]/30 rounded-[32px] p-8 transition-all duration-500 hover:-translate-y-2 shadow-xl hover:shadow-[#B39CF6]/10">
+                      <h2 className='text-[#8A8FA3] mb-4 text-sm uppercase font-black tracking-widest'>{item.title}</h2>
+                      <div className='flex items-center justify-between'> 
+                        <h2 className='font-bold text-[#EDEFF6] text-5xl tracking-tighter'>{item.data}</h2>
+                        <div className="p-4 bg-[#B39CF6]/10 rounded-2xl group-hover:bg-[#B39CF6]/20 transition-colors">
+                          {item.icon === 'van' ?
+                              <TbTruckDelivery className='text-3xl text-[#B39CF6]' />
+                              :
+                              <FaRegCreditCard className='text-3xl text-[#B39CF6]' />
+                          }
+                        </div>
+                      </div>
+                      <div className='absolute bottom-0 left-8 right-8 h-[4px] bg-[#B39CF6] rounded-t-full opacity-40 group-hover:opacity-100 transition-opacity duration-500'></div>
+                  </Link>
+                ))}
+               </>
+               } 
+           </div>
+         ) : (
+           <div className='fleet-stats mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'>
+              <Link to='/drivers' className='group relative bg-[#11131A] hover:bg-[#181C24] border border-white/5 hover:border-[#4EA1FF]/30 rounded-[32px] p-8 transition-all duration-500 hover:-translate-y-2 shadow-xl hover:shadow-[#4EA1FF]/10'>
+                  <h2 className='text-[#8A8FA3] mb-4 text-sm uppercase font-black tracking-widest'>Total Drivers</h2>
+                  <div className='flex items-center justify-between'> 
+                    <h2 className='font-bold text-[#EDEFF6] text-5xl tracking-tighter'>{fleetStats.drivers}</h2>
+                    <div className="p-4 bg-[#4EA1FF]/10 rounded-2xl group-hover:bg-[#4EA1FF]/20 transition-colors">
+                      <HiOutlineUserCircle className='text-3xl text-[#4EA1FF]' />
+                    </div>
+                  </div>
+                  <div className='absolute bottom-0 left-8 right-8 h-[4px] bg-[#4EA1FF] rounded-t-full opacity-40 group-hover:opacity-100 transition-opacity duration-500'></div>
+              </Link>
+              <Link to='/trucks' className='group relative bg-[#11131A] hover:bg-[#181C24] border border-white/5 hover:border-[#4EA1FF]/30 rounded-[32px] p-8 transition-all duration-500 hover:-translate-y-2 shadow-xl hover:shadow-[#4EA1FF]/10'>
+                  <h2 className='text-[#8A8FA3] mb-4 text-sm uppercase font-black tracking-widest'>Total Trucks</h2>
+                  <div className='flex items-center justify-between'> 
+                    <h2 className='font-bold text-[#EDEFF6] text-5xl tracking-tighter'>{fleetStats.trucks}</h2>
+                    <div className="p-4 bg-[#4EA1FF]/10 rounded-2xl group-hover:bg-[#4EA1FF]/20 transition-colors">
+                      <TbTruckDelivery className='text-3xl text-[#4EA1FF]' />
+                    </div>
+                  </div>
+                  <div className='absolute bottom-0 left-8 right-8 h-[4px] bg-[#4EA1FF] rounded-t-full opacity-40 group-hover:opacity-100 transition-opacity duration-500'></div>
+              </Link>
+              <Link to='/trailers' className='group relative bg-[#11131A] hover:bg-[#181C24] border border-white/5 hover:border-[#4EA1FF]/30 rounded-[32px] p-8 transition-all duration-500 hover:-translate-y-2 shadow-xl hover:shadow-[#4EA1FF]/10'>
+                  <h2 className='text-[#8A8FA3] mb-4 text-sm uppercase font-black tracking-widest'>Total Trailers</h2>
+                  <div className='flex items-center justify-between'> 
+                    <h2 className='font-bold text-[#EDEFF6] text-5xl tracking-tighter'>{fleetStats.trailers}</h2>
+                    <div className="p-4 bg-[#4EA1FF]/10 rounded-2xl group-hover:bg-[#4EA1FF]/20 transition-colors">
+                      <FiBox className='text-3xl text-[#4EA1FF]' />
+                    </div>
+                  </div>
+                  <div className='absolute bottom-0 left-8 right-8 h-[4px] bg-[#4EA1FF] rounded-t-full opacity-40 group-hover:opacity-100 transition-opacity duration-500'></div>
+              </Link>
+              <Link to='/customers' className='group relative bg-[#11131A] hover:bg-[#181C24] border border-white/5 hover:border-[#4EA1FF]/30 rounded-[32px] p-8 transition-all duration-500 hover:-translate-y-2 shadow-xl hover:shadow-[#4EA1FF]/10'>
+                  <h2 className='text-[#8A8FA3] mb-4 text-sm uppercase font-black tracking-widest'>Total Customers</h2>
+                  <div className='flex items-center justify-between'> 
+                    <h2 className='font-bold text-[#EDEFF6] text-5xl tracking-tighter'>{customersData.length}</h2>
+                    <div className="p-4 bg-[#4EA1FF]/10 rounded-2xl group-hover:bg-[#4EA1FF]/20 transition-colors">
+                      <TbUserSquareRounded className='text-3xl text-[#4EA1FF]' />
+                    </div>
+                  </div>
+                  <div className='absolute bottom-0 left-8 right-8 h-[4px] bg-[#4EA1FF] rounded-t-full opacity-40 group-hover:opacity-100 transition-opacity duration-500'></div>
+              </Link>
+           </div>
+         )}
 
          {/* Admin Features Section */}
          {isAdmin && (
-           <div className='admin-section mt-8'>
-             <div className='flex justify-between items-center mb-4'>
-               <h2 className='text-white text-2xl'>Admin Overview</h2>
-               <span className='text-gray-400 text-sm bg-gray-800 px-3 py-1 rounded-full'>Admin Access</span>
+           <div className='admin-section mt-12'>
+             <div className='flex justify-between items-center mb-6'>
+               <h2 className='text-white text-2xl font-bold tracking-tight'>Admin Overview</h2>
+               <span className='text-[#4EA1FF] text-[10px] uppercase font-black tracking-widest bg-[#4EA1FF]/10 px-4 py-1.5 rounded-full border border-[#4EA1FF]/20'>Admin Access</span>
              </div>
              
-             <div className='admin-cards grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-6'>
+             <div className='admin-cards grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10'>
                {/* Company Info Card */}
-               <div className='admin-card border border-gray-700 rounded-[30px] p-[20px] md:p-[25px] bg-gradient-to-br from-gray-900 to-gray-800'>
-                 <h3 className='text-gray-300 mb-1 text-normal md:text-lg'>Company Info</h3>
-                 <div className='mt-4'>
-                   <p className='text-white text-sm'>{adminData?.tenantInfo?.tenant?.name || currentUser?.company?.name || tenant?.name}</p>
-                   <p className='text-gray-400 text-xs mt-1'>Tenant Admin</p>
+               <div className='group relative bg-[#11131A] hover:bg-[#181C24] border border-white/5 hover:border-[#4EA1FF]/30 rounded-[32px] p-8 transition-all duration-500 hover:-translate-y-2 shadow-xl hover:shadow-[#4EA1FF]/10 overflow-hidden'>
+                 <h2 className='text-[#8A8FA3] mb-4 text-sm uppercase font-black tracking-widest'>Company Info</h2>
+                 <div className='flex flex-col'>
+                   <p className='text-white font-bold text-xl tracking-tight leading-tight'>{adminData?.tenantInfo?.tenant?.name || currentUser?.company?.name || tenant?.name}</p>
+                   <p className='text-[#8A8FA3] text-xs mt-2 uppercase font-bold tracking-wider'>Tenant Admin</p>
                  </div>
-                 <div className='bg-blue-500 h-[3px] mt-4 w-[40px]'></div>
+                 <div className='absolute bottom-0 left-8 right-8 h-[4px] bg-[#4EA1FF] rounded-t-full opacity-40 group-hover:opacity-100 transition-opacity duration-500'></div>
                </div>
 
                {/* Total Revenue Card */}
                {adminData?.analytics?.summary && (
-                 <div className='admin-card border border-gray-700 rounded-[30px] p-[20px] md:p-[25px] bg-gradient-to-br from-gray-900 to-gray-800'>
-                   <h3 className='text-gray-300 mb-1 text-normal md:text-lg'>Total Revenue</h3>
-                   <div className='flex items-center mt-4'>
-                     <FaRegCreditCard className='text-3xl text-green-400 me-3' />
-                     <h2 className='font-bold text-white text-2xl'>
+                 <div className='group relative bg-[#11131A] hover:bg-[#181C24] border border-white/5 hover:border-[#10B981]/30 rounded-[32px] p-8 transition-all duration-500 hover:-translate-y-2 shadow-xl hover:shadow-[#10B981]/10 overflow-hidden'>
+                   <h2 className='text-[#8A8FA3] mb-4 text-sm uppercase font-black tracking-widest'>Total Revenue</h2>
+                   <div className='flex items-center justify-between'> 
+                     <h2 className='font-bold text-[#EDEFF6] text-4xl tracking-tighter'>
                        ${(adminData.analytics.summary.totalRevenue || 0).toLocaleString()}
                      </h2>
+                     <div className="p-4 bg-[#10B981]/10 rounded-2xl group-hover:bg-[#10B981]/20 transition-colors">
+                       <FaRegCreditCard className='text-3xl text-[#10B981]' />
+                     </div>
                    </div>
-                   <div className='bg-green-500 h-[3px] mt-4 w-[40px]'></div>
+                   <div className='absolute bottom-0 left-8 right-8 h-[4px] bg-[#10B981] rounded-t-full opacity-40 group-hover:opacity-100 transition-opacity duration-500'></div>
                  </div>
                )}
 
                {/* New Customers Card */}
                {adminData?.analytics?.summary && (
-                 <div className='admin-card border border-gray-700 rounded-[30px] p-[20px] md:p-[25px] bg-gradient-to-br from-gray-900 to-gray-800'>
-                   <h3 className='text-gray-300 mb-1 text-normal md:text-lg'>New Customers</h3>
-                   <div className='flex items-center mt-4'>
-                     <TbTruckDelivery className='text-4xl text-purple-400 me-3' />
-                     <h2 className='font-bold text-white text-3xl'>{adminData.analytics.summary.newCustomers || 0}</h2>
+                 <div className='group relative bg-[#11131A] hover:bg-[#181C24] border border-white/5 hover:border-[#8B5CF6]/30 rounded-[32px] p-8 transition-all duration-500 hover:-translate-y-2 shadow-xl hover:shadow-[#8B5CF6]/10 overflow-hidden'>
+                   <h2 className='text-[#8A8FA3] mb-4 text-sm uppercase font-black tracking-widest'>New Customers</h2>
+                   <div className='flex items-center justify-between'> 
+                     <h2 className='font-bold text-[#EDEFF6] text-5xl tracking-tighter'>{adminData.analytics.summary.newCustomers || 0}</h2>
+                     <div className="p-4 bg-[#8B5CF6]/10 rounded-2xl group-hover:bg-[#8B5CF6]/20 transition-colors">
+                       <TbTruckDelivery className='text-3xl text-[#8B5CF6]' />
+                     </div>
                    </div>
-                   <div className='bg-purple-500 h-[3px] mt-4 w-[40px]'></div>
+                   <div className='absolute bottom-0 left-8 right-8 h-[4px] bg-[#8B5CF6] rounded-t-full opacity-40 group-hover:opacity-100 transition-opacity duration-500'></div>
                  </div>
                )}
 
                {/* User Usage Card */}
                {adminData?.usage && (
-                 <div className='admin-card border border-gray-700 rounded-[30px] p-[20px] md:p-[25px] bg-gradient-to-br from-gray-900 to-gray-800'>
-                   <h3 className='text-gray-300 mb-1 text-normal md:text-lg'>Team Size</h3>
-                   <div className='flex items-center mt-4'>
-                     <TbTruckDelivery className='text-4xl text-blue-400 me-3' />
-                     <h2 className='font-bold text-white text-3xl'>
-                       {adminData.usage.usage?.users || 0}
-                     </h2>
+                 <div className='group relative bg-[#11131A] hover:bg-[#181C24] border border-white/5 hover:border-[#3B82F6]/30 rounded-[32px] p-8 transition-all duration-500 hover:-translate-y-2 shadow-xl hover:shadow-[#3B82F6]/10 overflow-hidden'>
+                   <h2 className='text-[#8A8FA3] mb-4 text-sm uppercase font-black tracking-widest'>Team Size</h2>
+                   <div className='flex items-center justify-between'> 
+                     <div className='flex flex-col'>
+                       <h2 className='font-bold text-[#EDEFF6] text-5xl tracking-tighter'>{adminData.usage.usage?.users || 0}</h2>
+                       <p className='text-[#8A8FA3] text-[10px] uppercase font-bold tracking-widest mt-1'>
+                         of {adminData.usage.limits?.maxUsers || '∞'} max
+                       </p>
+                     </div>
+                     <div className="p-4 bg-[#3B82F6]/10 rounded-2xl group-hover:bg-[#3B82F6]/20 transition-colors">
+                       <TbTruckDelivery className='text-3xl text-[#3B82F6]' />
+                     </div>
                    </div>
-                   <p className='text-gray-400 text-xs mt-2'>
-                     of {adminData.usage.limits?.maxUsers || '∞'} max users
-                   </p>
-                   <div className='bg-blue-500 h-[3px] mt-4 w-[40px]'></div>
+                   <div className='absolute bottom-0 left-8 right-8 h-[4px] bg-[#3B82F6] rounded-t-full opacity-40 group-hover:opacity-100 transition-opacity duration-500'></div>
                  </div>
                )}
 
                {/* Carriers Count Card */}
-               <div className='admin-card border border-gray-700 rounded-[30px] p-[20px] md:p-[25px] bg-gradient-to-br from-gray-900 to-gray-800'>
-                 <h3 className='text-gray-300 mb-1 text-normal md:text-lg'>Total Carriers</h3>
-                 <div className='flex items-center mt-4'>
-                   <TbTruckDelivery className='text-4xl text-blue-400 me-3' />
-                   <h2 className='font-bold text-white text-3xl'>{carriersData.length}</h2>
+               <div className='group relative bg-[#11131A] hover:bg-[#181C24] border border-white/5 hover:border-[#3B82F6]/30 rounded-[32px] p-8 transition-all duration-500 hover:-translate-y-2 shadow-xl hover:shadow-[#3B82F6]/10 overflow-hidden'>
+                 <h2 className='text-[#8A8FA3] mb-4 text-sm uppercase font-black tracking-widest'>Total Carriers</h2>
+                 <div className='flex items-center justify-between'> 
+                   <div className='flex flex-col'>
+                     <h2 className='font-bold text-[#EDEFF6] text-5xl tracking-tighter'>{carriersData.length}</h2>
+                     <p className='text-[#8A8FA3] text-[10px] uppercase font-bold tracking-widest mt-1'>Active carriers</p>
+                   </div>
+                   <div className="p-4 bg-[#3B82F6]/10 rounded-2xl group-hover:bg-[#3B82F6]/20 transition-colors">
+                     <TbTruckDelivery className='text-3xl text-[#3B82F6]' />
+                   </div>
                  </div>
-                 <p className='text-gray-400 text-xs mt-2'>Active carriers</p>
-                 <div className='bg-blue-500 h-[3px] mt-4 w-[40px]'></div>
+                 <div className='absolute bottom-0 left-8 right-8 h-[4px] bg-[#3B82F6] rounded-t-full opacity-40 group-hover:opacity-100 transition-opacity duration-500'></div>
                </div>
 
                {/* Customers Count Card */}
-               <div className='admin-card border border-gray-700 rounded-[30px] p-[20px] md:p-[25px] bg-gradient-to-br from-gray-900 to-gray-800'>
-                 <h3 className='text-gray-300 mb-1 text-normal md:text-lg'>Total Customers</h3>
-                 <div className='flex items-center mt-4'>
-                   <FaRegCreditCard className='text-3xl text-green-400 me-3' />
-                   <h2 className='font-bold text-white text-3xl'>{customersData.length}</h2>
+               <div className='group relative bg-[#11131A] hover:bg-[#181C24] border border-white/5 hover:border-[#10B981]/30 rounded-[32px] p-8 transition-all duration-500 hover:-translate-y-2 shadow-xl hover:shadow-[#10B981]/10 overflow-hidden'>
+                 <h2 className='text-[#8A8FA3] mb-4 text-sm uppercase font-black tracking-widest'>Total Customers</h2>
+                 <div className='flex items-center justify-between'> 
+                   <div className='flex flex-col'>
+                     <h2 className='font-bold text-[#EDEFF6] text-5xl tracking-tighter'>{customersData.length}</h2>
+                     <p className='text-[#8A8FA3] text-[10px] uppercase font-bold tracking-widest mt-1'>Active customers</p>
+                   </div>
+                   <div className="p-4 bg-[#10B981]/10 rounded-2xl group-hover:bg-[#10B981]/20 transition-colors">
+                     <FaRegCreditCard className='text-3xl text-[#10B981]' />
+                   </div>
                  </div>
-                 <p className='text-gray-400 text-xs mt-2'>Active customers</p>
-                 <div className='bg-green-500 h-[3px] mt-4 w-[40px]'></div>
+                 <div className='absolute bottom-0 left-8 right-8 h-[4px] bg-[#10B981] rounded-t-full opacity-40 group-hover:opacity-100 transition-opacity duration-500'></div>
                </div>
              </div>
 

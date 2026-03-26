@@ -21,6 +21,7 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
   const [phones, setPhones] = useState(item?.driverProfile?.phones?.filter(p => !p.is_primary).map(p => p.phone) || [""]);
   
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
   
   const resetForm = () => {
     setName(""); setEmail(""); setPhone(""); setCountry(""); setAddress("");
@@ -48,7 +49,8 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
         emails: emails.filter(Boolean),
         phones: phones.filter(Boolean)
       };
-      const resp = await Api.post('/driver/add', body);
+      const endpoint = item ? `/driver/edit/${item._id}` : '/driver/add';
+      const resp = await Api.post(endpoint, body);
       if (resp.data.status) {
         const newUser = resp.data.user;
         // If a license document is selected, upload it as employee document
@@ -93,84 +95,152 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
                 <HiOutlineUserCircle className='text-rose-300' size={22} />
               </div>
               <div>
-                <h3 className='text-white text-xl font-bold'>Add Driver</h3>
-                <p className='text-gray-400 text-xs'>Create a driver profile with contacts and compliance docs</p>
+                <h3 className='text-white text-xl font-bold'>{item ? 'Edit Driver Profile' : 'Add Driver'}</h3>
+                <p className='text-gray-400 text-xs'>{item ? 'Update driver rates, documents and background details' : 'Create a driver profile with contacts and compliance docs'}</p>
               </div>
             </div>
           </div>
           
           <div className='p-6'>
-          
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-            <div>
-              <label className='label text-gray-300'>Name</label>
-              <input className='input-sm' value={name} onChange={(e)=>setName(e.target.value)} placeholder='Driver name' />
+            {/* Tab Header */}
+            <div className='flex gap-4 border-b border-gray-800 mb-6'>
+              <button 
+                onClick={() => setActiveTab("general")}
+                className={`pb-2 px-1 text-sm font-medium transition-colors relative ${activeTab === "general" ? "text-rose-400" : "text-gray-500 hover:text-gray-300"}`}
+              >
+                General Info
+                {activeTab === "general" && <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-rose-400'></div>}
+              </button>
+              <button 
+                onClick={() => setActiveTab("contacts")}
+                className={`pb-2 px-1 text-sm font-medium transition-colors relative ${activeTab === "contacts" ? "text-rose-400" : "text-gray-500 hover:text-gray-300"}`}
+              >
+                Contacts
+                {activeTab === "contacts" && <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-rose-400'></div>}
+              </button>
+              <button 
+                onClick={() => setActiveTab("payment")}
+                className={`pb-2 px-1 text-sm font-medium transition-colors relative ${activeTab === "payment" ? "text-rose-400" : "text-gray-500 hover:text-gray-300"}`}
+              >
+                Payment Profile
+                {activeTab === "payment" && <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-rose-400'></div>}
+              </button>
             </div>
-            <div>
-              <label className='label text-gray-300'>Primary Email</label>
-              <input className='input-sm' type='email' value={email} onChange={(e)=>setEmail(e.target.value)} placeholder='Primary email' />
-            </div>
-            <div>
-              <label className='label text-gray-300'>Primary Phone</label>
-              <input className='input-sm' value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder='Primary phone' />
-            </div>
-            <div>
-              <label className='label text-gray-300'>Country</label>
-              <input className='input-sm' value={country} onChange={(e)=>setCountry(e.target.value)} placeholder='Country' />
-            </div>
-            <div className='md:col-span-2'>
-              <label className='label text-gray-300'>Address</label>
-              <input className='input-sm' value={address} onChange={(e)=>setAddress(e.target.value)} placeholder='Address' />
-            </div>
-          </div>
-          
-          <div className='mt-4'>
-            <label className='label text-gray-300'>Additional Emails</label>
-            {emails.map((e, idx)=>(
-              <div key={`em-${idx}`} className='flex items-center gap-2 mb-2'>
-                <input className='input-sm flex-1' type='email' value={e} onChange={(ev)=>changeEmailField(idx, ev.target.value)} placeholder='Email' />
-                {emails.length > 1 && (
-                  <button className='btn xs text-white bg-red-700' onClick={()=>removeEmailField(idx)}>Remove</button>
-                )}
+
+            {/* General Info Tab */}
+            {activeTab === "general" && (
+              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn'>
+                <div>
+                  <label className='label text-gray-300'>Name</label>
+                  <input className='input-sm' value={name} onChange={(e)=>setName(e.target.value)} placeholder='Driver name' />
+                </div>
+                <div>
+                  <label className='label text-gray-300'>Primary Email</label>
+                  <input className='input-sm' type='email' value={email} onChange={(e)=>setEmail(e.target.value)} placeholder='Primary email' />
+                </div>
+                <div>
+                  <label className='label text-gray-300'>Primary Phone</label>
+                  <input className='input-sm' value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder='Primary phone' />
+                </div>
+                <div>
+                  <label className='label text-gray-300'>Country</label>
+                  <input className='input-sm' value={country} onChange={(e)=>setCountry(e.target.value)} placeholder='Country' />
+                </div>
+                <div className='md:col-span-2'>
+                  <label className='label text-gray-300'>Address</label>
+                  <input className='input-sm' value={address} onChange={(e)=>setAddress(e.target.value)} placeholder='Address' />
+                </div>
               </div>
-            ))}
-            <button className='btn xs text-black' onClick={addEmailField}>Add Email</button>
-          </div>
-          
-          <div className='mt-4'>
-            <label className='label text-gray-300'>Additional Phones</label>
-            {phones.map((p, idx)=>(
-              <div key={`ph-${idx}`} className='flex items-center gap-2 mb-2'>
-                <input className='input-sm flex-1' value={p} onChange={(ev)=>changePhoneField(idx, ev.target.value)} placeholder='Phone' />
-                {phones.length > 1 && (
-                  <button className='btn xs text-white bg-red-700' onClick={()=>removePhoneField(idx)}>Remove</button>
-                )}
+            )}
+            
+            {/* Contacts Tab */}
+            {activeTab === "contacts" && (
+              <div className='animate-fadeIn'>
+                <div className=''>
+                  <label className='label text-gray-300'>Additional Emails</label>
+                  {emails.map((e, idx)=>(
+                    <div key={`em-${idx}`} className='flex items-center gap-2 mb-2'>
+                      <input className='input-sm flex-1' type='email' value={e} onChange={(ev)=>changeEmailField(idx, ev.target.value)} placeholder='Email' />
+                      {emails.length > 1 && (
+                        <button className='btn xs text-white bg-red-700' onClick={()=>removeEmailField(idx)}>Remove</button>
+                      )}
+                    </div>
+                  ))}
+                  <button className='btn xs text-black' onClick={addEmailField}>Add Email</button>
+                </div>
+                
+                <div className='mt-6'>
+                  <label className='label text-gray-300'>Additional Phones</label>
+                  {phones.map((p, idx)=>(
+                    <div key={`ph-${idx}`} className='flex items-center gap-2 mb-2'>
+                      <input className='input-sm flex-1' value={p} onChange={(ev)=>changePhoneField(idx, ev.target.value)} placeholder='Phone' />
+                      {phones.length > 1 && (
+                        <button className='btn xs text-white bg-red-700' onClick={()=>removePhoneField(idx)}>Remove</button>
+                      )}
+                    </div>
+                  ))}
+                  <button className='btn xs text-black' onClick={addPhoneField}>Add Phone</button>
+                </div>
               </div>
-            ))}
-            <button className='btn xs text-black' onClick={addPhoneField}>Add Phone</button>
-          </div>
+            )}
+
+            {/* Payment Profile Tab */}
+            {activeTab === "payment" && (
+              <div className='animate-fadeIn'>
+                <div className='grid grid-cols-1 gap-4'>
+                  <div>
+                    <label className='label text-gray-300 font-semibold'>Rate per Mile ($)</label>
+                    <div className='relative'>
+                      <span className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-500'>$</span>
+                      <input className='input-sm ps-8' type='number' step='0.01' value={ratePerMile} onChange={(e)=>setRatePerMile(e.target.value)} placeholder='e.g., 0.75' />
+                    </div>
+                    <p className='text-[10px] text-gray-500 mt-1'>This rate will be used to calculate salary for trips assigned to this driver.</p>
+                  </div>
+                  
+                  <div className='mt-2'>
+                    <label className='label text-gray-300 font-semibold'>Background Details & Notes</label>
+                    <textarea 
+                      className='input-sm min-h-[120px] py-3' 
+                      value={notes} 
+                      onChange={(e)=>setNotes(e.target.value)} 
+                      placeholder='Add any background information, history, or special payment notes...'
+                    />
+                  </div>
+
+                  <div className='mt-2'>
+                    <label className='label text-gray-300 font-semibold'>Files & Documents</label>
+                    <div className='border-2 border-dashed border-gray-800 rounded-xl p-6 flex flex-col items-center justify-center bg-gray-900/50 hover:bg-gray-900 transition-colors'>
+                      <input 
+                        id="driver-files"
+                        className='hidden' 
+                        type='file' 
+                        multiple 
+                        accept=".pdf,image/*,.doc,.docx" 
+                        onChange={(e)=>setLicenseDoc(e.target.files[0])} 
+                      />
+                      <label htmlFor="driver-files" className='cursor-pointer flex flex-col items-center'>
+                        <div className='w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center mb-3 text-rose-400'>
+                          <HiOutlineUserCircle size={24} />
+                        </div>
+                        <span className='text-sm text-gray-300 font-medium'>Click to upload files</span>
+                        <span className='text-xs text-gray-500 mt-1'>PDF, Images, or Documents</span>
+                      </label>
+                      {licenseDoc && (
+                        <div className='mt-4 p-2 bg-rose-500/10 border border-rose-500/20 rounded-lg flex items-center gap-2'>
+                          <span className='text-xs text-rose-300 truncate max-w-[200px]'>{licenseDoc.name}</span>
+                          <button onClick={() => setLicenseDoc(null)} className='text-rose-500 hover:text-rose-400'>&times;</button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-4 mt-4'>
-            <div>
-              <label className='label text-gray-300'>Rate per Mile</label>
-              <input className='input-sm' type='number' step='0.01' value={ratePerMile} onChange={(e)=>setRatePerMile(e.target.value)} placeholder='e.g., 0.75' />
+            <div className='flex justify-end gap-2 mt-10 pt-6 border-t border-gray-800'>
+              <button className='btn sm bg-gray-800 text-gray-200' onClick={()=>setOpen(false)}>Cancel</button>
+              <button className='btn sm main-btn text-black font-semibold px-8' disabled={loading} onClick={submit}>{loading ? 'Saving...' : 'Save Driver Profile'}</button>
             </div>
-            <div className='md:col-span-2'>
-              <label className='label text-gray-300'>Notes</label>
-              <input className='input-sm' value={notes} onChange={(e)=>setNotes(e.target.value)} placeholder='Optional notes' />
-            </div>
-          </div>
-          
-          <div className='mt-4'>
-            <label className='label text-gray-300'>License Document</label>
-            <input className='input-sm' type='file' accept=".pdf,image/*" onChange={(e)=>setLicenseDoc(e.target.files[0])} />
-            <p className='text-xs text-gray-400 mt-2'>Upload license or compliance doc. It will attach to this driver only.</p>
-          </div>
-          
-          <div className='flex justify-end gap-2 mt-6'>
-            <button className='btn sm bg-gray-800 text-gray-200' onClick={()=>setOpen(false)}>Cancel</button>
-            <button className='btn sm main-btn text-black font-semibold' disabled={loading} onClick={submit}>{loading ? 'Saving...' : 'Save Driver'}</button>
-          </div>
           </div>
         </div>
       </Popup>

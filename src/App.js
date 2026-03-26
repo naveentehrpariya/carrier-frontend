@@ -27,6 +27,7 @@ import AccountOrders from './pages/dashboard/accounts/AccountOrders';
 import OrderPDF from './pages/dashboard/order/OrderPDF';
 import CustomerInvoice from './pages/dashboard/order/CustomerInvoice';
 import ViewOrder from './pages/dashboard/order/View';
+import TripPlanning from './pages/dashboard/order/TripPlanning';
 import CompanyDetails from './pages/auth/CompanyDetails';
 import CustomerDetail from './pages/dashboard/customer/CustomerDetail';
 import EquipAndCommodity from './pages/dashboard/admin/EquipAndCommodity';
@@ -138,6 +139,11 @@ export default function App() {
                     <Route path="/view/order/:id" element={
                       <PrivateRoute>
                         <ViewOrder />
+                      </PrivateRoute>
+                    } />
+                    <Route path="/order/trip-planning/:id" element={
+                      <PrivateRoute>
+                        <TripPlanning />
                       </PrivateRoute>
                     } />
                     <Route path="/order/customer/invoice/:id" element={

@@ -11,12 +11,14 @@ import {
   ClockIcon,
   CreditCardIcon,
   UserGroupIcon,
-  ChevronRightIcon
+  ChevronRightIcon,
+  ShieldCheckIcon
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import Api from '../api/Api';
 import TenantActionModal from './TenantActionModal';
 import TimeFormat from '../pages/common/TimeFormat';
+import ManageUserModulesModal from './ManageUserModulesModal';
 
 export default function TenantManagement({ onViewTenant }) {
   const [tenants, setTenants] = useState([]);
@@ -24,6 +26,8 @@ export default function TenantManagement({ onViewTenant }) {
   const [selectedTenant, setSelectedTenant] = useState(null);
   const [actionType, setActionType] = useState(null);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [permissionsTenant, setPermissionsTenant] = useState(null);
+  const [permissionsOpen, setPermissionsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -190,6 +194,7 @@ export default function TenantManagement({ onViewTenant }) {
     // Always add view and edit actions
     actions.unshift({ type: 'view', label: 'View', icon: EyeIcon, color: 'text-gray-600 hover:text-gray-700' });
     actions.push({ type: 'edit', label: 'Edit', icon: PencilSquareIcon, color: 'text-gray-600 hover:text-gray-700' });
+    actions.push({ type: 'permissions', label: 'Permissions', icon: ShieldCheckIcon, color: 'text-indigo-600 hover:text-indigo-700' });
 
     return actions;
   };
@@ -341,6 +346,9 @@ export default function TenantManagement({ onViewTenant }) {
                           onClick={() => {
                             if (action.type === 'view') {
                               onViewTenant(tenant);
+                            } else if (action.type === 'permissions') {
+                              setPermissionsTenant(tenant);
+                              setPermissionsOpen(true);
                             } else {
                               handleTenantAction(tenant, action.type);
                             }
@@ -390,13 +398,17 @@ export default function TenantManagement({ onViewTenant }) {
         </div>
       )}
 
-      {/* Action Modal */}
       <TenantActionModal
         isOpen={isActionModalOpen}
         onClose={() => setIsActionModalOpen(false)}
         tenant={selectedTenant}
         actionType={actionType}
         onActionComplete={handleActionComplete}
+      />
+      <ManageUserModulesModal
+        isOpen={permissionsOpen}
+        onClose={() => setPermissionsOpen(false)}
+        tenant={permissionsTenant}
       />
     </div>
   );

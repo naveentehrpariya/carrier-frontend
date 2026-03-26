@@ -370,7 +370,11 @@ export default function AddOrder({ isEdit = false }){
         carrier_payment_status: order.carrier_payment_status || "pending",
         carrier_payment_method: order.carrier_payment_method || "",
         revenue_currency: order.revenue_currency || 'cad',
-        order_status: order.order_status || "added"
+        order_status: order.order_status || "added",
+        order_type: order.order_type || 'outsourcing',
+        driver: order.driver || null,
+        truck: order.truck || null,
+        trailer: order.trailer || null
       });
       
       // Set currency
@@ -401,13 +405,65 @@ export default function AddOrder({ isEdit = false }){
       setRevCurrency(e.target.value);
     } 
     
-    const {Errors} = useContext(UserContext);
+    // Terminology constants
+    const TERM_OUTSOURCING = 'Outsourcing (Carriers)';
+    const TERM_REGULAR = 'Regular (Trucking, driver etc)';
+
+    const {Errors, user: currentUser} = useContext(UserContext);
+    const userModules = Array.isArray(currentUser?.allowedModules) ? currentUser.allowedModules : ['outsourcing', 'regular'];
+    const availableOrderTypes = [
+      ...(userModules.includes('outsourcing') ? [{ label: TERM_OUTSOURCING, value: 'outsourcing' }] : []),
+      ...(userModules.includes('regular') ? [{ label: TERM_REGULAR, value: 'regular' }] : []),
+    ];
+
+    useEffect(() => {
+      if (!data.order_type) {
+        const def = availableOrderTypes[0]?.value || 'outsourcing';
+        setData(prev => ({ ...prev, order_type: def }));
+      }
+    }, [userModules]);
+
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     useEffect(()=>{
       console.log("shippingDetails",shippingDetails);
     },[shippingDetails]);
+
+    // Asset listings for Regular orders
+    const [drivers, setDrivers] = useState([]);
+    const [trucks, setTrucks] = useState([]);
+    const [trailers, setTrailers] = useState([]);
+    const fetchAssetLists = () => {
+      // Fetch drivers
+      Api.get(`/driver/listings`).then(res => {
+        const lists = res.data?.lists || [];
+        const opts = lists.map(d => ({ value: d._id, label: `${d.name} (${d.corporateID || 'No ID'})` }));
+        setDrivers(opts);
+      }).catch(()=> setDrivers([]));
+
+      // Fetch trucks
+      Api.get(`/fleet/trucks/listings`).then(res => {
+        const lists = res.data?.lists || res.data?.trucks || [];
+        const opts = lists.map(t => ({ value: t._id, label: `${t.unitNumber || ''} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate' }));
+        setTrucks(opts);
+      }).catch(()=> setTrucks([]));
+
+      // Fetch trailers
+      Api.get(`/fleet/trailers/listings`).then(res => {
+        const lists = res.data?.lists || res.data?.trailers || [];
+        const opts = lists.map(t => ({ value: t._id, label: `${t.unitNumber || ''} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate' }));
+        setTrailers(opts);
+      }).catch(()=> setTrailers([]));
+    };
+
+    useEffect(() => { 
+      fetchAssetLists(); 
+    }, []);
+
+    const chooseDriver = (e) => setData(prev => ({ ...prev, driver: e?.value || null }));
+    const chooseTruck = (e) => setData(prev => ({ ...prev, truck: e?.value || null }));
+    const chooseTrailer = (e) => setData(prev => ({ ...prev, trailer: e?.value || null }));
 
     const addOrder = async () => {
 
@@ -416,13 +472,21 @@ export default function AddOrder({ isEdit = false }){
       // add 2 seconds delay to get distance
       await new Promise(resolve => setTimeout(resolve, 2000));
 
+      const orderType = data.order_type || (availableOrderTypes[0]?.value || 'outsourcing');
+      const isOutsourcing = orderType === 'outsourcing';
+
       const alldata = {...data, 
+        order_type: orderType,
         "revenue_items"  : revenueItems || [],
-        "carrier_revenue_items"  : carrierRevenueItems || [],
+        "carrier_revenue_items"  : isOutsourcing ? (carrierRevenueItems || []) : [],
         "shipping_details" : shippingDetails || [],
         "totalDistance" : Number(calculated_distance),
         "total_amount" : revenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
-        "carrier_amount" : carrierRevenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
+        "carrier_amount" : isOutsourcing ? carrierRevenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0) : 0,
+        "driver": isOutsourcing ? null : data.driver,
+        "truck": isOutsourcing ? null : data.truck,
+        "trailer": isOutsourcing ? null : data.trailer,
+        "carrier": isOutsourcing ? data.carrier : null
       };
 
       function isObjectValid(obj) {
@@ -445,12 +509,14 @@ export default function AddOrder({ isEdit = false }){
           return false;
         }
       }
-      if(alldata.carrier_revenue_items && alldata.carrier_revenue_items[0]) {
-        const isall = isObjectValid(alldata.carrier_revenue_items && alldata.carrier_revenue_items[0]);
-        if(!isall) {
-          toast.error('Please enter correct carrier revenue details of this order.');
-          setLoading(false);
-          return false;
+      if (isOutsourcing) {
+        if(alldata.carrier_revenue_items && alldata.carrier_revenue_items[0]) {
+          const isall = isObjectValid(alldata.carrier_revenue_items && alldata.carrier_revenue_items[0]);
+          if(!isall) {
+            toast.error('Please enter correct carrier revenue details of this order.');
+            setLoading(false);
+            return false;
+          }
         }
       }
       
@@ -459,10 +525,19 @@ export default function AddOrder({ isEdit = false }){
         setLoading(false);
         return false;
       }
-      if(alldata.carrier === null || alldata.carrier === '') {
-        toast.error('Carrier is required');
-        setLoading(false);
-        return false;
+
+      if(isOutsourcing){
+        if(!alldata.carrier) {
+          toast.error('Carrier is required');
+          setLoading(false);
+          return false;
+        }
+      } else {
+        if(!alldata.driver || !alldata.truck || !alldata.trailer){
+          toast.error('Driver, Truck and Trailer are required');
+          setLoading(false);
+          return false;
+        }
       }
 
       if(alldata.total_amount === '') {
@@ -507,6 +582,46 @@ export default function AddOrder({ isEdit = false }){
     <AuthLayout>
       <div className="px-4 sm:px-0">
          <h2 className='text-white heading xl text-xl sm:text-2xl '>{isEditMode ? `Edit Order #${existingOrder?.serial_no}` : 'Add New Order'}</h2>
+
+         {/* Module Switcher Tabs */}
+         <div className="flex bg-[#1B1E27] p-1 rounded-xl border border-white/5 shadow-inner w-fit mt-6 mb-8">
+           <button
+             onClick={() => setData(prev => ({ ...prev, order_type: 'outsourcing' }))}
+             className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-8 rounded-lg transition-all duration-300 ${
+               (data.order_type || 'outsourcing') === 'outsourcing' 
+                 ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' 
+                 : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
+             }`}
+           >
+             {TERM_OUTSOURCING}
+           </button>
+           <button
+             onClick={() => setData(prev => ({ ...prev, order_type: 'regular' }))}
+             className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-8 rounded-lg transition-all duration-300 ${
+               (data.order_type || 'outsourcing') === 'regular' 
+                 ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' 
+                 : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
+             }`}
+           >
+             {TERM_REGULAR}
+           </button>
+         </div>
+
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            {/* Common Customer Selection */}
+            <div className='input-item md:col-span-2'>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Customer</label>
+                <Select 
+                  classNamePrefix="react-select input"  
+                  placeholder={'Search and choose customer...'}
+                  isSearchable={true}
+                  value={data.customer ? customersListing.find(customer => customer.value === data.customer) : null}
+                  onChange={chooseCustomer}
+                  options={customersListing} 
+                />
+            </div>
+         </div>
+
           <div>
             {/* <div className="flex justify-between mt-12 mb-4 items-center">
               <p className="text-gray-400 heading xl text-xl">Shipping Details</p>
@@ -515,7 +630,6 @@ export default function AddOrder({ isEdit = false }){
                 onClick={addNewShippingBlock}> + Add New
               </button>
             </div> */}
-
 
             {shippingDetails.map((detail, index) => (
               <>
@@ -759,14 +873,6 @@ export default function AddOrder({ isEdit = false }){
             </div>
 
 
-            <div className='input-item mb-3'>
-                <label className="mt-2 mb-0 block text-sm text-gray-400">Customer</label>
-                <Select classNamePrefix="react-select input"  placeholder={'Choose Customer'}
-                value={data.customer ? customersListing.find(customer => customer.value === data.customer) : null}
-                onChange={chooseCustomer}
-                options={customersListing} />
-            </div>
-
             <div className="borders rounded-[20px] sbg-dark sborder-gray-900 p-6s">
               {revenueItems.map((item, index) => {
                 const total  = item.rate * item.quantity;
@@ -859,18 +965,11 @@ export default function AddOrder({ isEdit = false }){
           </div>
 
 
-          {/* CARRIER DETAILS */}
-          <h2 className='heading text-lg sm:text-xl text-gray-400 pt-12 border-t border-gray-800 mt-12 mb-6'>Carrier Details</h2>
+          {/* CARRIER FINANCIALS - ONLY for Outsourcing */}
+          {(data.order_type || 'outsourcing') === 'outsourcing' && (
+          <>
+          <h2 className='heading text-lg sm:text-xl text-gray-400 pt-12 border-t border-gray-800 mt-12 mb-6'>Carrier Financials</h2>
           <div className='customer'>
-
-            <div className='input-item mb-4'>
-              <label className="mt-2 mb-0 block text-sm text-gray-400">Choose Carrier</label>
-              <Select classNamePrefix="react-select input"  placeholder={'Choose Carrier'}
-                value={data.carrier ? carriersListing.find(carrier => carrier.value === data.carrier) : null}
-                onChange={chooseCarrier}
-                options={carriersListing} />
-            </div>
-
             <div className="borders rounded-[20px] sbg-dark sborder-gray-900 p-6s">
               {carrierRevenueItems.map((item, index) => {
                 const total  = item.rate * item.quantity;
@@ -962,18 +1061,47 @@ export default function AddOrder({ isEdit = false }){
               </div>
             </div>
           </div>
-       
-          
+          </>
+          )}
 
-          {data?.carrier_amount ? 
-            <div className='flex justify-end my-6 '>
-                <div>
-                  <p className='text-white'>Sell Amount : <span className='text-gray-400'>
-                    <Currency amount={data.carrier_amount} currency={revCurrency || 'cad'} /> </span> 
-                  </p>
+          {/* CARRIER SELECTION - ONLY for Outsourcing */}
+          {(data.order_type || 'outsourcing') === 'outsourcing' && (
+            <div className='mt-12 pt-12 border-t border-gray-800'>
+              <h2 className='heading text-lg sm:text-xl text-gray-400 mb-6'>Carrier Assignment</h2>
+              <div className='input-item md:max-w-md'>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Assign Carrier</label>
+                <Select 
+                  classNamePrefix="react-select input"  
+                  placeholder={'Search and choose carrier...'}
+                  isSearchable={true}
+                  value={data.carrier ? carriersListing.find(carrier => carrier.value === data.carrier) : null}
+                  onChange={chooseCarrier}
+                  options={carriersListing} 
+                />
+              </div>
+            </div>
+          )}
+
+          {/* FLEET ASSIGNMENTS - ONLY for Regular */}
+          {(data.order_type || 'outsourcing') === 'regular' && (
+            <div className="mt-12 pt-12 border-t border-gray-800">
+              <h2 className='heading text-lg sm:text-xl text-gray-400 mb-6'>Fleet Assignments (Regular)</h2>
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+                <div className='input-item'>
+                  <label className="mt-2 mb-0 block text-sm text-gray-400">Driver</label>
+                  <Select classNamePrefix="react-select input" placeholder="Search and choose Driver" isSearchable={true} options={drivers} value={drivers.find(d => d.value === data.driver) || null} onChange={chooseDriver} />
                 </div>
-            </div> 
-          : ''}
+                <div className='input-item'>
+                  <label className="mt-2 mb-0 block text-sm text-gray-400">Truck</label>
+                  <Select classNamePrefix="react-select input" placeholder="Search and choose Truck" isSearchable={true} options={trucks} value={trucks.find(t => t.value === data.truck) || null} onChange={chooseTruck} />
+                </div>
+                <div className='input-item'>
+                  <label className="mt-2 mb-0 block text-sm text-gray-400">Trailer</label>
+                  <Select classNamePrefix="react-select input" placeholder="Search and choose Trailer" isSearchable={true} options={trailers} value={trailers.find(t => t.value === data.trailer) || null} onChange={chooseTrailer} />
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className='subtotals flex justify-ends my-6'>
             <ul className='flex flex-col sm:flex-row justify-between w-full bg-dark2 p-3 sm:p-4 border border-gray-700 rounded-xl gap-4 sm:gap-0'>
@@ -990,12 +1118,23 @@ export default function AddOrder({ isEdit = false }){
               </button>
               }
               </strong></li>
-              <li className='flex justify-center sm:justify-end '><p className='text-gray-400 me-4'>Carrier Total : </p> <strong className='text-white'>  <Currency amount={ carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
+              {(data.order_type || 'outsourcing') === 'outsourcing' && (
+                <li className='flex justify-center sm:justify-end '><p className='text-gray-400 me-4'>Carrier Total : </p> <strong className='text-white'>  <Currency amount={ carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
+              )}
             </ul>
           </div>
 
           <div className='flex justify-center sm:justify-end items-center mt-6'>
-            <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-8 sm:px-[50px] text-sm ms-0 sm:ms-3 main-btn text-black font-bold w-full sm:w-auto`}>{loading ? (isEditMode ? "Updating..." : "Adding...") : (isEditMode ? "Update Order" : "Submit Order")}</button>
+            <button 
+              onClick={addOrder}  
+              className={`btn md ${
+                (data.order_type || 'outsourcing') === 'outsourcing' 
+                  ? (data.carrier === '' ? "disabled" : '')
+                  : (!data.driver || !data.truck || !data.trailer ? "disabled" : '')
+              } px-8 sm:px-[50px] text-sm ms-0 sm:ms-3 main-btn text-black font-bold w-full sm:w-auto`}
+            >
+              {loading ? (isEditMode ? "Updating..." : "Adding...") : (isEditMode ? "Update Order" : "Submit Order")}
+            </button>
           </div>
           {/* <div className='flex justify-end items-center mt-6'>
             {distance ?

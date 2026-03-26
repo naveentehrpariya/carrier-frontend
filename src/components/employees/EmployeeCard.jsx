@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LuEye, LuPhone, LuMail, LuMapPin } from "react-icons/lu";
 import Badge from '../../pages/common/Badge';
@@ -8,6 +8,7 @@ import AddDriver from '../../pages/dashboard/drivers/AddDriver';
 import SuspandAccount from '../../pages/dashboard/employees/SuspandAccount';
 import ChangePassword from '../../pages/dashboard/employees/ChangePassword';
 import TimeFormat from '../../pages/common/TimeFormat';
+import DriverEarningsPopup from '../drivers/DriverEarningsPopup';
 
 export default function EmployeeCard({ 
   employee, 
@@ -38,6 +39,7 @@ export default function EmployeeCard({
 
   const roleInfo = getRoleInfo(employee.role);
 
+  const [showEarnings, setShowEarnings] = useState(false);
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-[30px] p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:ring-1 hover:ring-gray-700 focus-within:ring-1 focus-within:ring-gray-700">
       {/* Header: Avatar, Name, Status */}
@@ -70,6 +72,14 @@ export default function EmployeeCard({
                 {roleInfo.text}
               </span>
               <Badge title={true} status={employee.status} />
+            </div>
+            {/* Module access badges */}
+            <div className="flex flex-wrap gap-1 mt-3">
+              {(Array.isArray(employee.allowedModules) ? employee.allowedModules : ['outsourcing', 'regular']).map(m => (
+                <span key={m} className="px-2 py-0.5 rounded-md bg-gray-800 text-gray-400 text-[9px] uppercase font-bold border border-gray-700">
+                  {m === 'outsourcing' ? 'Outsourcing' : 'Regular'}
+                </span>
+              ))}
             </div>
           </div>
       </div>
@@ -163,6 +173,15 @@ export default function EmployeeCard({
           <LuEye size={16} aria-hidden="true" />
           Documents
         </button>
+        {Number(employee?.role) === 0 && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowEarnings(true); }}
+            className="text-sm text-rose-400 hover:text-rose-300 transition-colors px-2 py-1"
+            aria-label={`View earnings for ${employee.name}`}
+          >
+            Earnings
+          </button>
+        )}
 
         {/* Actions dropdown */}
         <div onClick={(e) => e.stopPropagation()}>
@@ -211,6 +230,9 @@ export default function EmployeeCard({
           </Dropdown>
         </div>
       </div>
+      {Number(employee?.role) === 0 && (
+        <DriverEarningsPopup driver={employee} open={showEarnings} onClose={() => setShowEarnings(false)} />
+      )}
     </div>
   );
 }

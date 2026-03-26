@@ -64,6 +64,9 @@ export const getOrderPrefix = (user, company, tenant, order) => {
  */
 export const getOrderNumber = (order, user, company, tenant) => {
   const prefix = getOrderPrefix(user, company, tenant, order);
-  const serialNo = order.serial_no || order._id?.slice(-6) || "000000";
+  if (!order || typeof order !== 'object') {
+    return `${prefix}000000`;
+  }
+  const serialNo = order?.serial_no ?? order?._id?.slice(-6) ?? "000000";
   return `${prefix}${serialNo}`;
 };

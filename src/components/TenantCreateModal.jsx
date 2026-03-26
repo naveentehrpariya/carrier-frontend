@@ -8,6 +8,7 @@ import TenantCredentialsModal from './TenantCredentialsModal';
 export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [existingData, setExistingData] = useState({ names: [], slugs: [], subdomains: [] });
+  const [existingDataLoaded, setExistingDataLoaded] = useState(false);
   const [credentials, setCredentials] = useState(null);
   const [showCredsModal, setShowCredsModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -30,36 +31,44 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
   });
   const [errors, setErrors] = useState({});
 
+  const fetchExistingData = async () => {
+    setExistingDataLoaded(false);
+    try {
+      const response = await Api.get('/api/super-admin/tenants?fields=name,subdomain&limit=1000');
+      if (response.data.status && response.data.data) {
+        const tenants = response.data.data;
+        const normalized = {
+          names: tenants.map(t => t.name?.toLowerCase()).filter(Boolean),
+          slugs: tenants.map(t => t.subdomain?.toLowerCase()).filter(Boolean),
+          subdomains: tenants.map(t => t.subdomain?.toLowerCase()).filter(Boolean)
+        };
+        setExistingData(normalized);
+        return normalized;
+      }
+    } catch (error) {
+      console.error('Error fetching existing tenant data:', error);
+    } finally {
+      setExistingDataLoaded(true);
+    }
+    const fallback = { names: [], slugs: [], subdomains: [] };
+    setExistingData(fallback);
+    return fallback;
+  };
+
   // Fetch existing tenant data for validation
   useEffect(() => {
-    const fetchExistingData = async () => {
-      try {
-        const response = await Api.get('/api/super-admin/tenants?fields=name,subdomain&limit=1000');
-        if (response.data.status && response.data.data) {
-          const tenants = response.data.data;
-          setExistingData({
-            names: tenants.map(t => t.name?.toLowerCase()).filter(Boolean),
-            slugs: tenants.map(t => t.subdomain?.toLowerCase()).filter(Boolean),
-            subdomains: tenants.map(t => t.subdomain?.toLowerCase()).filter(Boolean)
-          });
-        }
-      } catch (error) {
-        console.error('Error fetching existing tenant data:', error);
-      }
-    };
-
     if (isOpen) {
       fetchExistingData();
     }
   }, [isOpen]);
 
-  const validateForm = () => {
+  const validateForm = (data = existingData) => {
     const newErrors = {};
 
     // Required fields
     if (!formData.name.trim()) {
       newErrors.name = 'Company name is required';
-    } else if (existingData.names.includes(formData.name.toLowerCase().trim())) {
+    } else if (data.names.includes(formData.name.toLowerCase().trim())) {
       newErrors.name = 'Company name already exists';
     }
 
@@ -67,7 +76,7 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
       newErrors.subdomain = 'Subdomain is required';
     } else if (!/^[a-z0-9-]+$/.test(formData.subdomain)) {
       newErrors.subdomain = 'Subdomain can only contain lowercase letters, numbers, and hyphens';
-    } else if (existingData.subdomains.includes(formData.subdomain.toLowerCase().trim())) {
+    } else if (data.subdomains.includes(formData.subdomain.toLowerCase().trim())) {
       newErrors.subdomain = 'Subdomain already exists';
     }
 
@@ -149,7 +158,8 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    const data = existingDataLoaded ? existingData : await fetchExistingData();
+    if (!validateForm(data)) {
       return;
     }
 

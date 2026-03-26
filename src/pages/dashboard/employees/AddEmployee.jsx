@@ -3,9 +3,13 @@ import Popup from '../../common/Popup'
 import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
+import { useAuth } from '../../../context/MultiTenantAuthProvider';
 import countries from './../../common/Countries';
 
 export default function AddEmployee({fetchLists, item, text, classes, defaultRole}){
+
+    const { user: currentUser } = useAuth();
+    const adminAllowedModules = Array.isArray(currentUser?.allowedModules) ? currentUser.allowedModules : ['outsourcing', 'regular'];
 
     const commisions = Array.from({ length: 100 }, (_, index) => (index + 1) * 1);
     const [staffType, setStaffType] = useState(
@@ -20,6 +24,7 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
       phone: item?.phone || "",
       address: item?.address || "",
       staff_commision: item?.staff_commision || "",
+      allowedModules: Array.isArray(item?.allowedModules) ? item.allowedModules : ['outsourcing', 'regular']
     });
 
     const [action, setaction] = useState();
@@ -27,6 +32,19 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
 
     const handleinput = (e) => {
       setData({ ...data, [e.target.name]: e.target.value});
+    }
+
+    const toggleModule = (module) => {
+      setData(prev => {
+        const current = prev.allowedModules || [];
+        if (current.includes(module)) {
+          // Keep at least one module
+          if (current.length === 1) return prev;
+          return { ...prev, allowedModules: current.filter(m => m !== module) };
+        } else {
+          return { ...prev, allowedModules: [...current, module] };
+        }
+      });
     }
     
     const [loading, setLoading] = useState(false);
@@ -132,6 +150,33 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
               <button className={`mx-2 ${staffType === 1 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(1)} >Employee</button>
               <button className={`mx-2 ${staffType === 2 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(2)} >Accountant</button>
          </div>
+
+         {/* Module Access Controls (Dynamic based on admin's plan) */}
+         {adminAllowedModules.length > 0 && (
+           <div className="mt-8 pt-6 border-t border-gray-800">
+             <label className="mb-3 block text-sm text-gray-400 text-center font-medium">Assign Module Access</label>
+             <div className="flex justify-center gap-6">
+               {adminAllowedModules.map(m => (
+                 <label key={m} className="flex items-center gap-2 cursor-pointer group">
+                   <div 
+                     onClick={() => toggleModule(m)}
+                     className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                       data.allowedModules?.includes(m) 
+                         ? 'bg-main border-main text-black' 
+                         : 'border-gray-600 group-hover:border-gray-400'
+                     }`}
+                   >
+                     {data.allowedModules?.includes(m) && (
+                       <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>
+                     )}
+                   </div>
+                   <span className="text-sm text-gray-300 capitalize">{m === 'outsourcing' ? 'Outsourcing (Carriers)' : 'Regular (Trucking)'}</span>
+                 </label>
+               ))}
+             </div>
+           </div>
+         )}
+
          <div className='flex justify-center items-center'>
             <button  onClick={addEmployee} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Creating..." : "Create Account"}</button>
          </div>

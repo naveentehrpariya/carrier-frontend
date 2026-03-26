@@ -20,6 +20,7 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
    const [lists, setLists] = useState([]);
    const [currentPage, setCurrentPage] = useState(1);
    const [totalPages, setTotalPages] = useState(1);
+   const [viewMode, setViewMode] = useState('table');
    const {Errors, user} = useContext(UserContext);
 
    // get search query param from url
@@ -53,6 +54,15 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
       setCurrentPage(1); // Reset to first page when filters change
       fetchLists();
    },[customer, orderStatus, payementStatus]);
+
+   useEffect(() => {
+      if (isRecent) {
+         setViewMode('list');
+         return;
+      }
+      const saved = localStorage.getItem('orders:viewMode');
+      if (saved === 'list' || saved === 'table') setViewMode(saved);
+   }, [isRecent]);
 
    // Handle pagination
    const handlePageChange = (page) => {
@@ -103,7 +113,7 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
          <> 
             <div className='md:flex justify-between items-center mb-6'>
                <h2 className='text-white text-2xl mb-4 md:mb-0'>{title ? title : "Orders"}</h2>
-               <div className='sm:flex items-center justify-between md:justify-end'>
+               <div className='sm:flex items-center justify-between md:justify-end gap-3'>
                   {hideFilter ? '' :
                   <>
                   <div className='relative me-3'>
@@ -135,6 +145,30 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
 
                   </>
                   }
+                  {!isRecent && (
+                     <div className='flex items-center bg-dark1 border border-gray-600 rounded-xl p-1'>
+                        <button
+                           type="button"
+                           onClick={() => {
+                              setViewMode('table');
+                              localStorage.setItem('orders:viewMode', 'table');
+                           }}
+                           className={`px-3 py-2 rounded-lg text-sm ${viewMode === 'table' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`}
+                        >
+                           Table
+                        </button>
+                        <button
+                           type="button"
+                           onClick={() => {
+                              setViewMode('list');
+                              localStorage.setItem('orders:viewMode', 'list');
+                           }}
+                           className={`px-3 py-2 rounded-lg text-sm ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`}
+                        >
+                           List
+                        </button>
+                     </div>
+                  )}
                   {hideSearch ? ' ': <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search order' className='text-white min-w-[200px] w-full md:w-auto bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />}
                      <OrderExel data={lists} orderStatus={orderStatus} />
                   {/* {hideExportOrder ? '' : <Link to="/order/add" className={"ms-4 btn md text-black font-bold w-full md:w-auto block md:flex mt-3 md:mt-0"} >+ New Order</Link>} */}
@@ -155,15 +189,11 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
             )}
 
             {loading ? 
-               (isRecent ? <OrderItem loading={true} /> : <Loading />)
+               ((isRecent || viewMode === 'list') ? <OrderItem loading={true} /> : <Loading />)
                :
                <>
                {lists && lists.length > 0 ? 
-                  (isRecent ? 
-                     <OrderItem lists={lists} fetchLists={fetchLists} /> 
-                     : 
-                     <OrderTable lists={lists} fetchLists={fetchLists} />
-                  )
+                  ((isRecent || viewMode === 'list') ? <OrderItem lists={lists} fetchLists={fetchLists} /> : <OrderTable lists={lists} fetchLists={fetchLists} />)
                   : 
                   <EmptyOrderState 
                      isFiltering={orderStatus || payementStatus || searching}

@@ -24,8 +24,9 @@ import { getOrderNumber } from '../../../utils/orderPrefix';
 
 export default function ViewOrder() {
    
-   const [order, setOrder] = useState([]);
+   const [order, setOrder] = useState(null);
    const [paymentLogs, setPaymentLogs] = useState([]);
+   const [trips, setTrips] = useState([]);
    const [loading, setLoading] = useState(true);
    const {Errors,user, company} = useContext(UserContext);
    const { id } = useParams();
@@ -38,6 +39,10 @@ export default function ViewOrder() {
          if (res.data.status) {
             setOrder(res.data.order);
             setPaymentLogs(res.data.paymentLogs);
+            // Fetch trips for this order
+            Api.get(`/order/trips/${id}`).then(tripRes => {
+               if (tripRes.data.status) setTrips(tripRes.data.trips);
+            });
          } else {
             setOrder(null);
          }
@@ -58,6 +63,11 @@ export default function ViewOrder() {
          {/* <button className='bg-main px-4 py-2 rounded-xl'>Edit Order</button> */}
          <div className='flex items-center ps-3'>
             <Link to={`/order/detail/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Carrier Sheet</Link>
+            {order?.order_type === 'regular' && (
+              <Link to={`/order/trip-planning/${order?._id}`} className='bg-rose-500 text-white px-4 py-2 rounded-xl me-3 flex items-center shadow-lg shadow-rose-500/20'> 
+                <FaTruckMoving className='me-2' size='20px' /> Trip Planning
+              </Link>
+            )}
             {user?.role !== 1 && (
               <Link to={`/order/customer/invoice/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Invoice</Link>
             )}
@@ -120,7 +130,7 @@ export default function ViewOrder() {
                      <li className=''><strong className='text-gray-400 '> Order No. # :</strong> <p className='flex mt-1'>{order?.lock ? <FaLock className='me-1 text-red-500' /> : <FaLockOpen className='me-1' />} {getOrderNumber(order, user, company, null)}</p> </li>
                      <li className=''><strong className='text-gray-400'>Order Created Date :</strong> <p><TimeFormat date={order?.createdAt} /></p> </li>
                      <li className=''><strong className='text-gray-400'>Order Status :</strong> <p><Badge title={true} status={order?.order_status} /></p> </li>
-                     <li className=''><strong className='text-gray-400'>Total Distance :</strong> <p><DistanceInMiles d={order.totalDistance} /></p> </li>
+                     <li className=''><strong className='text-gray-400'>Total Distance :</strong> <p><DistanceInMiles d={order?.totalDistance || 0} /></p> </li>
                   </ul>
                </div>
 
@@ -135,15 +145,26 @@ export default function ViewOrder() {
                            <li className='flex items-center'><p className=''><strong className=' !text-gray-400'>Payment Status:</strong> <Badge approved={order?.customer_payment_approved_by_admin} date={order?.customer_payment_date || ""} title={true} status={order?.customer_payment_status} text={`${order?.customer_payment_status === 'paid' ? `via ${order?.customer_payment_method}` :''} `} /></p> </li>
                         </ul>
                      </div>
-                     <div className='customerDetails mb-2 bg-dark1 border border-gray-700 p-4 rounded-xl'>
-                        <p className='font-bold text-gray-400 text-xl mb-2'>Carrier Details</p>
-                        <ul className=''>
-                           <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Carrier Name:</strong> <p><Link className='text-main' to={`/carrier/detail/${order?.carrier?._id}`}>{order?.carrier?.name} (MC{order?.carrier?.mc_code})</Link> </p> </li>
-                           <li className=' flex mb-2'> <p> <strong className=' me-2 !text-gray-400'>Carrier Phone :</strong> {order?.carrier?.phone}, {order?.carrier?.secondary_phone}</p> </li>
-                           <li className=' flex mb-2'> <p className='break-all'><strong className=' me-2 !text-gray-400 '>Carrier Email :</strong> {order?.carrier?.email}, {order?.carrier?.secondary_email}</p> </li>
-                           <li className=' flex items-center'><strong className=' !text-gray-400'>Payment Status:</strong> <p className='ps-2'><Badge approved={order?.carrier_payment_approved_by_admin} date={order?.carrier_payment_date || ""} title={true} status={order?.carrier_payment_status} text={`${order?.carrier_payment_status === 'paid' ? `via ${order?.carrier_payment_method}` :''} `} /></p> </li>
-                     </ul>
-                     </div>
+                     {order?.order_type === 'outsourcing' ? (
+                       <div className='customerDetails mb-2 bg-dark1 border border-gray-700 p-4 rounded-xl'>
+                          <p className='font-bold text-gray-400 text-xl mb-2'>Carrier Details</p>
+                          <ul className=''>
+                             <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Carrier Name:</strong> <p><Link className='text-main' to={`/carrier/detail/${order?.carrier?._id}`}>{order?.carrier?.name || "N/A"} (MC{order?.carrier?.mc_code || "N/A"})</Link> </p> </li>
+                             <li className=' flex mb-2'> <p> <strong className=' me-2 !text-gray-400'>Carrier Phone :</strong> {order?.carrier?.phone || "N/A"}{order?.carrier?.secondary_phone ? `, ${order?.carrier.secondary_phone}` : ''}</p> </li>
+                             <li className=' flex mb-2'> <p className='break-all'><strong className=' me-2 !text-gray-400 '>Carrier Email :</strong> {order?.carrier?.email || "N/A"}{order?.carrier?.secondary_email ? `, ${order?.carrier.secondary_email}` : ''}</p> </li>
+                             <li className=' flex items-center'><strong className=' !text-gray-400'>Payment Status:</strong> <p className='ps-2'><Badge approved={order?.carrier_payment_approved_by_admin} date={order?.carrier_payment_date || ""} title={true} status={order?.carrier_payment_status} text={`${order?.carrier_payment_status === 'paid' ? `via ${order?.carrier_payment_method}` :''} `} /></p> </li>
+                          </ul>
+                       </div>
+                     ) : (
+                       <div className='customerDetails mb-2 bg-dark1 border border-gray-700 p-4 rounded-xl'>
+                          <p className='font-bold text-rose-400 text-xl mb-2'>Fleet Assignments (Regular)</p>
+                          <ul className=''>
+                             <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Driver:</strong> <p className='text-white'>{order?.driver?.name || "Unassigned"}</p> </li>
+                             <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Truck Unit:</strong> <p className='text-white'>{order?.truck?.unitNumber || "N/A"}</p> </li>
+                             <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Trailer Unit:</strong> <p className='text-white'>{order?.trailer?.unitNumber || "N/A"}</p> </li>
+                          </ul>
+                       </div>
+                     )}
                      <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
                         <p className='font-bold text-gray-400 text-xl mb-2'>Staff Details</p>
                         <ul className=''>
@@ -153,6 +174,28 @@ export default function ViewOrder() {
                            <li className=' flex items-center capitalize'> <p> <strong className=' me-1 !text-gray-400'>Address : </strong> {order?.created_by?.address}</p> </li>
                         </ul>
                      </div>
+
+                     {/* TRIP SEGMENTS / SPLIT INFO */}
+                     {trips && trips.length > 0 && (
+                        <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl mt-2'>
+                           <p className='font-bold text-rose-400 text-xl mb-4'>Trip Segments (Split)</p>
+                           <div className='space-y-4'>
+                              {trips.map((trip, idx) => (
+                                 <div key={idx} className='border-l-2 border-rose-500/30 pl-4 py-1'>
+                                    <p className='text-white font-bold text-sm uppercase tracking-wider mb-2'>Segment #{trip.trip_no}</p>
+                                    <div className='grid grid-cols-2 gap-y-2 text-xs'>
+                                       <p><span className='text-gray-500'>Driver:</span> <span className='text-gray-300 ml-1'>{trip.driver?.name || 'Unassigned'}</span></p>
+                                       <p><span className='text-gray-500'>Truck:</span> <span className='text-gray-300 ml-1'>{trip.truck?.unitNumber || 'N/A'}</span></p>
+                                       <p><span className='text-gray-500'>Miles:</span> <span className='text-gray-300 ml-1'>{trip.miles}</span></p>
+                                       <p><span className='text-gray-500'>Distance:</span> <span className='text-gray-300 ml-1'>{(trip.total_km || (trip.miles * 1.60934)).toFixed ? (trip.total_km || (trip.miles * 1.60934)).toFixed(2) : (Number(trip.total_km || (trip.miles * 1.60934)).toFixed(2))} km</span></p>
+                                       <p><span className='text-gray-500'>Pay:</span> <span className='text-green-500 ml-1'>${trip.total_driver_pay?.toFixed(2)}</span></p>
+                                    </div>
+                                    <p className='text-[10px] text-gray-500 mt-2 italic'>{trip.start_location} → {trip.end_location}</p>
+                                 </div>
+                              ))}
+                           </div>
+                        </div>
+                     )}
                   </div>
                   <OrderMap order={order} />
                </div>
@@ -229,11 +272,11 @@ export default function ViewOrder() {
                   </div>
                }
 
-               {order && order.carrier_revenue_items &&
+               {order?.order_type === 'outsourcing' && order?.carrier_revenue_items && order?.carrier_revenue_items.length > 0 &&
                   <div id='revanue' className='orderFill border-t border-gray-700 pb-3 mt-1 pt-6'>
                      <p className='font-bold  text-xl mb-2'>Carrier Revenue Items</p>
                      {order && order.carrier_revenue_items && order.carrier_revenue_items.map((r, index) => {
-                        return <div className='mt-4 mb-4 pb-2' >
+                        return <div className='mt-4 mb-4 pb-2' key={index} >
                            <div className='flex justify-between  '>
                               <p className='flex items-center w-[32%]'><strong>Revenue Item:</strong> <p className='ps-2'>{r.revenue_item}</p> </p>
                               <p className='flex items-center w-[32%]'><strong>Rate  :   </strong  > <p className='capitalize ps-2'><Currency amount={r?.rate || 0} currency={order?.revenue_currency || 'cad'} /> * {r.quantity}</p> </p>
@@ -247,7 +290,9 @@ export default function ViewOrder() {
                
                <div className='flex justify-between bg-dark3 p-3 rounded-xl'>
                      <h2 className='font-bold  text-xl text-right'>Total : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
-                     <h2 className='font-bold  text-xl text-right'>Sell Amount : <Currency amount={order?.carrier_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
+                     {order?.order_type === 'outsourcing' && (
+                        <h2 className='font-bold  text-xl text-right'>Sell Amount : <Currency amount={order?.carrier_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
+                     )}
                </div>
             </div>
          </div>

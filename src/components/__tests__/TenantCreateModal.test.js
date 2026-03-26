@@ -61,7 +61,6 @@ describe('TenantCreateModal', () => {
   });
 
   it('shows validation errors for required fields', async () => {
-    const user = userEvent.setup();
     renderModal();
     
     await waitFor(() => {
@@ -70,7 +69,7 @@ describe('TenantCreateModal', () => {
 
     // Try to submit without filling required fields
     const submitButton = screen.getByRole('button', { name: /create tenant/i });
-    await user.click(submitButton);
+    await userEvent.click(submitButton);
 
     await waitFor(() => {
       expect(screen.getByText('Company name is required')).toBeInTheDocument();
@@ -80,7 +79,6 @@ describe('TenantCreateModal', () => {
   });
 
   it('auto-generates subdomain from company name', async () => {
-    const user = userEvent.setup();
     renderModal();
     
     await waitFor(() => {
@@ -88,26 +86,28 @@ describe('TenantCreateModal', () => {
     });
 
     const companyNameInput = screen.getByPlaceholderText('ACME Transport Inc');
-    await user.type(companyNameInput, 'Test Company LLC');
+    await userEvent.type(companyNameInput, 'Test Company LLC');
 
     const subdomainInput = screen.getByPlaceholderText('acme-transport');
     expect(subdomainInput.value).toBe('test-company-llc');
   });
 
   it('validates duplicate company names', async () => {
-    const user = userEvent.setup();
     renderModal();
     
     await waitFor(() => {
       expect(screen.getByText('Create New Tenant')).toBeInTheDocument();
     });
+    await waitFor(() => {
+      expect(Api.get).toHaveBeenCalledTimes(1);
+    });
 
     // Fill in a company name that already exists
     const companyNameInput = screen.getByPlaceholderText('ACME Transport Inc');
-    await user.type(companyNameInput, 'Existing Company');
+    await userEvent.type(companyNameInput, 'Existing Company');
 
     const submitButton = screen.getByRole('button', { name: /create tenant/i });
-    await user.click(submitButton);
+    await userEvent.click(submitButton);
 
     await waitFor(() => {
       expect(screen.getByText('Company name already exists')).toBeInTheDocument();
@@ -115,7 +115,6 @@ describe('TenantCreateModal', () => {
   });
 
   it('validates subdomain format', async () => {
-    const user = userEvent.setup();
     renderModal();
     
     await waitFor(() => {
@@ -123,11 +122,11 @@ describe('TenantCreateModal', () => {
     });
 
     const subdomainInput = screen.getByPlaceholderText('acme-transport');
-    await user.clear(subdomainInput);
-    await user.type(subdomainInput, 'Invalid Subdomain!');
+    await userEvent.clear(subdomainInput);
+    await userEvent.type(subdomainInput, 'Invalid Subdomain!');
 
     const submitButton = screen.getByRole('button', { name: /create tenant/i });
-    await user.click(submitButton);
+    await userEvent.click(submitButton);
 
     await waitFor(() => {
       expect(screen.getByText('Subdomain can only contain lowercase letters, numbers, and hyphens')).toBeInTheDocument();
@@ -135,7 +134,6 @@ describe('TenantCreateModal', () => {
   });
 
   it('submits form successfully', async () => {
-    const user = userEvent.setup();
     renderModal();
     
     // Mock successful API response
@@ -155,14 +153,14 @@ describe('TenantCreateModal', () => {
     });
 
     // Fill in all required fields
-    await user.type(screen.getByPlaceholderText('ACME Transport Inc'), 'Test Company');
-    await user.type(screen.getByPlaceholderText('John Doe'), 'Test Admin');
-    await user.type(screen.getByPlaceholderText('admin@acmetransport.com'), 'admin@testcompany.com');
-    await user.type(screen.getByPlaceholderText('MC123456'), 'MC789012');
-    await user.type(screen.getByPlaceholderText('DOT789012'), 'DOT345678');
+    await userEvent.type(screen.getByPlaceholderText('ACME Transport Inc'), 'Test Company');
+    await userEvent.type(screen.getByPlaceholderText('John Doe'), 'Test Admin');
+    await userEvent.type(screen.getByPlaceholderText('admin@acmetransport.com'), 'admin@testcompany.com');
+    await userEvent.type(screen.getByPlaceholderText('MC123456'), 'MC789012');
+    await userEvent.type(screen.getByPlaceholderText('DOT789012'), 'DOT345678');
 
     const submitButton = screen.getByRole('button', { name: /create tenant/i });
-    await user.click(submitButton);
+    await userEvent.click(submitButton);
 
     await waitFor(() => {
       expect(Api.post).toHaveBeenCalledWith('/api/super-admin/tenants', expect.objectContaining({
@@ -172,12 +170,21 @@ describe('TenantCreateModal', () => {
         adminEmail: 'admin@testcompany.com',
       }));
       expect(mockOnSuccess).toHaveBeenCalled();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Tenant Created Successfully')).toBeInTheDocument();
+    });
+
+    const doneButton = screen.getByRole('button', { name: /done/i });
+    await userEvent.click(doneButton);
+
+    await waitFor(() => {
       expect(mockOnClose).toHaveBeenCalled();
     });
   });
 
   it('handles API errors', async () => {
-    const user = userEvent.setup();
     renderModal();
     
     // Mock API error
@@ -193,14 +200,14 @@ describe('TenantCreateModal', () => {
     });
 
     // Fill in required fields
-    await user.type(screen.getByPlaceholderText('ACME Transport Inc'), 'Test Company');
-    await user.type(screen.getByPlaceholderText('John Doe'), 'Test Admin');
-    await user.type(screen.getByPlaceholderText('admin@acmetransport.com'), 'admin@testcompany.com');
-    await user.type(screen.getByPlaceholderText('MC123456'), 'MC789012');
-    await user.type(screen.getByPlaceholderText('DOT789012'), 'DOT345678');
+    await userEvent.type(screen.getByPlaceholderText('ACME Transport Inc'), 'Test Company');
+    await userEvent.type(screen.getByPlaceholderText('John Doe'), 'Test Admin');
+    await userEvent.type(screen.getByPlaceholderText('admin@acmetransport.com'), 'admin@testcompany.com');
+    await userEvent.type(screen.getByPlaceholderText('MC123456'), 'MC789012');
+    await userEvent.type(screen.getByPlaceholderText('DOT789012'), 'DOT345678');
 
     const submitButton = screen.getByRole('button', { name: /create tenant/i });
-    await user.click(submitButton);
+    await userEvent.click(submitButton);
 
     await waitFor(() => {
       expect(Api.post).toHaveBeenCalled();
@@ -211,7 +218,6 @@ describe('TenantCreateModal', () => {
   });
 
   it('closes modal when cancel button is clicked', async () => {
-    const user = userEvent.setup();
     renderModal();
     
     await waitFor(() => {
@@ -219,7 +225,7 @@ describe('TenantCreateModal', () => {
     });
 
     const cancelButton = screen.getByRole('button', { name: /cancel/i });
-    await user.click(cancelButton);
+    await userEvent.click(cancelButton);
 
     expect(mockOnClose).toHaveBeenCalled();
   });
