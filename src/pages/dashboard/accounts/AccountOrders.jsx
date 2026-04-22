@@ -75,7 +75,7 @@ export default function AccountOrders() {
                         <tr>
                           <th className='px-4 py-3 text-start text-gray-400 uppercase tracking-wide'>Order</th> 
                           <th className='px-4 py-3 text-start text-gray-400 uppercase tracking-wide'>Customer</th>
-                          <th className='px-4 py-3 text-start text-gray-400 uppercase tracking-wide'>Carrier Payment</th>
+                          <th className='px-4 py-3 text-start text-gray-400 uppercase tracking-wide'>Carrier / Fleet</th>
                           <th className='px-4 py-3 text-start text-gray-400 uppercase tracking-wide'>Employee</th>
                           <th className='px-4 py-3 text-start text-gray-400 uppercase tracking-wide'>Amounts</th>
                           <th className='px-4 py-3 text-start text-gray-400 uppercase tracking-wide'>Status</th>
@@ -101,7 +101,8 @@ export default function AccountOrders() {
                              <Link className='text-main capitalize' to={`/customer/detail/${c?.customer?._id}`}>
                                {c?.customer?.name || '--'} ({c?.customer?.customerCode || '--'})
                              </Link>
-                             <div className='mt-2'>
+                             <div className='mt-2 flex items-center whitespace-nowrap'>
+                              <span>Payment : </span>
                                <UpdatePaymentStatus
                                  order={c}
                                  classes={`!p-0 ${c?.lock ? 'disabled-order' : ''}`}
@@ -125,41 +126,81 @@ export default function AccountOrders() {
                            </td>
                            {/* Carrier Payment */}
                            <td className='px-4 py-3 align-top text-gray-200'>
-                             <Link className='text-main' to={`/carrier/detail/${c?.carrier?._id}`}>
-                               {c.carrier?.name || '--'} (MC{c?.carrier?.mc_code || '--'})
-                             </Link>
-                             <div className='mt-2'>
-                               <UpdatePaymentStatus
-                                 order={c}
-                                 classes={`!p-0 ${c?.lock ? 'disabled-order' : ''}`}
-                                 pstatus={c.carrier_payment_status}
-                                 pmethod={c.carrier_payment_method}
-                                 pnotes={c.carrier_payment_notes}
-                                 text={<Badge
-                                   approved={c?.carrier_payment_approved_by_admin}
-                                   tooltipcontent={c?.carrier_payment_date && !c?.carrier_payment_approved_by_admin ? `Carrrier payment status currently in pending and not approve by admin yet.` : ''}
-                                   date={c?.carrier_payment_date || ''}
-                                   title={false}
-                                   status={c?.carrier_payment_status}
-                                   text={`${c?.carrier_payment_status === 'paid' ? `(${c?.carrier_payment_method})` : ''}`}
-                                 />}
-                                 paymentType={2}
-                                 id={c.id}
-                                 type={2}
-                                 fetchLists={fetchLists}
-                               />
-                             </div>
+                             {c?.order_type === 'regular' ? (
+                               <>
+                                 <div className="capitalize">
+                                   Driver:{' '}
+                                   {c?.driver?._id ? (
+                                     <Link className="text-main" to={`/employee/detail/${c.driver._id}`}>{c?.driver?.name || 'Unassigned'}</Link>
+                                   ) : (
+                                     <span>{c?.driver?.name || 'Unassigned'}</span>
+                                   )}
+                                 </div>
+                                 <div className="mt-1">
+                                   Truck:{' '}
+                                   {c?.truck?._id ? (
+                                     <Link className="text-main" to={`/truck/detail/${c.truck._id}`}>
+                                       {c?.truck?.unitNumber || c?.truck?.plateNumber || '—'}
+                                     </Link>
+                                   ) : (
+                                     <span>{c?.truck?.unitNumber || c?.truck?.plateNumber || '—'}</span>
+                                   )}
+                                 </div>
+                                 <div className="mt-1">
+                                   Trailer:{' '}
+                                   {c?.trailer?._id ? (
+                                     <Link className="text-main" to={`/trailer/detail/${c.trailer._id}`}>
+                                       {c?.trailer?.unitNumber || c?.trailer?.plateNumber || '—'}
+                                     </Link>
+                                   ) : (
+                                     <span>{c?.trailer?.unitNumber || c?.trailer?.plateNumber || '—'}</span>
+                                   )}
+                                 </div>
+                               </>
+                             ) : (
+                               <>
+                                 <Link className='text-main' to={`/carrier/detail/${c?.carrier?._id}`}>
+                                   {c.carrier?.name || '--'} (MC{c?.carrier?.mc_code || '--'})
+                                 </Link>
+                                 <div className='mt-2 flex items-center whitespace-nowrap'>
+                                  <span>Payment : </span>
+                                   <UpdatePaymentStatus
+                                     order={c}
+                                     classes={`!p-0 ${c?.lock ? 'disabled-order' : ''}`}
+                                     pstatus={c.carrier_payment_status}
+                                     pmethod={c.carrier_payment_method}
+                                     pnotes={c.carrier_payment_notes}
+                                     text={<Badge
+                                       approved={c?.carrier_payment_approved_by_admin}
+                                       tooltipcontent={c?.carrier_payment_date && !c?.carrier_payment_approved_by_admin ? `Carrrier payment status currently in pending and not approve by admin yet.` : ''}
+                                       date={c?.carrier_payment_date || ''}
+                                       title={false}
+                                       status={c?.carrier_payment_status}
+                                       text={`${c?.carrier_payment_status === 'paid' ? `(${c?.carrier_payment_method})` : ''}`}
+                                     />}
+                                     paymentType={2}
+                                     id={c.id}
+                                     type={2}
+                                     fetchLists={fetchLists}
+                                   />
+                                 </div>
+                               </>
+                             )}
                            </td>
                            {/* Employee */}
                            <td className='px-4 py-3 align-top text-gray-200'>
-                             <div>Staff: {c.created_by?.name}</div>
-                             <div className='mt-1'>Commission: <Currency amount={c.commission} currency={c.revenue_currency || 'usd'} /> ({c.created_by?.staff_commision || 0}%)</div>
+                             <div className='capitalize'>Added By: {c.created_by?.name}</div>
+                             <div className='mt-1'>Commission: <Currency amount={c?.order_type === 'outsourcing' ? c.commission : 0} currency={c.revenue_currency || 'usd'} /> ({c?.order_type === 'outsourcing' ? (c.created_by?.staff_commision || 0) : 0}%)</div>
                            </td>
                            {/* Amounts */}
                            <td className='px-4 py-3 align-top text-gray-200'>
                              <div>Amount: <Currency amount={c.total_amount} currency={c.revenue_currency || 'usd'} /></div>
-                             <div className='mt-1'>Sell: <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></div>
+                             {c?.order_type !== 'regular' ? 
+                             <>
+                             <div className='mt-1'>Sell: <Currency amount={c.carrier_amount} currency={c.revenue_currency || 'usd'} /></div> 
                              <div className='mt-1'>Profit: <Currency amount={c.profit} currency={c.revenue_currency || 'usd'} /></div>
+                             </>
+                             : null}
                            </td>
                            {/* Status */}
                            <td className='px-4 py-3 align-top text-gray-200'>
@@ -172,7 +213,7 @@ export default function AccountOrders() {
                            <td className='px-4 py-3 align-top text-gray-200'>
                              <div className='flex items-center gap-2'>
                                <Dropdown>
-                                 {(user && user.is_admin === 1) || (user && user.role === 2) ? (
+                                 {(user && user.is_admin === 1) || (user && user?.permissions?.includes('accounting')) ? (
                                    <>
                                      <li className={`list-none text-sm ${c.lock ? 'disabled' : ''}`}>
                                        <UpdatePaymentStatus
@@ -210,7 +251,7 @@ export default function AccountOrders() {
                                      </li>
                                   </>
                                 ) : ''}
-                                {(user?.is_admin === 1 || user?.role === 1 || user?.role === 2) && (
+                                {(user?.is_admin === 1 || user?.permissions?.includes('regular') || user?.permissions?.includes('outsourcing') || user?.permissions?.includes('subadmin') || user?.permissions?.includes('accounting')) && (
                                   <li className={`list-none text-sm ${c.lock ? "disabled" : ""}`}>
                                     <Link 
                                       className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${c.lock ? 'opacity-50 pointer-events-none' : ''}`} 
@@ -220,7 +261,7 @@ export default function AccountOrders() {
                                     </Link>
                                   </li>
                                 )}
-                                 {user?.role !== 1 && (
+                                 {!(user?.permissions?.includes('regular') || user?.permissions?.includes('outsourcing') || user?.permissions?.includes('subadmin')) && (
                                    <li className='list-none text-sm'>
                                      <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${c._id}`}>Download Customer Invoice</Link>
                                    </li>

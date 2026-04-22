@@ -31,8 +31,8 @@ export default function OrderTable({ lists, fetchLists }) {
 
       {lists.map((order, index) => {
         const orderNumber = getOrderNumber(order, user, company, null)
-        const canManagePayments = user?.is_admin === 1 || user?.role === 2
-        const canEdit = user?.is_admin === 1 || user?.role === 1 || user?.role === 2
+        const canManagePayments = user?.is_admin === 1 || user?.permissions?.includes('accounting')
+        const canEdit = user?.is_admin === 1 || user?.permissions?.includes('regular') || user?.permissions?.includes('outsourcing') || user?.permissions?.includes('subadmin') || user?.permissions?.includes('accounting')
 
         return (
           <div
@@ -53,6 +53,9 @@ export default function OrderTable({ lists, fetchLists }) {
                     <DistanceInMiles d={order?.totalDistance} />
                   </span>
                 </div>
+                {order?.customer_order_no && order.order_type === 'regular' ? (
+                  <span className='text-gray-400'>Cust Order: {order.customer_order_no}</span>
+                ) : null}
               </div>
             </div>
 
@@ -97,18 +100,73 @@ export default function OrderTable({ lists, fetchLists }) {
             </div>
 
             <div className='xl:col-span-2 min-w-0'>
-              <Link to={`/carrier/detail/${order.carrier?._id}`} className='text-sm text-blue-400 hover:text-blue-300 font-medium'>
-                {order.carrier?.name || "--"} (MC{order.carrier?.mc_code || "--"})
-              </Link>
-              <div className='mt-2 flex items-center gap-2 flex-wrap'>
-                {canManagePayments ? (
-                  <UpdatePaymentStatus
-                    order={order}
-                    classes={`!p-0 !cursor-pointer ${order?.lock ? 'disabled-order' : ''}`}
-                    pstatus={order.carrier_payment_status}
-                    pmethod={order.carrier_payment_method}
-                    pnotes={order.carrier_payment_notes}
-                    text={
+              {order?.order_type === 'regular' ? (
+                <div className="text-sm text-gray-200 space-y-1">
+                  <div className="capitalize">
+                    Driver:{' '}
+                    {order?.drivers && order.drivers.length > 0 ? (
+                      order.drivers.map((d, i) => (
+                        <span key={d._id}>
+                          <Link className="text-main" to={`/employee/detail/${d._id}`}>{d.name || 'Unassigned'}</Link>
+                          {i < order.drivers.length - 1 ? ', ' : ''}
+                        </span>
+                      ))
+                    ) : order?.driver?._id ? (
+                      <Link className="text-main" to={`/employee/detail/${order.driver._id}`}>{order?.driver?.name || 'Unassigned'}</Link>
+                    ) : (
+                      <span>{order?.driver?.name || 'Unassigned'}</span>
+                    )}
+                  </div>
+                  <div>
+                    Truck:{' '}
+                    {order?.truck?._id ? (
+                      <Link className="text-main" to={`/truck/detail/${order.truck._id}`}>
+                        {order?.truck?.unitNumber || order?.truck?.plateNumber || '—'}
+                      </Link>
+                    ) : (
+                      <span>{order?.truck?.unitNumber || order?.truck?.plateNumber || '—'}</span>
+                    )}
+                  </div>
+                  <div>
+                    Trailer:{' '}
+                    {order?.trailer?._id ? (
+                      <Link className="text-main" to={`/trailer/detail/${order.trailer._id}`}>
+                        {order?.trailer?.unitNumber || order?.trailer?.plateNumber || '—'}
+                      </Link>
+                    ) : (
+                      <span>{order?.trailer?.unitNumber || order?.trailer?.plateNumber || '—'}</span>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <Link to={`/carrier/detail/${order.carrier?._id}`} className='text-sm text-blue-400 hover:text-blue-300 font-medium'>
+                    {order.carrier?.name || "--"} (MC{order.carrier?.mc_code || "--"})
+                  </Link>
+                  <div className='mt-2 flex items-center gap-2 flex-wrap'>
+                    {canManagePayments ? (
+                      <UpdatePaymentStatus
+                        order={order}
+                        classes={`!p-0 !cursor-pointer ${order?.lock ? 'disabled-order' : ''}`}
+                        pstatus={order.carrier_payment_status}
+                        pmethod={order.carrier_payment_method}
+                        pnotes={order.carrier_payment_notes}
+                        text={
+                          <Badge
+                            classes='!text-[10px] !px-2 !py-[2px]'
+                            tooltipcontent={order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ? `Carrier payment status currently in pending and not approve by admin yet.` : ''}
+                            approved={order?.carrier_payment_approved_by_admin}
+                            date={order?.carrier_payment_date || ""}
+                            status={order?.carrier_payment_status}
+                            text={order?.carrier_payment_status === 'paid' ? ` (${order?.carrier_payment_method})` : ''}
+                          />
+                        }
+                        paymentType={2}
+                        id={order.id}
+                        type={2}
+                        fetchLists={fetchLists}
+                      />
+                    ) : (
                       <Badge
                         classes='!text-[10px] !px-2 !py-[2px]'
                         tooltipcontent={order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ? `Carrier payment status currently in pending and not approve by admin yet.` : ''}
@@ -117,23 +175,10 @@ export default function OrderTable({ lists, fetchLists }) {
                         status={order?.carrier_payment_status}
                         text={order?.carrier_payment_status === 'paid' ? ` (${order?.carrier_payment_method})` : ''}
                       />
-                    }
-                    paymentType={2}
-                    id={order.id}
-                    type={2}
-                    fetchLists={fetchLists}
-                  />
-                ) : (
-                  <Badge
-                    classes='!text-[10px] !px-2 !py-[2px]'
-                    tooltipcontent={order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ? `Carrier payment status currently in pending and not approve by admin yet.` : ''}
-                    approved={order?.carrier_payment_approved_by_admin}
-                    date={order?.carrier_payment_date || ""}
-                    status={order?.carrier_payment_status}
-                    text={order?.carrier_payment_status === 'paid' ? ` (${order?.carrier_payment_method})` : ''}
-                  />
-                )}
-              </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             <div className='xl:col-span-3'>
@@ -235,7 +280,7 @@ export default function OrderTable({ lists, fetchLists }) {
                     )}
                   </>
                 )}
-                {user?.role !== 1 && (
+                {!user?.permissions?.includes('orders') && (
                   <li className='list-none text-sm'>
                     <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${order._id}`}>Download Customer Invoice</Link>
                   </li>

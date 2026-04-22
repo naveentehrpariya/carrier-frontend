@@ -394,6 +394,9 @@ export default function OrderPDF() {
                      return <>
                            <div style={{flexWrap:"wrap"}} className="flex gap-5 mb-4 pb-6 w-full">
                               <p style={{display:"flex",}} className='capitalize '><p style={{ fontWeight: 700, color: "#111" }} >Order No : </p> #CMC{order?.serial_no ||''}</p>
+                              {order?.order_type === 'regular' && order?.customer_order_no ? (
+                                 <p style={{display:"flex"}} className='capitalize '><p style={{ fontWeight: 700, color: "#111" }} >Customer Order No : </p> {order.customer_order_no}</p>
+                              ) : null}
                               <p style={{display:"flex"}} className=' '><p style={{ fontWeight: 700, color: "#111" }} >Commodity : </p> {s?.commodity?.value || s?.commodity}</p>
                               {s?.reference && (
                                  <p style={{display:"flex"}} className=''><p style={{ fontWeight: 700, color: "#111" }} >Commodity Reference : </p> {s.reference}</p>

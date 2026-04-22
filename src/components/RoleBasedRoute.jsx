@@ -20,7 +20,7 @@ const RoleBasedRoute = ({ children, allowedRoles = [], fallbackPath = "/home" })
       return <Navigate to="/login" replace />;
     }
   
-    const userRole = user?.role;
+    const userRole = null;
     
     // Super admins bypass all role restrictions
     if (checkSuperAdminAccess()) {

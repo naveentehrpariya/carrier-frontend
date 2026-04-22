@@ -3,6 +3,7 @@ import Popup from '../../pages/common/Popup';
 import Api from '../../api/Api';
 import { toast } from 'react-hot-toast';
 import TimeFormat from '../../pages/common/TimeFormat';
+import { Link } from 'react-router-dom';
 
 export default function DriverEarningsPopup({ driver, open, onClose }) {
   const [from, setFrom] = useState('');
@@ -11,6 +12,9 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState([]);
+  const [cityHours, setCityHours] = useState([]);
+  const [newCityDate, setNewCityDate] = useState('');
+  const [newCityHours, setNewCityHours] = useState('');
 
   const toISODate = (d) => {
     const pad = (n) => String(n).padStart(2, '0');
@@ -52,10 +56,35 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
       setMode('current');
       setFrom(r.from);
       setTo(r.to);
+      setCityHours([]);
+      setNewCityDate('');
+      setNewCityHours('');
       fetchSummary(r);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  const cityRate = Number(driver?.driverProfile?.cityHoursRate || 0);
+  const cityHoursTotal = cityHours.reduce((acc, x) => acc + Number(x.hours || 0), 0);
+  const cityPay = cityHoursTotal * cityRate;
+  const totalPayWithCity = Number(summary?.totalPay || 0) + cityPay;
+
+  const addCityHour = () => {
+    const hours = Number(newCityHours);
+    const date = String(newCityDate || '').trim();
+    if (!date) return toast.error('Please select a city date');
+    if (!Number.isFinite(hours) || hours <= 0) return toast.error('Please enter valid city hours');
+    setCityHours((prev) => [...prev, { id: `${Date.now()}-${Math.random()}`, date, hours }]);
+    setNewCityHours('');
+  };
+
+  const updateCityHour = (id, patch) => {
+    setCityHours((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  };
+
+  const removeCityHour = (id) => {
+    setCityHours((prev) => prev.filter((x) => x.id !== id));
+  };
 
   const exportPDF = async () => {
     try {
@@ -73,6 +102,10 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
         doc.setFontSize(10);
         doc.text(`Range: ${from || '—'} to ${to || '—'}`, 14, 28);
       }
+      const soloRate = Number(summary?.soloRate ?? driver?.driverProfile?.ratePerMileSolo ?? driver?.driverProfile?.ratePerMile ?? 0);
+      const teamRate = Number(summary?.teamRate ?? driver?.driverProfile?.ratePerMileTeam ?? driver?.driverProfile?.ratePerMile ?? 0);
+      doc.setFontSize(9);
+      doc.text(`Rates: Solo $${soloRate.toFixed(2)}/mi • Team $${teamRate.toFixed(2)}/mi • City $${cityRate.toFixed(2)}/hr`, 14, 31);
       doc.setTextColor(17, 24, 39);
       doc.setFontSize(12);
       const s = summary || {};
@@ -80,18 +113,45 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
       doc.text(`Total Miles: ${(s.totalMiles || 0).toFixed(2)}`, 14, 52);
       doc.text(`Total KM: ${(s.totalKm || 0).toFixed(2)}`, 14, 60);
       doc.setTextColor(16, 185, 129);
-      doc.text(`Total Pay: $${(s.totalPay || 0).toFixed(2)}`, 14, 68);
+      doc.text(`Total Pay: $${totalPayWithCity.toFixed(2)}`, 14, 68);
+      if (cityHoursTotal > 0) {
+        doc.setTextColor(17, 24, 39);
+        doc.setFontSize(10);
+        doc.text(`City Hours: ${cityHoursTotal.toFixed(2)}h • City Pay: $${cityPay.toFixed(2)}`, 14, 74);
+      }
       doc.setTextColor(17, 24, 39);
-      const rows = orders.map((o) => [String(o._id).slice(-6), o.trips, o.miles.toFixed(2), o.km.toFixed(2), `$${o.pay.toFixed(2)}`]);
+      const rows = orders.map((o) => [
+        o.orderSerial ? `CMC${o.orderSerial}` : String(o._id).slice(-6),
+        o.rateType ? String(o.rateType).toUpperCase() : '',
+        o.trips,
+        o.miles.toFixed(2),
+        o.km.toFixed(2),
+        `$${o.pay.toFixed(2)}`
+      ]);
       autoTable(doc, {
-        startY: 76,
-        head: [['Order', 'Trips', 'Miles', 'KM', 'Pay']],
+        startY: cityHoursTotal > 0 ? 80 : 76,
+        head: [['Order', 'Type', 'Trips', 'Miles', 'KM', 'Pay']],
         body: rows,
         styles: { fontSize: 10 },
         headStyles: { fillColor: [31, 41, 55], textColor: 255 },
         alternateRowStyles: { fillColor: [249, 250, 251] },
-        columnStyles: { 4: { halign: 'right' } }
+        columnStyles: { 5: { halign: 'right' } }
       });
+
+      if (cityHours.length > 0) {
+        const startY = (doc.lastAutoTable?.finalY || 76) + 10;
+        const cityRows = cityHours.map((c) => [c.date, String(Number(c.hours || 0).toFixed(2)), `$${(Number(c.hours || 0) * cityRate).toFixed(2)}`]);
+        autoTable(doc, {
+          startY,
+          head: [['City Date', 'Hours', 'Pay']],
+          body: cityRows,
+          styles: { fontSize: 10 },
+          headStyles: { fillColor: [31, 41, 55], textColor: 255 },
+          alternateRowStyles: { fillColor: [249, 250, 251] },
+          columnStyles: { 2: { halign: 'right' } }
+        });
+      }
+
       doc.save(`payslip-${driver?.name || 'driver'}.pdf`);
     } catch (e) {
       toast.error('Failed to generate PDF');
@@ -186,8 +246,101 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
           </div>
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
             <p className="text-[10px] text-gray-500 uppercase font-bold">Total Pay</p>
-            <p className="text-xl font-black text-green-500 mt-1">${Number(summary?.totalPay || 0).toFixed(2)}</p>
+            <p className="text-xl font-black text-green-500 mt-1">${totalPayWithCity.toFixed(2)}</p>
+            {cityHoursTotal > 0 && (
+              <p className="text-[10px] text-gray-400 mt-1">Includes city hours: {cityHoursTotal.toFixed(2)}h</p>
+            )}
           </div>
+        </div>
+
+        <div className="flex flex-wrap gap-2 mb-4">
+          <span className="px-3 py-2 rounded-xl text-[10px] uppercase font-black border border-emerald-500/30 text-emerald-300 bg-emerald-500/10">
+            Solo ${Number(summary?.soloRate ?? driver?.driverProfile?.ratePerMileSolo ?? driver?.driverProfile?.ratePerMile ?? 0).toFixed(2)}/mi
+          </span>
+          <span className="px-3 py-2 rounded-xl text-[10px] uppercase font-black border border-yellow-500/30 text-yellow-300 bg-yellow-500/10">
+            Team ${Number(summary?.teamRate ?? driver?.driverProfile?.ratePerMileTeam ?? driver?.driverProfile?.ratePerMile ?? 0).toFixed(2)}/mi
+          </span>
+          <span className="px-3 py-2 rounded-xl text-[10px] uppercase font-black border border-blue-500/30 text-blue-300 bg-blue-500/10">
+            City ${cityRate.toFixed(2)}/hr
+          </span>
+        </div>
+
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 mb-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="div">
+              <p className="text-[10px] text-gray-500 uppercase font-bold">City Hours</p>
+              <p className="text-xs text-gray-400 mt-1">Rate: ${cityRate.toFixed(2)}/hour</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="date"
+                className="input-sm max-w-[200px]"
+                value={newCityDate}
+                onChange={(e) => setNewCityDate(e.target.value)}
+                onInput={(e) => setNewCityDate(e.target.value)}
+                onBlur={(e) => setNewCityDate(e.target.value)}
+              />
+              <input
+                className="input-sm max-w-[140px]"
+                type="number"
+                step="0.25"
+                placeholder="Hours"
+                value={newCityHours}
+                onChange={(e) => setNewCityHours(e.target.value)}
+              />
+              <button className="btn  rounded-2xl !py-4 px-6 bg-gray-800 text-white" onClick={addCityHour} disabled={loading}>
+                Add
+              </button>
+            </div>
+          </div>
+
+          {cityHours.length > 0 && (
+            <div className="mt-4 border border-gray-800 rounded-2xl overflow-hidden">
+              <div className="max-h-[180px] overflow-auto">
+                <table className="min-w-[520px] w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-gray-400 bg-gray-900 sticky top-0">
+                      <th className="px-3 py-2">Date</th>
+                      <th className="px-3 py-2">Hours</th>
+                      <th className="px-3 py-2 text-right">Pay</th>
+                      <th className="px-3 py-2 text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cityHours.map((c) => (
+                      <tr key={c.id} className="border-t border-gray-800">
+                        <td className="px-3 py-2">
+                          <input
+                            type="date"
+                            className="input-sm"
+                            value={c.date}
+                            onChange={(e) => updateCityHour(c.id, { date: e.target.value })}
+                          />
+                        </td>
+                        <td className="px-3 py-2">
+                          <input
+                            className="input-sm"
+                            type="number"
+                            step="0.25"
+                            value={c.hours}
+                            onChange={(e) => updateCityHour(c.id, { hours: Number(e.target.value) || 0 })}
+                          />
+                        </td>
+                        <td className="px-3 py-2 text-right text-green-400 font-bold">
+                          ${(Number(c.hours || 0) * cityRate).toFixed(2)}
+                        </td>
+                        <td className="px-3 py-2 text-right">
+                          <button className="btn xs bg-red-700 text-white" onClick={() => removeCityHour(c.id)}>
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="border border-gray-800 rounded-2xl overflow-hidden">
@@ -196,6 +349,7 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
             <thead>
               <tr className="text-left text-gray-400 bg-gray-900 sticky top-0">
                 <th className="px-3 py-2">Order</th>
+                <th className="px-3 py-2">Type</th>
                 <th className="px-3 py-2">Trips</th>
                 <th className="px-3 py-2">Miles</th>
                 <th className="px-3 py-2">KM</th>
@@ -205,7 +359,16 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
             <tbody>
               {orders.map((o, idx) => (
                 <tr key={idx} className="border-t border-gray-800">
-                  <td className="px-3 py-2">{String(o._id).slice(-6)}</td>
+                  <td className="px-3 py-2">
+                    <Link className="text-blue-400 hover:text-blue-300" to={`/view/order/${o._id}`}>
+                      {o.orderSerial ? `#CMC${o.orderSerial}` : String(o._id).slice(-6)}
+                    </Link>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase border ${o.rateType === 'team' ? 'border-yellow-500/30 text-yellow-300 bg-yellow-500/10' : 'border-emerald-500/30 text-emerald-300 bg-emerald-500/10'}`}>
+                      {o.rateType || 'solo'}
+                    </span>
+                  </td>
                   <td className="px-3 py-2">{o.trips}</td>
                   <td className="px-3 py-2">{o.miles.toFixed(2)}</td>
                   <td className="px-3 py-2">{o.km.toFixed(2)}</td>
@@ -213,7 +376,7 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
                 </tr>
               ))}
               {orders.length === 0 && (
-                <tr><td className="px-3 py-10 text-gray-500" colSpan={5}>No trips in this range</td></tr>
+                <tr><td className="px-3 py-10 text-gray-500" colSpan={6}>No trips in this range</td></tr>
               )}
             </tbody>
           </table>

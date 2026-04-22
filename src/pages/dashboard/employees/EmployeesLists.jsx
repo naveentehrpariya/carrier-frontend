@@ -7,12 +7,16 @@ import EmployeeDocuments from './EmployeeDocuments';
 import EmployeeCard from '../../../components/employees/EmployeeCard';
 import { EmployeeGridSkeleton } from '../../../components/employees/EmployeeCardSkeleton';
 import EmptyEmployeeState from '../../../components/employees/EmptyEmployeeState';
+import ManageUserModulesModal from '../../../components/ManageUserModulesModal';
+import { useAuth } from '../../../context/MultiTenantAuthProvider';
+
 export default function EmployeesLists() {
 
-
+   const { user: currentUser } = useAuth();
    const [loading, setLoading] = useState(true);
    const [lists, setLists] = useState([]);
    const [showDocuments, setShowDocuments] = useState(false);
+   const [showPermissions, setShowPermissions] = useState(false);
    const [selectedEmployee, setSelectedEmployee] = useState(null);
    const {Errors} = useContext(UserContext);
 
@@ -51,7 +55,22 @@ export default function EmployeesLists() {
       <AuthLayout> 
          <div className='flex justify-between items-center'>
             <h2 className='text-white text-2xl'>Employees</h2>
-            <AddEmployee fetchLists={fetchLists} />
+            <div className="flex gap-2">
+               {(currentUser?.isTenantAdmin || currentUser?.is_admin === 1 || currentUser?.permissions?.includes('subadmin')) && (
+                  <button 
+                     onClick={() => setShowPermissions(true)}
+                     className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-xl border border-gray-700 transition-colors flex items-center gap-2 text-sm font-medium"
+                  >
+                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.746 3.746 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+                     </svg>
+                     Manage Permissions
+                  </button>
+               )}
+               {(currentUser?.is_admin === 1 || currentUser?.permissions?.includes('employees') || currentUser?.permissions?.includes('subadmin')) && (
+                 <AddEmployee fetchLists={fetchLists} />
+               )}
+            </div>
          </div>
 
          <div className='mt-8'>
@@ -79,6 +98,18 @@ export default function EmployeesLists() {
                employee={selectedEmployee} 
                isOpen={showDocuments}
                onClose={handleCloseDocuments}
+            />
+         )}
+
+         {/* Conditionally render ManageUserModulesModal */}
+         {showPermissions && (
+            <ManageUserModulesModal 
+               isOpen={showPermissions} 
+               onClose={() => {
+                  setShowPermissions(false);
+                  fetchLists(); // refresh lists in case permissions affected visibility
+               }} 
+               tenant={{ tenantId: currentUser?.tenantId, name: currentUser?.company?.name || 'Company' }}
             />
          )}
       </AuthLayout>

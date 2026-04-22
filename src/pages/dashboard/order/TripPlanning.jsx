@@ -216,11 +216,25 @@ export default function TripPlanning() {
         try {
             // Validate required assignments per segment before saving
             if (order.order_type === 'regular') {
-                const firstMissing = trips.findIndex(t => !t.driver);
-                if (firstMissing !== -1) {
-                    setActiveTripIndex(firstMissing);
-                    setLoading(false);
-                    return toast.error(`Trip #${firstMissing + 1}: please select a Driver`);
+                if (trips.length > 1) {
+                    const firstMissingDriver = trips.findIndex(t => !t.driver);
+                    if (firstMissingDriver !== -1) {
+                        setActiveTripIndex(firstMissingDriver);
+                        setLoading(false);
+                        return toast.error(`Trip #${firstMissingDriver + 1}: please select a Driver`);
+                    }
+                    const firstMissingTruck = trips.findIndex(t => !t.truck);
+                    if (firstMissingTruck !== -1) {
+                        setActiveTripIndex(firstMissingTruck);
+                        setLoading(false);
+                        return toast.error(`Trip #${firstMissingTruck + 1}: please select a Truck`);
+                    }
+                    const firstMissingTrailer = trips.findIndex(t => !t.trailer);
+                    if (firstMissingTrailer !== -1) {
+                        setActiveTripIndex(firstMissingTrailer);
+                        setLoading(false);
+                        return toast.error(`Trip #${firstMissingTrailer + 1}: please select a Trailer`);
+                    }
                 }
             } else {
                 const firstMissing = trips.findIndex(t => !t.carrier);
@@ -235,13 +249,24 @@ export default function TripPlanning() {
                 const startLoc = order.locations[t.start_stop_index];
                 const endLoc = order.locations[t.end_stop_index];
                 
-                const selectedDriver = drivers.find(d => d.value === t.driver);
-                
                 const milesVal = Number(t.miles) || sumMilesBetween(t.start_stop_index, t.end_stop_index);
+                
+                const driversList = t.drivers || (t.driver ? [t.driver] : []);
+                const effDrivers = Math.max(driversList.length, 1);
+                const rateType = effDrivers > 1 ? 'team' : 'solo';
+                let totalPay = 0;
+                driversList.forEach(dVal => {
+                    const drv = drivers.find(d => d.value === dVal);
+                    const r = rateType === 'team' ? (drv?.ratePerMileTeam || drv?.ratePerMile || 0) : (drv?.ratePerMileSolo || drv?.ratePerMile || 0);
+                    totalPay += (milesVal / effDrivers) * r;
+                });
+                const effectiveRate = milesVal > 0 ? (totalPay / milesVal) : 0;
+
                 return {
                     start_stop_index: t.start_stop_index,
                     end_stop_index: t.end_stop_index,
-                    driver: t.driver,
+                    driver: t.drivers && t.drivers.length > 0 ? t.drivers[0] : t.driver,
+                    drivers: t.drivers || (t.driver ? [t.driver] : []),
                     truck: t.truck,
                     trailer: t.trailer,
                 carrier: t.carrier,
@@ -251,7 +276,7 @@ export default function TripPlanning() {
                     miles: milesVal,
                     totalDistance: milesVal,
                     distance_unit: 'mi',
-                    rate_per_mile: selectedDriver?.ratePerMile || 0
+                    rate_per_mile: effectiveRate
                 };
             });
 
@@ -270,9 +295,16 @@ export default function TripPlanning() {
     };
 
     const calculateDriverPay = (trip) => {
-        const selectedDriver = drivers.find(d => d.value === trip.driver);
-        const rate = selectedDriver?.ratePerMile || 0;
-        return (Number(trip.miles) || 0) * rate;
+        const driversList = trip.drivers || (trip.driver ? [trip.driver] : []);
+        const effDrivers = Math.max(driversList.length, 1);
+        const rateType = effDrivers > 1 ? 'team' : 'solo';
+        let totalPay = 0;
+        driversList.forEach(dVal => {
+            const selectedDriver = drivers.find(d => d.value === dVal);
+            const rate = rateType === 'team' ? (selectedDriver?.ratePerMileTeam || selectedDriver?.ratePerMile || 0) : (selectedDriver?.ratePerMileSolo || selectedDriver?.ratePerMile || 0);
+            totalPay += ((Number(trip.miles) || 0) / effDrivers) * rate;
+        });
+        return totalPay;
     };
 
     const [relayModal, setRelayModal] = useState(null); // stores the index after which to insert
@@ -318,6 +350,12 @@ export default function TripPlanning() {
 
     const addRelayPoint = async () => {
         if (!newRelayLocation) return toast.error('Please choose a location');
+        if (order.order_type === 'regular') {
+            const base = trips?.[0] || {};
+            if (!base.driver || !base.truck || !base.trailer) {
+                return toast.error('Please assign Driver/Truck/Trailer to the first trip before adding another trip');
+            }
+        }
         
         setLoading(true);
         try {
@@ -489,7 +527,7 @@ export default function TripPlanning() {
                                                 <p className='text-[9px] mt-1'>
                                                     {order.order_type === 'regular' ? (
                                                         <span className='text-gray-500'>
-                                                            Driver: <span className={`${trip.driver ? 'text-gray-300' : 'text-rose-400'}`}>{drivers.find(d => d.value === trip.driver)?.label || 'Unassigned'}</span>
+                                                            Driver(s): <span className={`${trip.drivers && trip.drivers.length > 0 ? 'text-gray-300' : 'text-rose-400'}`}>{trip.drivers && trip.drivers.length > 0 ? trip.drivers.map(d => drivers.find(drv => drv.value === d)?.label?.split('(')[0] || 'Unassigned').join(', ') : (drivers.find(d => d.value === trip.driver)?.label || 'Unassigned')}</span>
                                                         </span>
                                                     ) : (
                                                         <span className='text-gray-500'>
@@ -531,26 +569,24 @@ export default function TripPlanning() {
                                 {order.order_type === 'regular' ? (
                                     <>
                                         <div className='input-item'>
-                                            <label className='text-[10px] text-gray-500 uppercase font-bold mb-1 block'>Driver</label>
+                                            <label className='text-[10px] text-gray-500 uppercase font-bold mb-1 block'>Driver(s)</label>
                                             <Select 
+                                                isMulti
                                                 options={drivers} 
                                                 isSearchable={true}
                                                 classNamePrefix="react-select input"
-                                                placeholder="Choose Driver"
-                                                value={drivers.find(d => d.value === trips[activeTripIndex]?.driver)}
-                                                onChange={(opt) => {
+                                                placeholder="Choose Driver(s)"
+                                                value={drivers.filter(d => (trips[activeTripIndex]?.drivers || []).includes(d.value))}
+                                                onChange={(opts) => {
                                                     const newTrips = [...trips];
-                                                    newTrips[activeTripIndex].driver = opt.value;
+                                                    const values = opts ? opts.map(opt => opt.value) : [];
+                                                    newTrips[activeTripIndex].drivers = values;
+                                                    newTrips[activeTripIndex].driver = values.length > 0 ? values[0] : null;
                                                     setTrips(newTrips);
                                                 }}
                                             />
-                                            {!trips[activeTripIndex]?.driver && (
+                                            {(!trips[activeTripIndex]?.drivers || trips[activeTripIndex]?.drivers.length === 0) && (
                                                 <p className='text-[10px] text-rose-400 mt-1'>Driver is required for this segment</p>
-                                            )}
-                                            {trips[activeTripIndex]?.driver && (
-                                                <p className='text-[9px] text-rose-400 mt-1 uppercase font-bold tracking-widest'>
-                                                    Current Rate: ${drivers.find(d => d.value === trips[activeTripIndex].driver)?.ratePerMile}/mile
-                                                </p>
                                             )}
                                         </div>
                                         <div className='grid grid-cols-2 gap-4'>
@@ -590,6 +626,7 @@ export default function TripPlanning() {
                                                 className='btn bg-gray-800 text-white'
                                                 onClick={() => {
                                                     const newTrips = [...trips];
+                                                    newTrips[activeTripIndex].drivers = [];
                                                     newTrips[activeTripIndex].driver = null;
                                                     newTrips[activeTripIndex].truck = null;
                                                     newTrips[activeTripIndex].trailer = null;
@@ -604,6 +641,7 @@ export default function TripPlanning() {
                                                     const base = trips[activeTripIndex];
                                                     const newTrips = trips.map((t, idx) => idx <= activeTripIndex ? t : ({
                                                         ...t,
+                                                        drivers: base.drivers || [],
                                                         driver: base.driver,
                                                         truck: base.truck,
                                                         trailer: base.trailer

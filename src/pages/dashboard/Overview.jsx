@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useContext } from 'react'
 import AuthLayout from '../../layout/AuthLayout';
 import revanue from '../../img/revenue-graph.png'
 import loads from '../../img/loads-stats.png';
@@ -10,23 +10,35 @@ import { FiBox } from "react-icons/fi";
 import RecentOrdersLists from './order/RecentOrderLists';
 import Api from '../../api/Api';
 import { Link } from 'react-router-dom';
-import { useContext } from 'react';
 import { UserContext } from '../../context/AuthProvider';
 import { useAuth } from '../../context/MultiTenantAuthProvider';
 import { useMultiTenant } from '../../context/MultiTenantProvider';
 import safeStorage from '../../utils/safeStorage';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Legend
+} from 'recharts';
 
 export default function Overview() {
-  const { user: authUser, activeModule, setActiveModule } = useAuth(); // Multi-tenant auth user
+  const { user: authUser, company: authCompany, activeModule, setActiveModule } = useAuth(); // Multi-tenant auth user
   const { user } = useContext(UserContext); // Legacy user context
   const { tenant } = useMultiTenant();
   
   // Use multi-tenant auth user if available, fallback to legacy
   const currentUser = authUser || user;
-  const isAdmin = currentUser?.role === 3 || currentUser?.isTenantAdmin;
-  const allowedModules = Array.isArray(currentUser?.allowedModules) ? currentUser.allowedModules : ['outsourcing', 'regular'];
+  const isAdmin = currentUser?.is_admin === 1 || currentUser?.isTenantAdmin;
+  const allowedModules = Array.isArray(currentUser?.permissions) ? currentUser.permissions : [];
   
   const [lists, setLists] = useState([]);
+  const [chartData, setChartData] = useState([]);
   const [adminData, setAdminData] = useState(null);
   const [carriersData, setCarriersData] = useState([]);
   const [customersData, setCustomersData] = useState([]);
@@ -40,6 +52,9 @@ export default function Overview() {
     Api.get('/overview').then((res) => {
       if (res.data.status === true) {
         setLists(res.data.lists);
+        if (res.data.chartData) {
+          setChartData(res.data.chartData);
+        }
         setTopListLoading(false)
       }
     }).catch((err) => {
@@ -89,33 +104,37 @@ export default function Overview() {
          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
            <div>
              <h2 className='text-[#EDEFF6] font-bold text-3xl md:text-4xl mb-2 flex items-center gap-3'>
-               Welcome to {adminData?.tenantInfo?.tenant?.name || currentUser?.company?.name || tenant?.name}
+               Welcome to {adminData?.tenantInfo?.tenant?.name || authCompany?.name || currentUser?.company?.name || tenant?.name || currentUser?.tenantId}
                {isAdmin && <span className='text-[14px] bg-[#4EA1FF]/10 text-[#4EA1FF] px-3 py-1 rounded-full border border-[#4EA1FF]/20'>(Admin)</span>}
              </h2>
              <p className='text-[#8A8FA3] text-lg'>
-               You have administrative access to manage your company and employees.
+               {isAdmin ? 'You have administrative access to manage your company and employees.' : 'You can access your assigned modules and work items.'}
              </p>
            </div>
 
            {/* Module Switcher Tabs (Modern UI) */}
-           {allowedModules.length > 1 && (
-             <div className="flex bg-[#1B1E27] p-1.5 rounded-2xl border border-white/5 shadow-inner">
-               <button
-                 onClick={() => setActiveModule('outsourcing')}
-                 className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-6 rounded-xl transition-all duration-300 ${
-                   activeModule === 'outsourcing' ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
-                 }`}
-               >
-                 OUTSOURCING
-               </button>
-               <button
-                 onClick={() => setActiveModule('regular')}
-                 className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-6 rounded-xl transition-all duration-300 ${
-                   activeModule === 'regular' ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
-                 }`}
-               >
-                 REGULAR
-               </button>
+         {allowedModules.length > 1 && (
+           <div className="flex bg-[#1B1E27] p-1.5 rounded-2xl border border-white/5 shadow-inner">
+              {allowedModules.includes('outsourcing') && (
+                <button
+                  onClick={() => setActiveModule('outsourcing')}
+                  className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-6 rounded-xl transition-all duration-300 ${
+                    activeModule === 'outsourcing' ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
+                  }`}
+                >
+                  OUTSOURCING
+                </button>
+              )}
+              {allowedModules.includes('regular') && (
+                <button
+                  onClick={() => setActiveModule('regular')}
+                  className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-6 rounded-xl transition-all duration-300 ${
+                    activeModule === 'regular' ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
+                  }`}
+                >
+                  REGULAR
+                </button>
+              )}
              </div>
            )}
          </div>
@@ -198,6 +217,62 @@ export default function Overview() {
                   </div>
                   <div className='absolute bottom-0 left-8 right-8 h-[4px] bg-[#4EA1FF] rounded-t-full opacity-40 group-hover:opacity-100 transition-opacity duration-500'></div>
               </Link>
+           </div>
+         )}
+
+         {/* Dynamic Charts Section */}
+         {chartData && chartData.length > 0 && (
+           <div className='grid grid-cols-1 lg:grid-cols-2 gap-6 mt-10 mb-10'>
+              <div className='bg-[#11131A] border border-white/5 rounded-[32px] p-8 shadow-xl'>
+                 <h2 className='text-[#8A8FA3] mb-6 text-sm uppercase font-black tracking-widest'>Revenue & Profit Trend (Last 6 Months)</h2>
+                 <div className='h-[300px] w-full'>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                          </linearGradient>
+                          <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#2B3240" vertical={false} />
+                        <XAxis dataKey="name" stroke="#8A8FA3" axisLine={false} tickLine={false} />
+                        <YAxis stroke="#8A8FA3" axisLine={false} tickLine={false} tickFormatter={(value) => `$${value/1000}k`} />
+                        <Tooltip 
+                           contentStyle={{ backgroundColor: '#181C24', borderColor: '#2B3240', borderRadius: '12px', color: '#fff' }}
+                           itemStyle={{ fontWeight: 'bold' }}
+                           formatter={(value) => [`$${value.toLocaleString()}`, undefined]}
+                        />
+                        <Legend iconType="circle" />
+                        <Area type="monotone" dataKey="revenue" name="Revenue" stroke="#10B981" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+                        <Area type="monotone" dataKey="profit" name="Profit" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#colorProfit)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                 </div>
+              </div>
+              
+              <div className='bg-[#11131A] border border-white/5 rounded-[32px] p-8 shadow-xl'>
+                 <h2 className='text-[#8A8FA3] mb-6 text-sm uppercase font-black tracking-widest'>Loads Volume (Last 6 Months)</h2>
+                 <div className='h-[300px] w-full'>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#2B3240" vertical={false} />
+                        <XAxis dataKey="name" stroke="#8A8FA3" axisLine={false} tickLine={false} />
+                        <YAxis stroke="#8A8FA3" axisLine={false} tickLine={false} />
+                        <Tooltip 
+                           cursor={{ fill: '#181C24' }}
+                           contentStyle={{ backgroundColor: '#181C24', borderColor: '#2B3240', borderRadius: '12px', color: '#fff' }}
+                           itemStyle={{ color: '#B39CF6', fontWeight: 'bold' }}
+                        />
+                        <Legend iconType="circle" />
+                        <Bar dataKey="loads" name="Total Loads" fill="#B39CF6" radius={[6, 6, 0, 0]} barSize={40} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                 </div>
+              </div>
            </div>
          )}
 
@@ -328,7 +403,7 @@ export default function Overview() {
              )}
 
              {/* Quick Admin Actions */}
-             <div className='admin-actions pt-8'>
+             <div className='admin-actions pt-8 mb-8'>
                <h3 className='text-white text-xl mb-4'>Quick Actions</h3>
                <div className='flex flex-wrap gap-3'>
                  <Link to='/carriers' className='admin-action-btn !rounded-[10px] bg-blue-800 hover:bg-blue-700 text-white px-4 py-2 rounded-lg border border-blue-600 transition-colors flex items-center'>

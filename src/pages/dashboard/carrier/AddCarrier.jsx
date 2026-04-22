@@ -1,10 +1,11 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import Popup from '../../common/Popup'
 import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import countries from './../../common/Countries';
 import DynamicCarrierEmailInput from '../../../components/DynamicCarrierEmailInput';
+import GoogleAddressInput from '../../common/GoogleAddressInput';
 
 export default function AddCarrier({item, fetchLists, classes, text}){
 
@@ -23,8 +24,13 @@ export default function AddCarrier({item, fetchLists, classes, text}){
     });
 
     const [emails, setEmails] = useState([]);
+    const [showSecondaryPhone, setShowSecondaryPhone] = useState(!!item?.secondary_phone);
     const [action, setaction] = useState();
     const {Errors} = useContext(UserContext);
+
+    useEffect(() => {
+      setShowSecondaryPhone(!!item?.secondary_phone);
+    }, [item]);
 
     const handleinput = (e) => {
       setData({ ...data, [e.target.name]: e.target.value});
@@ -81,6 +87,7 @@ export default function AddCarrier({item, fetchLists, classes, text}){
             secondary_phone: "",
           });
           setEmails([]);
+          setShowSecondaryPhone(false);
           setTimeout(() => {
             setaction();
           }, 1000);
@@ -114,19 +121,58 @@ export default function AddCarrier({item, fetchLists, classes, text}){
               />
             </div>
             <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Phone</label>
-               <input defaultValue={item?.phone} required name='phone' onChange={handleinput} type='number' placeholder={"Phone Number"} className="input-sm" />
+               <label className="mt-4 mb-0 block text-sm text-gray-400">Primary Phone</label>
+               <input defaultValue={item?.phone} required name='phone' onChange={handleinput} type='number' placeholder={"Primary phone"} className="input-sm" />
             </div>
             <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400"> Secondary Phone</label>
-               <input defaultValue={item?.secondary_phone} required name='secondary_phone' onChange={handleinput} type='number' placeholder={"Secondary Phone"} className="input-sm" />
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Additional Phone</label>
+              {showSecondaryPhone ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    defaultValue={item?.secondary_phone}
+                    name="secondary_phone"
+                    onChange={handleinput}
+                    type="number"
+                    placeholder="Additional phone"
+                    className="input-sm flex-1"
+                  />
+                  <button
+                    type="button"
+                    className="text-red-400 hover:text-red-300 text-normal p-1"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setData((prev) => ({ ...prev, secondary_phone: "" }));
+                      setShowSecondaryPhone(false);
+                    }}
+                    title="Remove additional phone"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="mt-1 text-blue-400 hover:text-blue-300 text-normal flex items-center cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowSecondaryPhone(true);
+                  }}
+                >
+                  <span className="mr-1">+</span> Add Another Phone
+                </button>
+              )}
             </div>
             </div>
 
             <div className='grid grid-cols-1 gap-5'>
               <div className='input-item'>
                 <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
-                <input defaultValue={item?.location} required name='location' onChange={handleinput} type={'text'} placeholder={"Enter location"} className="input-sm" />
+                <GoogleAddressInput
+                  value={data.location}
+                  onChange={(v) => setData((prev) => ({ ...prev, location: v }))}
+                  placeholder="Enter location"
+                  className="input-sm"
+                />
               </div>
             </div>
             

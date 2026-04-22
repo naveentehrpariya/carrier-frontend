@@ -4,6 +4,7 @@ import Api from '../../../api/Api';
 import toast from 'react-hot-toast';
 import { UserContext } from '../../../context/AuthProvider';
 import { HiOutlineUserCircle } from 'react-icons/hi2';
+import GoogleAddressInput from '../../common/GoogleAddressInput';
 
 export default function AddDriver({ text = "Add Driver", classes = "", fetchLists, item = null }) {
   const { Errors } = useContext(UserContext);
@@ -13,28 +14,63 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
   const [phone, setPhone] = useState(item?.phone || "");
   const [country, setCountry] = useState(item?.country || "");
   const [address, setAddress] = useState(item?.address || "");
-  const [ratePerMile, setRatePerMile] = useState(item?.driverProfile?.ratePerMile || "");
+  const [ratePerMileSolo, setRatePerMileSolo] = useState(item?.driverProfile?.ratePerMileSolo ?? item?.driverProfile?.ratePerMile ?? "");
+  const [ratePerMileTeam, setRatePerMileTeam] = useState(item?.driverProfile?.ratePerMileTeam ?? item?.driverProfile?.ratePerMile ?? "");
+  const [cityHoursRate, setCityHoursRate] = useState(item?.driverProfile?.cityHoursRate ?? "");
+  const [licenseNumber, setLicenseNumber] = useState(item?.driverProfile?.licenseNumber || "");
+  const [licenseIssueDate, setLicenseIssueDate] = useState(
+    item?.driverProfile?.licenseIssueDate ? String(item.driverProfile.licenseIssueDate).slice(0, 10) : ""
+  );
+  const [licenseExpiry, setLicenseExpiry] = useState(
+    item?.driverProfile?.licenseExpiry ? String(item.driverProfile.licenseExpiry).slice(0, 10) : ""
+  );
+  const [licenseState, setLicenseState] = useState(item?.driverProfile?.licenseState || "");
   const [notes, setNotes] = useState(item?.driverProfile?.notes || "");
-  const [licenseDoc, setLicenseDoc] = useState(null);
+  const [licenseDocs, setLicenseDocs] = useState([]);
   
-  const [emails, setEmails] = useState(item?.driverProfile?.emails?.filter(e => !e.is_primary).map(e => e.email) || [""]);
-  const [phones, setPhones] = useState(item?.driverProfile?.phones?.filter(p => !p.is_primary).map(p => p.phone) || [""]);
+  const initialEmails = Array.isArray(item?.driverProfile?.emails)
+    ? item.driverProfile.emails.filter((e) => !e.is_primary).map((e) => e.email).filter(Boolean)
+    : [];
+  const initialPhones = Array.isArray(item?.driverProfile?.phones)
+    ? item.driverProfile.phones.filter((p) => !p.is_primary).map((p) => p.phone).filter(Boolean)
+    : [];
+  const [emails, setEmails] = useState(initialEmails);
+  const [phones, setPhones] = useState(initialPhones);
+  const [showExtraEmails, setShowExtraEmails] = useState(initialEmails.length > 0);
+  const [showExtraPhones, setShowExtraPhones] = useState(initialPhones.length > 0);
   
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
   
   const resetForm = () => {
     setName(""); setEmail(""); setPhone(""); setCountry(""); setAddress("");
-    setRatePerMile(""); setNotes(""); setLicenseDoc(null);
-    setEmails([""]); setPhones([""]);
+    setRatePerMileSolo(""); setRatePerMileTeam(""); setCityHoursRate("");
+    setLicenseNumber(""); setLicenseIssueDate(""); setLicenseExpiry(""); setLicenseState("");
+    setNotes(""); setLicenseDocs([]);
+    setEmails([]); setPhones([]);
+    setShowExtraEmails(false); setShowExtraPhones(false);
   };
   
-  const addEmailField = () => setEmails([...emails, ""]);
-  const removeEmailField = (idx) => setEmails(emails.filter((_, i) => i !== idx));
+  const addEmailField = () => {
+    setShowExtraEmails(true);
+    setEmails((prev) => (prev.length ? [...prev, ""] : [""]));
+  };
+  const removeEmailField = (idx) => {
+    const updated = emails.filter((_, i) => i !== idx);
+    setEmails(updated);
+    if (updated.length === 0) setShowExtraEmails(false);
+  };
   const changeEmailField = (idx, val) => setEmails(emails.map((e, i) => i === idx ? val : e));
   
-  const addPhoneField = () => setPhones([...phones, ""]);
-  const removePhoneField = (idx) => setPhones(phones.filter((_, i) => i !== idx));
+  const addPhoneField = () => {
+    setShowExtraPhones(true);
+    setPhones((prev) => (prev.length ? [...prev, ""] : [""]));
+  };
+  const removePhoneField = (idx) => {
+    const updated = phones.filter((_, i) => i !== idx);
+    setPhones(updated);
+    if (updated.length === 0) setShowExtraPhones(false);
+  };
   const changePhoneField = (idx, val) => setPhones(phones.map((p, i) => i === idx ? val : p));
   
   const submit = async () => {
@@ -45,7 +81,9 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
     try {
       const body = {
         name, email, phone, country, address,
-        ratePerMile, notes,
+        ratePerMileSolo, ratePerMileTeam, cityHoursRate,
+        licenseNumber, licenseIssueDate, licenseExpiry, licenseState,
+        notes,
         emails: emails.filter(Boolean),
         phones: phones.filter(Boolean)
       };
@@ -53,20 +91,19 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
       const resp = await Api.post(endpoint, body);
       if (resp.data.status) {
         const newUser = resp.data.user;
-        // If a license document is selected, upload it as employee document
-        if (licenseDoc && newUser?._id) {
-          const fdata = new FormData();
-          fdata.append('attachment', licenseDoc);
-          try {
-            const up = await Api.post(`/upload/employee/doc/${newUser._id}`, fdata);
-            if (up.data.status) {
-              toast.success('License document uploaded');
-            } else {
-              toast.error(up.data.message || 'Failed to upload license');
+        if (Array.isArray(licenseDocs) && licenseDocs.length > 0 && newUser?._id) {
+          for (const file of licenseDocs) {
+            const fdata = new FormData();
+            fdata.append('attachment', file);
+            try {
+              const up = await Api.post(`/upload/employee/doc/${newUser._id}`, fdata);
+              if (!up.data.status) {
+                toast.error(up.data.message || 'Failed to upload document');
+              }
+            } catch (e) {
+              Errors && Errors(e);
+              toast.error('Failed to upload document');
             }
-          } catch (e) {
-            Errors && Errors(e);
-            toast.error('Failed to upload license');
           }
         }
         toast.success(resp.data.message || 'Driver added');
@@ -108,15 +145,8 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
                 onClick={() => setActiveTab("general")}
                 className={`pb-2 px-1 text-sm font-medium transition-colors relative ${activeTab === "general" ? "text-rose-400" : "text-gray-500 hover:text-gray-300"}`}
               >
-                General Info
+                Driver Info
                 {activeTab === "general" && <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-rose-400'></div>}
-              </button>
-              <button 
-                onClick={() => setActiveTab("contacts")}
-                className={`pb-2 px-1 text-sm font-medium transition-colors relative ${activeTab === "contacts" ? "text-rose-400" : "text-gray-500 hover:text-gray-300"}`}
-              >
-                Contacts
-                {activeTab === "contacts" && <div className='absolute bottom-0 left-0 right-0 h-0.5 bg-rose-400'></div>}
               </button>
               <button 
                 onClick={() => setActiveTab("payment")}
@@ -129,57 +159,83 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
 
             {/* General Info Tab */}
             {activeTab === "general" && (
-              <div className='grid grid-cols-1 md:grid-cols-2 gap-4 animate-fadeIn'>
-                <div>
-                  <label className='label text-gray-300'>Name</label>
-                  <input className='input-sm' value={name} onChange={(e)=>setName(e.target.value)} placeholder='Driver name' />
-                </div>
-                <div>
-                  <label className='label text-gray-300'>Primary Email</label>
-                  <input className='input-sm' type='email' value={email} onChange={(e)=>setEmail(e.target.value)} placeholder='Primary email' />
-                </div>
-                <div>
-                  <label className='label text-gray-300'>Primary Phone</label>
-                  <input className='input-sm' value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder='Primary phone' />
-                </div>
-                <div>
-                  <label className='label text-gray-300'>Country</label>
-                  <input className='input-sm' value={country} onChange={(e)=>setCountry(e.target.value)} placeholder='Country' />
-                </div>
-                <div className='md:col-span-2'>
-                  <label className='label text-gray-300'>Address</label>
-                  <input className='input-sm' value={address} onChange={(e)=>setAddress(e.target.value)} placeholder='Address' />
-                </div>
-              </div>
-            )}
-            
-            {/* Contacts Tab */}
-            {activeTab === "contacts" && (
               <div className='animate-fadeIn'>
-                <div className=''>
-                  <label className='label text-gray-300'>Additional Emails</label>
-                  {emails.map((e, idx)=>(
-                    <div key={`em-${idx}`} className='flex items-center gap-2 mb-2'>
-                      <input className='input-sm flex-1' type='email' value={e} onChange={(ev)=>changeEmailField(idx, ev.target.value)} placeholder='Email' />
-                      {emails.length > 1 && (
-                        <button className='btn xs text-white bg-red-700' onClick={()=>removeEmailField(idx)}>Remove</button>
-                      )}
-                    </div>
-                  ))}
-                  <button className='btn xs text-black' onClick={addEmailField}>Add Email</button>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <div>
+                    <label className='label text-gray-300'>Name</label>
+                    <input className='input-sm' value={name} onChange={(e)=>setName(e.target.value)} placeholder='Driver name' />
+                  </div>
+                  <div>
+                    <label className='label text-gray-300'>Primary Email</label>
+                    <input className='input-sm' type='email' value={email} onChange={(e)=>setEmail(e.target.value)} placeholder='Primary email' />
+                  </div>
+                  <div>
+                    <label className='label text-gray-300'>Primary Phone</label>
+                    <input className='input-sm' value={phone} onChange={(e)=>setPhone(e.target.value)} placeholder='Primary phone' />
+                  </div>
+                  <div>
+                    <label className='label text-gray-300'>Country</label>
+                    <input className='input-sm' value={country} onChange={(e)=>setCountry(e.target.value)} placeholder='Country' />
+                  </div>
+                  <div className='md:col-span-2'>
+                    <label className='label text-gray-300'>Complete Address</label>
+                    <GoogleAddressInput value={address} onChange={setAddress} placeholder="Complete address" className="input-sm" />
+                  </div>
                 </div>
-                
-                <div className='mt-6'>
-                  <label className='label text-gray-300'>Additional Phones</label>
-                  {phones.map((p, idx)=>(
-                    <div key={`ph-${idx}`} className='flex items-center gap-2 mb-2'>
-                      <input className='input-sm flex-1' value={p} onChange={(ev)=>changePhoneField(idx, ev.target.value)} placeholder='Phone' />
-                      {phones.length > 1 && (
-                        <button className='btn xs text-white bg-red-700' onClick={()=>removePhoneField(idx)}>Remove</button>
-                      )}
-                    </div>
-                  ))}
-                  <button className='btn xs text-black' onClick={addPhoneField}>Add Phone</button>
+
+                <div className='mt-6 grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <div>
+                    <label className='label text-gray-300'>License Number</label>
+                    <input className='input-sm' value={licenseNumber} onChange={(e)=>setLicenseNumber(e.target.value)} placeholder='License number' />
+                  </div>
+                  <div>
+                    <label className='label text-gray-300'>Province</label>
+                    <input className='input-sm' value={licenseState} onChange={(e)=>setLicenseState(e.target.value)} placeholder='Province' />
+                  </div>
+                  <div>
+                    <label className='label text-gray-300'>License Issue Date</label>
+                    <input className='input-sm' type='date' value={licenseIssueDate} onChange={(e)=>setLicenseIssueDate(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className='label text-gray-300'>License Expiry Date</label>
+                    <input className='input-sm' type='date' value={licenseExpiry} onChange={(e)=>setLicenseExpiry(e.target.value)} />
+                  </div>
+                </div>
+
+                <div className='mt-6 grid grid-cols-1 md:grid-cols-2 gap-4'>
+                  <div>
+                    <label className='label text-gray-300'>Additional Emails</label>
+                    {showExtraEmails ? (
+                      <>
+                        {emails.map((e, idx)=>(
+                          <div key={`em-${idx}`} className='flex items-center gap-2 mb-2'>
+                            <input className='input-sm flex-1' type='email' value={e} onChange={(ev)=>changeEmailField(idx, ev.target.value)} placeholder='Email' />
+                            <button className='btn xs text-white bg-red-700' onClick={()=>removeEmailField(idx)}>Remove</button>
+                          </div>
+                        ))}
+                        <button className='btn xs text-black' onClick={addEmailField}>Add Email</button>
+                      </>
+                    ) : (
+                      <button className='btn xs text-black' onClick={addEmailField}>Add Another Email</button>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className='label text-gray-300'>Additional Phones</label>
+                    {showExtraPhones ? (
+                      <>
+                        {phones.map((p, idx)=>(
+                          <div key={`ph-${idx}`} className='flex items-center gap-2 mb-2'>
+                            <input className='input-sm flex-1' value={p} onChange={(ev)=>changePhoneField(idx, ev.target.value)} placeholder='Phone' />
+                            <button className='btn xs text-white bg-red-700' onClick={()=>removePhoneField(idx)}>Remove</button>
+                          </div>
+                        ))}
+                        <button className='btn xs text-black' onClick={addPhoneField}>Add Phone</button>
+                      </>
+                    ) : (
+                      <button className='btn xs text-black' onClick={addPhoneField}>Add Another Phone</button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -189,12 +245,30 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
               <div className='animate-fadeIn'>
                 <div className='grid grid-cols-1 gap-4'>
                   <div>
-                    <label className='label text-gray-300 font-semibold'>Rate per Mile ($)</label>
+                    <label className='label text-gray-300 font-semibold'>Rate per Mile (Solo) ($)</label>
                     <div className='relative'>
                       <span className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-500'>$</span>
-                      <input className='input-sm ps-8' type='number' step='0.01' value={ratePerMile} onChange={(e)=>setRatePerMile(e.target.value)} placeholder='e.g., 0.75' />
+                      <input className='input-sm ps-8' type='number' step='0.01' value={ratePerMileSolo} onChange={(e)=>setRatePerMileSolo(e.target.value)} placeholder='e.g., 0.75' />
                     </div>
-                    <p className='text-[10px] text-gray-500 mt-1'>This rate will be used to calculate salary for trips assigned to this driver.</p>
+                    <p className='text-[10px] text-gray-500 mt-1'>Applied when an order has a single driver.</p>
+                  </div>
+
+                  <div>
+                    <label className='label text-gray-300 font-semibold'>Rate per Mile (Team) ($)</label>
+                    <div className='relative'>
+                      <span className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-500'>$</span>
+                      <input className='input-sm ps-8' type='number' step='0.01' value={ratePerMileTeam} onChange={(e)=>setRatePerMileTeam(e.target.value)} placeholder='e.g., 0.85' />
+                    </div>
+                    <p className='text-[10px] text-gray-500 mt-1'>Applied when an order has multiple drivers.</p>
+                  </div>
+
+                  <div>
+                    <label className='label text-gray-300 font-semibold'>City Hours Rate ($/hour)</label>
+                    <div className='relative'>
+                      <span className='absolute left-4 top-1/2 -translate-y-1/2 text-gray-500'>$</span>
+                      <input className='input-sm ps-8' type='number' step='0.01' value={cityHoursRate} onChange={(e)=>setCityHoursRate(e.target.value)} placeholder='e.g., 25.00' />
+                    </div>
+                    <p className='text-[10px] text-gray-500 mt-1'>Used when adding city hours in payslip generation.</p>
                   </div>
                   
                   <div className='mt-2'>
@@ -216,7 +290,7 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
                         type='file' 
                         multiple 
                         accept=".pdf,image/*,.doc,.docx" 
-                        onChange={(e)=>setLicenseDoc(e.target.files[0])} 
+                        onChange={(e)=>setLicenseDocs(Array.from(e.target.files || []))} 
                       />
                       <label htmlFor="driver-files" className='cursor-pointer flex flex-col items-center'>
                         <div className='w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center mb-3 text-rose-400'>
@@ -225,10 +299,12 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
                         <span className='text-sm text-gray-300 font-medium'>Click to upload files</span>
                         <span className='text-xs text-gray-500 mt-1'>PDF, Images, or Documents</span>
                       </label>
-                      {licenseDoc && (
+                      {licenseDocs.length > 0 && (
                         <div className='mt-4 p-2 bg-rose-500/10 border border-rose-500/20 rounded-lg flex items-center gap-2'>
-                          <span className='text-xs text-rose-300 truncate max-w-[200px]'>{licenseDoc.name}</span>
-                          <button onClick={() => setLicenseDoc(null)} className='text-rose-500 hover:text-rose-400'>&times;</button>
+                          <span className='text-xs text-rose-300 truncate max-w-[220px]'>
+                            {licenseDocs.map((f) => f.name).join(', ')}
+                          </span>
+                          <button onClick={() => setLicenseDocs([])} className='text-rose-500 hover:text-rose-400'>&times;</button>
                         </div>
                       )}
                     </div>

@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/MultiTenantAuthProvider';
 import toast from 'react-hot-toast';
 import AuthLayout from '../../layout/AuthLayout';
-import safeStorage from '../../utils/safeStorage';
 import Api from '../../api/Api';
 
 export default function UserProfile() {
     const { user, updateProfile } = useAuth();
-    const [loading, setLoading] = useState(false);
     const [emailLoading, setEmailLoading] = useState(false);
     const [passwordLoading, setPasswordLoading] = useState(false);
     const [subscriptionData, setSubscriptionData] = useState(null);
@@ -90,9 +88,7 @@ export default function UserProfile() {
         setEmailLoading(true);
         
         try {
-            const response = await Api.post(`/api/auth/edit_user/${user._id}`, {
-                email: emailForm.email
-            });
+            const response = await Api.patch(`/user/update`, { email: emailForm.email });
 
             const data = response.data;
             
@@ -100,14 +96,14 @@ export default function UserProfile() {
                 toast.success('Email updated successfully!');
                 // Update user context if needed
                 if (updateProfile) {
-                    updateProfile({ ...user, email: emailForm.email });
+                    updateProfile(data.user || { ...user, email: emailForm.email });
                 }
             } else {
                 toast.error(data.message || 'Failed to update email');
             }
         } catch (error) {
             console.error('Email update error:', error);
-            toast.error('Network error. Please try again.');
+            toast.error(error.response?.data?.message || 'Network error. Please try again.');
         } finally {
             setEmailLoading(false);
         }
@@ -116,7 +112,7 @@ export default function UserProfile() {
     const handleUpdatePassword = async (e) => {
         e.preventDefault();
         
-        if (!passwordForm.password || !passwordForm.confirmPassword) {
+        if (!passwordForm.currentPassword || !passwordForm.password || !passwordForm.confirmPassword) {
             toast.error('All password fields are required');
             return;
         }
@@ -135,7 +131,7 @@ export default function UserProfile() {
         
         try {
             const response = await Api.post('/api/auth/change-password', {
-                id: user._id,
+                currentPassword: passwordForm.currentPassword,
                 password: passwordForm.password
             });
 
@@ -153,7 +149,7 @@ export default function UserProfile() {
             }
         } catch (error) {
             console.error('Password update error:', error);
-            toast.error('Network error. Please try again.');
+            toast.error(error.response?.data?.message || 'Network error. Please try again.');
         } finally {
             setPasswordLoading(false);
         }
@@ -200,7 +196,7 @@ export default function UserProfile() {
                                         {user.email}
                                     </p>
                                     <span className="inline-block px-2 py-1 bg-blue-600 text-blue-100 text-[10px] rounded-full mt-1">
-                                        {user.is_admin ? 'Tenant Admin' : 'User'}
+                                        {(user.isTenantAdmin || user.role === 3 || user.is_admin === 1) ? 'Tenant Admin' : 'User'}
                                     </span>
                                 </div>
                             </div>
@@ -216,7 +212,7 @@ export default function UserProfile() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-400">Role:</span>
-                                    <span className="text-white">{user.is_admin ? 'Tenant Administrator' : 'User'}</span>
+                                    <span className="text-white">{(user.isTenantAdmin || user.role === 3 || user.is_admin === 1) ? 'Administrator' : (user.role === 2 ? 'Accountant' : (user.role === 1 ? 'Employee/Staff' : (user.role === 0 ? 'Driver' : 'User')))}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-gray-400">Status:</span>

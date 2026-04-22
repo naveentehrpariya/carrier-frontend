@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import Api from '../api/Api';
 import { useMultiTenant } from './MultiTenantProvider';
 import { useAuth } from './MultiTenantAuthProvider';
@@ -25,7 +25,7 @@ export function SidebarCountsProvider({ children }) {
   const { getTenantApi } = useMultiTenant();
   const tenantApi = useMemo(() => (getTenantApi ? getTenantApi() : api), [getTenantApi, tenant?.id, isSuperAdmin]);
 
-  const fetchCounts = async () => {
+  const fetchCounts = useCallback(async () => {
     if (refreshingRef.current) return; // Prevent concurrent refreshes
     refreshingRef.current = true;
     try {
@@ -51,14 +51,14 @@ export function SidebarCountsProvider({ children }) {
       setLoadingCounts(false);
       refreshingRef.current = false;
     }
-  };
+  }, [tenantApi]);
 
   useEffect(() => {
     // Initial load and on tenant change (only when authenticated)
     if (!isSuperAdmin && isAuthenticated) {
       fetchCounts();
     }
-  }, [tenantApi, isSuperAdmin, isAuthenticated]);
+  }, [fetchCounts, isSuperAdmin, isAuthenticated]);
 
   useEffect(() => {
     // Listen for global refresh events emitted after mutations
@@ -67,7 +67,7 @@ export function SidebarCountsProvider({ children }) {
     };
     window.addEventListener('sidebar-counts:refresh', onRefreshEvent);
     return () => window.removeEventListener('sidebar-counts:refresh', onRefreshEvent);
-  }, [isSuperAdmin, tenantApi]);
+  }, [isSuperAdmin, fetchCounts]);
 
   const value = useMemo(() => ({ counts, loadingCounts, refreshCounts: fetchCounts }), [counts, loadingCounts]);
   return (

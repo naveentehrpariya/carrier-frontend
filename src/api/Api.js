@@ -1,6 +1,6 @@
 import axios from 'axios';
 import safeStorage from '../utils/safeStorage';
-const APP_URL = 'http://localhost:8080';
+const APP_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 const APP_URL_LIVE = 'https://logistikore.com/api';
 function getToken(){
   const data = safeStorage.getItem('token');

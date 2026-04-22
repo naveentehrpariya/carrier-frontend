@@ -19,35 +19,28 @@ export default function EmployeeOrders({ employeeID, employee }) {
    const fetchLists = (value) => {
       setLoading(true);
       
-      // Fetch all orders first
-      const resp = Api.get(`/order/listings?${value ? `search=${value}` : ''}`);
+      const qs = new URLSearchParams();
+      if (value) qs.set('search', value);
+      if (employeeID) {
+         if (employee?.permissions?.includes('driver')) {
+            qs.set('driver_id', employeeID);
+         } else {
+            qs.set('created_by_id', employeeID);
+         }
+      }
+      const resp = Api.get(`/order/listings?${qs.toString()}`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
-            let ordersList = res.data.orders || [];
-            
-            // Filter orders by employee ID (creator)
-            if (employeeID && ordersList.length > 0) {
-               ordersList = ordersList.filter(order => {
-                  // Try different possible field names for the creator
-                  return order.created_by?._id === employeeID || 
-                         order.created_by === employeeID ||
-                         order.createdBy?._id === employeeID ||
-                         order.createdBy === employeeID ||
-                         order.employee_id === employeeID ||
-                         order.user_id === employeeID ||
-                         order.addedBy === employeeID ||
-                         order.addedBy?._id === employeeID;
-               });
-            }
+            const ordersList = res.data.orders || [];
             
             setLists(ordersList);
             
             // Calculate stats
             const totalOrders = ordersList.length;
-            const completedOrders = ordersList.filter(order => order.status === 'completed').length;
-            const pendingOrders = ordersList.filter(order => order.status === 'pending' || order.status === 'active').length;
-            const inProgressOrders = ordersList.filter(order => order.status === 'in_progress' || order.status === 'processing').length;
+            const completedOrders = ordersList.filter(order => order.order_status === 'completed').length;
+            const pendingOrders = ordersList.filter(order => order.order_status === 'added' || order.order_status === 'intransit').length;
+            const inProgressOrders = 0;
             const totalRevenue = ordersList.reduce((sum, order) => {
                return sum + (parseFloat(order.total_amount) || 0);
             }, 0);
@@ -172,7 +165,7 @@ export default function EmployeeOrders({ employeeID, employee }) {
                         <div className="flex justify-between">
                            <span className="text-gray-400">Role:</span>
                            <span className="text-blue-400 capitalize">
-                              {employee?.role === 2 ? 'Accountant' : employee?.role === 3 ? 'Admin' : 'Employee'}
+                              {employee?.permissions?.includes('accounting') ? 'Accountant' : employee?.is_admin === 1 ? 'Admin' : 'Employee'}
                            </span>
                         </div>
                   </div>
@@ -184,7 +177,9 @@ export default function EmployeeOrders({ employeeID, employee }) {
 
          {/* Orders Section */}
          <div className='md:flex justify-between items-center'>
-            <h2 className='text-white text-2xl mb-4 md:mb-0'>Orders Created by {employee?.name}</h2>
+            <h2 className='text-white text-2xl mb-4 md:mb-0'>
+               {employee?.permissions?.includes('driver') ? `Orders Assigned to ${employee?.name}` : `Orders Created by ${employee?.name}`}
+            </h2>
             <div className='sm:flex items-center justify-between md:justify-end'>
                <input 
                   ref={debounceRef} 
@@ -206,7 +201,7 @@ export default function EmployeeOrders({ employeeID, employee }) {
                      <div className="text-gray-400 text-6xl mb-4">📋</div>
                      <Nocontent text={`No orders found${employeeID ? ` for ${employee?.name}` : ''}`} />
                      <p className="text-gray-500 mt-2">
-                        {employee?.name} hasn't created any orders yet.
+                        {employee?.permissions?.includes('driver') ? `${employee?.name} doesn't have any assigned orders yet.` : `${employee?.name} hasn't created any orders yet.`}
                      </p>
                   </div>
                }

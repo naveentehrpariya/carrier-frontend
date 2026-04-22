@@ -398,11 +398,11 @@ export default function AllTenantsManagement() {
       const loadingToast = toast.loading(`Accessing ${tenant.name} environment...`);
       
       // Use the tenant emulation API
-      const tenantId = tenant.tenantId || tenant._id;
+      const tenantId = tenant.tenantId;
       console.log('🔍 Selected tenant ID for API call:', tenantId);
       console.log('🔍 Making emulation API call to:', '/api/super-admin/emulate-tenant');
       
-      const requestPayload = { tenantId: tenantId };
+      const requestPayload = { tenantId };
       console.log('📞 API Request payload:', requestPayload);
       
       const response = await Api.post('/api/super-admin/emulate-tenant', requestPayload);
@@ -419,20 +419,11 @@ export default function AllTenantsManagement() {
         console.log('✅ Tenant emulation successful!');
         console.log('🔑 Response data:', response.data);
         toast.success(`Successfully authenticated for ${tenant.name}`);
-        let targetUrl = response.data.redirectUrl;
-        const isLocalDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-        if (isLocalDev) {
-          alert('sdfhdf1')
-          if (targetUrl.includes('?tenant=')) {
-            alert('sdfhdf2')
-            targetUrl = targetUrl.replace('http://localhost:3000?', 'http://localhost:3000/home?');
-          }
-          alert('sdfhdf3')
-        }
+        const targetUrl = response.data.redirectUrl || `http://localhost:3000/home?tenant=${tenantId}`;
         
         console.log('🔗 Environment detection:', {
           currentHostname: window.location.hostname,
-          isLocalDev: isLocalDev,
+          isLocalDev: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
           tenantSubdomain: tenant.subdomain,
           tenantDomain: tenant.domain,
           tenantFullDomain: tenant.fullDomain
@@ -441,12 +432,7 @@ export default function AllTenantsManagement() {
         console.log('🔗 Final target URL:', targetUrl);
         const urlWithToken = `${targetUrl}${targetUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(response.data.token)}`;
         console.log('🔗 Final URL with token:', urlWithToken);
-        if(isLocalDev){
-          const url = `http:localhost:3000?token=${encodeURIComponent(response.data.token)}`;
-          window.open(url, '_blank');
-        } else { 
-          window.open(urlWithToken, '_blank');
-        }
+        window.open(urlWithToken, '_blank');
       } else {
         console.error('❌ Tenant emulation failed - API returned success=false');
         console.error('❌ Response data:', response.data);
@@ -467,16 +453,9 @@ export default function AllTenantsManagement() {
       
       // Fallback: Just open the tenant URL
       console.log('🔄 Falling back to direct URL access');
-      const subdomain = tenant.subdomain;
-      let domainurl;
-      alert("window.location.href",window.location.href)
-      if(window.location.href == 'localhost'){
-         domainurl = `http://${subdomain}.logistikore.com/login`;
-      } else { 
-         domainurl = `http://localhost:3000/login?tanent=${subdomain}`;
-
-      }
-      window.open(domainurl, '_blank');
+      const tenantId = tenant.tenantId;
+      const fallbackUrl = `http://localhost:3000/home?tenant=${encodeURIComponent(tenantId)}`;
+      window.open(fallbackUrl, '_blank');
     }
   };
 
@@ -729,9 +708,9 @@ export default function AllTenantsManagement() {
                               {tenant.subdomain}
                             </div> */}
                             <div className="mt-2 flex items-center gap-2"><span className="text-[10px] px-2 py-1 rounded-full bg-gray-800 text-gray-300 border border-gray-700">ID: {tenant.tenantId}</span></div>
-                            {tenant.admin && (
+                            {tenant.contactInfo?.adminEmail && (
                               <div className="text-xs text-gray-400">
-                                {tenant.admin.name} • {tenant.admin.email}
+                                {(tenant.contactInfo?.adminName || 'Admin')} • {tenant.contactInfo.adminEmail}
                               </div>
                             )}
                           </div>
@@ -742,9 +721,9 @@ export default function AllTenantsManagement() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="space-y-2">
                           <div>
-                            <span className={`inline-flex uppercase items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPlanBadgeColor(tenant.subscription?.plan)}`}>
+                            <span className={`inline-flex uppercase items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPlanBadgeColor(tenant.subscriptionPlan?.slug || tenant.subscription?.planSlug || tenant.subscription?.legacyPlan || '')}`}>
                               <CreditCardIcon className="h-3 w-3 mr-1" />
-                              {tenant.subscription?.plan || 'No Plan'}
+                              {tenant.subscriptionPlan?.name || tenant.subscription?.planSlug || tenant.subscription?.legacyPlan || 'No Plan'}
                             </span>
                           </div>
                         </div>

@@ -38,9 +38,10 @@ export default function EmployeeDetail() {
       fetchEmployee();
    }, [id]);
 
-   const getRoleText = (role, position) => {
-      if (role === '2' || role === 2) return `Accountant${position ? ` (${position})` : ''}`;
-      if (role === '3' || role === 3) return `Administrator${position ? ` (${position})` : ''}`;
+   const getRoleText = (permissions, position) => {
+      if (employee?.is_admin === 1) return `Administrator${position ? ` (${position})` : ''}`;
+      if (permissions?.includes('accounting')) return `Accountant${position ? ` (${position})` : ''}`;
+      if (permissions?.includes('driver')) return `Driver${position ? ` (${position})` : ''}`;
       return `Employee${position ? ` (${position})` : ''}`;
    }
 
@@ -79,10 +80,10 @@ export default function EmployeeDetail() {
                            <p className="pt-2 text-white flex items-center text-start">
                               <span className="font-semibold w-32">Role:</span>
                               <span className={`px-3 py-1 rounded-full text-sm ${
-                                 employee?.role === 2 ? 'bg-orange-600' : 
-                                 employee?.role === 3 ? 'bg-red-600' : 'bg-blue-600'
+                                 employee?.permissions?.includes('accounting') ? 'bg-orange-600' : 
+                                 employee?.is_admin === 1 ? 'bg-red-600' : 'bg-blue-600'
                               } text-white`}>
-                                 {getRoleText(employee?.role, employee?.position)}
+                                 {getRoleText(employee?.permissions, employee?.position)}
                               </span>
                            </p>
                            <p className="pt-2 text-white flex items-center text-start">

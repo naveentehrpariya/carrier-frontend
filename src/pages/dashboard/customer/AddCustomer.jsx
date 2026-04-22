@@ -6,6 +6,7 @@ import { UserContext } from '../../../context/AuthProvider';
 import countries from './../../common/Countries';
 import Select from 'react-select'
 import DynamicEmailInput from '../../../components/DynamicEmailInput'
+import GoogleAddressInput from '../../common/GoogleAddressInput';
 
 export default function AddCustomer({item, fetchLists, classes, text}){
 
@@ -23,10 +24,14 @@ export default function AddCustomer({item, fetchLists, classes, text}){
       zipcode: item?.zipcode || "",
       assigned_to: item?.assigned_to?._id || null,
     });
-
     const [emails, setEmails] = useState([]);
+    const [showSecondaryPhone, setShowSecondaryPhone] = useState(!!item?.secondary_phone);
     const [action, setaction] = useState();
     const {Errors} = useContext(UserContext);
+
+    useEffect(() => {
+      setShowSecondaryPhone(!!item?.secondary_phone);
+    }, [item]);
 
     const handleinput = (e) => {
       setData({ ...data, [e.target.name]: e.target.value});
@@ -62,7 +67,7 @@ export default function AddCustomer({item, fetchLists, classes, text}){
     },[]);
 
     const chooseStaff = (e) => { 
-      setData({ ...data, assigned_to: e.value});
+      setData({ ...data, assigned_to: e ? e.value : null});
     }
 
     const handleEmailsChange = (emailsArray) => {
@@ -80,11 +85,6 @@ export default function AddCustomer({item, fetchLists, classes, text}){
     }
 
     const add_customer = () => {
-      if(data.assigned_to == null || data.assigned_to === ''){
-        toast.error("Please select a staff member.");
-        return false
-      }
-
       // Validate that at least one valid email is provided
       const validEmails = emails.filter(e => e.email && e.email.trim() !== '');
       if(validEmails.length === 0){
@@ -119,6 +119,7 @@ export default function AddCustomer({item, fetchLists, classes, text}){
             zipcode: "",
             assigned_to: null,
           });
+          setShowSecondaryPhone(false);
           setTimeout(() => {
             setaction();
           }, 1000);
@@ -142,7 +143,8 @@ export default function AddCustomer({item, fetchLists, classes, text}){
             <label className="mt-4 mb-0 block text-sm text-gray-400">Assigned To</label>
             <Select defaultValue={(staffLists && staffLists.find(e => e.value === item?.assigned_to?._id)) || null} classNamePrefix="react-select input"  placeholder={'Choose Staff'}
               onChange={chooseStaff}
-              options={staffLists} />
+              isClearable={true}
+              options={[{ label: 'Unassigned (Visible to all staff)', value: null }, ...staffLists]} />
           </div>
 
           <div className='input-item'>
@@ -166,13 +168,47 @@ export default function AddCustomer({item, fetchLists, classes, text}){
             </div>
 
             <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Phone</label>
+               <label className="mt-4 mb-0 block text-sm text-gray-400">Primary Phone</label>
                <input  defaultValue={item?.phone} name='phone' onChange={handleinput} type={'number'} placeholder={"Phone Number"} className="input-sm" />
             </div>
 
             <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Secondary Phone</label>
-               <input  defaultValue={item?.secondary_phone} name='secondary_phone' onChange={handleinput} type={'number'} placeholder={"Secondary Phone Number"} className="input-sm" />
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Additional Phone</label>
+              {showSecondaryPhone ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    defaultValue={item?.secondary_phone}
+                    name="secondary_phone"
+                    onChange={handleinput}
+                    type="number"
+                    placeholder="Additional phone"
+                    className="input-sm flex-1"
+                  />
+                  <button
+                    type="button"
+                    className="text-red-400 hover:text-red-300 text-normal p-1"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setData((prev) => ({ ...prev, secondary_phone: "" }));
+                      setShowSecondaryPhone(false);
+                    }}
+                    title="Remove additional phone"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  className="mt-1 text-blue-400 hover:text-blue-300 text-normal flex items-center cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowSecondaryPhone(true);
+                  }}
+                >
+                  <span className="mr-1">+</span> Add Another Phone
+                </button>
+              )}
             </div>
 
             
@@ -180,7 +216,12 @@ export default function AddCustomer({item, fetchLists, classes, text}){
             <div className='grid grid-cols-1 gap-3'>
               <div className='input-item'>
                   <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
-                  <textarea defaultValue={item?.address} row='4' name='address' onChange={handleinput}   placeholder={"Address"} className="input-sm" />
+                  <GoogleAddressInput
+                    value={data.address || ''}
+                    onChange={(v) => setData((prev) => ({ ...prev, address: v }))}
+                    placeholder="Address"
+                    className="input-sm"
+                  />
               </div>
             </div>
             <div className='grid grid-cols-2 gap-3'>

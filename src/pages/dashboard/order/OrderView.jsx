@@ -333,7 +333,7 @@ export default function OrderView({order, text, fetchLists, btnclasses, isOpen, 
             </div>
 
             <p className='my-2 text-white mb-4'>{order.notes}</p>
-            {user?.role === 2 || user?.is_admin === 1 ?
+            {user?.permissions?.includes('accounting') || user?.is_admin === 1 ?
                <>
                   {order?.customer_payment_notes ?<p className='text-white my-2 mt-4'><p className='!text-gray-400'>Customer Payment Notes :</p> {order?.customer_payment_notes}</p> :''}
                   {order?.carrier_payment_notes ? <p className='text-white my-2 mt-4'> <p className='!text-gray-400'>Carrier Payment Notes :</p> {order?.carrier_payment_notes}</p> :'' }
@@ -379,7 +379,7 @@ export default function OrderView({order, text, fetchLists, btnclasses, isOpen, 
                      <p className='text-gray-500 text-sm'>No documents found for this order.</p> 
                   }
 
-                  {user?.role === 2 || user?.is_admin === 1 ?
+                  {user?.permissions?.includes('accounting') || user?.is_admin === 1 ?
                      <>
                         <h2 className='text-gray-100 text-xl mt-4 pb-2 border-t border-gray-700 pt-6'>Payment Logs</h2>
                         

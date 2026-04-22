@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { LuUsers } from "react-icons/lu";
 import AddEmployee from '../../pages/dashboard/employees/AddEmployee';
 import AddDriver from '../../pages/dashboard/drivers/AddDriver';
+import { UserContext } from '../../context/AuthProvider';
 
 export default function EmptyEmployeeState({ fetchLists, mode = 'employee', title, description }) {
+  const { user } = useContext(UserContext);
+
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4">
       <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4">
@@ -22,9 +25,13 @@ export default function EmptyEmployeeState({ fetchLists, mode = 'employee', titl
       </p>
       
       {mode === 'driver' ? (
-        <AddDriver text="Add Driver" classes="btn md text-black font-bold" fetchLists={fetchLists} />
+        (user?.is_admin === 1 || user?.permissions?.includes('driver') || user?.permissions?.includes('subadmin')) ? (
+          <AddDriver text="Add Driver" classes="btn md text-black font-bold" fetchLists={fetchLists} />
+        ) : null
       ) : (
-        <AddEmployee fetchLists={fetchLists} />
+        (user?.is_admin === 1 || user?.permissions?.includes('employees') || user?.permissions?.includes('subadmin')) ? (
+          <AddEmployee fetchLists={fetchLists} />
+        ) : null
       )}
     </div>
   );

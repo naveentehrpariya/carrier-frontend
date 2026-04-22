@@ -45,6 +45,24 @@ export default function SubscriptionPlans() {
   });
 
   const [action, setAction] = useState();
+
+  const VALID_MODULES = ['outsourcing', 'regular'];
+  const sanitizeAllowedModules = (value) => {
+    if (!Array.isArray(value)) return [];
+    return value
+      .map((m) => String(m).toLowerCase().trim())
+      .filter((m) => VALID_MODULES.includes(m));
+  };
+
+  const getErrorMessage = (e) => {
+    const raw = e?.response?.data;
+    if (typeof raw === 'string' && /ValidationError/i.test(raw)) {
+      const m = raw.match(/ValidationError:\s*([^<\n]+)/i);
+      return m ? `ValidationError: ${m[1].trim()}` : 'ValidationError';
+    }
+    return e?.response?.data?.message || e?.message || 'Request failed';
+  };
+
   const fetchPlans = async () => {
     setLoading(true);
     setError('');
@@ -54,7 +72,7 @@ export default function SubscriptionPlans() {
       setPlans(data);
       setAction("close")
     } catch (e) {
-      setError(e?.response?.data?.message || 'Failed to load plans');
+      setError(getErrorMessage(e) || 'Failed to load plans');
     } finally {
       setLoading(false);
     }
@@ -69,11 +87,11 @@ export default function SubscriptionPlans() {
   
   const onModuleToggle = (module) => {
     setForm(prev => {
-      const current = prev.allowedModules || [];
+      const current = sanitizeAllowedModules(prev.allowedModules);
       if (current.includes(module)) {
         return { ...prev, allowedModules: current.filter(m => m !== module) };
       } else {
-        return { ...prev, allowedModules: [...current, module] };
+        return { ...prev, allowedModules: sanitizeAllowedModules([...current, module]) };
       }
     });
   };
@@ -95,6 +113,15 @@ export default function SubscriptionPlans() {
     setSubmitting(true);
     setError('');
     try {
+      const allowedModules = sanitizeAllowedModules(form.allowedModules);
+      if (!allowedModules.length) {
+        setError('Please select at least one module');
+        return;
+      }
+      if (!String(form.description || '').trim()) {
+        setError('Description is required');
+        return;
+      }
       const features = form.featuresInput
         .split(',')
         .map(f => f.trim())
@@ -103,7 +130,7 @@ export default function SubscriptionPlans() {
       const payload = {
         name: form.name,
         slug: form.slug || form.name.toLowerCase().replace(/\s+/g, '-'),
-        description: form.description,
+        description: String(form.description || '').trim(),
         isActive: form.isActive,
         limits: {
           ...(form?.limits?.maxUsers ? { maxUsers: Number(form.limits.maxUsers) } : {}),
@@ -112,7 +139,7 @@ export default function SubscriptionPlans() {
           ...(form?.limits?.maxCarriers ? { maxCarriers: Number(form.limits.maxCarriers) } : {})
         },
         features,
-        allowedModules: form.allowedModules
+        allowedModules
       };
 
       const res = await Api.post('/api/super-admin/subscription-plans', payload);
@@ -127,7 +154,7 @@ export default function SubscriptionPlans() {
         toast.success('Plan created successfully');
       }
     } catch (e) {
-      setError(e?.response?.data?.message || 'Failed to create plan');
+      setError(getErrorMessage(e) || 'Failed to create plan');
     } finally {
       setSubmitting(false);
       setAction("close")
@@ -147,7 +174,7 @@ export default function SubscriptionPlans() {
         maxCustomers: plan.limits?.maxCustomers || 1000,
         maxCarriers: plan.limits?.maxCarriers || 500
       },
-      allowedModules: Array.isArray(plan.allowedModules) ? plan.allowedModules : ['outsourcing'],
+      allowedModules: sanitizeAllowedModules(plan.allowedModules).length ? sanitizeAllowedModules(plan.allowedModules) : ['outsourcing'],
       featuresInput: Array.isArray(plan.features) ? plan.features.join(', ') : ''
     });
   };
@@ -159,6 +186,15 @@ export default function SubscriptionPlans() {
     setSubmitting(true);
     setError('');
     try {
+      const allowedModules = sanitizeAllowedModules(form.allowedModules);
+      if (!allowedModules.length) {
+        setError('Please select at least one module');
+        return;
+      }
+      if (!String(form.description || '').trim()) {
+        setError('Description is required');
+        return;
+      }
       const features = form.featuresInput
         .split(',')
         .map(f => f.trim())
@@ -167,7 +203,7 @@ export default function SubscriptionPlans() {
       const payload = {
         name: form.name,
         slug: form.slug,
-        description: form.description,
+        description: String(form.description || '').trim(),
         isActive: form.isActive,
         limits: {
           maxUsers: Number(form.limits.maxUsers),
@@ -176,7 +212,7 @@ export default function SubscriptionPlans() {
           maxCarriers: Number(form.limits.maxCarriers)
         },
         features,
-        allowedModules: form.allowedModules
+        allowedModules
       };
 
       console.log('Frontend: Updating plan with payload:', payload);
@@ -191,7 +227,7 @@ export default function SubscriptionPlans() {
         toast.success('Plan updated successfully');
       }
     } catch (e) {
-      setError(e?.response?.data?.message || 'Failed to update plan');
+      setError(getErrorMessage(e) || 'Failed to update plan');
     } finally {
       setSubmitting(false);
     }
@@ -262,7 +298,7 @@ export default function SubscriptionPlans() {
                         <input className="input-sm" value={form.slug} onChange={e => onChange('slug', e.target.value)} placeholder="auto-generated from name" />
                         </Field> */}
                       <Field label="Description">
-                        <input className="input-sm" value={form.description} onChange={e => onChange('description', e.target.value)} />
+                        <input className="input-sm" value={form.description} onChange={e => onChange('description', e.target.value)} required />
                       </Field>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -364,11 +400,17 @@ export default function SubscriptionPlans() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-4">
-                  {(p.allowedModules || ['outsourcing', 'regular']).map(m => (
-                    <span key={m} className="px-3 py-1 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-300 font-bold uppercase tracking-wider">
-                      {m === 'outsourcing' ? 'Outsourcing' : 'Regular'}
+                  {(Array.isArray(p.allowedModules) ? p.allowedModules : []).length > 0 ? (
+                    (Array.isArray(p.allowedModules) ? p.allowedModules : []).map(m => (
+                      <span key={m} className="px-3 py-1 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-300 font-bold uppercase tracking-wider">
+                        {m === 'outsourcing' ? 'Outsourcing' : 'Regular'}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="px-3 py-1 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-400 font-bold uppercase tracking-wider">
+                      No Modules
                     </span>
-                  ))}
+                  )}
                 </div>
                 <div className="mt-6 flex gap-3 justify-between">
                   <button onClick={() => startEdit(p)} className="w-full rounded-xl btn px-4 text-xs py-2">Edit</button>
@@ -396,7 +438,7 @@ export default function SubscriptionPlans() {
                     <p className="text-xs text-gray-400 mt-1">Changing slug may affect URLs and integrations</p>
                   </Field>
                   <Field label="Description">
-                    <textarea className="input-sm" value={form.description} onChange={e => onChange('description', e.target.value)} rows={3} />
+                    <textarea className="input-sm" value={form.description} onChange={e => onChange('description', e.target.value)} rows={3} required />
                   </Field>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field label="Max Users">

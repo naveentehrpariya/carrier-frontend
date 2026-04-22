@@ -125,7 +125,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
               <div className="flex items-center justify-between">
                 <span className="text-xs text-gray-400">Payment</span>
                 <div>
-                  {(user?.is_admin || user?.role === 2) ? (
+                  {(user?.is_admin || user?.permissions?.includes('accounting')) ? (
                     <UpdatePaymentStatus 
                       order={order}
                       classes={`!p-0 !cursor-pointer ${order?.lock ? 'disabled-order' : ''}`}
@@ -160,57 +160,94 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
             </div>
           </div>
 
-          {/* Carrier */}
+          {/* Carrier / Fleet */}
           <div className="bg-gray-800/30 rounded-xl p-3 border border-gray-800">
             <h4 className="text-sm font-medium text-gray-300 flex items-center gap-2 mb-2">
               <LuTruck size={16} />
-              Carrier
+              {order?.order_type === 'regular' ? 'Fleet' : 'Carrier'}
             </h4>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">Name</span>
-                <Link 
-                  to={`/carrier/detail/${order.carrier?._id}`}
-                  className="text-sm text-blue-400 hover:text-blue-300 font-medium text-right"
-                >
-                  {order.carrier?.name || "--"} (MC{order.carrier?.mc_code || "--"})
-                </Link>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-400">Payment</span>
-                <div>
-                  {(user?.is_admin || user?.role === 2) ? (
-                    <UpdatePaymentStatus 
-                      order={order}
-                      classes={`!p-0 !cursor-pointer ${order?.lock ? 'disabled-order' : ''}`}
-                      pstatus={order.carrier_payment_status}
-                      pmethod={order.carrier_payment_method}
-                      pnotes={order.carrier_payment_notes}
-                      text={<Badge 
-                        classes='cursor-pointer'
-                        tooltipcontent={order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ? `Carrier payment status currently in pending and not approve by admin yet.` :''}
-                        approved={order?.carrier_payment_approved_by_admin} date={order?.carrier_payment_date || ""} 
-                        title={true}  status={order?.carrier_payment_status} 
-                        text={order?.carrier_payment_status === 'paid' ? ` (${order?.carrier_payment_method})` :''}
-                      />}
-                      paymentType={2} 
-                      id={order.id} 
-                      type={2}
-                      fetchLists={fetchLists}
-                    />
-                  ) : (
-                    <Badge 
-                     classes='cursor-pointer'
-                      tooltipcontent={order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ? `Carrier payment status currently in pending and not approve by admin yet.` :''}
-                      approved={order?.carrier_payment_approved_by_admin}
-                      date={order?.carrier_payment_date || ""} 
-                      title={true} 
-                      status={order?.carrier_payment_status} 
-                      text={order?.carrier_payment_status === 'paid' ? ` (${order?.carrier_payment_method})` :''}
-                    />
-                  )}
+              {order?.order_type === 'regular' ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">Driver</span>
+                    {order?.driver?._id ? (
+                      <Link to={`/employee/detail/${order.driver._id}`} className="text-sm text-blue-400 hover:text-blue-300 font-medium text-right capitalize">
+                        {order?.driver?.name || 'Unassigned'}
+                      </Link>
+                    ) : (
+                      <span className="text-sm text-gray-200 text-right capitalize">{order?.driver?.name || 'Unassigned'}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">Truck</span>
+                    {order?.truck?._id ? (
+                      <Link to={`/truck/detail/${order.truck._id}`} className="text-sm text-blue-400 hover:text-blue-300 font-medium text-right">
+                        {order?.truck?.unitNumber || order?.truck?.plateNumber || '—'}
+                      </Link>
+                    ) : (
+                      <span className="text-sm text-gray-200 text-right">{order?.truck?.unitNumber || order?.truck?.plateNumber || '—'}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">Trailer</span>
+                    {order?.trailer?._id ? (
+                      <Link to={`/trailer/detail/${order.trailer._id}`} className="text-sm text-blue-400 hover:text-blue-300 font-medium text-right">
+                        {order?.trailer?.unitNumber || order?.trailer?.plateNumber || '—'}
+                      </Link>
+                    ) : (
+                      <span className="text-sm text-gray-200 text-right">{order?.trailer?.unitNumber || order?.trailer?.plateNumber || '—'}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">Name</span>
+                    <Link 
+                      to={`/carrier/detail/${order.carrier?._id}`}
+                      className="text-sm text-blue-400 hover:text-blue-300 font-medium text-right"
+                    >
+                      {order.carrier?.name || "--"} (MC{order.carrier?.mc_code || "--"})
+                    </Link>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-gray-400">Payment</span>
+                    <div>
+                      {(user?.is_admin || user?.permissions?.includes('accounting')) ? (
+                        <UpdatePaymentStatus 
+                          order={order}
+                          classes={`!p-0 !cursor-pointer ${order?.lock ? 'disabled-order' : ''}`}
+                          pstatus={order.carrier_payment_status}
+                          pmethod={order.carrier_payment_method}
+                          pnotes={order.carrier_payment_notes}
+                          text={<Badge 
+                            classes='cursor-pointer'
+                            tooltipcontent={order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ? `Carrier payment status currently in pending and not approve by admin yet.` :''}
+                            approved={order?.carrier_payment_approved_by_admin} date={order?.carrier_payment_date || ""} 
+                            title={true}  status={order?.carrier_payment_status} 
+                            text={order?.carrier_payment_status === 'paid' ? ` (${order?.carrier_payment_method})` :''}
+                          />}
+                          paymentType={2} 
+                          id={order.id} 
+                          type={2}
+                          fetchLists={fetchLists}
+                        />
+                      ) : (
+                        <Badge 
+                          classes='cursor-pointer'
+                          tooltipcontent={order?.carrier_payment_date && !order?.carrier_payment_approved_by_admin ? `Carrier payment status currently in pending and not approve by admin yet.` :''}
+                          approved={order?.carrier_payment_approved_by_admin}
+                          date={order?.carrier_payment_date || ""} 
+                          title={true} 
+                          status={order?.carrier_payment_status} 
+                          text={order?.carrier_payment_status === 'paid' ? ` (${order?.carrier_payment_method})` :''}
+                        />
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -235,7 +272,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
         {/* Actions Menu */}
         <div className="flex items-center gap-2">
           <Dropdown>
-            {(user?.is_admin === 1 || user?.role === 1 || user?.role === 2) && (
+            {(user?.is_admin === 1 || user?.permissions?.includes('regular') || user?.permissions?.includes('outsourcing') || user?.permissions?.includes('subadmin') || user?.permissions?.includes('accounting')) && (
               <li className={`list-none text-sm ${order.lock ? "disabled" : ""}`}>
                   <Link 
                     className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${order.lock ? 'opacity-50 pointer-events-none' : ''}`}
@@ -245,7 +282,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                   </Link>
                 </li>
             )}
-            {(user?.is_admin === 1 || user?.role === 2) && (
+            {(user?.is_admin === 1 || user?.permissions?.includes('accounting')) && (
               <>
                 <li className={`list-none text-sm ${order.lock ? "disabled" : ""}`}>
                   <UpdatePaymentStatus 
@@ -306,7 +343,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                 
               </>
             )}
-            {user?.role !== 1 && (
+            {!(user?.permissions?.includes('regular') || user?.permissions?.includes('outsourcing') || user?.permissions?.includes('subadmin')) && (
               <li className='list-none text-sm'>
                 <Link 
                   className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block'

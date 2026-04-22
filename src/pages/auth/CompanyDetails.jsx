@@ -4,6 +4,7 @@ import { UserContext } from '../../context/AuthProvider';
 import Api from '../../api/Api';
 import AuthLayout from '../../layout/AuthLayout';
 import safeStorage from '../../utils/safeStorage';
+import GoogleAddressInput from '../common/GoogleAddressInput';
 
 export default function CompanyDetails({ fetchLists, classes, text}){
 
@@ -131,7 +132,12 @@ export default function CompanyDetails({ fetchLists, classes, text}){
             <div className='grid grid-cols-1 gap-5'>
             <div className='input-item'>
                <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
-               <input defaultValue={company?.address} required name='address' onChange={handleinput} type={'text'} placeholder={"Enter address"} className="input-sm" />
+               <GoogleAddressInput
+                 value={data.address}
+                 onChange={(v) => setData((prev) => ({ ...prev, address: v }))}
+                 placeholder="Enter address"
+                 className="input-sm"
+               />
             </div>
             </div>
             <div className='h-[1px] bg-gray-800 my-12'></div>

@@ -68,11 +68,11 @@ export default function ViewOrder() {
                 <FaTruckMoving className='me-2' size='20px' /> Trip Planning
               </Link>
             )}
-            {user?.role !== 1 && (
+            {(!user?.permissions?.includes('regular') && !user?.permissions?.includes('outsourcing') && !user?.permissions?.includes('subadmin')) && (
               <Link to={`/order/customer/invoice/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Invoice</Link>
             )}
             <Dropdown classes={'relative top-1'} iconsize={'30px '}>
-            {(user && user.is_admin === 1) || (user && user.role === 2) ?
+            {(user && user.is_admin === 1) || (user && user?.permissions?.includes('accounting')) ?
                <>
                   <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
                      <UpdatePaymentStatus pstatus={order?.carrier_payment_status} pmethod={order?.carrier_payment_method} pnotes={order?.carrier_payment_notes} text={<>{order?.lock ? <FaLock size={12} className='me-1' /> : ""} Update Carrier Payment</>} paymentType={2} id={order?.id} type={2} fetchLists={fetchOrder} />
@@ -102,7 +102,7 @@ export default function ViewOrder() {
                   </li>
                </> 
             : '' }
-            {(user?.is_admin === 1 || user?.role === 1 || user?.role === 2) && (
+            {(user?.is_admin === 1 || user?.permissions?.includes('regular') || user?.permissions?.includes('outsourcing') || user?.permissions?.includes('subadmin') || user?.permissions?.includes('accounting')) && (
               <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
                 <Link className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${order?.lock ? 'opacity-50 pointer-events-none' : ''}`} to={`/edit/order/${order?._id}`}>{order?.lock ? <FaLock size={12} className='me-1 inline' /> : ""} Edit Order</Link>
               </li>
@@ -128,6 +128,9 @@ export default function ViewOrder() {
                <div className='py-3 mt-3 pt-4'>
                   <ul className='grid grid-cols-4 gap-2'>
                      <li className=''><strong className='text-gray-400 '> Order No. # :</strong> <p className='flex mt-1'>{order?.lock ? <FaLock className='me-1 text-red-500' /> : <FaLockOpen className='me-1' />} {getOrderNumber(order, user, company, null)}</p> </li>
+                     {order?.order_type === 'regular' && order?.customer_order_no ? (
+                       <li className=''><strong className='text-gray-400'>Customer Order No. :</strong> <p>{order.customer_order_no}</p> </li>
+                     ) : null}
                      <li className=''><strong className='text-gray-400'>Order Created Date :</strong> <p><TimeFormat date={order?.createdAt} /></p> </li>
                      <li className=''><strong className='text-gray-400'>Order Status :</strong> <p><Badge title={true} status={order?.order_status} /></p> </li>
                      <li className=''><strong className='text-gray-400'>Total Distance :</strong> <p><DistanceInMiles d={order?.totalDistance || 0} /></p> </li>
@@ -140,8 +143,8 @@ export default function ViewOrder() {
                         <p className='font-bold text-gray-400 text-xl mb-2'>Customer Details</p>
                         <ul className=''>
                            <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Name:</strong><Link className='text-main' to={`/customer/detail/${order?.customer?._id}`}>{order?.customer?.name || "--"}({order?.customer?.customerCode || "--"})</Link> </p> </li>
-                           <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Phone :</strong>{order?.customer?.phone } {order?.customer?.phone ? `,${order?.customer?.secondary_phone}` :'' } </p> </li>
-                           <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Email :</strong> {order?.customer?.email } {order?.customer?.email ? `,${order?.customer?.secondary_email}` :'' }</p> </li>
+                           <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Phone :</strong>{[order?.customer?.phone, order?.customer?.secondary_phone].filter(Boolean).join(', ') || '--'} </p> </li>
+                           <li className='flex mb-2'> <p><strong className=' me-2 !text-gray-400'>Customer Email :</strong> {[order?.customer?.email, order?.customer?.secondary_email].filter(Boolean).join(', ') || '--'}</p> </li>
                            <li className='flex items-center'><p className=''><strong className=' !text-gray-400'>Payment Status:</strong> <Badge approved={order?.customer_payment_approved_by_admin} date={order?.customer_payment_date || ""} title={true} status={order?.customer_payment_status} text={`${order?.customer_payment_status === 'paid' ? `via ${order?.customer_payment_method}` :''} `} /></p> </li>
                         </ul>
                      </div>
@@ -159,7 +162,7 @@ export default function ViewOrder() {
                        <div className='customerDetails mb-2 bg-dark1 border border-gray-700 p-4 rounded-xl'>
                           <p className='font-bold text-rose-400 text-xl mb-2'>Fleet Assignments (Regular)</p>
                           <ul className=''>
-                             <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Driver:</strong> <p className='text-white'>{order?.driver?.name || "Unassigned"}</p> </li>
+                             <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Driver:</strong> <p className='text-white'>{order?.drivers && order.drivers.length > 0 ? order.drivers.map(d => d.name).join(', ') : (order?.driver?.name || "Unassigned")}</p> </li>
                              <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Truck Unit:</strong> <p className='text-white'>{order?.truck?.unitNumber || "N/A"}</p> </li>
                              <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Trailer Unit:</strong> <p className='text-white'>{order?.trailer?.unitNumber || "N/A"}</p> </li>
                           </ul>
@@ -184,7 +187,7 @@ export default function ViewOrder() {
                                  <div key={idx} className='border-l-2 border-rose-500/30 pl-4 py-1'>
                                     <p className='text-white font-bold text-sm uppercase tracking-wider mb-2'>Segment #{trip.trip_no}</p>
                                     <div className='grid grid-cols-2 gap-y-2 text-xs'>
-                                       <p><span className='text-gray-500'>Driver:</span> <span className='text-gray-300 ml-1'>{trip.driver?.name || 'Unassigned'}</span></p>
+                                       <p><span className='text-gray-500'>Drivers:</span> <span className='text-gray-300 ml-1'>{trip.drivers && trip.drivers.length > 0 ? trip.drivers.map(d => d.name).join(', ') : (trip.driver?.name || 'Unassigned')}</span></p>
                                        <p><span className='text-gray-500'>Truck:</span> <span className='text-gray-300 ml-1'>{trip.truck?.unitNumber || 'N/A'}</span></p>
                                        <p><span className='text-gray-500'>Miles:</span> <span className='text-gray-300 ml-1'>{trip.miles}</span></p>
                                        <p><span className='text-gray-500'>Distance:</span> <span className='text-gray-300 ml-1'>{(trip.total_km || (trip.miles * 1.60934)).toFixed ? (trip.total_km || (trip.miles * 1.60934)).toFixed(2) : (Number(trip.total_km || (trip.miles * 1.60934)).toFixed(2))} km</span></p>

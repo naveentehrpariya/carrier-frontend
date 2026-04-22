@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import PrivateRoute from './components/PrivateRoute';
 import RoleBasedRoute from './components/RoleBasedRoute';
+import ModuleBasedRoute from './components/ModuleBasedRoute';
 import SuperAdminRoute from './components/SuperAdminRoute';
 import DashboardRouter from './components/DashboardRouter';
 import MultiTenantProvider from './context/MultiTenantProvider';
@@ -24,6 +25,9 @@ import Orders from './pages/dashboard/order/Orders';
 import AddOrder from './pages/dashboard/order/AddOrder';
 import EmployeesLists from './pages/dashboard/employees/EmployeesLists';
 import AccountOrders from './pages/dashboard/accounts/AccountOrders';
+import DriversSalary from './pages/dashboard/accounts/DriversSalary';
+import TrucksGrossEarning from './pages/dashboard/accounts/TrucksGrossEarning';
+import GlobalSearch from './pages/dashboard/search/GlobalSearch';
 import OrderPDF from './pages/dashboard/order/OrderPDF';
 import CustomerInvoice from './pages/dashboard/order/CustomerInvoice';
 import ViewOrder from './pages/dashboard/order/View';
@@ -42,6 +46,8 @@ import LandingPage from './homepage/LandingPage';
 import Drivers from './pages/dashboard/drivers/Drivers';
 import Trucks from './pages/dashboard/fleet/Trucks';
 import Trailers from './pages/dashboard/fleet/Trailers';
+import TruckDetail from './pages/dashboard/fleet/TruckDetail';
+import TrailerDetail from './pages/dashboard/fleet/TrailerDetail';
 
 export default function App() {
   return (
@@ -147,12 +153,12 @@ export default function App() {
                       </PrivateRoute>
                     } />
                     <Route path="/order/customer/invoice/:id" element={
-                      <RoleBasedRoute allowedRoles={[3]}>
+                      <RoleBasedRoute allowedRoles={['accounting', 'regular', 'outsourcing', 'subadmin']}>
                         <CustomerInvoice />
                       </RoleBasedRoute>
                     } />
                     <Route path="/order/add" element={
-                      <RoleBasedRoute allowedRoles={[1, 3]}>
+                      <RoleBasedRoute allowedRoles={['regular', 'outsourcing', 'subadmin']}>
                         <AddOrder />
                       </RoleBasedRoute>
                     } />
@@ -162,7 +168,7 @@ export default function App() {
                       </PrivateRoute>
                     } />
                     <Route path="/payments" element={
-                      <RoleBasedRoute allowedRoles={[2, 3]}>
+                      <RoleBasedRoute allowedRoles={['accounting', 'payments']}>
                         <PaymentLists />
                       </RoleBasedRoute>
                     } />
@@ -172,34 +178,44 @@ export default function App() {
                       </PrivateRoute>
                     } />
                     <Route path="/carriers" element={
-                      <PrivateRoute>
+                      <ModuleBasedRoute allowedModules={['outsourcing']}>
                         <Carriers />
-                      </PrivateRoute>
+                      </ModuleBasedRoute>
                     } />
                     <Route path="/carrier/detail/:id" element={
-                      <PrivateRoute>
+                      <ModuleBasedRoute allowedModules={['outsourcing']}>
                         <CarrierDetail />
-                      </PrivateRoute>
+                      </ModuleBasedRoute>
                     } />
                     <Route path="/employees" element={
-                      <PrivateRoute>
+                      <RoleBasedRoute allowedRoles={['employees', 'subadmin']}>
                         <EmployeesLists />
-                      </PrivateRoute>
+                      </RoleBasedRoute>
                     } />
                     <Route path="/drivers" element={
-                      <PrivateRoute>
+                      <ModuleBasedRoute allowedModules={['regular']}>
                         <Drivers />
-                      </PrivateRoute>
+                      </ModuleBasedRoute>
                     } />
                     <Route path="/trucks" element={
-                      <PrivateRoute>
+                      <ModuleBasedRoute allowedModules={['regular']}>
                         <Trucks />
-                      </PrivateRoute>
+                      </ModuleBasedRoute>
+                    } />
+                    <Route path="/truck/detail/:id" element={
+                      <ModuleBasedRoute allowedModules={['regular']}>
+                        <TruckDetail />
+                      </ModuleBasedRoute>
                     } />
                     <Route path="/trailers" element={
-                      <PrivateRoute>
+                      <ModuleBasedRoute allowedModules={['regular']}>
                         <Trailers />
-                      </PrivateRoute>
+                      </ModuleBasedRoute>
+                    } />
+                    <Route path="/trailer/detail/:id" element={
+                      <ModuleBasedRoute allowedModules={['regular']}>
+                        <TrailerDetail />
+                      </ModuleBasedRoute>
                     } />
                     <Route path="/employee/detail/:id" element={
                       <PrivateRoute>
@@ -207,9 +223,28 @@ export default function App() {
                       </PrivateRoute>
                     } />
                     <Route path="/accounts/orders" element={
-                      <RoleBasedRoute allowedRoles={[2, 3]}>
+                      <RoleBasedRoute allowedRoles={['accounting']}>
                         <AccountOrders />
                       </RoleBasedRoute>
+                    } />
+                    <Route path="/accounts/drivers-salary" element={
+                      <RoleBasedRoute allowedRoles={['accounting']}>
+                        <ModuleBasedRoute allowedModules={['regular']}>
+                          <DriversSalary />
+                        </ModuleBasedRoute>
+                      </RoleBasedRoute>
+                    } />
+                    <Route path="/accounts/trucks-gross" element={
+                      <RoleBasedRoute allowedRoles={['accounting']}>
+                        <ModuleBasedRoute allowedModules={['regular']}>
+                          <TrucksGrossEarning />
+                        </ModuleBasedRoute>
+                      </RoleBasedRoute>
+                    } />
+                    <Route path="/search" element={
+                      <PrivateRoute>
+                        <GlobalSearch />
+                      </PrivateRoute>
                     } />
                     <Route path="/company/details" element={
                       <PrivateRoute>
@@ -219,7 +254,7 @@ export default function App() {
 
                     {/* Role-based protected routes - example for admin access */}
                     <Route path="/commodity-and-equipments" element={
-                      <RoleBasedRoute allowedRoles={[3]}>
+                      <RoleBasedRoute allowedRoles={['admin']}>
                         <EquipAndCommodity />
                       </RoleBasedRoute>
                     } />

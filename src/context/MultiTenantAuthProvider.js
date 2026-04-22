@@ -24,18 +24,15 @@ export default function MultiTenantAuthProvider(props) {
   // New state for module switching
   const [activeModule, setActiveModule] = useState('outsourcing');
 
-  // Sync activeModule with user's allowedModules
+  // Sync activeModule with user's permissions
   useEffect(() => {
-    if (user && Array.isArray(user.allowedModules) && user.allowedModules.length > 0) {
-      // If user is admin, don't reset activeModule based on their individual allowedModules
-      // as they should have access to whatever the plan allows
-      if (user.role === 3 || user.isTenantAdmin) return;
-
-      if (!user.allowedModules.includes(activeModule)) {
-        setActiveModule(user.allowedModules[0]);
+    if (user) {
+      const allowed = Array.isArray(user.permissions) ? user.permissions.filter(p => ['regular', 'outsourcing'].includes(p)) : [];
+      if (allowed.length > 0 && !allowed.includes(activeModule)) {
+        setActiveModule(allowed[0]);
       }
     }
-  }, [user, activeModule]);
+  }, [user]);
 
   const { tenant, isSuperAdmin, canAccessTenant, clearTenantContext } = useMultiTenant();
 
@@ -88,8 +85,7 @@ export default function MultiTenantAuthProvider(props) {
         safeStorage.removeItem('tenant_emulation_data');
         
         // Check if we have stored data from synchronous token setup
-        const currentToken = safeStorage.getItem('token');
-        if (currentToken) {
+        if (token) {
           try {
             console.log('🔄 Fetching latest profile from server...');
             const res = await Api.get('/user/profile');
@@ -114,7 +110,7 @@ export default function MultiTenantAuthProvider(props) {
           }
         }
 
-        if (currentToken && userData) {
+        if (token && userData) {
           try {
             const parsedUser = JSON.parse(userData);
             const parsedCompany = companyData ? JSON.parse(companyData) : null;
@@ -205,6 +201,18 @@ export default function MultiTenantAuthProvider(props) {
           safeStorage.setItem('company', JSON.stringify(userData.company));
         }
 
+        try {
+          const profileRes = await Api.get('/user/profile');
+          if (profileRes.data?.status) {
+            const latestUser = profileRes.data.user;
+            const latestCompany = profileRes.data.company;
+            setUser(latestUser);
+            setCompany(latestCompany || null);
+            safeStorage.setItem('user', JSON.stringify(latestUser));
+            if (latestCompany) safeStorage.setItem('company', JSON.stringify(latestCompany));
+          }
+        } catch (e) {}
+
         toast.success(response.data.message || 'Login successful!');
         return { success: true, data: response.data };
 
@@ -268,7 +276,7 @@ export default function MultiTenantAuthProvider(props) {
 
   // Check if current user is tenant admin
   const checkTenantAdminAccess = () => {
-    return user && (user.isTenantAdmin || user.role === 3);
+    return user && (user.isTenantAdmin || user.is_admin === 1);
   };
 
   // Get user permissions
@@ -278,18 +286,10 @@ export default function MultiTenantAuthProvider(props) {
     }
     
     if (checkTenantAdminAccess()) {
-      return ['tenant_admin', 'user_management', 'tenant_settings', 'reports'];
+      return ['tenant_admin', 'user_management', 'tenant_settings', 'reports', 'admin', 'regular', 'outsourcing', 'accounting', 'customers', 'employees', 'carriers', 'payments', 'orders', 'subadmin'];
     }
     
-    // Regular user permissions based on role
-    const rolePermissions = {
-      0: ['view_orders', 'basic_access'], // Driver
-      1: ['create_orders', 'edit_orders', 'view_reports'], // Staff  
-      2: ['manage_orders', 'view_analytics', 'manage_customers'], // Manager
-      3: ['full_access'] // Admin
-    };
-    
-    return rolePermissions[user?.role] || ['basic_access'];
+    return user?.permissions || [];
   };
 
   // Check specific permission (super admins have all permissions)

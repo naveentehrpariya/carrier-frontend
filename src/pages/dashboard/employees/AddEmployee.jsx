@@ -5,26 +5,35 @@ import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import { useAuth } from '../../../context/MultiTenantAuthProvider';
 import countries from './../../common/Countries';
+import GoogleAddressInput from '../../common/GoogleAddressInput';
 
 export default function AddEmployee({fetchLists, item, text, classes, defaultRole}){
 
     const { user: currentUser } = useAuth();
-    const adminAllowedModules = Array.isArray(currentUser?.allowedModules) ? currentUser.allowedModules : ['outsourcing', 'regular'];
+    const adminAllowedModules = Array.isArray(currentUser?.permissions) ? currentUser.permissions : [];
 
     const commisions = Array.from({ length: 100 }, (_, index) => (index + 1) * 1);
-    const [staffType, setStaffType] = useState(
-      typeof defaultRole === 'number' ? defaultRole : (typeof item?.role === 'number' ? item?.role : 1)
-    );
+    const [staffType, setStaffType] = useState(0);
+    const availablePermissions = [
+      { id: 'regular', label: 'Regular (Trucking & Fleet)' },
+      { id: 'outsourcing', label: 'Outsourcing (Carriers)' },
+      { id: 'accounting', label: 'Accounting & Payments' },
+      { id: 'customers', label: 'Manage Customers' },
+      { id: 'employees', label: 'Manage Employees' },
+      { id: 'carriers', label: 'Manage Carriers' },
+      { id: 'subadmin', label: 'Subadmin' },
+    ];
+
     const [data, setData] = useState({
-      name: item?.name || "",
-      email: item?.email || "",
-      position: item?.position || "",
-      password: "",
-      country: item?.country || "",
-      phone: item?.phone || "",
-      address: item?.address || "",
-      staff_commision: item?.staff_commision || "",
-      allowedModules: Array.isArray(item?.allowedModules) ? item.allowedModules : ['outsourcing', 'regular']
+      name: item?.name || '',
+      email: item?.email || '',
+      phone: item?.phone || '',
+      country: item?.country || '',
+      address: item?.address || '',
+      position: item?.position || '',
+      staff_commision: item?.staff_commision || '',
+      password: '',
+      permissions: item?.permissions || ['regular', 'outsourcing']
     });
 
     const [action, setaction] = useState();
@@ -34,18 +43,15 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
       setData({ ...data, [e.target.name]: e.target.value});
     }
 
-    const toggleModule = (module) => {
+    const togglePermission = (perm) => {
       setData(prev => {
-        const current = prev.allowedModules || [];
-        if (current.includes(module)) {
-          // Keep at least one module
-          if (current.length === 1) return prev;
-          return { ...prev, allowedModules: current.filter(m => m !== module) };
-        } else {
-          return { ...prev, allowedModules: [...current, module] };
-        }
+        const current = prev.permissions || [];
+        const updated = current.includes(perm)
+          ? current.filter(p => p !== perm)
+          : [...current, perm];
+        return { ...prev, permissions: updated };
       });
-    }
+    };
     
     const [loading, setLoading] = useState(false);
     const addEmployee = () => {
@@ -56,7 +62,7 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
           toast.error("Please fill all the required fields");
           return false;
         }
-        if (staffType === 1) {
+        if (data.permissions?.includes('regular') || data.permissions?.includes('outsourcing') || data.permissions?.includes('subadmin')) {
           if (!data.staff_commision || String(data.staff_commision).trim() === '') {
             toast.error("Please choose staff commission");
             return false;
@@ -66,9 +72,9 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
       setLoading(true);
       let addEditStaff;
       if(item){
-        addEditStaff = Api.post(`/user/edit_user/${item._id}`, {...data, role:staffType});
+        addEditStaff = Api.post(`/user/edit_user/${item._id}`, {...data, permissions: data.permissions});
       } else { 
-        addEditStaff = Api.post(`/user/create_user`, {...data, role:staffType || 1, generateAutoPassword: data.password ? 0 : 1});
+        addEditStaff = Api.post(`/user/create_user`, {...data, permissions: data.permissions, generateAutoPassword: data.password ? 0 : 1});
       }
       addEditStaff.then((res) => {
         setLoading(false);
@@ -101,7 +107,7 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
                <label className="mt-4 mb-0 block text-sm text-gray-400">Email</label>
                <input defaultValue={item?.email} required name='email' onChange={handleinput} type={'email'} placeholder={"Email address"} className="input-sm" />
             </div>
-            {staffType === 1 && (
+            {(data.permissions?.includes('orders') || data.permissions?.includes('outsourcing')) && (
               <div className='input-item'>
                  <label className="mt-4 mb-0 block text-sm text-gray-400">Staff Commission</label>
                  <select  defaultValue={item?.staff_commision} onChange={handleinput} name='staff_commision' className="input-sm" >
@@ -137,45 +143,50 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
             }
           <div className='input-item mb-4 '>
               <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
-              <input defaultValue={item?.address} required name='address' onChange={handleinput} type={'address'} placeholder={"Enter address"} className="input-sm" />
+              <GoogleAddressInput
+                value={data.address}
+                onChange={(v) => setData((prev) => ({ ...prev, address: v }))}
+                placeholder="Enter address"
+                className="input-sm"
+              />
           </div>
           <div className='input-item mb-4 '>
               <label className="mt-4 mb-0 block text-sm text-gray-400">Position</label>
               <input defaultValue={item?.position} required name='position' onChange={handleinput} type={'position'} placeholder={"eg. Senior Manger"} className="input-sm" />
           </div>
 
-          <label className=" mb-2 block text-sm text-gray-400 text-center mt-6">Staff Type</label>
-         <div className='flex justify-center'>
-              <button className={`mx-2 ${staffType === 0 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(0)} >Driver</button>
-              <button className={`mx-2 ${staffType === 1 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(1)} >Employee</button>
-              <button className={`mx-2 ${staffType === 2 ? 'bg-main text-black' : 'bg-gray-300'} rounded-[20px] min-w-[120px] !text-[15px] text-center px-3 py-2`} onClick={(e)=>setStaffType(2)} >Accountant</button>
-         </div>
-
-         {/* Module Access Controls (Dynamic based on admin's plan) */}
-         {adminAllowedModules.length > 0 && (
-           <div className="mt-8 pt-6 border-t border-gray-800">
-             <label className="mb-3 block text-sm text-gray-400 text-center font-medium">Assign Module Access</label>
-             <div className="flex justify-center gap-6">
-               {adminAllowedModules.map(m => (
-                 <label key={m} className="flex items-center gap-2 cursor-pointer group">
-                   <div 
-                     onClick={() => toggleModule(m)}
-                     className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-                       data.allowedModules?.includes(m) 
-                         ? 'bg-main border-main text-black' 
-                         : 'border-gray-600 group-hover:border-gray-400'
-                     }`}
-                   >
-                     {data.allowedModules?.includes(m) && (
-                       <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>
-                     )}
-                   </div>
-                   <span className="text-sm text-gray-300 capitalize">{m === 'outsourcing' ? 'Outsourcing (Carriers)' : 'Regular (Trucking)'}</span>
-                 </label>
-               ))}
-             </div>
+         <div className="mt-8 pt-6 border-t border-gray-800">
+           <label className="mb-3 block text-sm text-gray-400 text-center font-medium">Assign Permissions</label>
+           <div className="flex flex-wrap justify-center gap-4">
+             {availablePermissions.map(p => (
+               <label
+                 key={p.id}
+                 className="flex items-center gap-2 cursor-pointer group select-none bg-gray-900 px-4 py-2 rounded-xl"
+               >
+                 <input
+                   type="checkbox"
+                   className="sr-only"
+                   checked={!!data.permissions?.includes(p.id)}
+                   onChange={() => togglePermission(p.id)}
+                 />
+                 <div
+                   className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                     data.permissions?.includes(p.id)
+                       ? 'bg-main border-main text-black'
+                       : 'border-gray-600 group-hover:border-gray-400'
+                   }`}
+                 >
+                   {data.permissions?.includes(p.id) && (
+                     <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>
+                   )}
+                 </div>
+                 <span className="text-sm text-gray-300 capitalize">
+                   {p.label}
+                 </span>
+               </label>
+             ))}
            </div>
-         )}
+         </div>
 
          <div className='flex justify-center items-center'>
             <button  onClick={addEmployee} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Creating..." : "Create Account"}</button>

@@ -12,6 +12,9 @@ import html2canvas from "html2canvas";
 import { PDFDocument } from 'pdf-lib';
 import Loading from './../../common/Loading';
 import companyLogoFallback from '../../../img/logo.png';
+import { pdf } from '@react-pdf/renderer';
+import { saveAs } from 'file-saver';
+import { CustomerInvoicePdfxDocument } from './CustomerInvoicePdfx.tsx';
 
 export default function CustomerInvoice() {
    const [loading, setLoading] = useState(true);
@@ -20,6 +23,8 @@ export default function CustomerInvoice() {
    const { id } = useParams();
    const [downloadingPdf, setDownloadingPdf] = useState(false);
    const [pdfProgress, setPdfProgress] = useState('');
+   const [downloadingPdfx, setDownloadingPdfx] = useState(false);
+   const [pdfxProgress, setPdfxProgress] = useState('');
    const pdfRef = useRef();
    const todaydate = new Date();
 
@@ -198,6 +203,30 @@ export default function CustomerInvoice() {
   }
  };
 
+ const downloadPDFx = async () => {
+   setDownloadingPdfx(true);
+   setPdfxProgress('Generating PDF...');
+   try {
+     const blob = await pdf(
+       <CustomerInvoicePdfxDocument
+         order={order}
+         company={company}
+         invoiceNo={invoiceNo}
+         issuedAt={todaydate}
+       />
+     ).toBlob();
+     saveAs(blob, `CMC${order?.serial_no || ''}_invoice-${invoiceNo}-pdfx.pdf`);
+     setPdfxProgress('PDF downloaded successfully!');
+     setTimeout(() => setPdfxProgress(''), 3000);
+   } catch (e) {
+     console.error('PDFx generation failed:', e);
+     setPdfxProgress('PDF generation failed');
+     setTimeout(() => setPdfxProgress(''), 3000);
+   } finally {
+     setDownloadingPdfx(false);
+   }
+ };
+
 
    return (
       <AuthLayout>
@@ -248,9 +277,17 @@ export default function CustomerInvoice() {
                      <button className='bg-main px-4 py-2 rounded-xl text-sm' onClick={downloadPDF} disabled={downloadingPdf}>
                        {downloadingPdf ? "Generating..." : "Download PDF"}
                      </button>
+                     <button className='bg-main px-4 py-2 rounded-xl text-sm ml-2' onClick={downloadPDFx} disabled={downloadingPdfx}>
+                       {downloadingPdfx ? "Generating..." : "Download PDFx"}
+                     </button>
                      {pdfProgress && (
                         <div className='text-xs text-blue-600 mt-1 max-w-[200px]'>
                            {pdfProgress}
+                        </div>
+                     )}
+                     {pdfxProgress && (
+                        <div className='text-xs text-blue-600 mt-1 max-w-[200px]'>
+                           {pdfxProgress}
                         </div>
                      )}
                   </div>
@@ -296,6 +333,11 @@ export default function CustomerInvoice() {
                   </div>
                   <div>
                      <p style={{ textTransform: "uppercase", marginTop: "1.3rem", marginBottom: "0.2rem" }}> <p style={{fontWeight:700, display:'inline-block'}}>Order Number : </p> #CMC{order?.serial_no}</p>
+                     {order?.order_type === 'regular' && order?.customer_order_no ? (
+                       <p style={{ marginBottom: "0.2rem" }}>
+                         <p style={{fontWeight:700, display:'inline-block'}}>Customer Order No : </p> {order.customer_order_no}
+                       </p>
+                     ) : null}
                      <p style={{ marginBottom: "0.2rem" }}> <p style={{fontWeight:700, display:'inline-block'}}>Invoice Date : </p> <TimeFormat time={true} date={Date.now()} /></p>
                      <p style={{ marginBottom: "0.2rem" }}> <p style={{fontWeight:700, display:'inline-block'}}>Amount : </p> <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></p>
                   </div>
@@ -357,6 +399,9 @@ export default function CustomerInvoice() {
                      <div className="shipping-detail-item" style={{   pageBreakInside: "avoid", breakInside: "avoid" }} key={index}>
                         <div style={{ display: "flex", flexWrap: "wrap", marginBottom: "2rem" }}>
                               <p style={{marginBottom:'5px', marginRight:"20px"}}><p style={{fontWeight: 700, display:'inline-block'}}>Order No :</p>   #CMC{order?.serial_no ||''}</p>
+                              {order?.order_type === 'regular' && order?.customer_order_no ? (
+                                 <p style={{marginBottom:'5px', marginRight:"20px"}}><p style={{fontWeight: 700, display:'inline-block'}}>Customer Order No :</p> {order.customer_order_no}</p>
+                              ) : null}
                               <p style={{marginBottom:'5px', marginRight:"20px"}}><p style={{fontWeight: 700, display:'inline-block'}}>Commodity :</p>  {s?.commodity?.value || s?.commodity}</p>
                               {s?.reference && (
                                  <p style={{marginBottom:'5px', marginRight:"20px"}}><p style={{fontWeight: 700, display:'inline-block'}}>Commodity Reference :</p> {s.reference}</p>
@@ -411,17 +456,19 @@ export default function CustomerInvoice() {
                         <span className='ml-1 text-gray-700'>(cc: {company.remittance_secondary_email})</span>
                      )}
                   </p>
-                  <div className='bank-details' style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
-                  <h3 style={{ color: "#2563eb", fontWeight: 900, }}>NAME OF BANK :- {company?.bank_name || 'ROYAL BANK OF CANADA'}</h3>
-                  
-                  <div className='p-4 border rounded-2xl mt-4 '>
-                     <p className=''><strong>Bank Name:</strong> {company?.bank_name || ''}</p>
-                     <p className='mt-2'><strong>Account Name:</strong> {company?.account_name || ''}</p>
-                     <p className='mt-2'> <strong>Account Number:</strong> {company?.account_number || ''}</p>
-                     <p className='mt-2'> <strong>Routing Number:</strong> {company?.routing_number || ''}</p>
-                  </div>
+                  {order?.order_type !== 'regular' && (
+                     <div className='bank-details' style={{ pageBreakInside: "avoid", breakInside: "avoid" }}>
+                     <h3 style={{ color: "#2563eb", fontWeight: 900, }}>NAME OF BANK :- {company?.bank_name || 'ROYAL BANK OF CANADA'}</h3>
+                     
+                     <div className='p-4 border rounded-2xl mt-4 '>
+                        <p className=''><strong>Bank Name:</strong> {company?.bank_name || ''}</p>
+                        <p className='mt-2'><strong>Account Name:</strong> {company?.account_name || ''}</p>
+                        <p className='mt-2'> <strong>Account Number:</strong> {company?.account_number || ''}</p>
+                        <p className='mt-2'> <strong>Routing Number:</strong> {company?.routing_number || ''}</p>
+                     </div>
 
-                  </div>
+                     </div>
+                  )}
                   <div style={{textAlign: 'right', marginTop: "2rem",marginBottom: "2rem"}}>
                      <div>Date: <TimeFormat date={todaydate} time={true} /></div>
                      <div style={{ fontSize: "11px", marginTop: "0.3rem" }}>

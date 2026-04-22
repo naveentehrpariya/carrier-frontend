@@ -11,12 +11,16 @@ export default function Trailers() {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     plateNumber: '',
+    unitNumber: '',
+    vin: '',
+    licenseNumber: '',
     type: '',
     length: '',
     make: '',
     model: '',
     notes: ''
   });
+  const [addDocs, setAddDocs] = useState([]);
   const [docOpen, setDocOpen] = useState(false);
   const [selected, setSelected] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -55,9 +59,23 @@ export default function Trailers() {
       setLoading(false);
       if (res.data.status) {
         toast.success('Trailer added');
+        const newTrailerId = res.data?.trailer?._id;
+        if (newTrailerId && Array.isArray(addDocs) && addDocs.length > 0) {
+          (async () => {
+            for (const f of addDocs) {
+              const fdata = new FormData();
+              fdata.append('attachment', f);
+              try {
+                await Api.post(`/upload/trailer/doc/${newTrailerId}`, fdata);
+              } catch {
+              }
+            }
+          })();
+        }
         setAction('close');
         setTimeout(() => setAction(undefined), 500);
-        setForm({ plateNumber: '', type: '', length: '', notes: '' });
+        setForm({ plateNumber: '', unitNumber: '', vin: '', licenseNumber: '', type: '', length: '', make: '', model: '', notes: '' });
+        setAddDocs([]);
         loadLists();
       } else {
         toast.error(res.data.message || 'Failed to add trailer');
@@ -135,8 +153,20 @@ export default function Trailers() {
               <input name='plateNumber' value={form.plateNumber} onChange={updateForm} type='text' placeholder='TR-12345' className="input-sm" />
             </div>
             <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Unit Number</label>
+              <input name='unitNumber' value={form.unitNumber} onChange={updateForm} type='text' placeholder='Unit number' className="input-sm" />
+            </div>
+            <div className='input-item'>
               <label className="mt-4 mb-0 block text-sm text-gray-400">Type</label>
               <input name='type' value={form.type} onChange={updateForm} type='text' placeholder='Dry Van / Reefer / Flatbed' className="input-sm" />
+            </div>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">VIN</label>
+              <input name='vin' value={form.vin} onChange={updateForm} type='text' placeholder='Vehicle Identification Number' className="input-sm" />
+            </div>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">License Number</label>
+              <input name='licenseNumber' value={form.licenseNumber} onChange={updateForm} type='text' placeholder='License number' className="input-sm" />
             </div>
             <div className='input-item'>
               <label className="mt-4 mb-0 block text-sm text-gray-400">Length (ft)</label>
@@ -154,6 +184,10 @@ export default function Trailers() {
           <div className='input-item mb-4 '>
             <label className="mt-4 mb-0 block text-sm text-gray-400">Notes</label>
             <input name='notes' value={form.notes} onChange={updateForm} type='text' placeholder='Optional notes' className="input-sm" />
+          </div>
+          <div className='input-item mb-4'>
+            <label className="mt-2 mb-0 block text-sm text-gray-400">Documents</label>
+            <input className='input-sm' type='file' multiple onChange={(e)=>setAddDocs(Array.from(e.target.files || []))} />
           </div>
           <div className='flex justify-center items-center'>
             <button onClick={addTrailer} className="btn md mt-2 px-[50px] main-btn text-black font-bold">{loading ? "Saving..." : "Save"}</button>

@@ -3,13 +3,26 @@ import { toast } from 'react-hot-toast';
 import Api from '../api/Api';
 import Popup from '../pages/common/Popup';
 import { ShieldCheckIcon, MagnifyingGlassIcon, UserCircleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../context/MultiTenantAuthProvider';
 
 export default function ManageUserModulesModal({ isOpen, onClose, tenant }) {
+  const { user: currentUser } = useAuth();
+  const adminAllowedModules = Array.isArray(currentUser?.permissions) ? currentUser.permissions : ['outsourcing', 'regular'];
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
   const [query, setQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [modules, setModules] = useState({ outsourcing: false, regular: false });
+
+  const roleLabel = (role, isAdmin) => {
+    if (isAdmin === 1) return 'Admin';
+    const r = Number(role);
+    if (r === 3) return 'Administrator';
+    if (r === 2) return 'Accountant';
+    if (r === 1) return 'Employee/Staff';
+    if (r === 0) return 'Driver';
+    return 'User';
+  };
 
   useEffect(() => {
     if (isOpen && tenant?.tenantId) {
@@ -27,17 +40,17 @@ export default function ManageUserModulesModal({ isOpen, onClose, tenant }) {
     try {
       setLoading(true);
       const qs = new URLSearchParams();
-      if (q && q.trim()) qs.set('q', q.trim());
-      const url = `/api/tenant/admin/users?tenant=${encodeURIComponent(tenant.tenantId)}${qs.toString() ? `&${qs}` : ''}`;
+      if (q && q.trim()) qs.set('search', q.trim());
+      const url = `/api/tenant-admin/users?tenant=${encodeURIComponent(tenant.tenantId)}${qs.toString() ? `&${qs}` : ''}`;
       const res = await Api.get(url);
       if (res.data?.status) {
-        setUsers(Array.isArray(res.data.users) ? res.data.users : []);
+        setUsers(Array.isArray(res.data?.data?.users) ? res.data.data.users : []);
       } else {
         setUsers([]);
       }
     } catch (err) {
       console.error('Fetch users error:', err);
-      toast.error('Failed to load users');
+      toast.error(err.response?.data?.message || 'Failed to load users');
       setUsers([]);
     } finally {
       setLoading(false);
@@ -51,7 +64,7 @@ export default function ManageUserModulesModal({ isOpen, onClose, tenant }) {
 
   const selectUser = (user) => {
     setSelectedUser(user);
-    const allowed = Array.isArray(user.allowedModules) ? user.allowedModules : [];
+    const allowed = Array.isArray(user.permissions) ? user.permissions.filter(p => ['regular', 'outsourcing'].includes(p)) : [];
     setModules({
       outsourcing: allowed.includes('outsourcing'),
       regular: allowed.includes('regular')
@@ -70,9 +83,13 @@ export default function ManageUserModulesModal({ isOpen, onClose, tenant }) {
     const allowedModules = Object.entries(modules)
       .filter(([k, v]) => v)
       .map(([k]) => k);
+    if (!allowedModules.length) {
+      toast.error('Select at least one module');
+      return;
+    }
     try {
       setLoading(true);
-      const url = `/api/tenant/admin/users/${selectedUser._id}/modules?tenant=${encodeURIComponent(tenant.tenantId)}`;
+      const url = `/api/tenant-admin/users/${selectedUser._id}/modules?tenant=${encodeURIComponent(tenant.tenantId)}`;
       const res = await Api.patch(url, { allowedModules });
       if (res.data?.status) {
         toast.success('Permissions updated');
@@ -142,7 +159,7 @@ export default function ManageUserModulesModal({ isOpen, onClose, tenant }) {
                       <div className="text-xs text-gray-500">{user.email}</div>
                     </div>
                     <div className="text-xs text-gray-600">
-                      Role: {user.role}
+                      {roleLabel(user.role, user.is_admin)}
                     </div>
                   </div>
                 </button>
@@ -159,24 +176,31 @@ export default function ManageUserModulesModal({ isOpen, onClose, tenant }) {
                   <div className="text-xs text-gray-500">{selectedUser.email}</div>
                 </div>
                 <div className="space-y-3">
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4"
-                      checked={modules.outsourcing}
-                      onChange={() => toggleModule('outsourcing')}
-                    />
-                    <span className="text-sm text-gray-800">Outsourcing (Carriers)</span>
-                  </label>
-                  <label className="flex items-center space-x-3">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4"
-                      checked={modules.regular}
-                      onChange={() => toggleModule('regular')}
-                    />
-                    <span className="text-sm text-gray-800">Regular (Trucking, driver etc)</span>
-                  </label>
+                  {adminAllowedModules.includes('outsourcing') && (
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={modules.outsourcing}
+                        onChange={() => toggleModule('outsourcing')}
+                      />
+                      <span className="text-sm text-gray-800">Outsourcing (Carriers)</span>
+                    </label>
+                  )}
+                  {adminAllowedModules.includes('regular') && (
+                    <label className="flex items-center space-x-3">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4"
+                        checked={modules.regular}
+                        onChange={() => toggleModule('regular')}
+                      />
+                      <span className="text-sm text-gray-800">Regular (Trucking, driver etc)</span>
+                    </label>
+                  )}
+                  {adminAllowedModules.length === 0 && (
+                    <div className="text-sm text-red-500">You do not have permission to assign any modules.</div>
+                  )}
                 </div>
                 <div className="mt-6 flex items-center justify-between">
                   <div className="flex items-center text-xs text-gray-500">

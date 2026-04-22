@@ -9,6 +9,8 @@ import SuspandAccount from '../../pages/dashboard/employees/SuspandAccount';
 import ChangePassword from '../../pages/dashboard/employees/ChangePassword';
 import TimeFormat from '../../pages/common/TimeFormat';
 import DriverEarningsPopup from '../drivers/DriverEarningsPopup';
+import DriverLogsPopup from '../drivers/DriverLogsPopup';
+import { useAuth } from '../../context/MultiTenantAuthProvider';
 
 export default function EmployeeCard({ 
   employee, 
@@ -16,6 +18,7 @@ export default function EmployeeCard({
   fetchLists,
   onDeleteRequest
 }) {
+  const { user: currentUser } = useAuth();
   // Generate initials for avatar placeholder
   const getInitials = (name) => {
     return name
@@ -25,21 +28,21 @@ export default function EmployeeCard({
       .slice(0, 2) || 'UN';
   };
 
-  // Get role display text and color
-  const getRoleInfo = (role) => {
-    const r = Number(role);
-    if (r === 0) {
+  // Get role display text and color based on permissions
+  const getRoleInfo = (permissions) => {
+    if (permissions?.includes('driver')) {
       return { text: 'Driver', color: 'text-rose-400 bg-rose-500/10 border-rose-500/20' };
     }
-    if (r === 2) {
+    if (permissions?.includes('accounting')) {
       return { text: 'Accountant', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' };
     }
     return { text: 'Employee', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' };
   };
 
-  const roleInfo = getRoleInfo(employee.role);
+  const roleInfo = getRoleInfo(employee.permissions);
 
   const [showEarnings, setShowEarnings] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-[30px] p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:ring-1 hover:ring-gray-700 focus-within:ring-1 focus-within:ring-gray-700">
       {/* Header: Avatar, Name, Status */}
@@ -75,11 +78,33 @@ export default function EmployeeCard({
             </div>
             {/* Module access badges */}
             <div className="flex flex-wrap gap-1 mt-3">
-              {(Array.isArray(employee.allowedModules) ? employee.allowedModules : ['outsourcing', 'regular']).map(m => (
+              {[...new Set(Array.isArray(employee.effectiveAllowedModules) && employee.effectiveAllowedModules.length
+                ? employee.effectiveAllowedModules
+                : (Array.isArray(employee.permissions) && employee.permissions.length ? employee.permissions : [])
+              )]
+              .filter(m => m === 'regular' || m === 'outsourcing')
+              .map(m => (
                 <span key={m} className="px-2 py-0.5 rounded-md bg-gray-800 text-gray-400 text-[9px] uppercase font-bold border border-gray-700">
                   {m === 'outsourcing' ? 'Outsourcing' : 'Regular'}
                 </span>
               ))}
+              
+              {Array.isArray(employee.permissions) && employee.permissions
+                .filter(p => !['regular', 'outsourcing', 'driver'].includes(p))
+                .map(p => (
+                <span key={p} className="px-2 py-0.5 rounded-md bg-purple-900/30 text-purple-400 text-[9px] uppercase font-bold border border-purple-500/30">
+                  {p}
+                </span>
+              ))}
+
+              {(
+                (!Array.isArray(employee.effectiveAllowedModules) || employee.effectiveAllowedModules.length === 0) &&
+                (!Array.isArray(employee.permissions) || employee.permissions.length === 0)
+              ) && (
+                <span className="px-2 py-0.5 rounded-md bg-gray-800 text-gray-500 text-[9px] uppercase font-bold border border-gray-700">
+                  Inherits Company
+                </span>
+              )}
             </div>
           </div>
       </div>
@@ -97,7 +122,7 @@ export default function EmployeeCard({
               <span className="text-sm text-blue-400 font-medium">{employee.staff_commision}%</span>
             </div>
           )}
-          {Number(employee?.role) === 0 && employee?.driverProfile && typeof employee.driverProfile.ratePerMile !== 'undefined' && (
+          {employee?.permissions?.includes('driver') && employee?.driverProfile && typeof employee.driverProfile.ratePerMile !== 'undefined' && (
             <div className="flex justify-between items-center">
               <span className="text-xs text-gray-400 uppercase tracking-wide">Rate/Mile</span>
               <span className="text-sm text-rose-400 font-medium">
@@ -160,56 +185,59 @@ export default function EmployeeCard({
 
       {/* Footer: Documents and Actions */}
       <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-800">
-        {/* Documents button */}
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onOpenDocuments(employee);
-          }}
-          className="flex items-center gap-2 text-sm text-blue-400 hover:text-blue-300 transition-colors focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none rounded px-2 py-1"
-          aria-label={`View documents for ${employee.name}`}
-        >
-          <LuEye size={16} aria-hidden="true" />
-          Documents
-        </button>
-        {Number(employee?.role) === 0 && (
+        <div className="flex  flex-wrap items-center gap-2 flex-1 min-w-0">
           <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowEarnings(true); }}
-            className="text-sm text-rose-400 hover:text-rose-300 transition-colors px-2 py-1"
-            aria-label={`View earnings for ${employee.name}`}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenDocuments(employee);
+            }}
+            className="h-9 px-3 rounded-xl bg-gray-800/60 hover:bg-gray-800 border border-gray-700 text-sm font-semibold text-gray-100 transition-colors"
+            aria-label={`View documents for ${employee.name}`}
           >
-            Earnings
+            Documents
           </button>
-        )}
+          {employee?.permissions?.includes('driver') && (
+            <>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLogs(true); }}
+                className="h-9 px-3 rounded-xl bg-gray-800/60 hover:bg-gray-800 border border-gray-700 text-sm font-semibold text-gray-100 transition-colors"
+                aria-label={`View logs for ${employee.name}`}
+              >
+                Logs
+              </button>
+              <button
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowEarnings(true); }}
+                className="h-9 px-3 rounded-xl bg-gray-800/60 hover:bg-gray-800 border border-gray-700 text-sm font-semibold text-gray-100 transition-colors"
+                aria-label={`View earnings for ${employee.name}`}
+              >
+                Earnings
+              </button>
+            </>
+          )}
+        </div>
 
         {/* Actions dropdown */}
+        {(currentUser?.is_admin === 1 || currentUser?.permissions?.includes('employees') || currentUser?.permissions?.includes('subadmin')) && (
         <div onClick={(e) => e.stopPropagation()}>
           <Dropdown>
             <li className="list-none text-sm">
-              {(employee?.role === 0 ? (
-                <AddDriver 
-                  text="Edit" 
-                  classes="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block" 
-                  item={employee} 
-                  fetchLists={fetchLists} 
-                />
+              {(employee?.permissions?.includes('driver') ? (
+                <AddDriver text="Edit" fetchLists={fetchLists} item={employee} 
+                  classes="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block"  
+                /> 
               ) : (
-                <AddEmployee 
-                text="Edit" 
-                classes="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block" 
-                item={employee} 
-                fetchLists={fetchLists} 
+                <AddEmployee text="Edit" item={employee} fetchLists={fetchLists} 
+                  classes="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block" 
                 />
               ))}
             </li>
-            {employee?.role === 0 && (
+            {employee?.permissions?.includes('driver') && (
               <li className="list-none text-sm">
                 <button 
                   className="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-red-700 block"
                   onClick={() => onDeleteRequest && onDeleteRequest(employee)}
-                >
-                  Delete Driver
+                > Delete Driver
                 </button>
               </li>
             )}
@@ -229,9 +257,13 @@ export default function EmployeeCard({
             </li>
           </Dropdown>
         </div>
+        )}
       </div>
-      {Number(employee?.role) === 0 && (
+      {employee?.permissions?.includes('driver') && (
         <DriverEarningsPopup driver={employee} open={showEarnings} onClose={() => setShowEarnings(false)} />
+      )}
+      {employee?.permissions?.includes('driver') && (
+        <DriverLogsPopup driver={employee} open={showLogs} onClose={() => setShowLogs(false)} />
       )}
     </div>
   );

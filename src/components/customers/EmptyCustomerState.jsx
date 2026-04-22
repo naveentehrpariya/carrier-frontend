@@ -29,12 +29,12 @@ export default function EmptyCustomerState({ fetchLists, user }) {
         </div>
       </div>
       
-      {user?.role === 3 && (
+      {user?.is_admin === 1 || user?.permissions?.includes('customers') || user?.permissions?.includes('subadmin') ? (
         <AddCustomer 
           classes="btn md text-black font-bold bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl" 
           fetchLists={fetchLists} 
         />
-      )}
+      ) : null}
     </div>
   );
 }

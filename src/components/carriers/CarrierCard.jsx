@@ -159,7 +159,7 @@ export default function CarrierCard({
       </div>
 
       {/* Footer: Actions (only for admins) */}
-      {user?.is_admin === 1 && (
+      {(user?.is_admin === 1 || user?.permissions?.includes('carriers') || user?.permissions?.includes('subadmin')) && (
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-800">
           <div className="flex items-center gap-3">
             <AddCarrier 

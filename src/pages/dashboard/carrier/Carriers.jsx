@@ -53,8 +53,8 @@ export default function Carriers() {
             <h2 className='text-white text-2xl mb-4 md:mb-0'>Carriers</h2>
             <div className='sm:flex items-center justify-between md:justify-end'>
                <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search by name or code' className='text-white min-w-[250px] w-full md:w-auto bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />
-               {user?.role === 3 ? <div className='ms-4'></div> : ''}
-               {user?.role === 3 ? <AddCarrier classes={`btn md text-black font-bold w-full md:w-auto block md:flex mt-3 md:mt-0`} fetchLists={fetchLists} /> : '' }
+               {(user?.is_admin === 1 || user?.permissions?.includes('carriers') || user?.permissions?.includes('subadmin')) ? <div className='ms-4'></div> : ''}
+               {(user?.is_admin === 1 || user?.permissions?.includes('carriers') || user?.permissions?.includes('subadmin')) ? <AddCarrier classes={`btn md text-black font-bold w-full md:w-auto block md:flex mt-3 md:mt-0`} fetchLists={fetchLists} /> : '' }
 
             </div>
          </div>

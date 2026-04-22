@@ -12,6 +12,7 @@ import OrderStats from '../../../components/orders/OrderStats';
 import EmptyOrderState from '../../../components/orders/EmptyOrderState';
 import Pagination from '../../common/Pagination';
 import OrderTable from './OrderTable';
+import { useMultiTenant } from '../../../context/MultiTenantProvider';
 
 export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRecent, customer, sortby, hideAddOrder, title, hideSearch}) {
   const navigate = useNavigate();
@@ -22,6 +23,8 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
    const [totalPages, setTotalPages] = useState(1);
    const [viewMode, setViewMode] = useState('table');
    const {Errors, user} = useContext(UserContext);
+   const { getTenantApi } = useMultiTenant();
+   const tenantApi = React.useMemo(() => (getTenantApi ? getTenantApi() : Api), [getTenantApi]);
 
    // get search query param from url
    const [searchParams] = useSearchParams();
@@ -30,7 +33,7 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
    const fetchLists = (value, page = 1) => {
       setLoading(true);
       const limit = isRecent ? 5 : 20; // 20 orders per page, or 5 for recent view
-      const resp = Api.get(`/order/listings?page=${page}&limit=${limit}${orderStatus ?`&status=${orderStatus}` : ''}${payementStatus ?`&paymentStatus=${payementStatus}` : ''}${value ?`&search=${value}` : ''}${customer ?`&customer_id=${customer}` : ''} ${sortby ?`&sortby=${sortby}` : ''}`);
+      const resp = tenantApi.get(`/order/listings?page=${page}&limit=${limit}${orderStatus ?`&status=${orderStatus}` : ''}${payementStatus ?`&paymentStatus=${payementStatus}` : ''}${value ?`&search=${value}` : ''}${customer ?`&customer_id=${customer}` : ''} ${sortby ?`&sortby=${sortby}` : ''}`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {

@@ -341,9 +341,8 @@ export default function MultiTenantProvider({ children }) {
 
   return (
     <MultiTenantContext.Provider value={value}>
-      {/* Emulation banner */}
       {isEmulating && tenant && (
-        <div className="bg-yellow-600 absolute bottom-0 left-0 right-0 z-10 text-white px-2 py-1 text-center text-[10px] font-medium">
+        <div className="bg-yellow-600 fixed bottom-0 left-0 right-0 z-[99999] text-white px-2 py-1 text-center text-[10px] font-medium">
           <span>🎭 Emulating: {tenant.name}</span>
           <button 
             onClick={stopEmulation}

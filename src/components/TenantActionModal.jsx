@@ -41,7 +41,7 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
     if (isOpen) {
       setFormData({
         reason: '',
-        newPlan: tenant?.subscription?.plan || '',
+        newPlan: tenant?.subscription?.planSlug || tenant?.subscription?.plan || '',
         newStatus: getTargetStatus(),
         notes: '',
         maxUsers: tenant?.settings?.maxUsers ?? '',
@@ -280,7 +280,7 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
         case 'activate':
         case 'approve':
         case 'reject':
-          response = await Api.put(`/api/super-admin/tenants/${tenant._id}/status`, {
+          response = await Api.put(`/api/super-admin/tenants/${tenant.tenantId}/status`, {
             status: getTargetStatus(),
             reason: formData.reason,
             notes: formData.notes
@@ -288,9 +288,7 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
           break;
         
         case 'changePlan':
-          // Use tenantId and the correct endpoint format
-          const tenantIdentifier = tenant.tenantId || tenant._id;
-          response = await Api.put(`/api/super-admin/tenants/${tenantIdentifier}/plan`, {
+          response = await Api.put(`/api/super-admin/tenants/${tenant.tenantId}/plan`, {
             planSlug: formData.newPlan, // Backend expects planSlug (the slug of the subscription plan)
             reason: formData.reason,
             notes: formData.notes
@@ -298,11 +296,9 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
           break;
         
         case 'startTrial':
-          response = await Api.post(`/api/super-admin/tenants/${tenant._id}/start-trial`, {
-            reason: formData.reason,
-            notes: formData.notes
-          });
-          break;
+          toast.error('Start Trial is not supported from this screen');
+          setLoading(false);
+          return;
         
         case 'edit':
           // basic validation for limits
@@ -391,7 +387,9 @@ export default function TenantActionModal({ isOpen, onClose, tenant, actionType,
                 <div className="text-right">
                   <div className="text-sm font-medium capitalize">{tenant.status}</div>
                   {tenant.subscription?.plan && (
-                    <div className="text-xs text-gray-500 capitalize">{tenant.subscription.plan}</div>
+                    <div className="text-xs text-gray-500 capitalize">
+                      {tenant.subscription?.planSlug || tenant.subscription?.legacyPlan || tenant.subscription?.plan}
+                    </div>
                   )}
                 </div>
               </div>

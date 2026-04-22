@@ -11,14 +11,15 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
   const [existingDataLoaded, setExistingDataLoaded] = useState(false);
   const [credentials, setCredentials] = useState(null);
   const [showCredsModal, setShowCredsModal] = useState(false);
+  const [subscriptionPlans, setSubscriptionPlans] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     subdomain: '',
     adminName: '',
     adminEmail: '',
     adminPhone: '',
-    subscriptionPlan: 'starter',
-    status: 'trial',
+    subscriptionPlan: '',
+    status: 'active',
     companyInfo: {
       name: '',
       mc_code: '',
@@ -36,7 +37,7 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
     try {
       const response = await Api.get('/api/super-admin/tenants?fields=name,subdomain&limit=1000');
       if (response.data.status && response.data.data) {
-        const tenants = response.data.data;
+        const tenants = response.data.data.tenants || [];
         const normalized = {
           names: tenants.map(t => t.name?.toLowerCase()).filter(Boolean),
           slugs: tenants.map(t => t.subdomain?.toLowerCase()).filter(Boolean),
@@ -59,8 +60,30 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
   useEffect(() => {
     if (isOpen) {
       fetchExistingData();
+      fetchSubscriptionPlans();
     }
   }, [isOpen]);
+
+  const fetchSubscriptionPlans = async () => {
+    try {
+      const res = await Api.get('/api/super-admin/subscription-plans');
+      const plans = res?.data?.data?.plans || [];
+      const validPlans = Array.isArray(plans) ? plans : [];
+      setSubscriptionPlans(validPlans);
+      if (!formData.subscriptionPlan && validPlans.length) {
+        setFormData((prev) => ({ ...prev, subscriptionPlan: validPlans[0].slug }));
+      }
+    } catch {
+      setSubscriptionPlans([
+        { slug: 'starter', name: 'Starter' },
+        { slug: 'professional', name: 'Professional' },
+        { slug: 'enterprise', name: 'Enterprise' }
+      ]);
+      if (!formData.subscriptionPlan) {
+        setFormData((prev) => ({ ...prev, subscriptionPlan: 'starter' }));
+      }
+    }
+  };
 
   const validateForm = (data = existingData) => {
     const newErrors = {};
@@ -72,12 +95,8 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
       newErrors.name = 'Company name already exists';
     }
 
-    if (!formData.subdomain.trim()) {
-      newErrors.subdomain = 'Subdomain is required';
-    } else if (!/^[a-z0-9-]+$/.test(formData.subdomain)) {
+    if (formData.subdomain && !/^[a-z0-9-]+$/.test(formData.subdomain)) {
       newErrors.subdomain = 'Subdomain can only contain lowercase letters, numbers, and hyphens';
-    } else if (data.subdomains.includes(formData.subdomain.toLowerCase().trim())) {
-      newErrors.subdomain = 'Subdomain already exists';
     }
 
     if (!formData.adminName.trim()) {
@@ -165,15 +184,24 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
 
     setLoading(true);
     try {
-      const response = await Api.post('/api/super-admin/tenants', formData);
+      const payload = {
+        name: formData.name,
+        adminName: formData.adminName,
+        adminEmail: formData.adminEmail,
+        adminPhone: formData.adminPhone,
+        subscriptionPlan: formData.subscriptionPlan,
+        companyInfo: formData.companyInfo
+      };
+
+      const response = await Api.post('/api/super-admin/tenants', payload);
       
       if (response.data.status) {
-        const { tenant, credentials: apiCreds, tempPassword } = response.data.data || {};
+        const { tenant, adminUser, tempPassword } = response.data.data || {};
         
         // Extract credentials with fallbacks
-        const resolvedEmail = apiCreds?.email || formData.adminEmail;
-        const resolvedPassword = apiCreds?.password || tempPassword;
-        const resolvedUrl = tenant?.url || apiCreds?.url;
+        const resolvedEmail = adminUser?.email || formData.adminEmail;
+        const resolvedPassword = tempPassword;
+        const resolvedUrl = tenant?.tenantId ? `http://localhost:3000/?tenant=${tenant.tenantId}` : '';
         
         // Set up credentials for modal
         setCredentials({
@@ -183,7 +211,7 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
         });
         
         // Call onSuccess to refresh the tenant list, but don't close yet
-        onSuccess(response.data.data);
+        if (tenant) onSuccess(tenant);
         
         // Show the credentials modal
         setShowCredsModal(true);
@@ -301,8 +329,8 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
       adminName: '',
       adminEmail: '',
       adminPhone: '',
-      subscriptionPlan: 'starter',
-      status: 'trial',
+      subscriptionPlan: '',
+      status: 'active',
       companyInfo: {
         name: '',
         mc_code: '',
@@ -367,7 +395,7 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Subdomain *
+                    Subdomain (optional)
                   </label>
                   <input
                     type="text"
@@ -380,7 +408,7 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
                     placeholder="acme-transport"
                   />
                   {errors.subdomain && <p className="text-red-500 text-xs mt-1">{errors.subdomain}</p>}
-                  <p className="text-gray-500 text-xs mt-1">Will be accessible at: {formData.subdomain || 'your-subdomain'}.yourdomain.com</p>
+                  <p className="text-gray-500 text-xs mt-1">Tenant will be created under: {formData.subdomain || formData.name || 'company'} (auto)</p>
                 </div>
 
                 <div>
@@ -393,9 +421,11 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="starter">Starter</option>
-                    <option value="professional">Professional</option>
-                    <option value="enterprise">Enterprise</option>
+                    {subscriptionPlans.map((p) => (
+                      <option key={p._id || p.slug} value={p.slug}>
+                        {p.name}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -408,6 +438,7 @@ export default function TenantCreateModal({ isOpen, onClose, onSuccess }) {
                     value={formData.status}
                     onChange={handleInputChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    disabled
                   >
                     <option value="active">Active</option>
                     <option value="suspended">Suspended</option>

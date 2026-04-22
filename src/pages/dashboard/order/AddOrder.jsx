@@ -337,6 +337,7 @@ export default function AddOrder({ isEdit = false }){
 
     const [data, setData] = useState({
       "company_name" : "Cross Miles Carrier",
+      "customer_order_no": "",
       "customer" :null,
       'customer_payment_method' : '',
       "carrier" : null,
@@ -362,6 +363,7 @@ export default function AddOrder({ isEdit = false }){
       // Set basic order data
       setData({
         company_name: order.company_name || "Cross Miles Carrier",
+        customer_order_no: order.customer_order_no || "",
         customer: order.customer?._id || null,
         customer_payment_method: order.customer_payment_method || '',
         carrier: order.carrier?._id || null,
@@ -372,6 +374,7 @@ export default function AddOrder({ isEdit = false }){
         revenue_currency: order.revenue_currency || 'cad',
         order_status: order.order_status || "added",
         order_type: order.order_type || 'outsourcing',
+        drivers: order.drivers || (order.driver ? [order.driver] : []),
         driver: order.driver || null,
         truck: order.truck || null,
         trailer: order.trailer || null
@@ -410,7 +413,7 @@ export default function AddOrder({ isEdit = false }){
     const TERM_REGULAR = 'Regular (Trucking, driver etc)';
 
     const {Errors, user: currentUser} = useContext(UserContext);
-    const userModules = Array.isArray(currentUser?.allowedModules) ? currentUser.allowedModules : ['outsourcing', 'regular'];
+    const userModules = Array.isArray(currentUser?.permissions) ? currentUser.permissions : ['outsourcing', 'regular'];
     const availableOrderTypes = [
       ...(userModules.includes('outsourcing') ? [{ label: TERM_OUTSOURCING, value: 'outsourcing' }] : []),
       ...(userModules.includes('regular') ? [{ label: TERM_REGULAR, value: 'regular' }] : []),
@@ -461,7 +464,7 @@ export default function AddOrder({ isEdit = false }){
       fetchAssetLists(); 
     }, []);
 
-    const chooseDriver = (e) => setData(prev => ({ ...prev, driver: e?.value || null }));
+    const chooseDriver = (e) => setData(prev => ({ ...prev, drivers: e ? e.map(item => item.value) : [] }));
     const chooseTruck = (e) => setData(prev => ({ ...prev, truck: e?.value || null }));
     const chooseTrailer = (e) => setData(prev => ({ ...prev, trailer: e?.value || null }));
 
@@ -483,7 +486,8 @@ export default function AddOrder({ isEdit = false }){
         "totalDistance" : Number(calculated_distance),
         "total_amount" : revenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
         "carrier_amount" : isOutsourcing ? carrierRevenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0) : 0,
-        "driver": isOutsourcing ? null : data.driver,
+        "drivers": isOutsourcing ? [] : (data.drivers || []),
+        "driver": isOutsourcing ? null : (data.drivers && data.drivers.length > 0 ? data.drivers[0] : null),
         "truck": isOutsourcing ? null : data.truck,
         "trailer": isOutsourcing ? null : data.trailer,
         "carrier": isOutsourcing ? data.carrier : null
@@ -533,11 +537,10 @@ export default function AddOrder({ isEdit = false }){
           return false;
         }
       } else {
-        if(!alldata.driver || !alldata.truck || !alldata.trailer){
-          toast.error('Driver, Truck and Trailer are required');
-          setLoading(false);
-          return false;
-        }
+        alldata.drivers = alldata.drivers || [];
+        alldata.driver = alldata.driver || null;
+        alldata.truck = alldata.truck || null;
+        alldata.trailer = alldata.trailer || null;
       }
 
       if(alldata.total_amount === '') {
@@ -584,28 +587,30 @@ export default function AddOrder({ isEdit = false }){
          <h2 className='text-white heading xl text-xl sm:text-2xl '>{isEditMode ? `Edit Order #${existingOrder?.serial_no}` : 'Add New Order'}</h2>
 
          {/* Module Switcher Tabs */}
-         <div className="flex bg-[#1B1E27] p-1 rounded-xl border border-white/5 shadow-inner w-fit mt-6 mb-8">
-           <button
-             onClick={() => setData(prev => ({ ...prev, order_type: 'outsourcing' }))}
-             className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-8 rounded-lg transition-all duration-300 ${
-               (data.order_type || 'outsourcing') === 'outsourcing' 
-                 ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' 
-                 : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
-             }`}
-           >
-             {TERM_OUTSOURCING}
-           </button>
-           <button
-             onClick={() => setData(prev => ({ ...prev, order_type: 'regular' }))}
-             className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-8 rounded-lg transition-all duration-300 ${
-               (data.order_type || 'outsourcing') === 'regular' 
-                 ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' 
-                 : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
-             }`}
-           >
-             {TERM_REGULAR}
-           </button>
-         </div>
+         {availableOrderTypes.length > 1 && (
+           <div className="flex bg-[#1B1E27] p-1 rounded-xl border border-white/5 shadow-inner w-fit mt-6 mb-8">
+             <button
+               onClick={() => setData(prev => ({ ...prev, order_type: 'outsourcing' }))}
+               className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-8 rounded-lg transition-all duration-300 ${
+                 (data.order_type || 'outsourcing') === 'outsourcing' 
+                   ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' 
+                   : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
+               }`}
+             >
+               {TERM_OUTSOURCING}
+             </button>
+             <button
+               onClick={() => setData(prev => ({ ...prev, order_type: 'regular' }))}
+               className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-8 rounded-lg transition-all duration-300 ${
+                 (data.order_type || 'outsourcing') === 'regular' 
+                   ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' 
+                   : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
+               }`}
+             >
+               {TERM_REGULAR}
+             </button>
+           </div>
+         )}
 
          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
             {/* Common Customer Selection */}
@@ -620,6 +625,17 @@ export default function AddOrder({ isEdit = false }){
                   options={customersListing} 
                 />
             </div>
+            {(data.order_type || 'outsourcing') === 'regular' && (
+              <div className='input-item md:col-span-2'>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Customer Order No (Optional)</label>
+                <input
+                  className="input-sm"
+                  value={data.customer_order_no || ''}
+                  onChange={(e) => setData(prev => ({ ...prev, customer_order_no: e.target.value }))}
+                  placeholder="Enter customer order number"
+                />
+              </div>
+            )}
          </div>
 
           <div>
@@ -1088,16 +1104,16 @@ export default function AddOrder({ isEdit = false }){
               <h2 className='heading text-lg sm:text-xl text-gray-400 mb-6'>Fleet Assignments (Regular)</h2>
               <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
                 <div className='input-item'>
-                  <label className="mt-2 mb-0 block text-sm text-gray-400">Driver</label>
-                  <Select classNamePrefix="react-select input" placeholder="Search and choose Driver" isSearchable={true} options={drivers} value={drivers.find(d => d.value === data.driver) || null} onChange={chooseDriver} />
+                  <label className="mt-2 mb-0 block text-sm text-gray-400">Driver(s)</label>
+                  <Select isMulti classNamePrefix="react-select input" placeholder="Search and choose Driver(s)" isSearchable={true} isClearable={true} options={drivers} value={drivers.filter(d => (data.drivers || []).includes(d.value))} onChange={chooseDriver} />
                 </div>
                 <div className='input-item'>
                   <label className="mt-2 mb-0 block text-sm text-gray-400">Truck</label>
-                  <Select classNamePrefix="react-select input" placeholder="Search and choose Truck" isSearchable={true} options={trucks} value={trucks.find(t => t.value === data.truck) || null} onChange={chooseTruck} />
+                  <Select classNamePrefix="react-select input" placeholder="Search and choose Truck" isSearchable={true} isClearable={true} options={trucks} value={trucks.find(t => t.value === data.truck) || null} onChange={chooseTruck} />
                 </div>
                 <div className='input-item'>
                   <label className="mt-2 mb-0 block text-sm text-gray-400">Trailer</label>
-                  <Select classNamePrefix="react-select input" placeholder="Search and choose Trailer" isSearchable={true} options={trailers} value={trailers.find(t => t.value === data.trailer) || null} onChange={chooseTrailer} />
+                  <Select classNamePrefix="react-select input" placeholder="Search and choose Trailer" isSearchable={true} isClearable={true} options={trailers} value={trailers.find(t => t.value === data.trailer) || null} onChange={chooseTrailer} />
                 </div>
               </div>
             </div>
@@ -1129,8 +1145,8 @@ export default function AddOrder({ isEdit = false }){
               onClick={addOrder}  
               className={`btn md ${
                 (data.order_type || 'outsourcing') === 'outsourcing' 
-                  ? (data.carrier === '' ? "disabled" : '')
-                  : (!data.driver || !data.truck || !data.trailer ? "disabled" : '')
+                  ? (!data.carrier ? "disabled" : '')
+                  : ''
               } px-8 sm:px-[50px] text-sm ms-0 sm:ms-3 main-btn text-black font-bold w-full sm:w-auto`}
             >
               {loading ? (isEditMode ? "Updating..." : "Adding...") : (isEditMode ? "Update Order" : "Submit Order")}
