@@ -10,6 +10,7 @@ export default function UserContextProvider(props) {
   const [company, setcompany] = useState(null);
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState('CAD');
 
   // Check for existing authentication on component mount
   useEffect(() => {
@@ -19,12 +20,18 @@ export default function UserContextProvider(props) {
       const userData = safeStorage.getItem('user') || safeSessionStorage.getItem('user');
       const companyData = safeStorage.getItem('company') || safeSessionStorage.getItem('company');
       const adminData = safeStorage.getItem('admin') || safeSessionStorage.getItem('admin');
+      const currencyPref = safeStorage.getItem('selectedCurrency') || safeSessionStorage.getItem('selectedCurrency');
       
       if (token && userData) {
         setIsAuthenticated(true);
         setUser(JSON.parse(userData));
         if (companyData) setcompany(JSON.parse(companyData));
         if (adminData) setAdmin(JSON.parse(adminData));
+      }
+      if (currencyPref && ['CAD', 'USD', 'INR'].includes(String(currencyPref).toUpperCase())) {
+        setSelectedCurrency(String(currencyPref).toUpperCase());
+      } else {
+        setSelectedCurrency('CAD');
       }
       setLoading(false);
     };
@@ -42,6 +49,15 @@ export default function UserContextProvider(props) {
     safeStorage.setItem('user', JSON.stringify(userData));
     if (companyData) safeStorage.setItem('company', JSON.stringify(companyData));
     if (adminData) safeStorage.setItem('admin', JSON.stringify(adminData));
+  };
+
+  const updateSelectedCurrency = (currencyCode) => {
+    const next = String(currencyCode || 'CAD').toUpperCase();
+    const supported = ['CAD', 'USD', 'INR'];
+    const finalCode = supported.includes(next) ? next : 'CAD';
+    setSelectedCurrency(finalCode);
+    safeStorage.setItem('selectedCurrency', finalCode);
+    safeSessionStorage.setItem('selectedCurrency', finalCode);
   };
 
   const logout = () => {
@@ -64,15 +80,20 @@ export default function UserContextProvider(props) {
   function Errors(error) { 
       console.error(error);
       const errors = error && error.response && error.response.data && error.response.data.errors;
-      console.log("errors",errors)
-      if (errors !== undefined ) {
+      if (errors && Array.isArray(errors)) {
         errors.map((m, i) => { 
           toast.error(m); 
         });
       } else {
-          if(error && error.data && error.data.message !== undefined){ 
+          if (error && error.response && error.response.data && error.response.data.message) { 
+            toast.error(error.response.data.message);
+          } else if (error && error.data && error.data.message) { 
             toast.error(error.data.message);
-          } 
+          } else if (error && error.message) {
+            toast.error(error.message);
+          } else {
+            toast.error("Something went wrong");
+          }
       }
   }
 
@@ -83,6 +104,8 @@ export default function UserContextProvider(props) {
     login, company, setcompany,
     logout, admin, setAdmin,
     loading
+    ,selectedCurrency
+    ,setSelectedCurrency: updateSelectedCurrency
   };
 
     return <>

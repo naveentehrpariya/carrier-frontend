@@ -40,7 +40,7 @@ export default function TrailerDetail() {
             <div>
               <div className="text-gray-400 text-xs">Trailer Details</div>
               <h2 className="text-2xl font-bold">
-                {trailer?.unitNumber || trailer?.plateNumber || 'Trailer'}
+                {trailer?.type || trailer?.make || trailer?.model || trailer?.unitNumber || 'Unnamed Trailer'}
               </h2>
               <div className="text-gray-400 text-sm mt-1">
                 Plate: {trailer?.plateNumber || '—'}{trailer?.unitNumber ? ` • Unit: ${trailer.unitNumber}` : ''}
@@ -57,6 +57,7 @@ export default function TrailerDetail() {
                 <div className="bg-dark4 border border-gray-900 rounded-2xl p-5">
                   <div className="text-xs text-gray-500 uppercase font-bold">Information</div>
                   <div className="mt-3 space-y-2 text-gray-200">
+                    <div>Status: {trailer?.isActive === false ? <span className='text-red-400'>Disabled</span> : <span className='text-green-400'>Active</span>}</div>
                     <div>Type: {trailer?.type || '—'}</div>
                     <div>VIN: {trailer?.vin || '—'}</div>
                     <div>License: {trailer?.licenseNumber || '—'}</div>

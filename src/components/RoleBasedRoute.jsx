@@ -20,25 +20,23 @@ const RoleBasedRoute = ({ children, allowedRoles = [], fallbackPath = "/home" })
       return <Navigate to="/login" replace />;
     }
   
-    const userRole = null;
-    
     // Super admins bypass all role restrictions
     if (checkSuperAdminAccess()) {
       return children;
     }
-    
+
     // If no specific roles required, allow access
     if (allowedRoles.length === 0) {
       return children;
     }
-    
+
     // Check if user has any of the required roles
     const hasRequiredRole = allowedRoles.some(role => {
       if (typeof role === 'number') {
-        return userRole === role;
+        // Support both user.role and is_admin === 1 (admin flag used across this app)
+        return user?.role === role || (role === 3 && user?.is_admin === 1);
       }
       if (typeof role === 'string') {
-        // Handle permission-based access
         return hasPermission(role);
       }
       return false;

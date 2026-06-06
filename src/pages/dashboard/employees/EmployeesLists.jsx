@@ -20,6 +20,21 @@ export default function EmployeesLists() {
    const [selectedEmployee, setSelectedEmployee] = useState(null);
    const {Errors} = useContext(UserContext);
 
+   const sortEmployees = (employees = []) => {
+      return [...employees].sort((a, b) => {
+         const aInactive = (a?.status || '').toLowerCase() === 'inactive' ? 1 : 0;
+         const bInactive = (b?.status || '').toLowerCase() === 'inactive' ? 1 : 0;
+
+         if (aInactive !== bInactive) {
+            return aInactive - bInactive;
+         }
+
+         const aCreatedAt = new Date(a?.createdAt || 0).getTime();
+         const bCreatedAt = new Date(b?.createdAt || 0).getTime();
+         return bCreatedAt - aCreatedAt;
+      });
+   };
+
    const handleOpenDocuments = (employee) => {
       setSelectedEmployee(employee);
       setShowDocuments(true);
@@ -36,7 +51,7 @@ export default function EmployeesLists() {
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {
-            setLists(res.data.lists);
+            setLists(sortEmployees(res.data.lists || []));
          } else {
             setLists([]);
          }

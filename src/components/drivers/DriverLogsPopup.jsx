@@ -4,6 +4,7 @@ import Api from '../../api/Api';
 import { toast } from 'react-hot-toast';
 import TimeFormat from '../../pages/common/TimeFormat';
 import { Link } from 'react-router-dom';
+import { FaTrash, FaEdit } from 'react-icons/fa';
 
 const toISODate = (d) => {
   const pad = (n) => String(n).padStart(2, '0');
@@ -20,6 +21,12 @@ const monthRange = (shift = 0) => {
 const fmtMoney = (value) => {
   const n = Number(value || 0);
   return `$${n.toFixed(2)}`;
+};
+
+const fmtMilesKm = (value) => {
+  const miles = Number(value || 0);
+  const km = miles * 1.60934;
+  return `${miles.toFixed(2)} mi (${km.toFixed(2)} km)`;
 };
 
 export default function DriverLogsPopup({ driver, open, onClose }) {
@@ -84,6 +91,49 @@ export default function DriverLogsPopup({ driver, open, onClose }) {
     }
   };
 
+  const handleIgnoreEmptyMove = async (l) => {
+    if (!window.confirm('Are you sure you want to remove this empty move from the calculations?')) return;
+    try {
+      const payload = {
+        driverId: driver._id,
+        after_trip_id: l.after_trip_id,
+        before_trip_id: l.before_trip_id
+      };
+      const res = await Api.post('/empty-moves/ignore', payload);
+      if (res.data.status) {
+        toast.success(res.data.message);
+        fetchLogs({ from, to });
+      } else {
+        toast.error(res.data.message);
+      }
+    } catch {
+      toast.error('Error removing empty move');
+    }
+  };
+
+  const handleEditEmptyNote = async (l) => {
+    const note = window.prompt('Enter note for this empty move:', l.note || '');
+    if (note === null) return; // User cancelled
+
+    try {
+      const payload = {
+        driverId: driver._id,
+        after_trip_id: l.after_trip_id,
+        before_trip_id: l.before_trip_id,
+        note
+      };
+      const res = await Api.post('/empty-moves/note', payload);
+      if (res.data.status) {
+        toast.success(res.data.message);
+        fetchLogs({ from, to });
+      } else {
+        toast.error(res.data.message);
+      }
+    } catch {
+      toast.error('Error saving note');
+    }
+  };
+
   return (
     <Popup open={open} onClose={onClose} showTrigger={false} size="md:max-w-5xl" bg="bg-black" space="p-4 sm:p-6">
       <div className="text-white">
@@ -143,15 +193,15 @@ export default function DriverLogsPopup({ driver, open, onClose }) {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-3">
               <div className="text-[10px] uppercase font-black text-gray-500">Trip Distance</div>
-              <div className="text-white text-lg font-bold">{Number(summary.loadedMiles || 0).toFixed(2)}</div>
+              <div className="text-white text-lg font-bold">{fmtMilesKm(summary.loadedMiles || 0)}</div>
             </div>
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-3">
               <div className="text-[10px] uppercase font-black text-gray-500">Empty Distance</div>
-              <div className="text-white text-lg font-bold">{Number(summary.emptyMiles || 0).toFixed(2)}</div>
+              <div className="text-white text-lg font-bold">{fmtMilesKm(summary.emptyMiles || 0)}</div>
             </div>
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-3">
               <div className="text-[10px] uppercase font-black text-gray-500">Total Distance</div>
-              <div className="text-white text-lg font-bold">{Number(summary.totalMiles || 0).toFixed(2)}</div>
+              <div className="text-white text-lg font-bold">{fmtMilesKm(summary.totalMiles || 0)}</div>
             </div>
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-3">
               <div className="text-[10px] uppercase font-black text-gray-500">Total Gross</div>
@@ -193,20 +243,50 @@ export default function DriverLogsPopup({ driver, open, onClose }) {
                     </td>
                     <td className="px-3 py-2">
                       {l.type === 'empty' ? (
-                        <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase border border-yellow-500/30 text-yellow-300 bg-yellow-500/10">
-                          Empty
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase border border-yellow-500/30 text-yellow-300 bg-yellow-500/10">
+                            Empty
+                          </span>
+                          <button 
+                              onClick={() => handleEditEmptyNote(l)}
+                              className="text-gray-500 hover:text-blue-400 p-1 transition-colors"
+                              title="Add or edit note"
+                          >
+                              <FaEdit size={12} />
+                          </button>
+                          <button 
+                              onClick={() => handleIgnoreEmptyMove(l)}
+                              className="text-gray-500 hover:text-red-400 p-1 transition-colors"
+                              title="Remove this empty distance"
+                          >
+                              <FaTrash size={12} />
+                          </button>
+                        </div>
                       ) : (
                         <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase border border-emerald-500/30 text-emerald-300 bg-emerald-500/10">
                           Trip
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-2 max-w-[320px] truncate">{l.type === 'empty' ? l.from_location : l.start_location}</td>
+                    <td className="px-3 py-2 max-w-[320px] truncate">
+                      {l.type === 'empty' ? (
+                        <div>
+                          {l.from_location}
+                          {l.note && (
+                              <div className="text-[10px] text-blue-400 mt-1 flex items-start gap-1">
+                                  <span className="font-bold">Note:</span>
+                                  <span className="whitespace-normal break-words">{l.note}</span>
+                              </div>
+                          )}
+                        </div>
+                      ) : (
+                        l.start_location
+                      )}
+                    </td>
                     <td className="px-3 py-2 max-w-[320px] truncate">{l.type === 'empty' ? l.to_location : l.end_location}</td>
-                    <td className="px-3 py-2">{l.type === 'trip' ? (l.truck?.plateNumber || l.truck?.unitNumber || '—') : '—'}</td>
+                    <td className="px-3 py-2">{l.type === 'trip' && l.truck ? `${[l.truck.make, l.truck.model].filter(Boolean).join(' ') || l.truck.unitNumber || '—'} ${l.truck.plateNumber ? `(${l.truck.plateNumber})` : ''}` : '—'}</td>
                     <td className="px-3 py-2 text-right">
-                      {typeof l.miles === 'number' ? Number(l.miles || 0).toFixed(2) : '—'}
+                      {typeof l.miles === 'number' ? fmtMilesKm(l.miles || 0) : '—'}
                     </td>
                     <td className="px-3 py-2 text-right">
                       {l.type === 'trip' ? fmtMoney(l.gross || 0) : '—'}

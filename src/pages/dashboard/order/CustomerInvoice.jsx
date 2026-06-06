@@ -76,129 +76,40 @@ export default function CustomerInvoice() {
 
   try {
     setPdfProgress('Generating PDF...');
-    const mmPerPx = 25.4 / 96;
-    const contentWidthPx = element.scrollWidth || element.clientWidth || 794;
-    const contentHeightPx = element.scrollHeight || element.clientHeight || 1123;
-    const contentWidthMm = contentWidthPx * mmPerPx;
-    const contentHeightMm = contentHeightPx * mmPerPx;
-    const pdfScale = 1.1;
-    const leftMargin = 10;
-    const rightMargin = 10;
-    const topMargin = 10;
-    const bottomMargin = 10;
-    const pageWidthMm = (contentWidthMm * pdfScale) + leftMargin + rightMargin;
-    const pageHeightMm = (contentHeightMm * pdfScale) + topMargin + bottomMargin;
+    
+    // Convert absolute/relative image paths to full URLs if needed
+    const clone = element.cloneNode(true);
+    const imgs = clone.querySelectorAll('img');
+    imgs.forEach(img => {
+      if (img.src.startsWith('/')) {
+        img.src = window.location.origin + img.getAttribute('src');
+      }
+    });
 
-    const doc = new jsPDF({
-      unit: 'mm',
-      format: [pageWidthMm, pageHeightMm],
-      orientation: 'portrait',
-      compress: true,
-      precision: 1,
-      userUnit: 1.0,
-    });
-    setPdfProgress('Generating PDF...');
-    doc.html(element, {
-      callback: async function (doc) {
-        try {
-          setPdfProgress('Compressing PDF...');
-          const pdfArrayBuffer = doc.output('arraybuffer');
-          const pdfDoc = await PDFDocument.load(pdfArrayBuffer);
-          const compressedPdfBytes = await pdfDoc.save({
-            useObjectStreams: true,
-            addDefaultPage: false,
-            objectsPerTick: 2000,
-            updateFieldAppearances: false,
-            compress: true,
-            linearize: false,
-            normalizeWhitespace: true,
-          });
-          setPdfProgress('Finalizing download...');
-          const blob = new Blob([compressedPdfBytes], { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-          setPdfProgress('PDF downloaded successfully!');
-          setTimeout(() => setPdfProgress(''), 3000);
-          setDownloadingPdf(false);
-        } catch (compressionError) {
-          console.error('PDF compression failed:', compressionError);
-          doc.save(`CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`);
-          setPdfProgress('PDF downloaded (compression skipped)');
-          setTimeout(() => setPdfProgress(''), 3000);
-          setDownloadingPdf(false);
-        }
-      },
-      x: leftMargin,
-      y: topMargin,
-      html2canvas: {
-        scale: 0.26,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
-        logging: false,
-        imageTimeout: 12000,
-        removeContainer: true,
-        pixelRatio: 1.0,
-        quality: 0.5,
-        foreignObjectRendering: false,
-        onclone: function (clonedDoc) {
-          try {
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const availableWidth = pageWidth - leftMargin - rightMargin;
-            const availableHeight = pageHeight - topMargin - bottomMargin;
-            const mmToPx = (mm) => (mm * 96) / 25.4;
-            const availableWidthPx = mmToPx(availableWidth);
-            const availableHeightPx = mmToPx(availableHeight);
-            const root = clonedDoc.getElementById('pdf-root');
-            if (root) {
-              const rect = root.getBoundingClientRect();
-              const contentWidthPx = rect.width || (root.scrollWidth || availableWidthPx);
-              const contentHeightPx = rect.height || (root.scrollHeight || availableHeightPx);
-              root.style.transformOrigin = 'top left';
-              root.style.transform = 'none';
-              root.style.zoom = '1';
-              root.style.margin = '0';
-              root.style.padding = '10px';
-              root.style.width = `${availableWidthPx}px`;
-              root.style.maxWidth = `${availableWidthPx}px`;
-              root.style.maxHeight = `${availableHeightPx}px`;
-              root.style.overflow = 'hidden';
-            }
-            clonedDoc.querySelectorAll('.table-section, .remittance-section, .shipping-detail-item, .bill-to-section').forEach(el => {
-              el.style.pageBreakInside = 'avoid';
-              el.style.breakInside = 'avoid';
-              el.style.marginBottom = '10px';
-            });
-          } catch (e) {}
-          clonedDoc.querySelectorAll('svg, .icon, canvas').forEach(el => {
-            el.style.display = 'none';
-          });
-          clonedDoc.querySelectorAll('.pdf-keep, .pdf-section, .pdf-table, .bank-details').forEach(el => {
-            el.style.pageBreakInside = 'avoid';
-            el.style.breakInside = 'avoid';
-            el.style.display = 'block';
-            el.style.width = '100%';
-            el.style.maxWidth = '100%';
-          });
-        }
-      },
-      pagebreak: { mode: ['css', 'legacy'], avoid: ['.pdf-keep', '.pdf-section', '.pdf-table', '.bank-details'] },
-      autoPaging: 'html',
-      width: contentWidthMm * pdfScale,
-      windowWidth: contentWidthPx,
-      margin: [topMargin, leftMargin, bottomMargin, rightMargin],
-    });
+    const htmlContent = clone.outerHTML;
+
+    const res = await Api.post('/order/generate-pdf', {
+      html: htmlContent,
+      filename: `CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`
+    }, { responseType: 'blob' });
+
+    const blob = new Blob([res.data], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    setPdfProgress('PDF downloaded successfully!');
+    setTimeout(() => setPdfProgress(''), 3000);
   } catch (error) {
     console.error('PDF generation failed:', error);
     setPdfProgress('PDF generation failed');
     setTimeout(() => setPdfProgress(''), 3000);
+  } finally {
     setDownloadingPdf(false);
   }
  };

@@ -79,6 +79,10 @@ export default function TruckDetail() {
                     <div>Year: {truck?.year || '—'}</div>
                     <div>VIN: {truck?.vin || '—'}</div>
                     <div>Capacity: {truck?.capacity || '—'}</div>
+                    <div>Owner Operated: {truck?.ownerOperated ? 'Yes' : 'No'}</div>
+                    {truck?.ownerOperated && (
+                      <div>Owner Operator: {truck?.ownerOperator?.fullName || '—'}</div>
+                    )}
                     <div>Notes: {truck?.notes || '—'}</div>
                   </div>
                 </div>

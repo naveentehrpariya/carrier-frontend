@@ -335,6 +335,9 @@ export default function AddOrder({ isEdit = false }){
     };
 
 
+    const {Errors, user: currentUser, selectedCurrency} = useContext(UserContext);
+    const selectedCurrencyCode = String(selectedCurrency || 'CAD').toLowerCase();
+
     const [data, setData] = useState({
       "company_name" : "Cross Miles Carrier",
       "customer_order_no": "",
@@ -345,8 +348,10 @@ export default function AddOrder({ isEdit = false }){
       "payment_method" : "none",
       "carrier_payment_status" : "pending",
       "carrier_payment_method" : "",
-      "revenue_currency" : 'cad',
+      "revenue_currency" : selectedCurrencyCode,
       "order_status" : "added", 
+      "settle_amount": 0,
+      "driver_assignment_mode": "company_driver",
     });
 
     const chooseCustomer = (e) => { 
@@ -357,16 +362,28 @@ export default function AddOrder({ isEdit = false }){
     }
 
     // Function to populate form data when editing
+    const pickId = (value) => {
+      if (!value) return null;
+      if (typeof value === 'string') return value;
+      if (typeof value === 'object' && value._id) return String(value._id);
+      return null;
+    };
+
     const populateOrderData = (order) => {
       if (!order) return;
+      const normalizedDrivers = Array.isArray(order.drivers)
+        ? order.drivers
+            .map((d) => pickId(d))
+            .filter(Boolean)
+        : (pickId(order.driver) ? [pickId(order.driver)] : []);
       
       // Set basic order data
       setData({
         company_name: order.company_name || "Cross Miles Carrier",
         customer_order_no: order.customer_order_no || "",
-        customer: order.customer?._id || null,
+        customer: pickId(order.customer),
         customer_payment_method: order.customer_payment_method || '',
-        carrier: order.carrier?._id || null,
+        carrier: pickId(order.carrier),
         payment_status: order.payment_status || "pending",
         payment_method: order.payment_method || "none",
         carrier_payment_status: order.carrier_payment_status || "pending",
@@ -374,10 +391,12 @@ export default function AddOrder({ isEdit = false }){
         revenue_currency: order.revenue_currency || 'cad',
         order_status: order.order_status || "added",
         order_type: order.order_type || 'outsourcing',
-        drivers: order.drivers || (order.driver ? [order.driver] : []),
-        driver: order.driver || null,
-        truck: order.truck || null,
-        trailer: order.trailer || null
+        drivers: normalizedDrivers,
+        driver: normalizedDrivers.length > 0 ? normalizedDrivers[0] : null,
+        truck: pickId(order.truck),
+        trailer: pickId(order.trailer),
+        settle_amount: Number(order.settle_amount || 0),
+        driver_assignment_mode: order.driver_assignment_mode || 'company_driver'
       });
       
       // Set currency
@@ -402,22 +421,23 @@ export default function AddOrder({ isEdit = false }){
       }
     };
 
-    const [revCurrency, setRevCurrency] = useState('cad');
-    const chooseAmountCurrency = (e) => { 
-      setData({ ...data, revenue_currency: e.target.value});
-      setRevCurrency(e.target.value);
-    } 
+    const [revCurrency, setRevCurrency] = useState(selectedCurrencyCode);
     
     // Terminology constants
     const TERM_OUTSOURCING = 'Outsourcing (Carriers)';
     const TERM_REGULAR = 'Regular (Trucking, driver etc)';
 
-    const {Errors, user: currentUser} = useContext(UserContext);
     const userModules = Array.isArray(currentUser?.permissions) ? currentUser.permissions : ['outsourcing', 'regular'];
     const availableOrderTypes = [
       ...(userModules.includes('outsourcing') ? [{ label: TERM_OUTSOURCING, value: 'outsourcing' }] : []),
       ...(userModules.includes('regular') ? [{ label: TERM_REGULAR, value: 'regular' }] : []),
     ];
+
+    useEffect(() => {
+      const nextCurrency = String(selectedCurrency || 'CAD').toLowerCase();
+      setRevCurrency(nextCurrency);
+      setData((prev) => ({ ...prev, revenue_currency: nextCurrency }));
+    }, [selectedCurrency]);
 
     useEffect(() => {
       if (!data.order_type) {
@@ -436,6 +456,7 @@ export default function AddOrder({ isEdit = false }){
     // Asset listings for Regular orders
     const [drivers, setDrivers] = useState([]);
     const [trucks, setTrucks] = useState([]);
+    const [truckMetaMap, setTruckMetaMap] = useState({});
     const [trailers, setTrailers] = useState([]);
     const fetchAssetLists = () => {
       // Fetch drivers
@@ -448,14 +469,28 @@ export default function AddOrder({ isEdit = false }){
       // Fetch trucks
       Api.get(`/fleet/trucks/listings`).then(res => {
         const lists = res.data?.lists || res.data?.trucks || [];
-        const opts = lists.map(t => ({ value: t._id, label: `${t.unitNumber || ''} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate' }));
+        const nextMeta = {};
+        const opts = lists.map(t => {
+            const tName = [t.make, t.model].filter(Boolean).join(' ') || t.unitNumber || 'Unnamed Truck';
+            nextMeta[t._id] = t;
+            return {
+              value: t._id,
+              label: `${`${tName} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate'}${t.ownerOperated ? ' • Owner Operated' : ''}`,
+              ownerOperated: !!t.ownerOperated,
+              ownerOperatorName: t?.ownerOperator?.fullName || ''
+            };
+        });
         setTrucks(opts);
+        setTruckMetaMap(nextMeta);
       }).catch(()=> setTrucks([]));
 
       // Fetch trailers
       Api.get(`/fleet/trailers/listings`).then(res => {
         const lists = res.data?.lists || res.data?.trailers || [];
-        const opts = lists.map(t => ({ value: t._id, label: `${t.unitNumber || ''} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate' }));
+        const opts = lists.map(t => {
+            const tName = [t.make, t.model].filter(Boolean).join(' ') || t.type || 'Unnamed Trailer';
+            return { value: t._id, label: `${tName} ${t.unitNumber ? `(${t.unitNumber})` : ''}`.trim() || 'No Unit/Plate' };
+        });
         setTrailers(opts);
       }).catch(()=> setTrailers([]));
     };
@@ -464,8 +499,24 @@ export default function AddOrder({ isEdit = false }){
       fetchAssetLists(); 
     }, []);
 
-    const chooseDriver = (e) => setData(prev => ({ ...prev, drivers: e ? e.map(item => item.value) : [] }));
-    const chooseTruck = (e) => setData(prev => ({ ...prev, truck: e?.value || null }));
+    const selectedTruckMeta = data.truck ? truckMetaMap[data.truck] : null;
+    const hasCompanyDriverSelected = Array.isArray(data.drivers) && data.drivers.length > 0;
+
+    const chooseDriver = (e) => {
+      const selectedDrivers = e ? e.map(item => item.value) : [];
+      setData(prev => ({ ...prev, drivers: selectedDrivers }));
+    };
+    const chooseTruck = (e) => {
+      const truckId = e?.value || null;
+      const meta = truckId ? truckMetaMap[truckId] : null;
+      const ownerOperated = !!meta?.ownerOperated;
+      setData((prev) => ({
+        ...prev,
+        truck: truckId,
+        settle_amount: ownerOperated ? prev.settle_amount : 0,
+        driver_assignment_mode: 'company_driver',
+      }));
+    };
     const chooseTrailer = (e) => setData(prev => ({ ...prev, trailer: e?.value || null }));
 
     const addOrder = async () => {
@@ -477,6 +528,13 @@ export default function AddOrder({ isEdit = false }){
 
       const orderType = data.order_type || (availableOrderTypes[0]?.value || 'outsourcing');
       const isOutsourcing = orderType === 'outsourcing';
+      const isRegular = orderType === 'regular';
+      const isOwnerOperatedTruck = isRegular && !!selectedTruckMeta?.ownerOperated;
+      const settleAmount = Number(data.settle_amount || 0);
+
+      const ownerDriverAssignmentMode = isOwnerOperatedTruck
+        ? (hasCompanyDriverSelected ? 'company_driver' : 'owner_driver')
+        : 'company_driver';
 
       const alldata = {...data, 
         order_type: orderType,
@@ -485,12 +543,14 @@ export default function AddOrder({ isEdit = false }){
         "shipping_details" : shippingDetails || [],
         "totalDistance" : Number(calculated_distance),
         "total_amount" : revenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0),
-        "carrier_amount" : isOutsourcing ? carrierRevenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0) : 0,
-        "drivers": isOutsourcing ? [] : (data.drivers || []),
-        "driver": isOutsourcing ? null : (data.drivers && data.drivers.length > 0 ? data.drivers[0] : null),
+        "carrier_amount" : isOutsourcing ? carrierRevenueItems.reduce((total, item) => total + Number(item.rate) * Number(item.quantity), 0) : settleAmount,
+        "drivers": isOutsourcing ? [] : ((isOwnerOperatedTruck && ownerDriverAssignmentMode === 'owner_driver') ? [] : (data.drivers || [])),
+        "driver": isOutsourcing ? null : ((isOwnerOperatedTruck && ownerDriverAssignmentMode === 'owner_driver') ? null : (data.drivers && data.drivers.length > 0 ? data.drivers[0] : null)),
         "truck": isOutsourcing ? null : data.truck,
         "trailer": isOutsourcing ? null : data.trailer,
-        "carrier": isOutsourcing ? data.carrier : null
+        "carrier": isOutsourcing ? data.carrier : null,
+        "settle_amount": isRegular ? settleAmount : 0,
+        "driver_assignment_mode": isRegular ? ownerDriverAssignmentMode : 'company_driver'
       };
 
       function isObjectValid(obj) {
@@ -541,6 +601,18 @@ export default function AddOrder({ isEdit = false }){
         alldata.driver = alldata.driver || null;
         alldata.truck = alldata.truck || null;
         alldata.trailer = alldata.trailer || null;
+        if (isOwnerOperatedTruck) {
+          if (!alldata.settle_amount || Number(alldata.settle_amount) <= 0) {
+            toast.error('Settle amount is required for owner operated truck');
+            setLoading(false);
+            return false;
+          }
+          if (Number(alldata.settle_amount) > Number(alldata.total_amount || 0)) {
+            toast.error('Settle amount can not be greater than order total');
+            setLoading(false);
+            return false;
+          }
+        }
       }
 
       if(alldata.total_amount === '') {
@@ -612,9 +684,9 @@ export default function AddOrder({ isEdit = false }){
            </div>
          )}
 
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             {/* Common Customer Selection */}
-            <div className='input-item md:col-span-2'>
+            <div className='input-item md:col-span-1'>
                 <label className="block text-sm font-medium text-gray-400 mb-2">Customer</label>
                 <Select 
                   classNamePrefix="react-select input"  
@@ -625,17 +697,24 @@ export default function AddOrder({ isEdit = false }){
                   options={customersListing} 
                 />
             </div>
-            {(data.order_type || 'outsourcing') === 'regular' && (
-              <div className='input-item md:col-span-2'>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Customer Order No (Optional)</label>
-                <input
-                  className="input-sm"
-                  value={data.customer_order_no || ''}
-                  onChange={(e) => setData(prev => ({ ...prev, customer_order_no: e.target.value }))}
-                  placeholder="Enter customer order number"
-                />
-              </div>
-            )}
+            <div className='input-item md:col-span-1'>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Customer Order No (Optional)</label>
+              <input
+                className="input-sm"
+                value={data.customer_order_no || ''}
+                onChange={(e) => setData(prev => ({ ...prev, customer_order_no: e.target.value }))}
+                placeholder="Enter customer order number"
+              />
+            </div>
+            <div className='input-item md:col-span-1'>
+              <label className="block text-sm font-medium text-gray-400 mb-2">Reference (PO#, Load#, etc.)</label>
+              <input
+                className="input-sm"
+                value={shippingDetails?.[0]?.reference || ''}
+                onChange={(e) => handleShippingInputChange(0, "reference", e.target.value)}
+                placeholder="PO#, Load#, Customer Pickup#, Container#"
+              />
+            </div>
          </div>
 
           <div>
@@ -659,7 +738,7 @@ export default function AddOrder({ isEdit = false }){
                   </button> : ''}
                 </div>
                   
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 pb-8 border-b border-gray-800 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-8 border-b border-gray-800 mb-8">
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Commodity</label>
                     <input
@@ -672,17 +751,19 @@ export default function AddOrder({ isEdit = false }){
                       className="input-sm"
                     />
                   </div>
-                  <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">Reference (PO#, Load#, etc.)</label>
-                    <input
-                      name="reference"
-                      value={detail.reference || ""}
-                      onChange={(e) =>handleShippingInputChange(index, "reference", e.target.value)}
-                      type={"text"}
-                      placeholder={"PO#, Load#, Customer Pickup#, Container#"}
-                      className="input-sm"
-                    />
-                  </div>
+                  {!(index === 0) && (
+                    <div className="input-item">
+                      <label className="mb-0 block text-sm text-gray-400">Reference (PO#, Load#, etc.)</label>
+                      <input
+                        name="reference"
+                        value={detail.reference || ""}
+                        onChange={(e) =>handleShippingInputChange(index, "reference", e.target.value)}
+                        type={"text"}
+                        placeholder={"PO#, Load#, Customer Pickup#, Container#"}
+                        className="input-sm"
+                      />
+                    </div>
+                  )}
                   <div className="input-item">
                     <label className="mb-0 block text-sm text-gray-400">Equipment</label>
                     <Select
@@ -879,12 +960,9 @@ export default function AddOrder({ isEdit = false }){
             <div className="flex flex-col sm:flex-row justify-between mt-12 mb-4 items-start sm:items-center gap-4 sm:gap-0">
               <p className="text-gray-400 heading xl text-lg sm:text-xl">Customer Revenue Items</p>
               <div className='flex items-center'>
-                <select value={revCurrency} onChange={chooseAmountCurrency} className='currency-drop bg-gray-800 text-white px-2 py-[5px] rounded-[10px]'>
-                  <option value={"cad"} >CAD</option>
-                  {/* <option value={"gbp"} >GBP</option> */}
-                  <option value={"usd"} >USD</option>
-                  <option value={"inr"} >INR</option>
-                </select>
+                <span className='currency-drop bg-gray-800 text-white px-3 py-[6px] rounded-[10px] text-sm uppercase'>
+                  {revCurrency || 'cad'}
+                </span>
               </div>
             </div>
 
@@ -1104,10 +1182,6 @@ export default function AddOrder({ isEdit = false }){
               <h2 className='heading text-lg sm:text-xl text-gray-400 mb-6'>Fleet Assignments (Regular)</h2>
               <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
                 <div className='input-item'>
-                  <label className="mt-2 mb-0 block text-sm text-gray-400">Driver(s)</label>
-                  <Select isMulti classNamePrefix="react-select input" placeholder="Search and choose Driver(s)" isSearchable={true} isClearable={true} options={drivers} value={drivers.filter(d => (data.drivers || []).includes(d.value))} onChange={chooseDriver} />
-                </div>
-                <div className='input-item'>
                   <label className="mt-2 mb-0 block text-sm text-gray-400">Truck</label>
                   <Select classNamePrefix="react-select input" placeholder="Search and choose Truck" isSearchable={true} isClearable={true} options={trucks} value={trucks.find(t => t.value === data.truck) || null} onChange={chooseTruck} />
                 </div>
@@ -1115,42 +1189,112 @@ export default function AddOrder({ isEdit = false }){
                   <label className="mt-2 mb-0 block text-sm text-gray-400">Trailer</label>
                   <Select classNamePrefix="react-select input" placeholder="Search and choose Trailer" isSearchable={true} isClearable={true} options={trailers} value={trailers.find(t => t.value === data.trailer) || null} onChange={chooseTrailer} />
                 </div>
+                <div className='input-item'>
+                  <label className="mt-2 mb-0 block text-sm text-gray-400">Driver(s)</label>
+                  <Select
+                    isMulti
+                    classNamePrefix="react-select input"
+                    placeholder="Search and choose Driver(s)"
+                    isSearchable={true}
+                    isClearable={true}
+                    options={drivers}
+                    value={drivers.filter(d => (data.drivers || []).includes(d.value))}
+                    onChange={chooseDriver}
+                  />
+                </div>
+               
+                
               </div>
+              {!!selectedTruckMeta?.ownerOperated && (
+                <div className='mt-4 border border-orange-500/20 bg-orange-500/5 rounded-xl p-4'>
+                  <p className='text-orange-300 text-sm font-semibold'>
+                    Owner Operated Truck: {selectedTruckMeta?.ownerOperator?.fullName || selectedTruckMeta?.ownerOperator?.name || 'Assigned Owner Operator'}
+                  </p>
+                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3'>
+                    <div className='input-item'>
+                      <label className="mt-2 mb-0 block text-sm text-gray-400">Settle Amount</label>
+                      <input
+                        className='input-sm'
+                        type='number'
+                        min='0'
+                        step='0.01'
+                        value={data.settle_amount || ''}
+                        onChange={(e) => setData((prev) => ({ ...prev, settle_amount: e.target.value }))}
+                        placeholder='Enter settle amount'
+                      />
+                    </div>
+                    <div className='input-item'>
+                      <label className="mt-2 mb-0 block text-sm text-gray-400">Driver Assignment</label>
+                      <div className='input-sm flex items-center text-white'>
+                        {hasCompanyDriverSelected ? 'Company Driver Assigned' : 'Owner Operator Driver (No company driver selected)'}
+                      </div>
+                    </div>
+                  </div>
+                  <p className='text-xs text-gray-400 mt-2'>
+                    Owner Profit = Customer Total - Settle Amount
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
-          <div className='subtotals flex justify-ends my-6'>
-            <ul className='flex flex-col sm:flex-row justify-between w-full bg-dark2 p-3 sm:p-4 border border-gray-700 rounded-xl gap-4 sm:gap-0'>
-              <li className='flex justify-center sm:justify-end '><p className='text-gray-400 me-4'>Customer Total : </p> <strong className='text-white'> <Currency amount={revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
-              <li className='flex justify-center sm:justify-end '><p className='text-gray-400 me-4'>Total Distance : </p>
-              <strong className='text-white'> <DistanceInMiles d={distance} />
-                {distance > 1 ? <button
-                className="text-main ms-2"
-                onClick={getDistance}>Re-calculate
-              </button> : 
-                <button
-                className="text-main ms-2"
-                onClick={getDistance}> Calculate Distance
-              </button>
-              }
-              </strong></li>
-              {(data.order_type || 'outsourcing') === 'outsourcing' && (
-                <li className='flex justify-center sm:justify-end '><p className='text-gray-400 me-4'>Carrier Total : </p> <strong className='text-white'>  <Currency amount={ carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
-              )}
-            </ul>
-          </div>
+          <div className='mt-6'>
 
-          <div className='flex justify-center sm:justify-end items-center mt-6'>
-            <button 
-              onClick={addOrder}  
-              className={`btn md ${
-                (data.order_type || 'outsourcing') === 'outsourcing' 
-                  ? (!data.carrier ? "disabled" : '')
-                  : ''
-              } px-8 sm:px-[50px] text-sm ms-0 sm:ms-3 main-btn text-black font-bold w-full sm:w-auto`}
-            >
-              {loading ? (isEditMode ? "Updating..." : "Adding...") : (isEditMode ? "Update Order" : "Submit Order")}
-            </button>
+            <div className='w-full subtotals flex justify-ends my-6 md:my-0'>
+              <ul className='flex flex-col sm:flex-row justify-between w-full bg-dark2 p-3 sm:p-4 border border-gray-700 rounded-xl gap-4 sm:gap-8 '>
+                <li className=' '>
+                  <p className='text-gray-400 me-4'>Customer Total : </p> 
+                  <strong className='text-white'> <Currency amount={revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong>
+                </li>
+                <li className=' '>
+                  <p className='text-gray-400 me-4'>Total Distance : </p>
+                <strong className='text-white'> <DistanceInMiles d={distance} />
+                  {distance > 1 ? <button
+                  className="text-main ms-2"
+                  onClick={getDistance}>Re-calculate
+                </button> : 
+                  <button
+                  className="text-main ms-2"
+                  onClick={getDistance}> Calculate Distance
+                </button>
+                }
+                </strong></li>
+                {(data.order_type || 'outsourcing') === 'outsourcing' && (
+                  <li className=''><p className='text-gray-400 me-4'>Carrier Total : </p> <strong className='text-white'>  <Currency amount={ carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
+                )}
+              {(data.order_type || 'outsourcing') === 'regular' && !!selectedTruckMeta?.ownerOperated && (
+                <li className='flex flex-col gap-2'>
+                  <div className='flex items-center justify-start sm:justify-end'>
+                    <p className='text-gray-400 me-4'>Settlement Amount : </p>
+                    <strong className='text-white'>
+                      <Currency amount={Number(data.settle_amount || 0)} currency={revCurrency || 'cad'} />
+                    </strong>
+                  </div>
+                  <div className='flex items-center justify-start sm:justify-end'>
+                    <p className='text-gray-400 me-4'>Owner Profit : </p>
+                    <strong className='text-white'>
+                      <Currency
+                        amount={(revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0) - Number(data.settle_amount || 0))}
+                        currency={revCurrency || 'cad'}
+                      />
+                    </strong>
+                  </div>
+                </li>
+              )}
+              </ul>
+            </div>
+
+            <div className='flex justify-center'>
+              <button 
+                onClick={addOrder}  
+                className={`btn md ${
+                  (data.order_type || 'outsourcing') === 'outsourcing' 
+                    ? (!data.carrier ? "disabled" : '')
+                    : ''
+                } px-8 mt-6 py-4 text-lg main-btn text-black font-bold w-full rounded-xl`}
+              > {loading ? (isEditMode ? "Updating..." : "Adding...") : (isEditMode ? "Update Order" : "Submit Order")}
+              </button>
+            </div>
           </div>
           {/* <div className='flex justify-end items-center mt-6'>
             {distance ?

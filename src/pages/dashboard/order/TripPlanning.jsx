@@ -85,7 +85,7 @@ export default function TripPlanning() {
                 Api.get(`/order/detail/${id}`),
                 Api.get('/driver/listings'),
                 Api.get('/fleet/trucks/listings'),
-                Api.get('/fleet/trailers/listings'),
+                Api.get('/fleet/trailers/listings?active=true'),
                 Api.get(`/order/trips/${id}`),
                 Api.get('/carriers/listings').catch(() => ({ data: { status: false, lists: [] } }))
             ]);
@@ -111,17 +111,23 @@ export default function TripPlanning() {
                 setDrivers(driverOptions);
             }
             if (trucksRes.data.status) {
-                const truckOptions = (trucksRes.data.lists || []).map(t => ({ 
-                    value: t._id, 
-                    label: `${t.unitNumber || ''} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate'
-                }));
+                const truckOptions = (trucksRes.data.lists || []).map(t => {
+                    const tName = [t.make, t.model].filter(Boolean).join(' ') || t.unitNumber || 'Unnamed Truck';
+                    return { 
+                        value: t._id, 
+                        label: `${tName} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate'
+                    };
+                });
                 setTrucks(truckOptions);
             }
             if (trailersRes.data.status) {
-                const trailerOptions = (trailersRes.data.lists || []).map(t => ({ 
-                    value: t._id, 
-                    label: `${t.unitNumber || ''} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate'
-                }));
+                const trailerOptions = (trailersRes.data.lists || []).map(t => {
+                    const tName = [t.make, t.model].filter(Boolean).join(' ') || t.type || 'Unnamed Trailer';
+                    return { 
+                        value: t._id, 
+                        label: `${tName} ${t.unitNumber ? `(${t.unitNumber})` : ''}`.trim() || 'No Unit/Plate'
+                    };
+                });
                 setTrailers(trailerOptions);
             }
             if (carriersRes.data.status) {
@@ -420,7 +426,7 @@ export default function TripPlanning() {
                 </div>
             </div>
 
-            <div className='sticky top-3 z-30 -mx-6 md:-mx-8 mb-6'>
+            <div className='-mx-6 md:-mx-8 mb-6'>
                 <div className='px-6 md:px-8'>
                     <div className='bg-gradient-to-r from-gray-900 via-gray-900/90 to-gray-900 border border-gray-800/80 ring-1 ring-white/5 rounded-3xl overflow-hidden shadow-2xl backdrop-blur'>
                         <div className='p-4 sm:p-6'>

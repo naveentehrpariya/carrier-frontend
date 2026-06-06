@@ -2,8 +2,10 @@ import React from 'react';
 import { LuPackage, LuTruck, LuBuilding2, LuPlus } from "react-icons/lu";
 import { Link } from 'react-router-dom';
 
-export default function EmptyOrderState({ isSearching, searchTerm }) {
-  if (isSearching) {
+export default function EmptyOrderState({ isSearching, isFiltering, searchTerm, onClearFilters }) {
+  const filtering = Boolean(isSearching || isFiltering);
+
+  if (filtering) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-4">
         <div className="w-16 h-16 bg-gray-800 rounded-2xl flex items-center justify-center mb-4">
@@ -14,10 +16,25 @@ export default function EmptyOrderState({ isSearching, searchTerm }) {
           No orders found
         </h3>
         
-        <p className="text-gray-400 text-center mb-6 max-w-md">
-          No orders match your search for "<span className="text-blue-400 font-medium">{searchTerm}</span>". 
-          Try adjusting your search terms or filters.
-        </p>
+        {searchTerm ? (
+          <p className="text-gray-400 text-center mb-6 max-w-md">
+            No orders match your search for "<span className="text-blue-400 font-medium">{searchTerm}</span>". 
+            Try adjusting your search terms or filters.
+          </p>
+        ) : (
+          <p className="text-gray-400 text-center mb-6 max-w-md">
+            No orders match your current filters. Try adjusting your filters.
+          </p>
+        )}
+        {typeof onClearFilters === 'function' && (
+          <button
+            type="button"
+            onClick={onClearFilters}
+            className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-xl font-medium transition-colors"
+          >
+            Clear filters
+          </button>
+        )}
       </div>
     );
   }

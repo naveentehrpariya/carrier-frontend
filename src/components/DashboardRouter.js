@@ -1,12 +1,10 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useMultiTenant } from '../context/MultiTenantProvider';
 import { useAuth } from '../context/MultiTenantAuthProvider';
 import Overview from '../pages/dashboard/Overview';
 
 const DashboardRouter = () => {
-  const { isSuperAdmin, tenant } = useMultiTenant();
-  const { user, loading } = useAuth();
+  const { user, loading, isSuperAdminUser } = useAuth();
 
   // Show loading if auth is still loading
   if (loading) {
@@ -23,7 +21,7 @@ const DashboardRouter = () => {
   }
 
   // Route super admins to super admin dashboard
-  if (isSuperAdmin) {
+  if (isSuperAdminUser) {
     return <Navigate to="/super-admin" replace />;
   }
 

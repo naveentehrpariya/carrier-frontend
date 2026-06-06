@@ -1,3 +1,5 @@
-export default function DistanceInMiles({ d}) {
-  return <>{d ? ((d * 0.6214).toFixed(2)) : '0'} Miles</>;
+export default function DistanceInMiles({ d }) {
+  const km = Number(d || 0);
+  const miles = km * 0.6214;
+  return <>{`${miles.toFixed(2)} mi (${km.toFixed(2)} km)`}</>;
 }

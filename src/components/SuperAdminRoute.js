@@ -1,14 +1,11 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useMultiTenant } from '../context/MultiTenantProvider';
 import { useAuth } from '../context/MultiTenantAuthProvider';
 
 const SuperAdminRoute = ({ children }) => {
-  const { isSuperAdmin } = useMultiTenant();
   const { user, loading, isSuperAdminUser } = useAuth();
 
   console.log('SuperAdminRoute checks:', {
-    isSuperAdmin,
     isSuperAdminUser,
     user: !!user,
     loading
@@ -29,8 +26,8 @@ const SuperAdminRoute = ({ children }) => {
     return <Navigate to="/multitenant-login" replace />;
   }
 
-  // Check both URL-based and auth-based super admin status
-  const hasSuperAdminAccess = isSuperAdmin || isSuperAdminUser;
+  // Trust auth-derived super admin flag; tenant context can be stale after account switches.
+  const hasSuperAdminAccess = Boolean(isSuperAdminUser);
   
   if (!hasSuperAdminAccess) {
     console.log('No super admin access, redirecting to unauthorized');

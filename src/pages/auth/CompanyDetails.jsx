@@ -5,11 +5,13 @@ import Api from '../../api/Api';
 import AuthLayout from '../../layout/AuthLayout';
 import safeStorage from '../../utils/safeStorage';
 import GoogleAddressInput from '../common/GoogleAddressInput';
+import defaultLogo from '../../img/logo.png';
 
 export default function CompanyDetails({ fetchLists, classes, text}){
 
-   const [action, setaction] = useState();
    const {Errors, company, setcompany} = useContext(UserContext);
+   const [pdfLogoFile, setPdfLogoFile] = useState(null);
+   const [pdfLogoUploading, setPdfLogoUploading] = useState(false);
  
 
     const [data, setData] = useState({
@@ -108,6 +110,40 @@ export default function CompanyDetails({ fetchLists, classes, text}){
       });
     }
 
+    const uploadCompanyLogo = async () => {
+      const file = pdfLogoFile;
+      if (!file) return;
+      if (!company?._id) return;
+
+      setPdfLogoUploading(true);
+      try {
+        const fdata = new FormData();
+        fdata.append('attachment', file);
+        fdata.append('variant', 'pdf');
+        const res = await Api.post('/user/company/logo', fdata, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+          },
+        });
+        if (res.data.status) {
+          toast.success(res.data.message);
+          if (res.data.company) {
+            setcompany(res.data.company);
+            safeStorage.setItem('company', JSON.stringify(res.data.company));
+          }
+          setPdfLogoFile(null);
+        } else {
+          toast.error(res.data.message);
+        }
+      } catch (err) {
+        console.error('Logo upload error:', err);
+        Errors(err);
+        toast.error('Logo upload failed');
+      } finally {
+        setPdfLogoUploading(false);
+      }
+    };
+
   return (
    <AuthLayout>
       <div className='flex justify-center items-center w-full'>
@@ -139,6 +175,39 @@ export default function CompanyDetails({ fetchLists, classes, text}){
                  className="input-sm"
                />
             </div>
+            </div>
+
+            <div className='mt-10'>
+               <h3 className='text-white font-bold text-lg md:text-2xl'>Company Logo</h3>
+               <p className='text-gray-400 text-normal mt-2'>Ye logo sabhi PDFs me use hoga (rate confirmation, invoice, owner operator statement, etc.) aur platform ka default logo replace karega.</p>
+
+               <div className='grid grid-cols-1 gap-6 mt-4'>
+                  <div className='p-4 rounded-xl border border-gray-800'>
+                     <label className="block text-sm text-gray-400 mb-2">Logo (white background)</label>
+                     <div className='bg-white rounded-lg p-4 flex items-center justify-center min-h-[110px]'>
+                        <img
+                          className='max-h-[80px] max-w-full'
+                          crossOrigin="anonymous"
+                          referrerPolicy="no-referrer"
+                          src={pdfLogoFile ? URL.createObjectURL(pdfLogoFile) : (company?.pdf_logo || company?.logo || defaultLogo)}
+                          alt="Logo"
+                        />
+                     </div>
+                     <input
+                       className="input-sm mt-3"
+                       type="file"
+                       accept="image/*"
+                       onChange={(e) => setPdfLogoFile(e.target.files?.[0] || null)}
+                     />
+                     <button
+                       disabled={!pdfLogoFile || pdfLogoUploading}
+                       onClick={uploadCompanyLogo}
+                       className="btn md mt-3 w-full main-btn text-black font-bold disabled:opacity-60"
+                     >
+                       {pdfLogoUploading ? "Uploading..." : "Upload Logo"}
+                     </button>
+                  </div>
+               </div>
             </div>
             <div className='h-[1px] bg-gray-800 my-12'></div>
 

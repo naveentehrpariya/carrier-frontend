@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { LuEye, LuPhone, LuMail, LuMapPin } from "react-icons/lu";
+import { LuPhone, LuMail, LuMapPin } from "react-icons/lu";
 import Badge from '../../pages/common/Badge';
 import Dropdown from '../../pages/common/Dropdown';
 import AddEmployee from '../../pages/dashboard/employees/AddEmployee';
@@ -11,6 +11,7 @@ import TimeFormat from '../../pages/common/TimeFormat';
 import DriverEarningsPopup from '../drivers/DriverEarningsPopup';
 import DriverLogsPopup from '../drivers/DriverLogsPopup';
 import { useAuth } from '../../context/MultiTenantAuthProvider';
+import Currency from '../../pages/common/Currency';
 
 export default function EmployeeCard({ 
   employee, 
@@ -29,17 +30,20 @@ export default function EmployeeCard({
   };
 
   // Get role display text and color based on permissions
-  const getRoleInfo = (permissions) => {
-    if (permissions?.includes('driver')) {
+  const getRoleInfo = (emp) => {
+    if (emp.is_admin === 1) {
+      return { text: 'Administrator', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' };
+    }
+    if (emp.permissions?.includes('driver') || emp.role === 0) {
       return { text: 'Driver', color: 'text-rose-400 bg-rose-500/10 border-rose-500/20' };
     }
-    if (permissions?.includes('accounting')) {
-      return { text: 'Accountant', color: 'text-blue-400 bg-blue-500/10 border-blue-500/20' };
+    if (emp.permissions?.includes('accounting')) {
+      return { text: 'Accountant', color: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' };
     }
-    return { text: 'Employee', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' };
+    return { text: emp.position || 'Employee', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20' };
   };
 
-  const roleInfo = getRoleInfo(employee.permissions);
+  const roleInfo = getRoleInfo(employee);
 
   const [showEarnings, setShowEarnings] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
@@ -55,7 +59,7 @@ export default function EmployeeCard({
               </div>
               <div className='ps-3'>
                 <Link 
-                  to={`/employee/detail/${employee._id}`}
+                  to={(employee?.permissions?.includes('driver') || employee?.role === 0) ? `/driver/detail/${employee._id}` : `/employee/detail/${employee._id}`}
                   className="text-lg  font-semibold text-gray-100 hover:text-blue-400 transition-colors leading-tight block truncate focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none rounded"
                   aria-label={`View details for ${employee.name}, ${roleInfo.text}, status: ${employee.status}`} >
                   {employee.name}
@@ -122,12 +126,32 @@ export default function EmployeeCard({
               <span className="text-sm text-blue-400 font-medium">{employee.staff_commision}%</span>
             </div>
           )}
-          {employee?.permissions?.includes('driver') && employee?.driverProfile && typeof employee.driverProfile.ratePerMile !== 'undefined' && (
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-gray-400 uppercase tracking-wide">Rate/Mile</span>
-              <span className="text-sm text-rose-400 font-medium">
-                ${Number(employee.driverProfile.ratePerMile || 0).toFixed(2)}
-              </span>
+          {employee?.permissions?.includes('driver') && employee?.driverProfile && (
+            <div className="space-y-1">
+              {typeof employee.driverProfile.ratePerMileSolo !== 'undefined' && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400 uppercase tracking-wide">Solo Rate/Mile</span>
+                  <span className="text-sm text-rose-400 font-medium">
+                    <Currency amount={Number(employee.driverProfile.ratePerMileSolo || employee.driverProfile.ratePerMile || 0)} currency="CAD" />
+                  </span>
+                </div>
+              )}
+              {typeof employee.driverProfile.ratePerMileTeam !== 'undefined' && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400 uppercase tracking-wide">Team Rate/Mile</span>
+                  <span className="text-sm text-rose-400 font-medium">
+                    <Currency amount={Number(employee.driverProfile.ratePerMileTeam || employee.driverProfile.ratePerMile || 0)} currency="CAD" />
+                  </span>
+                </div>
+              )}
+              {typeof employee.driverProfile.cityHoursRate !== 'undefined' && (
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-gray-400 uppercase tracking-wide">City Rate/Hr</span>
+                  <span className="text-sm text-rose-400 font-medium">
+                    <Currency amount={Number(employee.driverProfile.cityHoursRate || 0)} currency="CAD" />
+                  </span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -197,7 +221,7 @@ export default function EmployeeCard({
           >
             Documents
           </button>
-          {employee?.permissions?.includes('driver') && (
+          {(employee?.permissions?.includes('driver') || employee?.role === 0) && (
             <>
               <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLogs(true); }}
@@ -222,7 +246,7 @@ export default function EmployeeCard({
         <div onClick={(e) => e.stopPropagation()}>
           <Dropdown>
             <li className="list-none text-sm">
-              {(employee?.permissions?.includes('driver') ? (
+              {((employee?.permissions?.includes('driver') || employee?.role === 0) ? (
                 <AddDriver text="Edit" fetchLists={fetchLists} item={employee} 
                   classes="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block"  
                 /> 
@@ -232,7 +256,7 @@ export default function EmployeeCard({
                 />
               ))}
             </li>
-            {employee?.permissions?.includes('driver') && (
+            {(employee?.permissions?.includes('driver') || employee?.role === 0) && (
               <li className="list-none text-sm">
                 <button 
                   className="p-3 hover:bg-gray-100 w-full text-start rounded-xl text-red-700 block"
@@ -259,10 +283,10 @@ export default function EmployeeCard({
         </div>
         )}
       </div>
-      {employee?.permissions?.includes('driver') && (
+      {(employee?.permissions?.includes('driver') || employee?.role === 0) && (
         <DriverEarningsPopup driver={employee} open={showEarnings} onClose={() => setShowEarnings(false)} />
       )}
-      {employee?.permissions?.includes('driver') && (
+      {(employee?.permissions?.includes('driver') || employee?.role === 0) && (
         <DriverLogsPopup driver={employee} open={showLogs} onClose={() => setShowLogs(false)} />
       )}
     </div>

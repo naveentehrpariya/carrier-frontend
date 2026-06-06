@@ -8,13 +8,13 @@ import countries from './../../common/Countries';
 import GoogleAddressInput from '../../common/GoogleAddressInput';
 
 export default function AddEmployee({fetchLists, item, text, classes, defaultRole}){
-
-    const { user: currentUser } = useAuth();
+    
+  const { user: currentUser } = useAuth();
     const adminAllowedModules = Array.isArray(currentUser?.permissions) ? currentUser.permissions : [];
-
     const commisions = Array.from({ length: 100 }, (_, index) => (index + 1) * 1);
     const [staffType, setStaffType] = useState(0);
     const availablePermissions = [
+      // { id: 'driver', label: 'Driver' }, // Commented to prevent assigning driver role from here
       { id: 'regular', label: 'Regular (Trucking & Fleet)' },
       { id: 'outsourcing', label: 'Outsourcing (Carriers)' },
       { id: 'accounting', label: 'Accounting & Payments' },
@@ -35,10 +35,9 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
       password: '',
       permissions: item?.permissions || ['regular', 'outsourcing']
     });
-
+    
     const [action, setaction] = useState();
     const {Errors} = useContext(UserContext);
-
     const handleinput = (e) => {
       setData({ ...data, [e.target.name]: e.target.value});
     }
@@ -107,7 +106,7 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
                <label className="mt-4 mb-0 block text-sm text-gray-400">Email</label>
                <input defaultValue={item?.email} required name='email' onChange={handleinput} type={'email'} placeholder={"Email address"} className="input-sm" />
             </div>
-            {(data.permissions?.includes('orders') || data.permissions?.includes('outsourcing')) && (
+            {(data.permissions?.includes('regular') || data.permissions?.includes('outsourcing') || data.permissions?.includes('subadmin')) && (
               <div className='input-item'>
                  <label className="mt-4 mb-0 block text-sm text-gray-400">Staff Commission</label>
                  <select  defaultValue={item?.staff_commision} onChange={handleinput} name='staff_commision' className="input-sm" >

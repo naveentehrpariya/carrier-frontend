@@ -322,6 +322,26 @@ export default function MultiTenantProvider({ children }) {
     return debugInfo;
   };
 
+  // Get tenant-aware API instance
+  const getTenantApi = () => {
+    const api = Api;
+    
+    // Add tenant context to requests
+    api.interceptors.request.use(
+      (config) => {
+        console.log('[getTenantApi] Adding tenant header:', tenant?.tenantId);
+        if (tenant && !isSuperAdmin) {
+          config.headers['X-Tenant-ID'] = tenant.tenantId || tenant.id;
+          console.log('[getTenantApi] Header set:', config.headers['X-Tenant-ID']);
+        }
+        return config;
+      },
+      (error) => Promise.reject(error)
+    );
+
+    return api;
+  };
+
   const value = {
     // State
     tenant,
@@ -333,6 +353,7 @@ export default function MultiTenantProvider({ children }) {
     emulateTenant,
     stopEmulation,
     debugAuth,
+    getTenantApi,
     
     // Utilities
     loadTenantContext,

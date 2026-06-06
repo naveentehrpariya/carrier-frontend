@@ -39,7 +39,7 @@ export function SidebarCountsProvider({ children }) {
       ]);
 
       setCounts({
-        orders: overviewRes?.data?.lists?.[0]?.data || 0,
+        orders: overviewRes?.data?.lists?.find(l => l.title === 'Total Loads')?.data || 0,
         customers: customersRes?.data?.totalDocuments || 0,
         carriers: carriersRes?.data?.totalDocuments || 0,
         employees: employeesRes?.data?.totalDocuments || 0,

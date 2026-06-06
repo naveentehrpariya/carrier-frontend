@@ -140,20 +140,20 @@ export default function AccountOrders() {
                                    Truck:{' '}
                                    {c?.truck?._id ? (
                                      <Link className="text-main" to={`/truck/detail/${c.truck._id}`}>
-                                       {c?.truck?.unitNumber || c?.truck?.plateNumber || '—'}
+                                       {[c?.truck?.make, c?.truck?.model].filter(Boolean).join(' ') || c?.truck?.unitNumber || '—'} {c?.truck?.plateNumber ? `(${c.truck.plateNumber})` : ''}
                                      </Link>
                                    ) : (
-                                     <span>{c?.truck?.unitNumber || c?.truck?.plateNumber || '—'}</span>
+                                     <span>{[c?.truck?.make, c?.truck?.model].filter(Boolean).join(' ') || c?.truck?.unitNumber || '—'} {c?.truck?.plateNumber ? `(${c.truck.plateNumber})` : ''}</span>
                                    )}
                                  </div>
                                  <div className="mt-1">
                                    Trailer:{' '}
                                    {c?.trailer?._id ? (
                                      <Link className="text-main" to={`/trailer/detail/${c.trailer._id}`}>
-                                       {c?.trailer?.unitNumber || c?.trailer?.plateNumber || '—'}
+                                       {[c?.trailer?.make, c?.trailer?.model].filter(Boolean).join(' ') || c?.trailer?.type || '—'} {c?.trailer?.unitNumber ? `(${c.trailer.unitNumber})` : ''}
                                      </Link>
                                    ) : (
-                                     <span>{c?.trailer?.unitNumber || c?.trailer?.plateNumber || '—'}</span>
+                                     <span>{[c?.trailer?.make, c?.trailer?.model].filter(Boolean).join(' ') || c?.trailer?.type || '—'} {c?.trailer?.unitNumber ? `(${c.trailer.unitNumber})` : ''}</span>
                                    )}
                                  </div>
                                </>
@@ -215,19 +215,21 @@ export default function AccountOrders() {
                                <Dropdown>
                                  {(user && user.is_admin === 1) || (user && user?.permissions?.includes('accounting')) ? (
                                    <>
-                                     <li className={`list-none text-sm ${c.lock ? 'disabled' : ''}`}>
-                                       <UpdatePaymentStatus
-                                         order={c}
-                                         pstatus={c.carrier_payment_status}
-                                         pmethod={c.carrier_payment_method}
-                                         pnotes={c.carrier_payment_notes}
-                                         text={<>{c.lock ? <FaLock size={12} className='me-1' /> : ''} Update Carrier Payment</>}
-                                         paymentType={2}
-                                         id={c.id}
-                                         type={2}
-                                         fetchLists={fetchLists}
-                                       />
-                                     </li>
+                                    {c?.order_type === 'outsourcing' && (
+                                      <li className={`list-none text-sm ${c.lock ? 'disabled' : ''}`}>
+                                        <UpdatePaymentStatus
+                                          order={c}
+                                          pstatus={c.carrier_payment_status}
+                                          pmethod={c.carrier_payment_method}
+                                          pnotes={c.carrier_payment_notes}
+                                          text={<>{c.lock ? <FaLock size={12} className='me-1' /> : ''} Update Carrier Payment</>}
+                                          paymentType={2}
+                                          id={c.id}
+                                          type={2}
+                                          fetchLists={fetchLists}
+                                        />
+                                      </li>
+                                    )}
                                      {user && user.is_admin === 1 ? (
                                        <li className='list-none text-sm'>
                                          <LockOrder order={c} fetchLists={fetchLists} />
@@ -261,14 +263,16 @@ export default function AccountOrders() {
                                     </Link>
                                   </li>
                                 )}
-                                 {!(user?.permissions?.includes('regular') || user?.permissions?.includes('outsourcing') || user?.permissions?.includes('subadmin')) && (
+                                 {(user?.is_admin === 1 || !(user?.permissions?.includes('regular') || user?.permissions?.includes('outsourcing') || user?.permissions?.includes('subadmin'))) && (
                                    <li className='list-none text-sm'>
                                      <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${c._id}`}>Download Customer Invoice</Link>
                                    </li>
                                  )} 
-                                 <li className='list-none text-sm'>
-                                   <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${c._id}`}>Download Carrier Sheet</Link>
-                                 </li>
+                                 {c?.order_type === 'outsourcing' && (
+                                   <li className='list-none text-sm'>
+                                     <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${c._id}`}>Download Carrier Sheet</Link>
+                                   </li>
+                                 )}
                                </Dropdown>
                                <div className='ms-3'>
                                  <OrderView text={<><TbLayoutSidebarLeftCollapse size={20} /></>} order={c} fetchLists={fetchLists} />

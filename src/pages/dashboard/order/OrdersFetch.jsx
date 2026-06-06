@@ -2,10 +2,9 @@ import React, { useContext, useEffect, useRef, useState } from 'react'
 import AuthLayout from '../../../layout/AuthLayout';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import Nocontent from '../../common/NoContent';
 import Loading from '../../common/Loading';
-import OrderItem from './OrderItem';
 import OrderExel from './OrderExel';
 import { useNavigate } from 'react-router-dom';
 import OrderStats from '../../../components/orders/OrderStats';
@@ -21,7 +20,6 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
    const [lists, setLists] = useState([]);
    const [currentPage, setCurrentPage] = useState(1);
    const [totalPages, setTotalPages] = useState(1);
-   const [viewMode, setViewMode] = useState('table');
    const {Errors, user} = useContext(UserContext);
    const { getTenantApi } = useMultiTenant();
    const tenantApi = React.useMemo(() => (getTenantApi ? getTenantApi() : Api), [getTenantApi]);
@@ -29,13 +27,17 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
    // get search query param from url
    const [searchParams] = useSearchParams();
    const status = searchParams.get('status');
+   const paymentStatusParam = searchParams.get('paymentStatus');
    const [orderStatus, setOrderStatus] = useState(status || null);
+   const [payementStatus, setPaymentStatus] = useState(paymentStatusParam || null)
    const fetchLists = (value, page = 1) => {
       setLoading(true);
       const limit = isRecent ? 5 : 20; // 20 orders per page, or 5 for recent view
-      const resp = tenantApi.get(`/order/listings?page=${page}&limit=${limit}${orderStatus ?`&status=${orderStatus}` : ''}${payementStatus ?`&paymentStatus=${payementStatus}` : ''}${value ?`&search=${value}` : ''}${customer ?`&customer_id=${customer}` : ''} ${sortby ?`&sortby=${sortby}` : ''}`);
+      console.log('[OrdersFetch] API Request:', { page, limit, orderStatus, payementStatus });
+      const resp = tenantApi.get(`/order/listings?page=${page}&limit=${limit}${orderStatus ?`&status=${orderStatus}` : ''}${payementStatus ?`&paymentStatus=${payementStatus}` : ''}${value ?`&search=${value}` : ''}${customer ?`&customer_id=${customer}` : ''}${sortby ?`&sortby=${sortby}` : ''}`);
       resp.then((res) => {
          setLoading(false);
+         console.log('[OrdersFetch] API Response:', res.data.status, 'Orders:', res.data.orders?.length, 'TotalPages:', res.data.totalPages);
          if (res.data.status === true) {
             setLists(res.data.orders || []);
             setCurrentPage(res.data.page || 1);
@@ -51,21 +53,11 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
          Errors(err);
       });
    }
-   const [payementStatus, setPaymentStatus] = useState(null)
 
    useEffect(() => {
       setCurrentPage(1); // Reset to first page when filters change
       fetchLists();
    },[customer, orderStatus, payementStatus]);
-
-   useEffect(() => {
-      if (isRecent) {
-         setViewMode('list');
-         return;
-      }
-      const saved = localStorage.getItem('orders:viewMode');
-      if (saved === 'list' || saved === 'table') setViewMode(saved);
-   }, [isRecent]);
 
    // Handle pagination
    const handlePageChange = (page) => {
@@ -148,30 +140,6 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
 
                   </>
                   }
-                  {!isRecent && (
-                     <div className='flex items-center bg-dark1 border border-gray-600 rounded-xl p-1'>
-                        <button
-                           type="button"
-                           onClick={() => {
-                              setViewMode('table');
-                              localStorage.setItem('orders:viewMode', 'table');
-                           }}
-                           className={`px-3 py-2 rounded-lg text-sm ${viewMode === 'table' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`}
-                        >
-                           Table
-                        </button>
-                        <button
-                           type="button"
-                           onClick={() => {
-                              setViewMode('list');
-                              localStorage.setItem('orders:viewMode', 'list');
-                           }}
-                           className={`px-3 py-2 rounded-lg text-sm ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:text-white'}`}
-                        >
-                           List
-                        </button>
-                     </div>
-                  )}
                   {hideSearch ? ' ': <input ref={debounceRef} onChange={(e)=>{handleInputChange(e)}} type='search' placeholder='Search order' className='text-white min-w-[200px] w-full md:w-auto bg-dark1 border border-gray-600 rounded-xl px-4 py-[10px]  focus:shadow-0 focus:outline-0' />}
                      <OrderExel data={lists} orderStatus={orderStatus} />
                   {/* {hideExportOrder ? '' : <Link to="/order/add" className={"ms-4 btn md text-black font-bold w-full md:w-auto block md:flex mt-3 md:mt-0"} >+ New Order</Link>} */}
@@ -192,27 +160,27 @@ export default function OrdersFetch({hideExportOrder, hideFilter, sidebtn, isRec
             )}
 
             {loading ? 
-               ((isRecent || viewMode === 'list') ? <OrderItem loading={true} /> : <Loading />)
+               <Loading />
                :
                <>
-               {lists && lists.length > 0 ? 
-                  ((isRecent || viewMode === 'list') ? <OrderItem lists={lists} fetchLists={fetchLists} /> : <OrderTable lists={lists} fetchLists={fetchLists} />)
-                  : 
-                  <EmptyOrderState 
-                     isFiltering={orderStatus || payementStatus || searching}
-                     searchTerm={searchTerm}
-                     onClearFilters={() => {
-                        setOrderStatus(null);
-                        setPaymentStatus(null);
-                        setSearching(false);
-                        setSearchTerm('');
-                        setCurrentPage(1);
-                        if (debounceRef.current) debounceRef.current.value = '';
-                        navigate('/orders');
-                        fetchLists('', 1);
-                     }}
-                  />
-               }
+                  {lists && lists.length > 0 ? 
+                     <OrderTable lists={lists} fetchLists={fetchLists} />
+                     : 
+                     <EmptyOrderState 
+                        isFiltering={orderStatus || payementStatus || searching}
+                        searchTerm={searchTerm}
+                        onClearFilters={() => {
+                           setOrderStatus(null);
+                           setPaymentStatus(null);
+                           setSearching(false);
+                           setSearchTerm('');
+                           setCurrentPage(1);
+                           if (debounceRef.current) debounceRef.current.value = '';
+                           navigate('/orders');
+                           fetchLists('', 1);
+                        }}
+                     />
+                  }
                </>
             }
             

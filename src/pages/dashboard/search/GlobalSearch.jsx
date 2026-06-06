@@ -91,7 +91,7 @@ export default function GlobalSearch() {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mt-6">
           {blocks.map((b) => (
             <div key={b.key} className="bg-[#11131A] border border-white/5 rounded-2xl overflow-hidden">
-              <div className="px-4 py-3 bg-[#0E1016] flex items-center justify-between">
+              <div className="px-4 py-3 bg-[#12161d] flex items-center justify-between">
                 <h3 className="text-white font-bold">{b.title}</h3>
                 <span className="text-xs text-gray-400">{b.items.length}</span>
               </div>

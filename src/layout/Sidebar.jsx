@@ -7,6 +7,7 @@ import { TbTruckDelivery } from "react-icons/tb";
 import { VscGraphLine } from "react-icons/vsc";
 import { FaUsers } from "react-icons/fa";
 import { MdOutlineLogout } from "react-icons/md";
+import { MdOutlineManageHistory } from "react-icons/md";
 import { UserContext } from '../context/AuthProvider';
 import { useAuth } from '../context/MultiTenantAuthProvider';
 import { useMultiTenant } from '../context/MultiTenantProvider';
@@ -62,6 +63,7 @@ export default function Sidebar({toggle}) {
         const res = await Api.get('/user/logout');
         if(res.data.status){
           safeStorage.removeItem("token");
+          safeStorage.removeItem("activeModule");
           window.location.href = "/login";
         } else {
           console.error("Logout failed:", res.data.message);
@@ -102,7 +104,7 @@ export default function Sidebar({toggle}) {
   }, [isAccountPath]);
 
   const isFleetPath =
-    location.pathname === '/drivers' || location.pathname === '/trucks' || location.pathname === '/trailers';
+    location.pathname === '/drivers' || location.pathname === '/trucks' || location.pathname === '/trailers' || location.pathname === '/owner-operators';
   const [fleetOpen, setFleetOpen] = React.useState(isFleetPath);
   React.useEffect(() => {
     if (isFleetPath) setFleetOpen(true);
@@ -333,6 +335,20 @@ export default function Sidebar({toggle}) {
                     </Link>
                     <Link
                       className={`group transition-all duration-300 ${
+                        location.pathname === '/owner-operators'
+                          ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_6px_16px_rgba(139,92,246,0.35)]"
+                          : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'
+                      } py-[10px] px-[14px] border border-white/5 rounded-2xl flex items-center`}
+                      to={'/owner-operators'}
+                    >
+                      <FaUsers
+                        className={`${location.pathname === '/owner-operators' ? 'text-white' : 'text-[#EDEFF6]'} me-3`}
+                        size={'1.1rem'}
+                      />
+                      <span className="font-medium">Owner Operators</span>
+                    </Link>
+                    <Link
+                      className={`group transition-all duration-300 ${
                         location.pathname === '/trailers'
                           ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_6px_16px_rgba(139,92,246,0.35)]"
                           : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'
@@ -440,6 +456,17 @@ export default function Sidebar({toggle}) {
                     <TbTruckDelivery className={`${location.pathname === '/accounts/trucks-gross' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.1rem'} />
                     <span className="font-medium">Trucks Gross Earning</span>
                   </Link>
+                  <Link
+                    className={`group transition-all duration-300 ${
+                      location.pathname === '/accounts/owner-operator-salary'
+                        ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_6px_16px_rgba(139,92,246,0.35)]"
+                        : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'
+                    } py-[10px] px-[14px] border border-white/5 rounded-2xl flex items-center`}
+                    to={'/accounts/owner-operator-salary'}
+                  >
+                    <FaUsers className={`${location.pathname === '/accounts/owner-operator-salary' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.1rem'} />
+                    <span className="font-medium">Owner Operator Salary</span>
+                  </Link>
                 </div>
               </div>
             </li>
@@ -457,6 +484,19 @@ export default function Sidebar({toggle}) {
             >
               <TbListDetails className={`${location.pathname === '/company/details' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.1rem'} />
               <span className="font-medium">Company Details</span>
+            </Link>
+          )}
+          {currentUser?.is_admin === 1 && (
+            <Link
+              className={`group transition-all duration-300 ${
+                location.pathname === '/activity-logs'
+                  ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_6px_16px_rgba(139,92,246,0.35)]"
+                  : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'
+              } py-[10px] px-[14px] border border-white/5 rounded-2xl flex items-center`}
+              to={'/activity-logs'}
+            >
+              <MdOutlineManageHistory className={`${location.pathname === '/activity-logs' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.1rem'} />
+              <span className="font-medium">Activity Logs</span>
             </Link>
           )}
           {currentUser && (

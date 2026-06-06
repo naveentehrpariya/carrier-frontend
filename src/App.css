@@ -239,6 +239,15 @@ body.sidebar-open {
   transform: translateX(0) !important;
 }
 
+/* Global zebra striping for all app tables */
+table tbody tr:nth-child(odd) {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+table tbody tr:nth-child(even) {
+  background-color:#12161d;
+}
+
 
 
 

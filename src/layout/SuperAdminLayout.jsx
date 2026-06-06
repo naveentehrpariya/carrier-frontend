@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Helmet } from "react-helmet";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/MultiTenantAuthProvider";
-import { useMultiTenant } from "../context/MultiTenantProvider";
 import Logo from "../pages/common/Logo";
 import SuperAdminSidebar from "./SuperAdminSidebar";
 import { TbLogout } from "react-icons/tb";
@@ -9,8 +9,7 @@ import { HiOutlineUserCircle } from "react-icons/hi2";
 import safeStorage from "../utils/safeStorage";
 
 export default function SuperAdminLayout({ children, heading }) {
-  const { user: multiTenantUser, logout: multiTenantLogout } = useAuth();
-  const { isSuperAdmin } = useMultiTenant();
+  const { user: multiTenantUser, logout: multiTenantLogout, isSuperAdminUser } = useAuth();
 
   const [toggle, setToggle] = React.useState(false);
 
@@ -28,28 +27,27 @@ export default function SuperAdminLayout({ children, heading }) {
     } else {
       console.log('🔄 Using legacy logout in SuperAdminLayout');
       safeStorage.removeItem("token");
+      safeStorage.removeItem("activeModule");
       window.location.href = "/login";
     }
   };
 
-  // Check if user has super admin permissions
-  const isSuperAdminUser = React.useMemo(() => {
-    // Check stored super admin status
+  // Keep layout guard aligned with SuperAdminRoute and avoid hard page reload loops.
+  const hasSuperAdminAccess = React.useMemo(() => {
     const storedSuperAdminStatus = safeStorage.getItem('isSuperAdmin');
-    
+    let parsedStatus = false;
+
     try {
-      const parsedStatus = storedSuperAdminStatus ? JSON.parse(storedSuperAdminStatus) : false;
-      return parsedStatus;
+      parsedStatus = storedSuperAdminStatus ? JSON.parse(storedSuperAdminStatus) : false;
     } catch (error) {
       console.error('Error parsing super admin status:', error);
-      return false;
     }
-  }, [multiTenantUser, isSuperAdmin]);
 
-  // Redirect if not super admin
-  if (!isSuperAdminUser) {
-    window.location.href = "/home";
-    return null;
+    return Boolean(isSuperAdminUser || parsedStatus);
+  }, [isSuperAdminUser]);
+
+  if (!hasSuperAdminAccess) {
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return (

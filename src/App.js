@@ -27,6 +27,8 @@ import EmployeesLists from './pages/dashboard/employees/EmployeesLists';
 import AccountOrders from './pages/dashboard/accounts/AccountOrders';
 import DriversSalary from './pages/dashboard/accounts/DriversSalary';
 import TrucksGrossEarning from './pages/dashboard/accounts/TrucksGrossEarning';
+import OwnerOperatorSalary from './pages/dashboard/accounts/OwnerOperatorSalary';
+import OwnerOperatorStatement from './pages/dashboard/accounts/OwnerOperatorStatement';
 import GlobalSearch from './pages/dashboard/search/GlobalSearch';
 import OrderPDF from './pages/dashboard/order/OrderPDF';
 import CustomerInvoice from './pages/dashboard/order/CustomerInvoice';
@@ -46,8 +48,10 @@ import LandingPage from './homepage/LandingPage';
 import Drivers from './pages/dashboard/drivers/Drivers';
 import Trucks from './pages/dashboard/fleet/Trucks';
 import Trailers from './pages/dashboard/fleet/Trailers';
+import OwnerOperators from './pages/dashboard/fleet/OwnerOperators';
 import TruckDetail from './pages/dashboard/fleet/TruckDetail';
 import TrailerDetail from './pages/dashboard/fleet/TrailerDetail';
+import ActivityLogs from './pages/tenant-admin/ActivityLogs';
 
 export default function App() {
   return (
@@ -80,6 +84,13 @@ export default function App() {
                       <PrivateRoute>
                         <UserProfile />
                       </PrivateRoute>
+                    } />
+
+                    {/* Activity Logs - Admin only */}
+                    <Route path="/activity-logs" element={
+                      <RoleBasedRoute allowedRoles={[3]}>
+                        <ActivityLogs />
+                      </RoleBasedRoute>
                     } />
 
                     {/* Super Admin Dashboard */}
@@ -202,6 +213,11 @@ export default function App() {
                         <Trucks />
                       </ModuleBasedRoute>
                     } />
+                    <Route path="/owner-operators" element={
+                      <ModuleBasedRoute allowedModules={['regular']}>
+                        <OwnerOperators />
+                      </ModuleBasedRoute>
+                    } />
                     <Route path="/truck/detail/:id" element={
                       <ModuleBasedRoute allowedModules={['regular']}>
                         <TruckDetail />
@@ -222,6 +238,11 @@ export default function App() {
                         <EmployeeDetail />
                       </PrivateRoute>
                     } />
+                    <Route path="/driver/detail/:id" element={
+                      <PrivateRoute>
+                        <EmployeeDetail />
+                      </PrivateRoute>
+                    } />
                     <Route path="/accounts/orders" element={
                       <RoleBasedRoute allowedRoles={['accounting']}>
                         <AccountOrders />
@@ -238,6 +259,20 @@ export default function App() {
                       <RoleBasedRoute allowedRoles={['accounting']}>
                         <ModuleBasedRoute allowedModules={['regular']}>
                           <TrucksGrossEarning />
+                        </ModuleBasedRoute>
+                      </RoleBasedRoute>
+                    } />
+                    <Route path="/accounts/owner-operator-salary" element={
+                      <RoleBasedRoute allowedRoles={['accounting']}>
+                        <ModuleBasedRoute allowedModules={['regular']}>
+                          <OwnerOperatorSalary />
+                        </ModuleBasedRoute>
+                      </RoleBasedRoute>
+                    } />
+                    <Route path="/accounts/owner-operator-statement/:id" element={
+                      <RoleBasedRoute allowedRoles={['accounting']}>
+                        <ModuleBasedRoute allowedModules={['regular']}>
+                          <OwnerOperatorStatement />
                         </ModuleBasedRoute>
                       </RoleBasedRoute>
                     } />

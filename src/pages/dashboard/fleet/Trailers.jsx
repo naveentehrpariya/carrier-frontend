@@ -18,8 +18,12 @@ export default function Trailers() {
     length: '',
     make: '',
     model: '',
-    notes: ''
+    notes: '',
+    isActive: true
   });
+  const [isEditing, setIsEditing] = useState(false);
+  const [editId, setEditId] = useState(null);
+
   const [addDocs, setAddDocs] = useState([]);
   const [docOpen, setDocOpen] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -46,44 +50,88 @@ export default function Trailers() {
     loadLists();
   }, []);
 
-  const updateForm = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const updateForm = (e) => setForm({ ...form, [e.target.name]: e.target.type === 'checkbox' ? e.target.checked : e.target.value });
 
-  const addTrailer = () => {
+  const closePopup = () => {
+    setAction('close');
+    setTimeout(() => {
+      setAction(undefined);
+      setIsEditing(false);
+      setEditId(null);
+      setForm({ plateNumber: '', unitNumber: '', vin: '', licenseNumber: '', type: '', length: '', make: '', model: '', notes: '', isActive: true });
+      setAddDocs([]);
+    }, 500);
+  };
+
+  const saveTrailer = () => {
     if (!form.plateNumber || !form.type) {
       toast.error('Please fill required fields');
       return;
     }
     setLoading(true);
-    const resp = Api.post('/fleet/trailers/add', form);
-    resp.then((res) => {
-      setLoading(false);
-      if (res.data.status) {
-        toast.success('Trailer added');
-        const newTrailerId = res.data?.trailer?._id;
-        if (newTrailerId && Array.isArray(addDocs) && addDocs.length > 0) {
-          (async () => {
-            for (const f of addDocs) {
-              const fdata = new FormData();
-              fdata.append('attachment', f);
-              try {
-                await Api.post(`/upload/trailer/doc/${newTrailerId}`, fdata);
-              } catch {
+
+    if (isEditing && editId) {
+      Api.post(`/fleet/trailers/update/${editId}`, form)
+        .then((res) => {
+          setLoading(false);
+          if (res.data.status) {
+            toast.success('Trailer updated');
+            closePopup();
+            loadLists();
+          } else {
+            toast.error(res.data.message || 'Failed to update trailer');
+          }
+        }).catch(() => {
+          setLoading(false);
+          toast.error('Failed to update trailer');
+        });
+    } else {
+      const resp = Api.post('/fleet/trailers/add', form);
+      resp.then((res) => {
+        setLoading(false);
+        if (res.data.status) {
+          toast.success('Trailer added');
+          const newTrailerId = res.data?.trailer?._id;
+          if (newTrailerId && Array.isArray(addDocs) && addDocs.length > 0) {
+            (async () => {
+              for (const f of addDocs) {
+                const fdata = new FormData();
+                fdata.append('attachment', f);
+                try {
+                  await Api.post(`/upload/trailer/doc/${newTrailerId}`, fdata);
+                } catch {
+                }
               }
-            }
-          })();
+            })();
+          }
+          closePopup();
+          loadLists();
+        } else {
+          toast.error(res.data.message || 'Failed to add trailer');
         }
-        setAction('close');
-        setTimeout(() => setAction(undefined), 500);
-        setForm({ plateNumber: '', unitNumber: '', vin: '', licenseNumber: '', type: '', length: '', make: '', model: '', notes: '' });
-        setAddDocs([]);
-        loadLists();
-      } else {
-        toast.error(res.data.message || 'Failed to add trailer');
-      }
-    }).catch(() => {
-      setLoading(false);
-      toast.error('Failed to add trailer');
+      }).catch(() => {
+        setLoading(false);
+        toast.error('Failed to add trailer');
+      });
+    }
+  };
+
+  const openEdit = (t) => {
+    setIsEditing(true);
+    setEditId(t._id);
+    setForm({
+      plateNumber: t.plateNumber || '',
+      unitNumber: t.unitNumber || '',
+      vin: t.vin || '',
+      licenseNumber: t.licenseNumber || '',
+      type: t.type || '',
+      length: t.length || '',
+      make: t.make || '',
+      model: t.model || '',
+      notes: t.notes || '',
+      isActive: t.isActive !== false
     });
+    setAction('open');
   };
 
   const removeTrailer = (id) => {
@@ -134,14 +182,14 @@ export default function Trailers() {
     <AuthLayout>
       <div className='flex justify-between items-center'>
         <h2 className='text-white text-2xl'>Trailers</h2>
-        <Popup action={action} size="md:max-w-2xl" space='p-0' bg="bg-black" btnclasses="btn md text-black font-bold" btntext="Add Trailer">
+        <Popup action={action} onClose={closePopup} size="md:max-w-2xl" space='p-0' bg="bg-black" btnclasses="btn md text-black font-bold" btntext="Add Trailer">
           <div className='p-6 border-b border-gray-800 bg-gradient-to-r from-violet-700/40 to-purple-700/20 rounded-t-[35px]'>
             <div className='flex items-center gap-3'>
               <div className='h-10 w-10 rounded-full bg-violet-600/30 flex items-center justify-center'>
                 <FiBox className='text-violet-300' size={22} />
               </div>
               <div>
-                <h2 className='text-white text-xl font-bold'>Add Trailer</h2>
+                <h2 className='text-white text-xl font-bold'>{isEditing ? 'Edit Trailer' : 'Add Trailer'}</h2>
                 <p className='text-gray-400 text-xs'>Record trailer specs and upload RC/ownership docs</p>
               </div>
             </div>
@@ -181,17 +229,21 @@ export default function Trailers() {
               <input name='model' value={form.model} onChange={updateForm} type='text' placeholder='4000D-X Composite' className="input-sm" />
             </div>
           </div>
-          <div className='input-item mb-4 '>
-            <label className="mt-4 mb-0 block text-sm text-gray-400">Notes</label>
-            <input name='notes' value={form.notes} onChange={updateForm} type='text' placeholder='Optional notes' className="input-sm" />
-          </div>
-          <div className='input-item mb-4'>
-            <label className="mt-2 mb-0 block text-sm text-gray-400">Documents</label>
-            <input className='input-sm' type='file' multiple onChange={(e)=>setAddDocs(Array.from(e.target.files || []))} />
-          </div>
-          <div className='flex justify-center items-center'>
-            <button onClick={addTrailer} className="btn md mt-2 px-[50px] main-btn text-black font-bold">{loading ? "Saving..." : "Save"}</button>
-          </div>
+            <div className='input-item mb-4 '>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Notes</label>
+              <input name='notes' value={form.notes} onChange={updateForm} type='text' placeholder='Optional notes' className="input-sm" />
+            </div>
+            <div className='input-item mb-4 flex items-center gap-2'>
+              <input name='isActive' checked={form.isActive} onChange={updateForm} type='checkbox' id='isActiveCheckbox' className="w-4 h-4 rounded bg-gray-800 border-gray-700 text-violet-600 focus:ring-violet-600 focus:ring-offset-gray-900" />
+              <label htmlFor='isActiveCheckbox' className="text-sm text-gray-300 select-none">Active (Available for new assignments)</label>
+            </div>
+            <div className='input-item mb-4'>
+              <label className="mt-2 mb-0 block text-sm text-gray-400">Documents</label>
+              <input className='input-sm' type='file' multiple onChange={(e)=>setAddDocs(Array.from(e.target.files || []))} />
+            </div>
+            <div className='flex justify-center items-center'>
+              <button onClick={saveTrailer} className="btn md mt-2 px-[50px] main-btn text-black font-bold">{loading ? "Saving..." : "Save"}</button>
+            </div>
           </div>
         </Popup>
       </div>
@@ -200,19 +252,24 @@ export default function Trailers() {
         {lists && lists.length > 0 ? (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
             {lists.map((t) => (
-              <div key={t._id} className='bg-gray-900 border border-gray-800 rounded-[20px] p-4'>
-                <div className='flex justify-between items-start'>
-                  <div>
-                    <h3 className='text-white font-bold'>{t.type}</h3>
-                    <p className='text-gray-400 text-sm'>Plate: {t.plateNumber}</p>
-                    {t.length && <p className='text-gray-400 text-sm'>Length: {t.length} ft</p>}
-                  </div>
-                  <div className='flex gap-2'>
-                    <button onClick={() => openDocs(t)} className='text-xs px-3 py-1 rounded-[20px] bg-blue-700 text-white'>Docs</button>
-                  <button onClick={() => { setDeleteItem(t); setDeleteOpen(true); }} className='text-xs px-3 py-1 rounded-[20px] bg-red-700 text-white'>Delete</button>
-                  </div>
+              <div key={t._id} className='bg-gray-900 border border-gray-800 rounded-[20px] p-4 flex flex-col h-full'>
+                <div className='flex flex-wrap items-center gap-2 mb-3'>
+                  <h3 className='text-white font-bold text-lg'>{t.type || t.make || t.model || t.unitNumber || 'Unnamed Trailer'}</h3>
+                  {t.isActive === false && <span className='text-[10px] bg-red-900/40 text-red-400 px-2 py-0.5 rounded-full border border-red-800/50 uppercase font-bold tracking-wider'>Disabled</span>}
                 </div>
-                {t.notes && <p className='text-gray-500 text-xs mt-2'>{t.notes}</p>}
+                
+                <div className='flex-1 mb-4'>
+                  <p className='text-gray-400 text-sm'>Plate: <span className='text-gray-200'>{t.plateNumber}</span></p>
+                  {t.unitNumber && <p className='text-gray-400 text-sm mt-1'>Unit: <span className='text-gray-200'>{t.unitNumber}</span></p>}
+                  {t.length && <p className='text-gray-400 text-sm mt-1'>Length: <span className='text-gray-200'>{t.length} ft</span></p>}
+                  {t.notes && <p className='text-gray-500 text-xs mt-2 line-clamp-2'>{t.notes}</p>}
+                </div>
+                
+                <div className='flex gap-2 mt-auto pt-3 border-t border-gray-800/50'>
+                  <button onClick={() => openEdit(t)} className='flex-1 text-xs py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-white transition-colors font-medium'>Edit</button>
+                  <button onClick={() => openDocs(t)} className='flex-1 text-xs py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/20 transition-colors font-medium'>Docs</button>
+                  <button onClick={() => { setDeleteItem(t); setDeleteOpen(true); }} className='flex-1 text-xs py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors font-medium'>Delete</button>
+                </div>
               </div>
             ))}
           </div>

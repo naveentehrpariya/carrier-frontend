@@ -4,6 +4,7 @@ import Popup from '../../common/Popup';
 import { toast } from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { TbTruckDelivery } from 'react-icons/tb';
+import { FaTrash, FaEdit } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 import { useSearchParams } from 'react-router-dom';
 
@@ -24,6 +25,12 @@ const fmtMoney = (value) => {
   return `$${n.toFixed(2)}`;
 };
 
+const fmtMilesKm = (value) => {
+  const miles = Number(value || 0);
+  const km = miles * 1.60934;
+  return `${miles.toFixed(2)} mi (${km.toFixed(2)} km)`;
+};
+
 export default function Trucks() {
   const [lists, setLists] = useState([]);
   const [action, setAction] = useState();
@@ -36,8 +43,13 @@ export default function Trucks() {
     year: '',
     vin: '',
     capacity: '',
-    notes: ''
+    notes: '',
+    insuranceMonthly: '',
+    parkingMonthly: '',
+    ownerOperated: false,
+    ownerOperator: ''
   });
+  const [ownerOperators, setOwnerOperators] = useState([]);
   const [addDocs, setAddDocs] = useState([]);
   const [docOpen, setDocOpen] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -46,6 +58,22 @@ export default function Trucks() {
   const [docs, setDocs] = useState([]);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteItem, setDeleteItem] = useState(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editItem, setEditItem] = useState(null);
+  const [editForm, setEditForm] = useState({
+    plateNumber: '',
+    unitNumber: '',
+    make: '',
+    model: '',
+    year: '',
+    vin: '',
+    capacity: '',
+    notes: '',
+    insuranceMonthly: '',
+    parkingMonthly: '',
+    ownerOperated: false,
+    ownerOperator: ''
+  });
   const [statsOpen, setStatsOpen] = useState(false);
   const [statsTruck, setStatsTruck] = useState(null);
   const [statsFrom, setStatsFrom] = useState('');
@@ -80,8 +108,19 @@ export default function Trucks() {
     }
   };
 
+  const loadOwnerOperators = async () => {
+    try {
+      const res = await Api.get('/owner-operators/active');
+      if (res.data?.status) setOwnerOperators(res.data.lists || []);
+      else setOwnerOperators([]);
+    } catch {
+      setOwnerOperators([]);
+    }
+  };
+
   useEffect(() => {
     loadLists();
+    loadOwnerOperators();
   }, []);
 
   useEffect(() => {
@@ -109,6 +148,54 @@ export default function Trucks() {
   }, [lists, search]);
 
   const updateForm = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+  const updateEditForm = (e) => setEditForm({ ...editForm, [e.target.name]: e.target.value });
+
+  const openEdit = (t) => {
+    setEditItem(t);
+    setEditForm({
+      plateNumber: t.plateNumber || '',
+      unitNumber: t.unitNumber || '',
+      make: t.make || '',
+      model: t.model || '',
+      year: t.year || '',
+      vin: t.vin || '',
+      capacity: t.capacity || '',
+      notes: t.notes || '',
+      insuranceMonthly: t.insuranceMonthly || '',
+      parkingMonthly: t.parkingMonthly || '',
+      ownerOperated: !!t.ownerOperated,
+      ownerOperator: t?.ownerOperator?._id || t?.ownerOperator || ''
+    });
+    setEditOpen(true);
+  };
+
+  const submitEdit = () => {
+    if (!editForm.plateNumber || !editForm.make || !editForm.model) {
+      toast.error('Please fill required fields');
+      return;
+    }
+    if (editForm.ownerOperated && !editForm.ownerOperator) {
+      toast.error('Select owner operator for owner operated truck');
+      return;
+    }
+    setLoading(true);
+    Api.post(`/fleet/trucks/update/${editItem._id}`, editForm)
+      .then((res) => {
+        setLoading(false);
+        if (res.data.status) {
+          toast.success('Truck updated');
+          setEditOpen(false);
+          setEditItem(null);
+          loadLists();
+        } else {
+          toast.error(res.data.message || 'Failed to update truck');
+        }
+      })
+      .catch(() => {
+        setLoading(false);
+        toast.error('Failed to update truck');
+      });
+  };
 
   const fetchTruckSummary = useCallback(async (override = {}) => {
     if (!statsTruck?._id) return;
@@ -218,6 +305,10 @@ export default function Trucks() {
       toast.error('Please fill required fields');
       return;
     }
+    if (form.ownerOperated && !form.ownerOperator) {
+      toast.error('Select owner operator for owner operated truck');
+      return;
+    }
     setLoading(true);
     const resp = Api.post('/fleet/trucks/add', form);
     resp.then((res) => {
@@ -239,7 +330,20 @@ export default function Trucks() {
         }
         setAction('close');
         setTimeout(() => setAction(undefined), 500);
-        setForm({ plateNumber: '', unitNumber: '', make: '', model: '', year: '', vin: '', capacity: '', notes: '' });
+        setForm({
+          plateNumber: '',
+          unitNumber: '',
+          make: '',
+          model: '',
+          year: '',
+          vin: '',
+          capacity: '',
+          notes: '',
+          insuranceMonthly: '',
+          parkingMonthly: '',
+          ownerOperated: false,
+          ownerOperator: ''
+        });
         setAddDocs([]);
         loadLists();
       } else {
@@ -295,18 +399,63 @@ export default function Trucks() {
     }
   };
 
+  const handleIgnoreEmptyMove = async (o) => {
+    if (!window.confirm('Are you sure you want to remove this empty move from the calculations?')) return;
+    try {
+      const payload = {
+        truckId: statsTruck?._id || logsTruck?._id,
+        after_trip_id: o.after_trip_id,
+        before_trip_id: o.before_trip_id
+      };
+      const res = await Api.post('/empty-moves/ignore', payload);
+      if (res.data.status) {
+        toast.success(res.data.message);
+        if (statsOpen) fetchTruckSummary({ from: statsFrom, to: statsTo });
+        if (logsOpen) fetchTruckLogs({ from: logsFrom, to: logsTo });
+      } else {
+        toast.error(res.data.message);
+      }
+    } catch {
+      toast.error('Error removing empty move');
+    }
+  };
+
+  const handleEditEmptyNote = async (o) => {
+    const note = window.prompt('Enter note for this empty move:', o.note || '');
+    if (note === null) return; // User cancelled
+
+    try {
+      const payload = {
+        truckId: statsTruck?._id || logsTruck?._id,
+        after_trip_id: o.after_trip_id,
+        before_trip_id: o.before_trip_id,
+        note
+      };
+      const res = await Api.post('/empty-moves/note', payload);
+      if (res.data.status) {
+        toast.success(res.data.message);
+        if (statsOpen) fetchTruckSummary({ from: statsFrom, to: statsTo });
+        if (logsOpen) fetchTruckLogs({ from: logsFrom, to: logsTo });
+      } else {
+        toast.error(res.data.message);
+      }
+    } catch {
+      toast.error('Error saving note');
+    }
+  };
+
   return (
     <AuthLayout>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="text-white text-2xl font-bold">Trucks</h2>
-          <p className="text-xs text-gray-500 mt-1">Search supports plate, unit, VIN, make/model, and last location</p>
+          <p className="text-normal text-gray-500 mt-1">Search supports plate, unit, VIN, make/model, and last location</p>
         </div>
         <div className="flex w-full sm:w-auto gap-3">
           <div className="flex-1 sm:w-[320px]">
-            <input className="input-sm w-full" placeholder="Search trucks…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <input className="input-sm !mt-0 w-full" placeholder="Search trucks…" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <Popup action={action} size="md:max-w-2xl" space='p-0' bg="bg-black" btnclasses="btn md text-black font-bold whitespace-nowrap" btntext="Add Truck">
+          <Popup action={action} size="md:max-w-2xl" space='p-0' bg="bg-black" btnclasses="btn sm text-black font-bold whitespace-nowrap" btntext="Add Truck">
           <div className='p-6 border-b border-gray-800 bg-gradient-to-r from-blue-700/40 to-cyan-700/20 rounded-t-[35px]'>
             <div className='flex items-center gap-3'>
               <div className='h-10 w-10 rounded-full bg-blue-600/30 flex items-center justify-center'>
@@ -348,6 +497,31 @@ export default function Trucks() {
               <label className="mt-4 mb-0 block text-sm text-gray-400">Capacity (lbs)</label>
               <input name='capacity' value={form.capacity} onChange={updateForm} type='number' placeholder='e.g., 80000' className="input-sm" />
             </div>
+            <div className='input-item col-span-2'>
+              <label className="mt-4 mb-0 flex items-center gap-2 text-sm text-gray-400">
+                <input
+                  type="checkbox"
+                  checked={!!form.ownerOperated}
+                  onChange={(e) => setForm((p) => ({ ...p, ownerOperated: e.target.checked, ownerOperator: e.target.checked ? p.ownerOperator : '' }))}
+                />
+                Owner Operated
+              </label>
+            </div>
+            {form.ownerOperated && (
+              <div className='input-item col-span-2'>
+                <label className="mt-1 mb-0 block text-sm text-gray-400">Owner Operator</label>
+                <select
+                  className="input-sm"
+                  value={form.ownerOperator}
+                  onChange={(e) => setForm((p) => ({ ...p, ownerOperator: e.target.value }))}
+                >
+                  <option value="">Select owner operator</option>
+                  {(ownerOperators || []).map((o) => (
+                    <option key={o._id} value={o._id}>{o.fullName} ({o.ownerOperatorId})</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <div className='input-item mb-4 '>
             <label className="mt-4 mb-0 block text-sm text-gray-400">Notes</label>
@@ -369,28 +543,54 @@ export default function Trucks() {
         {filteredLists && filteredLists.length > 0 ? (
           <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4'>
             {filteredLists.map((t) => (
-              <div key={t._id} className='bg-gray-900 border border-gray-800 rounded-[20px] p-4'>
-                <div className='flex justify-between items-start gap-3'>
-                  <div className='min-w-0'>
-                    <h3 className='text-white font-bold truncate'>{t.make} {t.model}</h3>
-                    <p className='text-gray-400 text-sm truncate'>Plate: {t.plateNumber || '—'}</p>
-                    {t.unitNumber && <p className='text-gray-400 text-sm truncate'>Unit: {t.unitNumber}</p>}
-                    {t.lastLocation && <p className='text-gray-500 text-xs truncate' title={t.lastLocation}>Last: {t.lastLocation}</p>}
+              <div key={t._id} className='bg-gray-900 border border-gray-800 rounded-[20px] p-4 flex flex-col h-full'>
+                <div className='flex flex-wrap items-center gap-2 mb-3'>
+                  <h3 className='text-white font-bold text-lg capitalize'>{t.make && t.model ? `${t.make} ${t.model}` : t.unitNumber || t.plateNumber || 'Unnamed Truck'}</h3>
+                  {/* {t.ownerOperated && (
+                    <span className='text-[10px] bg-orange-500/10 border border-orange-500/30 text-orange-300 rounded-lg px-2 py-0.5'>
+                      Owner Operated
+                    </span>
+                  )} */}
+                </div>
+                
+                <div className='flex-1 mb-4'>
+                  <p className='text-gray-400 text-sm'>Plate: <span className='text-gray-200'>{t.plateNumber || '—'}</span></p>
+                  {t.unitNumber && <p className='text-gray-400 text-sm mt-1'>Unit: <span className='text-gray-200'>{t.unitNumber}</span></p>}
+                  {t.lastLocation && <p className='text-gray-500 text-xs mt-2 line-clamp-2' title={t.lastLocation}>Last Location: {t.lastLocation}</p>}
+                  
+                  <div className='mt-3 flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-800/30'>
+                    <span>Total Distance</span>
+                    <span className='text-gray-300 font-bold'>{fmtMilesKm(t.totalMiles || 0)}</span>
                   </div>
-                  <div className='flex flex-col gap-2 shrink-0'>
-                    <button onClick={() => openDocs(t)} className='text-xs px-3 py-1 rounded-[20px] bg-blue-700 text-white'>Docs</button>
-                    <button onClick={() => { setLogsTruck(t); setLogsOpen(true); }} className='text-xs px-3 py-1 rounded-[20px] bg-gray-800 text-white border border-gray-700'>Logs</button>
-                    <button onClick={() => { setStatsTruck(t); setStatsOpen(true); }} className='text-xs px-3 py-1 rounded-[20px] bg-gray-800 text-white border border-gray-700'>Distance</button>
-                    <button onClick={() => { setDeleteItem(t); setDeleteOpen(true); }} className='text-xs px-3 py-1 rounded-[20px] bg-red-700 text-white'>Delete</button>
+                  {(Number(t.insuranceMonthly) > 0 || Number(t.parkingMonthly) > 0) && (
+                    <div className='mt-2 flex flex-wrap gap-2'>
+                      {Number(t.insuranceMonthly) > 0 && (
+                        <span className='text-[10px] bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded-lg px-2 py-0.5'>
+                          Insurance ${Number(t.insuranceMonthly).toFixed(0)}/mo
+                        </span>
+                      )}
+                      {Number(t.parkingMonthly) > 0 && (
+                        <span className='text-[10px] bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 rounded-lg px-2 py-0.5'>
+                          Parking ${Number(t.parkingMonthly).toFixed(0)}/mo
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {t.notes && <p className='text-gray-500 text-xs mt-2 line-clamp-2'>{t.notes}</p>}
+                  {t.ownerOperated && t.ownerOperator?.fullName && (
+                    <p className='text-[14px] text-orange-300 mt-2'>Owner Operator : {t.ownerOperator.fullName}</p>
+                  )}
+                </div>
+                
+                <div className='grid grid-cols-2 gap-2 mt-auto pt-3 border-t border-gray-800/50'>
+                  <button onClick={() => openDocs(t)} className='text-xs py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/20 transition-colors font-medium'>Docs</button>
+                  <button onClick={() => { setLogsTruck(t); setLogsOpen(true); }} className='text-xs py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors font-medium'>Logs</button>
+                  <button onClick={() => { setStatsTruck(t); setStatsOpen(true); }} className='text-xs py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 transition-colors font-medium'>Distance</button>
+                  <div className='flex gap-2'>
+                    <button onClick={() => openEdit(t)} className='flex-1 text-xs py-2 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/20 transition-colors font-medium'>Edit</button>
+                    <button onClick={() => { setDeleteItem(t); setDeleteOpen(true); }} className='flex-1 text-xs py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors font-medium'>Delete</button>
                   </div>
                 </div>
-
-                <div className='mt-3 flex items-center justify-between text-xs text-gray-500'>
-                  <span>Total Distance</span>
-                  <span className='text-gray-300 font-bold'>{Number(t.totalMiles || 0).toFixed(2)}</span>
-                </div>
-
-                {t.notes && <p className='text-gray-500 text-xs mt-2'>{t.notes}</p>}
               </div>
             ))}
           </div>
@@ -467,7 +667,7 @@ export default function Trucks() {
             </div>
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
               <p className="text-[10px] text-gray-500 uppercase font-bold">Miles</p>
-              <p className="text-xl font-black mt-1">{Number(statsSummary?.totalMiles || 0).toFixed(2)}</p>
+              <p className="text-xl font-black mt-1">{fmtMilesKm(statsSummary?.totalMiles || 0)}</p>
             </div>
             <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
               <p className="text-[10px] text-gray-500 uppercase font-bold">KM</p>
@@ -481,6 +681,7 @@ export default function Trucks() {
                 <thead>
                   <tr className="text-left text-gray-400 bg-gray-900 sticky top-0">
                     <th className="px-3 py-2">Order</th>
+                    <th className="px-3 py-2">Type</th>
                     <th className="px-3 py-2">Trips</th>
                     <th className="px-3 py-2">Miles</th>
                     <th className="px-3 py-2">KM</th>
@@ -490,12 +691,54 @@ export default function Trucks() {
                   {statsOrders.map((o, idx) => (
                     <tr key={idx} className="border-t border-gray-800">
                       <td className="px-3 py-2">
-                        <Link className="text-blue-400 hover:text-blue-300" to={`/view/order/${o._id}`}>
-                          {o.orderSerial ? `#CMC${o.orderSerial}` : String(o._id).slice(-6)}
-                        </Link>
+                        {o.type === 'empty' ? (
+                            <div className="flex flex-col">
+                                <span className="text-gray-400 font-medium">Empty Move</span>
+                                <span className="text-[10px] text-gray-500 mt-0.5 truncate max-w-[200px] sm:max-w-[300px]" title={`${o.from_location} → ${o.to_location}`}>
+                                    {o.from_location} <span className="mx-1">→</span> {o.to_location}
+                                </span>
+                                {o.note && (
+                                    <div className="text-[10px] text-blue-400 mt-1 flex items-start gap-1">
+                                        <span className="font-bold">Note:</span>
+                                        <span className="whitespace-normal break-words max-w-[200px] sm:max-w-[300px]">{o.note}</span>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link className="text-blue-400 hover:text-blue-300" to={`/view/order/${o._id}`}>
+                              {o.orderSerial ? `#CMC${o.orderSerial}` : String(o._id).slice(-6)}
+                            </Link>
+                        )}
+                      </td>
+                      <td className="px-3 py-2">
+                        {o.type === 'empty' ? (
+                            <div className="flex items-center gap-2">
+                                <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase border border-yellow-500/30 text-yellow-300 bg-yellow-500/10">
+                                    Empty
+                                </span>
+                                <button 
+                                    onClick={() => handleEditEmptyNote(o)}
+                                    className="text-gray-500 hover:text-blue-400 p-1 transition-colors"
+                                    title="Add or edit note"
+                                >
+                                    <FaEdit size={12} />
+                                </button>
+                                <button 
+                                    onClick={() => handleIgnoreEmptyMove(o)}
+                                    className="text-gray-500 hover:text-red-400 p-1 transition-colors"
+                                    title="Remove this empty distance"
+                                >
+                                    <FaTrash size={12} />
+                                </button>
+                            </div>
+                        ) : (
+                            <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase border border-emerald-500/30 text-emerald-300 bg-emerald-500/10">
+                                Loaded
+                            </span>
+                        )}
                       </td>
                       <td className="px-3 py-2">{o.trips}</td>
-                      <td className="px-3 py-2">{Number(o.miles || 0).toFixed(2)}</td>
+                      <td className="px-3 py-2">{fmtMilesKm(o.miles || 0)}</td>
                       <td className="px-3 py-2">{Number(o.km || 0).toFixed(2)}</td>
                     </tr>
                   ))}
@@ -574,15 +817,15 @@ export default function Trucks() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               <div className="bg-gray-900 border border-gray-800 rounded-2xl p-3">
                 <div className="text-[10px] uppercase font-black text-gray-500">Trip Distance</div>
-                <div className="text-white text-lg font-bold">{Number(logsSummary.loadedMiles || 0).toFixed(2)}</div>
+                <div className="text-white text-lg font-bold">{fmtMilesKm(logsSummary.loadedMiles || 0)}</div>
               </div>
               <div className="bg-gray-900 border border-gray-800 rounded-2xl p-3">
                 <div className="text-[10px] uppercase font-black text-gray-500">Empty Distance</div>
-                <div className="text-white text-lg font-bold">{Number(logsSummary.emptyMiles || 0).toFixed(2)}</div>
+                <div className="text-white text-lg font-bold">{fmtMilesKm(logsSummary.emptyMiles || 0)}</div>
               </div>
               <div className="bg-gray-900 border border-gray-800 rounded-2xl p-3">
                 <div className="text-[10px] uppercase font-black text-gray-500">Total Distance</div>
-                <div className="text-white text-lg font-bold">{Number(logsSummary.totalMiles || 0).toFixed(2)}</div>
+                <div className="text-white text-lg font-bold">{fmtMilesKm(logsSummary.totalMiles || 0)}</div>
               </div>
               <div className="bg-gray-900 border border-gray-800 rounded-2xl p-3">
                 <div className="text-[10px] uppercase font-black text-gray-500">Total Gross</div>
@@ -623,21 +866,51 @@ export default function Trucks() {
                         )}
                       </td>
                       <td className="px-3 py-2">
-                        {l.type === 'empty' ? (
+                      {l.type === 'empty' ? (
+                        <div className="flex items-center gap-2">
                           <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase border border-yellow-500/30 text-yellow-300 bg-yellow-500/10">
                             Empty
                           </span>
+                          <button 
+                              onClick={() => handleEditEmptyNote(l)}
+                              className="text-gray-500 hover:text-blue-400 p-1 transition-colors"
+                              title="Add or edit note"
+                          >
+                              <FaEdit size={12} />
+                          </button>
+                          <button 
+                              onClick={() => handleIgnoreEmptyMove(l)}
+                              className="text-gray-500 hover:text-red-400 p-1 transition-colors"
+                              title="Remove this empty distance"
+                          >
+                              <FaTrash size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase border border-emerald-500/30 text-emerald-300 bg-emerald-500/10">
+                          Trip
+                        </span>
+                      )}
+                    </td>
+                      <td className="px-3 py-2 max-w-[320px] truncate">
+                        {l.type === 'empty' ? (
+                          <div>
+                            {l.from_location}
+                            {l.note && (
+                                <div className="text-[10px] text-blue-400 mt-1 flex items-start gap-1">
+                                    <span className="font-bold">Note:</span>
+                                    <span className="whitespace-normal break-words">{l.note}</span>
+                                </div>
+                            )}
+                          </div>
                         ) : (
-                          <span className="px-2 py-1 rounded-lg text-[10px] font-black uppercase border border-emerald-500/30 text-emerald-300 bg-emerald-500/10">
-                            Trip
-                          </span>
+                          l.start_location
                         )}
                       </td>
-                      <td className="px-3 py-2 max-w-[320px] truncate">{l.type === 'empty' ? l.from_location : l.start_location}</td>
                       <td className="px-3 py-2 max-w-[320px] truncate">{l.type === 'empty' ? l.to_location : l.end_location}</td>
                       <td className="px-3 py-2">{l.type === 'trip' && l.driver?.name ? l.driver.name : '—'}</td>
                       <td className="px-3 py-2 text-right">
-                        {typeof l.miles === 'number' ? Number(l.miles || 0).toFixed(2) : '—'}
+                        {typeof l.miles === 'number' ? fmtMilesKm(l.miles || 0) : '—'}
                       </td>
                       <td className="px-3 py-2 text-right">
                         {l.type === 'trip' ? fmtMoney(l.gross || 0) : '—'}
@@ -684,6 +957,86 @@ export default function Trucks() {
           </div>
         </div>
       </Popup>
+      <Popup open={editOpen} onClose={() => { setEditOpen(false); setEditItem(null); }} showTrigger={false} size="md:max-w-2xl" space="p-0" bg="bg-black">
+        <div className='p-6 border-b border-gray-800 bg-gradient-to-r from-yellow-700/40 to-orange-700/20 rounded-t-[35px]'>
+          <div className='flex items-center gap-3'>
+            <div className='h-10 w-10 rounded-full bg-yellow-600/30 flex items-center justify-center'>
+              <TbTruckDelivery className='text-yellow-300' size={22} />
+            </div>
+            <div>
+              <h2 className='text-white text-xl font-bold'>Edit Truck</h2>
+              <p className='text-gray-400 text-xs'>Update vehicle details</p>
+            </div>
+          </div>
+        </div>
+        <div className='p-6'>
+          <div className='grid grid-cols-2 gap-4'>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Make</label>
+              <input name='make' value={editForm.make} onChange={updateEditForm} type='text' placeholder='Volvo' className="input-sm" />
+            </div>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Model</label>
+              <input name='model' value={editForm.model} onChange={updateEditForm} type='text' placeholder='FH16' className="input-sm" />
+            </div>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Year</label>
+              <input name='year' value={editForm.year} onChange={updateEditForm} type='number' placeholder='2022' className="input-sm" />
+            </div>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">VIN</label>
+              <input name='vin' value={editForm.vin} onChange={updateEditForm} type='text' placeholder='Vehicle Identification Number' className="input-sm" />
+            </div>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Plate Number</label>
+              <input name='plateNumber' value={editForm.plateNumber} onChange={updateEditForm} type='text' placeholder='ABC123' className="input-sm" />
+            </div>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Unit Number</label>
+              <input name='unitNumber' value={editForm.unitNumber} onChange={updateEditForm} type='text' placeholder='Unit number' className="input-sm" />
+            </div>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Capacity (lbs)</label>
+              <input name='capacity' value={editForm.capacity} onChange={updateEditForm} type='number' placeholder='e.g., 80000' className="input-sm" />
+            </div>
+            <div className='input-item col-span-2'>
+              <label className="mt-4 mb-0 flex items-center gap-2 text-sm text-gray-400">
+                <input
+                  type="checkbox"
+                  checked={!!editForm.ownerOperated}
+                  disabled
+                  onChange={(e) => setEditForm((p) => ({ ...p, ownerOperated: e.target.checked, ownerOperator: e.target.checked ? p.ownerOperator : '' }))}
+                />
+                Owner Operated
+              </label>
+              <p className="text-[11px] text-gray-500 mt-1">Owner Operated can be selected while adding truck only.</p>
+            </div>
+            {editForm.ownerOperated && (
+              <div className='input-item col-span-2'>
+                <label className="mt-1 mb-0 block text-sm text-gray-400">Owner Operator</label>
+                <select
+                  className="input-sm"
+                  value={editForm.ownerOperator}
+                  onChange={(e) => setEditForm((p) => ({ ...p, ownerOperator: e.target.value }))}
+                >
+                  <option value="">Select owner operator</option>
+                  {(ownerOperators || []).map((o) => (
+                    <option key={o._id} value={o._id}>{o.fullName} ({o.ownerOperatorId})</option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+          <div className='input-item mb-4 '>
+            <label className="mt-4 mb-0 block text-sm text-gray-400">Notes</label>
+            <input name='notes' value={editForm.notes} onChange={updateEditForm} type='text' placeholder='Optional notes' className="input-sm" />
+          </div>
+          <div className='flex justify-center items-center'>
+            <button onClick={submitEdit} className="btn md mt-2 px-[50px] bg-yellow-500 hover:bg-yellow-400 text-black font-bold">{loading ? "Saving..." : "Save Changes"}</button>
+          </div>
+        </div>
+      </Popup>
+
     </AuthLayout>
   )
 }

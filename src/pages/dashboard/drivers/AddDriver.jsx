@@ -202,26 +202,26 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
                   </div>
                 </div>
 
-                <div className='mt-6 grid grid-cols-1 md:grid-cols-2 gap-4'>
+                <div className='mt-6 grid grid-cols-1 md:grid-cols-1 gap-4'>
                   <div>
-                    <label className='label text-gray-300'>Additional Emails</label>
+                    <label className='label text-gray-300 w-full'>Additional Emails</label>
                     {showExtraEmails ? (
-                      <>
+                      <> 
                         {emails.map((e, idx)=>(
                           <div key={`em-${idx}`} className='flex items-center gap-2 mb-2'>
                             <input className='input-sm flex-1' type='email' value={e} onChange={(ev)=>changeEmailField(idx, ev.target.value)} placeholder='Email' />
                             <button className='btn xs text-white bg-red-700' onClick={()=>removeEmailField(idx)}>Remove</button>
                           </div>
                         ))}
-                        <button className='btn xs text-black' onClick={addEmailField}>Add Email</button>
+                        <button className='btn xs text-black text-[13px] px-4 py-1' onClick={addEmailField}>Add Email</button>
                       </>
                     ) : (
-                      <button className='btn xs text-black' onClick={addEmailField}>Add Another Email</button>
+                      <button className='btn xs text-black text-[13px] px-4 py-1 ms-3' onClick={addEmailField}>Add Another Email</button>
                     )}
                   </div>
 
                   <div>
-                    <label className='label text-gray-300'>Additional Phones</label>
+                    <label className='label text-gray-300 w-full '>Additional Phones</label>
                     {showExtraPhones ? (
                       <>
                         {phones.map((p, idx)=>(
@@ -230,10 +230,10 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
                             <button className='btn xs text-white bg-red-700' onClick={()=>removePhoneField(idx)}>Remove</button>
                           </div>
                         ))}
-                        <button className='btn xs text-black' onClick={addPhoneField}>Add Phone</button>
+                        <button className='btn xs text-black text-[13px] px-4 py-1' onClick={addPhoneField}>Add Phone</button>
                       </>
                     ) : (
-                      <button className='btn xs text-black' onClick={addPhoneField}>Add Another Phone</button>
+                      <button className='btn xs text-black text-[13px] px-4 py-1 ms-3' onClick={addPhoneField}>Add Another Phone</button>
                     )}
                   </div>
                 </div>

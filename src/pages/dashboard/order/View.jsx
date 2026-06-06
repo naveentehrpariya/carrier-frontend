@@ -62,21 +62,25 @@ export default function ViewOrder() {
          <h1 className='text-2xl font-bold text-white mb-6 mt-4'> Order {getOrderNumber(order, user, company, null)}</h1>
          {/* <button className='bg-main px-4 py-2 rounded-xl'>Edit Order</button> */}
          <div className='flex items-center ps-3'>
-            <Link to={`/order/detail/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Carrier Sheet</Link>
+            {order?.order_type === 'outsourcing' && (
+              <Link to={`/order/detail/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Carrier Sheet</Link>
+            )}
             {order?.order_type === 'regular' && (
               <Link to={`/order/trip-planning/${order?._id}`} className='bg-rose-500 text-white px-4 py-2 rounded-xl me-3 flex items-center shadow-lg shadow-rose-500/20'> 
                 <FaTruckMoving className='me-2' size='20px' /> Trip Planning
               </Link>
             )}
-            {(!user?.permissions?.includes('regular') && !user?.permissions?.includes('outsourcing') && !user?.permissions?.includes('subadmin')) && (
+            {(user?.is_admin === 1 || (!user?.permissions?.includes('regular') && !user?.permissions?.includes('outsourcing') && !user?.permissions?.includes('subadmin'))) && (
               <Link to={`/order/customer/invoice/${order?._id}`} className='bg-main px-4 py-2 rounded-xl me-3 flex items-center'> <LuDownload className='me-2' size='20px' /> Invoice</Link>
             )}
             <Dropdown classes={'relative top-1'} iconsize={'30px '}>
             {(user && user.is_admin === 1) || (user && user?.permissions?.includes('accounting')) ?
                <>
-                  <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
-                     <UpdatePaymentStatus pstatus={order?.carrier_payment_status} pmethod={order?.carrier_payment_method} pnotes={order?.carrier_payment_notes} text={<>{order?.lock ? <FaLock size={12} className='me-1' /> : ""} Update Carrier Payment</>} paymentType={2} id={order?.id} type={2} fetchLists={fetchOrder} />
-                  </li>
+                  {order?.order_type === 'outsourcing' && (
+                    <li className={`list-none text-sm  ${order?.lock ? "disabled" : ""}`}>
+                       <UpdatePaymentStatus pstatus={order?.carrier_payment_status} pmethod={order?.carrier_payment_method} pnotes={order?.carrier_payment_notes} text={<>{order?.lock ? <FaLock size={12} className='me-1' /> : ""} Update Carrier Payment</>} paymentType={2} id={order?.id} type={2} fetchLists={fetchOrder} />
+                    </li>
+                  )}
                   {user && user.is_admin === 1 ?
                      <>
                         <li className='list-none text-sm'>
@@ -107,14 +111,16 @@ export default function ViewOrder() {
                 <Link className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${order?.lock ? 'opacity-50 pointer-events-none' : ''}`} to={`/edit/order/${order?._id}`}>{order?.lock ? <FaLock size={12} className='me-1 inline' /> : ""} Edit Order</Link>
               </li>
             )}
-            {user?.is_admin === 1 && (
+            {(user?.is_admin === 1 || (!user?.permissions?.includes('regular') && !user?.permissions?.includes('outsourcing') && !user?.permissions?.includes('subadmin'))) && (
               <li className='list-none text-sm'>
                 <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${order?._id}`}>Download Customer Invoice</Link>
               </li>
             )}
-            <li className='list-none text-sm'>
-               <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${order?._id}`}>Download Carrier Sheet</Link>
-            </li>
+            {order?.order_type === 'outsourcing' && (
+              <li className='list-none text-sm'>
+                 <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${order?._id}`}>Download Carrier Sheet</Link>
+              </li>
+            )}
             </Dropdown>
             <div className='ms-3'>
                <OrderView text={<><TbLayoutSidebarLeftCollapse size={20} /></>}  order={order} fetchLists={fetchOrder} />
@@ -161,11 +167,23 @@ export default function ViewOrder() {
                      ) : (
                        <div className='customerDetails mb-2 bg-dark1 border border-gray-700 p-4 rounded-xl'>
                           <p className='font-bold text-rose-400 text-xl mb-2'>Fleet Assignments (Regular)</p>
-                          <ul className=''>
-                             <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Driver:</strong> <p className='text-white'>{order?.drivers && order.drivers.length > 0 ? order.drivers.map(d => d.name).join(', ') : (order?.driver?.name || "Unassigned")}</p> </li>
-                             <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Truck Unit:</strong> <p className='text-white'>{order?.truck?.unitNumber || "N/A"}</p> </li>
-                             <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Trailer Unit:</strong> <p className='text-white'>{order?.trailer?.unitNumber || "N/A"}</p> </li>
-                          </ul>
+                          <ul className='mb-0 flex-1 min-w-0'>
+                             {order?.isOwnerOperatedTruck && (
+                               <li className='flex mb-2'>
+                                 <strong className=' me-2 !text-gray-400'>Owner Operator:</strong>
+                                 <p className='text-orange-300'>{order?.ownerOperator?.fullName || "N/A"}</p>
+                               </li>
+                             )}
+                             {order?.isOwnerOperatedTruck && (
+                               <li className='flex mb-2'>
+                                 <strong className=' me-2 !text-gray-400'>Driver Assignment:</strong>
+                                 <p className='text-white'>{order?.driver_assignment_mode === 'owner_driver' ? 'Owner Operator Driver' : 'Company Driver'}</p>
+                               </li>
+                             )}
+                             <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Driver:</strong> <p className='text-white'>{order?.drivers && order.drivers.length > 0 ? order.drivers.map(d => d.name).join(', ') : (order?.driver?.name || "N/A")}</p> </li>
+                             <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Truck:</strong> <p className='text-white'>{order?.truck ? `${[order.truck.make, order.truck.model].filter(Boolean).join(' ') || order.truck.unitNumber || '—'} ${order.truck.plateNumber ? `(${order.truck.plateNumber})` : ''}` : "N/A"}</p> </li>
+                             <li className=' flex mb-2'><strong className=' me-2 !text-gray-400'>Trailer:</strong> <p className='text-white'>{order?.trailer ? `${[order.trailer.make, order.trailer.model].filter(Boolean).join(' ') || order.trailer.type || '—'} ${order.trailer.unitNumber ? `(${order.trailer.unitNumber})` : ''}` : "N/A"}</p> </li>
+                           </ul>
                        </div>
                      )}
                      <div className='customerDetails bg-dark1 border border-gray-700 p-4 rounded-xl'>
@@ -187,11 +205,18 @@ export default function ViewOrder() {
                                  <div key={idx} className='border-l-2 border-rose-500/30 pl-4 py-1'>
                                     <p className='text-white font-bold text-sm uppercase tracking-wider mb-2'>Segment #{trip.trip_no}</p>
                                     <div className='grid grid-cols-2 gap-y-2 text-xs'>
-                                       <p><span className='text-gray-500'>Drivers:</span> <span className='text-gray-300 ml-1'>{trip.drivers && trip.drivers.length > 0 ? trip.drivers.map(d => d.name).join(', ') : (trip.driver?.name || 'Unassigned')}</span></p>
-                                       <p><span className='text-gray-500'>Truck:</span> <span className='text-gray-300 ml-1'>{trip.truck?.unitNumber || 'N/A'}</span></p>
+                                       {order?.order_type !== 'outsourcing' && (
+                                          <>
+                                             <p><span className='text-gray-500'>Drivers:</span> <span className='text-gray-300 ml-1'>{trip.drivers && trip.drivers.length > 0 ? trip.drivers.map(d => d.name).join(', ') : (trip.driver?.name || 'Unassigned')}</span></p>
+                                             <p><span className='text-gray-500'>Truck:</span> <span className='text-gray-300 ml-1'>{trip.truck ? `${[trip.truck.make, trip.truck.model].filter(Boolean).join(' ') || trip.truck.unitNumber || '—'} ${trip.truck.plateNumber ? `(${trip.truck.plateNumber})` : ''}` : "N/A"}</span></p>
+                                             <p><span className='text-gray-500'>Trailer:</span> <span className='text-gray-300 ml-1'>{trip.trailer ? `${[trip.trailer.make, trip.trailer.model].filter(Boolean).join(' ') || trip.trailer.type || '—'} ${trip.trailer.unitNumber ? `(${trip.trailer.unitNumber})` : ''}` : "N/A"}</span></p>
+                                          </>
+                                       )}
                                        <p><span className='text-gray-500'>Miles:</span> <span className='text-gray-300 ml-1'>{trip.miles}</span></p>
                                        <p><span className='text-gray-500'>Distance:</span> <span className='text-gray-300 ml-1'>{(trip.total_km || (trip.miles * 1.60934)).toFixed ? (trip.total_km || (trip.miles * 1.60934)).toFixed(2) : (Number(trip.total_km || (trip.miles * 1.60934)).toFixed(2))} km</span></p>
-                                       <p><span className='text-gray-500'>Pay:</span> <span className='text-green-500 ml-1'>${trip.total_driver_pay?.toFixed(2)}</span></p>
+                                       {order?.order_type !== 'outsourcing' && (
+                                          <p><span className='text-gray-500'>Pay:</span> <span className='text-green-500 ml-1'>${trip.total_driver_pay?.toFixed(2)}</span></p>
+                                       )}
                                     </div>
                                     <p className='text-[10px] text-gray-500 mt-2 italic'>{trip.start_location} → {trip.end_location}</p>
                                  </div>
@@ -295,6 +320,12 @@ export default function ViewOrder() {
                      <h2 className='font-bold  text-xl text-right'>Total : <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
                      {order?.order_type === 'outsourcing' && (
                         <h2 className='font-bold  text-xl text-right'>Sell Amount : <Currency amount={order?.carrier_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
+                     )}
+                     {order?.order_type === 'regular' && order?.isOwnerOperatedTruck && (
+                        <>
+                           <h2 className='font-bold  text-xl text-right'>Settle Amount : <Currency amount={order?.settle_amount || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
+                           <h2 className='font-bold  text-xl text-right'>Owner Profit : <Currency amount={order?.owner_profit || 0} currency={order?.revenue_currency || 'cad'} /> </h2>
+                        </>
                      )}
                </div>
             </div>

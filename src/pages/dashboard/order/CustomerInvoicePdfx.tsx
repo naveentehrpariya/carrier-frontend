@@ -143,7 +143,7 @@ function CustomerInvoicePdfxContent({ order, company, invoiceNo, issuedAt, logoS
   const cc = company?.remittance_secondary_email ? encodeURIComponent(company.remittance_secondary_email) : '';
   const mailToHref = mailTo ? `mailto:${mailTo}${cc ? `?cc=${cc}` : ''}` : '';
 
-  const logo = logoSrc || company?.logo || company?.logo_url || companyLogoFallback;
+  const logo = logoSrc || company?.pdf_logo || company?.logo || company?.logo_url || companyLogoFallback;
 
   return (
     <Document title={`Invoice ${invoiceNo || ''}`}>

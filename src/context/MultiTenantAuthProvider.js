@@ -15,6 +15,7 @@ export const useAuth = () => {
 };
 
 export default function MultiTenantAuthProvider(props) {
+  const ACTIVE_MODULE_STORAGE_KEY = 'activeModule';
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
   const [company, setCompany] = useState(null);
@@ -22,9 +23,12 @@ export default function MultiTenantAuthProvider(props) {
   const [isSuperAdminUser, setIsSuperAdminUser] = useState(false);
   
   // New state for module switching
-  const [activeModule, setActiveModule] = useState('outsourcing');
+  const [activeModule, setActiveModule] = useState(() => {
+    const savedModule = safeStorage.getItem(ACTIVE_MODULE_STORAGE_KEY);
+    return ['regular', 'outsourcing'].includes(savedModule) ? savedModule : 'outsourcing';
+  });
 
-  // Sync activeModule with user's permissions
+  // Sync activeModule with user's permissions and persist selection across refreshes
   useEffect(() => {
     if (user) {
       const allowed = Array.isArray(user.permissions) ? user.permissions.filter(p => ['regular', 'outsourcing'].includes(p)) : [];
@@ -33,6 +37,10 @@ export default function MultiTenantAuthProvider(props) {
       }
     }
   }, [user]);
+
+  useEffect(() => {
+    safeStorage.setItem(ACTIVE_MODULE_STORAGE_KEY, activeModule);
+  }, [activeModule]);
 
   const { tenant, isSuperAdmin, canAccessTenant, clearTenantContext } = useMultiTenant();
 
@@ -176,18 +184,56 @@ export default function MultiTenantAuthProvider(props) {
           hasToken: !!token
         });
         
+        // Merge top-level allowedModules (from tenantLogin response) into the user object
+        // so it is available immediately, before the profile refresh completes.
+        const allowedModulesFromResponse = response.data.allowedModules;
+        const userDataWithModules = {
+          ...userData,
+          allowedModules: Array.isArray(userData?.allowedModules) && userData.allowedModules.length > 0
+            ? userData.allowedModules
+            : (Array.isArray(allowedModulesFromResponse) ? allowedModulesFromResponse : [])
+        };
+
         // Store authentication data
         safeStorage.setItem('token', token);
-        safeStorage.setItem('user', JSON.stringify(userData));
+        safeStorage.setItem('user', JSON.stringify(userDataWithModules));
         safeStorage.setItem('isSuperAdmin', JSON.stringify(userIsSuperAdmin || false));
         
         if (tenantData) {
           safeStorage.setItem('tenant', JSON.stringify(tenantData));
         }
 
+        // Keep tenant context in sync with the latest login result.
+        // This prevents stale "admin" context from forcing tenant users into super-admin routes.
+        if (userIsSuperAdmin) {
+          safeStorage.setItem('tenantContext', JSON.stringify({
+            tenant: {
+              tenantId: 'admin',
+              id: 'admin',
+              name: 'Super Admin'
+            },
+            isSuperAdmin: true,
+            isEmulating: false
+          }));
+        } else if (tenantData) {
+          const resolvedTenantId = tenantData.tenantId || tenantData.subdomain;
+          safeStorage.setItem('tenantContext', JSON.stringify({
+            tenant: {
+              tenantId: resolvedTenantId,
+              id: resolvedTenantId,
+              name: tenantData.name || resolvedTenantId,
+              subdomain: tenantData.subdomain || resolvedTenantId
+            },
+            isSuperAdmin: false,
+            isEmulating: false
+          }));
+        } else {
+          safeStorage.removeItem('tenantContext');
+        }
+
         // Update state
         setIsAuthenticated(true);
-        setUser(userData);
+        setUser(userDataWithModules);
         setIsSuperAdminUser(userIsSuperAdmin || false);
         
         console.log('🔄 Auth state updated:', {
@@ -253,11 +299,13 @@ export default function MultiTenantAuthProvider(props) {
         safeStorage.removeItem('user');
         safeStorage.removeItem('company');
         safeStorage.removeItem('isSuperAdmin');
+        safeStorage.removeItem(ACTIVE_MODULE_STORAGE_KEY);
         
         setIsAuthenticated(false);
         setUser(null);
         setCompany(null);
         setIsSuperAdminUser(false);
+        setActiveModule('outsourcing');
         
         toast.success(response.data.message || 'Logout successful');
         

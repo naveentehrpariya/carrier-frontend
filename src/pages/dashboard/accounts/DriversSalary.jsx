@@ -61,14 +61,12 @@ export default function DriversSalary() {
       <div className="mt-6 bg-[#11131A] border border-white/5 rounded-2xl overflow-hidden">
         <div className="overflow-auto">
           <table className="min-w-[1200px] w-full text-sm text-white">
-            <thead className="bg-[#0E1016] text-[#8A8FA3]">
+            <thead className="bg-[#12161d] text-[#8A8FA3]">
               <tr>
                 <th className="text-left px-4 py-3 font-bold">Driver</th>
                 <th className="text-left px-4 py-3 font-bold">Corporate ID</th>
                 <th className="text-left px-4 py-3 font-bold">Email</th>
-                <th className="text-left px-4 py-3 font-bold">License No</th>
-                <th className="text-left px-4 py-3 font-bold">Issue</th>
-                <th className="text-left px-4 py-3 font-bold">Expiry</th>
+                <th className="text-left px-4 py-3 font-bold">License Details</th>
                 <th className="text-left px-4 py-3 font-bold">Province</th>
                 <th className="text-left px-4 py-3 font-bold">Address</th>
                 <th className="text-left px-4 py-3 font-bold">Rate/Mile</th>
@@ -96,9 +94,16 @@ export default function DriversSalary() {
                     <td className="px-4 py-3 font-semibold">{d?.name || '—'}</td>
                     <td className="px-4 py-3">{d?.corporateID || '—'}</td>
                     <td className="px-4 py-3">{d?.email || '—'}</td>
-                    <td className="px-4 py-3">{d?.driverProfile?.licenseNumber || '—'}</td>
-                    <td className="px-4 py-3">{d?.driverProfile?.licenseIssueDate ? String(d.driverProfile.licenseIssueDate).slice(0, 10) : '—'}</td>
-                    <td className="px-4 py-3">{d?.driverProfile?.licenseExpiry ? String(d.driverProfile.licenseExpiry).slice(0, 10) : '—'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col">
+                        <span className="font-medium text-gray-200">{d?.driverProfile?.licenseNumber || '—'}</span>
+                        <div className="text-xs text-gray-500 mt-1 flex items-center gap-1.5">
+                          <span>{d?.driverProfile?.licenseIssueDate ? String(d.driverProfile.licenseIssueDate).slice(0, 10) : '—'}</span>
+                          <span className="text-gray-600">→</span>
+                          <span>{d?.driverProfile?.licenseExpiry ? String(d.driverProfile.licenseExpiry).slice(0, 10) : '—'}</span>
+                        </div>
+                      </div>
+                    </td>
                     <td className="px-4 py-3">{d?.driverProfile?.licenseState || '—'}</td>
                     <td className="px-4 py-3 max-w-[360px] truncate">{d?.address || '—'}</td>
                     <td className="px-4 py-3">

@@ -16,7 +16,7 @@ import Api from "../api/Api";
 
 export default function AuthLayout({children, heading}) {
 
-  const {user} = React.useContext(UserContext);
+  const { user, selectedCurrency, setSelectedCurrency } = React.useContext(UserContext);
   const { user: multiTenantUser, logout: multiTenantLogout } = useAuth();
   
   // Use multi-tenant user if available, fallback to legacy user
@@ -30,6 +30,7 @@ export default function AuthLayout({children, heading}) {
     } else {
       console.log('🔄 Using legacy logout in AuthLayout');
       safeStorage.removeItem("token");
+      safeStorage.removeItem("activeModule");
       window.location.href = "/login";
     }
   };
@@ -142,7 +143,7 @@ export default function AuthLayout({children, heading}) {
               />
               {globalSearchOpen && (
                 <div className="absolute top-full left-6 right-6 mt-2 max-w-[720px] bg-[#11131A] border border-white/10 rounded-2xl overflow-hidden max-h-[60vh] !overflow-auto p-2">
-                  <div className="px-4 py-3 flex items-center justify-between bg-[#0E1016]">
+                  <div className="px-4 py-3 flex items-center justify-between bg-[#12161d]">
                     <div className="text-white font-bold">Search</div>
                     <div className="text-xs text-gray-400">{globalSearchLoading ? 'Searching…' : 'Press Enter for full results'}</div>
                   </div>
@@ -226,6 +227,18 @@ export default function AuthLayout({children, heading}) {
             </form>
             </div>
             <div className="flex gap-2 items-center">
+              <div className="hidden md:flex items-center">
+                <select
+                  value={selectedCurrency || 'CAD'}
+                  onChange={(e) => setSelectedCurrency(e.target.value)}
+                  className="bg-[#121625] text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:outline-none focus:ring-1 focus:ring-[#8B7CFF]"
+                  aria-label="Display Currency"
+                >
+                  <option value="CAD">CAD</option>
+                  <option value="USD">USD</option>
+                  <option value="INR">INR</option>
+                </select>
+              </div>
               <Link to='/profile' className="hidden md:flex items-center">
                 <div><HiOutlineUserCircle color="white"  size='2.5rem'/></div>
                 <div className="text-start me-4 ps-2">

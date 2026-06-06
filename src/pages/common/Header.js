@@ -1,8 +1,6 @@
 import React, { useContext } from 'react'
 import { Link, useNavigate  } from 'react-router-dom';
-import Button from './Button';
 import { UserContext } from '../../context/AuthProvider';
-import CheckLogin from '../auth/CheckLogin';
 import Logotext from './Logotext';
 
 export default function Header() {
