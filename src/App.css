@@ -65,6 +65,32 @@ body{background:var(--dark);font-family:'productsans';}
 .font-mona-i{font-family:'monasans-italic','sans-serif';}
 .input-field{border:1px solid var(--main);}
 .input:not(select):focus{box-shadow:none;outline:none;background:var(--dark2);}
+
+/* ── Modal kit (shared add/edit entity modals) ───────────────────────── */
+.modal-kit .input-sm:focus,
+.modal-kit .input:focus,
+.modal-kit select.input-sm:focus,
+.modal-kit textarea.input-sm:focus{
+  border-color:var(--accent,#a091ff) !important;
+  background:rgba(255,255,255,0.04);
+  box-shadow:0 0 0 3px rgba(160,145,255,0.16); /* fallback */
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--accent,#a091ff) 18%, transparent);
+  outline:none;
+  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.modal-kit .input-sm,
+.modal-kit select.input-sm,
+.modal-kit textarea.input-sm{
+  transition:border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.modal-kit .input-sm:hover:not(:focus){ border-color:#374151; }
+@keyframes modalKitUp{ from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;} }
+.modal-kit-section{ animation:modalKitUp .42s cubic-bezier(.2,.7,.3,1) both; }
+.modal-kit-section:nth-child(2){ animation-delay:.03s; }
+.modal-kit-section:nth-child(3){ animation-delay:.08s; }
+.modal-kit-section:nth-child(4){ animation-delay:.13s; }
+.modal-kit-section:nth-child(5){ animation-delay:.18s; }
+@media (prefers-reduced-motion: reduce){ .modal-kit-section{ animation:none; } }
 .border-main{border:1px solid var(--main);}
 
  

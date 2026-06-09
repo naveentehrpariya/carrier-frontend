@@ -4,6 +4,7 @@ import Popup from '../../common/Popup';
 import { toast } from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { FiBox } from 'react-icons/fi';
+import { ModalShell, ModalHeader, FormSection, Field, TextInput, ModalFooter, ACCENTS } from '../../../components/modal/ModalKit';
 
 export default function Trailers() {
   const [lists, setLists] = useState([]);
@@ -183,68 +184,52 @@ export default function Trailers() {
       <div className='flex justify-between items-center'>
         <h2 className='text-white text-2xl'>Trailers</h2>
         <Popup action={action} onClose={closePopup} size="md:max-w-2xl" space='p-0' bg="bg-black" btnclasses="btn md text-black font-bold" btntext="Add Trailer">
-          <div className='p-6 border-b border-gray-800 bg-gradient-to-r from-violet-700/40 to-purple-700/20 rounded-t-[35px]'>
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-full bg-violet-600/30 flex items-center justify-center'>
-                <FiBox className='text-violet-300' size={22} />
-              </div>
-              <div>
-                <h2 className='text-white text-xl font-bold'>{isEditing ? 'Edit Trailer' : 'Add Trailer'}</h2>
-                <p className='text-gray-400 text-xs'>Record trailer specs and upload RC/ownership docs</p>
-              </div>
-            </div>
-          </div>
-          <div className='p-6'>
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Plate Number</label>
-              <input name='plateNumber' value={form.plateNumber} onChange={updateForm} type='text' placeholder='TR-12345' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Unit Number</label>
-              <input name='unitNumber' value={form.unitNumber} onChange={updateForm} type='text' placeholder='Unit number' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Type</label>
-              <input name='type' value={form.type} onChange={updateForm} type='text' placeholder='Dry Van / Reefer / Flatbed' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">VIN</label>
-              <input name='vin' value={form.vin} onChange={updateForm} type='text' placeholder='Vehicle Identification Number' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">License Number</label>
-              <input name='licenseNumber' value={form.licenseNumber} onChange={updateForm} type='text' placeholder='License number' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Length (ft)</label>
-              <input name='length' value={form.length} onChange={updateForm} type='number' placeholder='53' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Make</label>
-              <input name='make' value={form.make} onChange={updateForm} type='text' placeholder='Utility' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Model</label>
-              <input name='model' value={form.model} onChange={updateForm} type='text' placeholder='4000D-X Composite' className="input-sm" />
-            </div>
-          </div>
-            <div className='input-item mb-4 '>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Notes</label>
-              <input name='notes' value={form.notes} onChange={updateForm} type='text' placeholder='Optional notes' className="input-sm" />
-            </div>
-            <div className='input-item mb-4 flex items-center gap-2'>
-              <input name='isActive' checked={form.isActive} onChange={updateForm} type='checkbox' id='isActiveCheckbox' className="w-4 h-4 rounded bg-gray-800 border-gray-700 text-violet-600 focus:ring-violet-600 focus:ring-offset-gray-900" />
-              <label htmlFor='isActiveCheckbox' className="text-sm text-gray-300 select-none">Active (Available for new assignments)</label>
-            </div>
-            <div className='input-item mb-4'>
-              <label className="mt-2 mb-0 block text-sm text-gray-400">Documents</label>
-              <input className='input-sm' type='file' multiple onChange={(e)=>setAddDocs(Array.from(e.target.files || []))} />
-            </div>
-            <div className='flex justify-center items-center'>
-              <button onClick={saveTrailer} className="btn md mt-2 px-[50px] main-btn text-black font-bold">{loading ? "Saving..." : "Save"}</button>
-            </div>
-          </div>
+          <ModalShell accent={ACCENTS.trailer}>
+          <ModalHeader
+            icon={FiBox}
+            accent={ACCENTS.trailer}
+            title={isEditing ? 'Edit Trailer' : 'Add Trailer'}
+            subtitle="Record trailer specs and upload RC/ownership docs"
+          />
+          <FormSection title="Trailer details">
+            <Field label="Plate Number"><TextInput name='plateNumber' value={form.plateNumber} onChange={updateForm} type='text' placeholder='TR-12345' /></Field>
+            <Field label="Unit Number"><TextInput name='unitNumber' value={form.unitNumber} onChange={updateForm} type='text' placeholder='Unit number' /></Field>
+            <Field label="Type"><TextInput name='type' value={form.type} onChange={updateForm} type='text' placeholder='Dry Van / Reefer / Flatbed' /></Field>
+            <Field label="VIN"><TextInput name='vin' value={form.vin} onChange={updateForm} type='text' placeholder='Vehicle Identification Number' /></Field>
+            <Field label="License Number"><TextInput name='licenseNumber' value={form.licenseNumber} onChange={updateForm} type='text' placeholder='License number' /></Field>
+            <Field label="Length (ft)"><TextInput name='length' value={form.length} onChange={updateForm} type='number' placeholder='53' /></Field>
+            <Field label="Make"><TextInput name='make' value={form.make} onChange={updateForm} type='text' placeholder='Utility' /></Field>
+            <Field label="Model"><TextInput name='model' value={form.model} onChange={updateForm} type='text' placeholder='4000D-X Composite' /></Field>
+          </FormSection>
+
+          <FormSection title="Status, notes & documents" divider>
+            <Field full label="Notes">
+              <TextInput name='notes' value={form.notes} onChange={updateForm} type='text' placeholder='Optional notes' />
+            </Field>
+            <Field full>
+              <label htmlFor='isActiveCheckbox' className="flex items-center gap-3 cursor-pointer select-none bg-white/[0.04] hover:bg-white/[0.07] px-4 py-3 rounded-xl border transition-colors"
+                style={{ borderColor: form.isActive ? 'rgba(232,121,249,0.5)' : 'rgba(255,255,255,0.06)' }}>
+                <input name='isActive' checked={form.isActive} onChange={updateForm} type='checkbox' id='isActiveCheckbox' className="sr-only" />
+                <div className="w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0"
+                  style={form.isActive ? { background: ACCENTS.trailer, borderColor: ACCENTS.trailer, color: '#000' } : { borderColor: 'rgba(255,255,255,0.25)' }}>
+                  {form.isActive && <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>}
+                </div>
+                <span className="text-sm text-gray-200">Active <span className="text-gray-500">(Available for new assignments)</span></span>
+              </label>
+            </Field>
+            <Field full label="Documents">
+              <input className='input-sm !mt-0 w-full file:mr-3 file:rounded-full file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-sm file:text-gray-200' type='file' multiple onChange={(e)=>setAddDocs(Array.from(e.target.files || []))} />
+            </Field>
+          </FormSection>
+
+          <ModalFooter
+            accent={ACCENTS.trailer}
+            onCancel={closePopup}
+            onSubmit={saveTrailer}
+            loading={loading}
+            submitLabel={isEditing ? 'Save Changes' : 'Add Trailer'}
+          />
+          </ModalShell>
         </Popup>
       </div>
 

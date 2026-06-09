@@ -42,7 +42,7 @@ export default function Popup({btnclasses, iconcolor, btntext, size, children, s
         </Transition.Child>
 
         <div className="fixed inset-0 z-10 w-screen overflow-y-auto px-4">
-          <div className="flex min-h-full items-center justify-center text-center sm:items-center">
+          <div className="flex min-h-full items-center justify-center py-8 text-center sm:items-center">
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -52,8 +52,11 @@ export default function Popup({btnclasses, iconcolor, btntext, size, children, s
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
-              <Dialog.Panel className={` transform overflow-hidden rounded-[35px] ${bg ? bg : "bg-white"} text-left shadow-xl transition-all sm:my-8 w-full md:w-full ${size ? size : 'md:max-w-lg'} ${space}`}>
-                  <div className='max-h-[80vh] pe-3 me-[-10px] overflow-auto'>
+              <Dialog.Panel
+                className={`relative transform overflow-hidden rounded-[35px] ${bg ? bg : "bg-white"} text-left shadow-xl transition-all w-full md:w-full ${size ? size : 'md:max-w-lg'} ${space}`}
+                style={{ maxHeight: '90vh', display: 'flex', flexDirection: 'column' }}
+              >
+                  <div className='overflow-y-auto' style={{ minHeight: 0, flex: '0 1 auto' }}>
                   {children}
                   </div>
                   <button

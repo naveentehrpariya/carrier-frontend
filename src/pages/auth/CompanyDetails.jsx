@@ -26,6 +26,7 @@ export default function CompanyDetails({ fetchLists, classes, text}){
       remittance_primary_email: company?.remittance_primary_email || "",
       remittance_secondary_email: company?.remittance_secondary_email || "",
       rate_confirmation_terms: company?.rate_confirmation_terms || '',
+      order_prefix: company?.order_prefix || "",
     });
 
     useEffect(() => {
@@ -42,6 +43,7 @@ export default function CompanyDetails({ fetchLists, classes, text}){
           remittance_primary_email: company?.remittance_primary_email || "",
           remittance_secondary_email: company?.remittance_secondary_email || "",
           rate_confirmation_terms: company?.rate_confirmation_terms || '',
+          order_prefix: company?.order_prefix || "",
         });
       }
     }, [company]);
@@ -209,6 +211,34 @@ export default function CompanyDetails({ fetchLists, classes, text}){
                   </div>
                </div>
             </div>
+            <div className='h-[1px] bg-gray-800 my-12'></div>
+
+            {/* Order Number Prefix */}
+            <div className='mt-12'>
+               <h3 className='text-white font-bold text-lg md:text-2xl'>Order Number Prefix</h3>
+               <p className='text-gray-400 text-sm mt-2'>Set a short code (up to 6 characters) that appears before every order number — e.g. <span className='text-white font-mono'>CMC</span> produces <span className='text-white font-mono'>CMC-1013</span>. Leave blank to auto-generate from your company name.</p>
+               <div className='grid grid-cols-1 md:grid-cols-3 gap-5 mt-4 items-end'>
+                  <div className='input-item'>
+                     <label className="mt-4 mb-0 block text-sm text-gray-400">Prefix (letters &amp; numbers only)</label>
+                     <input
+                        value={data.order_prefix}
+                        name='order_prefix'
+                        onChange={(e) => setData({ ...data, order_prefix: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6) })}
+                        type='text'
+                        maxLength={6}
+                        placeholder='e.g. CMC'
+                        className='input-sm tracking-widest font-mono uppercase'
+                     />
+                  </div>
+                  <div className='pb-1'>
+                     <p className='text-gray-500 text-sm'>Preview:</p>
+                     <p className='text-white font-mono text-lg mt-1'>
+                        {data.order_prefix ? `${data.order_prefix}-1013` : <span className='text-gray-600'>auto (from company name)</span>}
+                     </p>
+                  </div>
+               </div>
+            </div>
+
             <div className='h-[1px] bg-gray-800 my-12'></div>
 
             <div className='mt-12'>

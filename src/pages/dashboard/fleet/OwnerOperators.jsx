@@ -5,6 +5,8 @@ import AuthLayout from '../../../layout/AuthLayout';
 import Api from '../../../api/Api';
 import Popup from '../../common/Popup';
 import GoogleAddressInput from '../../common/GoogleAddressInput';
+import { HiOutlineIdentification } from 'react-icons/hi2';
+import { ModalShell, ModalHeader, FormSection, Field, TextInput, SelectInput, ModalFooter, ACCENTS } from '../../../components/modal/ModalKit';
 
 const initialForm = {
   fullName: '',
@@ -253,54 +255,53 @@ export default function OwnerOperators() {
         </div>
       </div>
 
-      <Popup action={action} size="md:max-w-2xl" space="p-6" bg="bg-black" btntext="" showTrigger={false}>
-        <div className="text-white">
-          <h3 className="text-xl font-bold">{editing ? 'Edit Owner Operator' : 'Add Owner Operator'}</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-            <div className="input-item">
-              <label className="text-sm text-gray-400">Full Name</label>
-              <input className="input-sm" value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} />
-            </div>
-            <div className="input-item">
-              <label className="text-sm text-gray-400">Company Name</label>
-              <input className="input-sm" value={form.companyName} onChange={(e) => setForm((p) => ({ ...p, companyName: e.target.value }))} />
-            </div>
-            <div className="input-item">
-              <label className="text-sm text-gray-400">Phone</label>
-              <input className="input-sm" value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} />
-            </div>
-            <div className="input-item">
-              <label className="text-sm text-gray-400">Email</label>
-              <input className="input-sm" value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} />
-            </div>
-            <div className="input-item">
-              <label className="text-sm text-gray-400">Status</label>
-              <select className="input-sm" value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-            <div className="input-item sm:col-span-2">
-              <label className="text-sm text-gray-400">Address</label>
+      <Popup action={action} size="md:max-w-2xl" space="p-0" bg="bg-black" btntext="" showTrigger={false}>
+        <ModalShell accent={ACCENTS.owner}>
+          <ModalHeader
+            icon={HiOutlineIdentification}
+            accent={ACCENTS.owner}
+            title={editing ? 'Edit Owner Operator' : 'Add Owner Operator'}
+            subtitle={editing ? 'Update owner operator and contact details' : 'Register an owner operator and their company'}
+          />
+          <FormSection title="Operator details">
+            <Field label="Full Name" required>
+              <TextInput value={form.fullName} onChange={(e) => setForm((p) => ({ ...p, fullName: e.target.value }))} placeholder="Full name" />
+            </Field>
+            <Field label="Company Name">
+              <TextInput value={form.companyName} onChange={(e) => setForm((p) => ({ ...p, companyName: e.target.value }))} placeholder="Company name" />
+            </Field>
+            <Field label="Phone">
+              <TextInput value={form.phone} onChange={(e) => setForm((p) => ({ ...p, phone: e.target.value }))} placeholder="Phone number" />
+            </Field>
+            <Field label="Email">
+              <TextInput value={form.email} onChange={(e) => setForm((p) => ({ ...p, email: e.target.value }))} placeholder="Email address" />
+            </Field>
+            <Field label="Status">
+              <SelectInput value={form.status} onChange={(e) => setForm((p) => ({ ...p, status: e.target.value }))}>
+                <option value="active" className="text-black">Active</option>
+                <option value="inactive" className="text-black">Inactive</option>
+              </SelectInput>
+            </Field>
+            <Field full label="Address">
               <GoogleAddressInput
                 value={form.address}
                 onChange={(value) => setForm((p) => ({ ...p, address: value }))}
                 placeholder="Search and select address"
-                className="input-sm"
+                className="input-sm !mt-0"
               />
-            </div>
-            <div className="input-item sm:col-span-2">
-              <label className="text-sm text-gray-400">Notes</label>
-              <input className="input-sm" value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} />
-            </div>
-          </div>
-          <div className="flex justify-end gap-2 mt-6">
-            <button className="btn sm bg-gray-800 text-white" onClick={() => setAction('close')}>Cancel</button>
-            <button className="btn sm main-btn text-black font-bold" onClick={onSave} disabled={saving}>
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-          </div>
-        </div>
+            </Field>
+            <Field full label="Notes">
+              <TextInput value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Optional notes" />
+            </Field>
+          </FormSection>
+          <ModalFooter
+            accent={ACCENTS.owner}
+            onCancel={() => setAction('close')}
+            onSubmit={onSave}
+            loading={saving}
+            submitLabel={editing ? 'Save Changes' : 'Add Operator'}
+          />
+        </ModalShell>
       </Popup>
 
       <Popup open={docsOpen} onClose={() => setDocsOpen(false)} showTrigger={false} size="md:max-w-2xl" space="p-6" bg="bg-black">

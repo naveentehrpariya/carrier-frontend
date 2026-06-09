@@ -13,7 +13,7 @@ const FALLBACK_RATES = {
 };
 const FX_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 
-const normalizeCode = (code, fallback = "CAD") => {
+const normalizeCode = (code, fallback = "USD") => {
   const value = String(code || fallback).toUpperCase();
   return ["CAD", "USD", "INR"].includes(value) ? value : fallback;
 };
@@ -82,8 +82,8 @@ export default function Currency({ amount, currency, onlySymbol }) {
 
   useEffect(() => {
     let mounted = true;
-    const sourceCurrency = normalizeCode(currency, "CAD");
-    const targetCurrency = normalizeCode(selectedCurrency, "CAD");
+    const sourceCurrency = normalizeCode(currency, "USD");
+    const targetCurrency = normalizeCode(selectedCurrency, "USD");
 
     const formatOutput = async () => {
       if (!onlySymbol) setLoading(true);

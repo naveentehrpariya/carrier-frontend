@@ -17,14 +17,52 @@ const PERMISSION_GROUPS = [
     ],
   },
   {
-    title: 'Feature Access',
-    description: 'Sections this user can open in the sidebar',
+    title: 'Customers',
+    description: 'View is read-only. Manage allows add / edit / delete.',
+    items: [
+      { key: 'customers',       label: 'View Customers',   hint: 'See customer list (read-only)' },
+      { key: 'customers_write', label: 'Manage Customers', hint: 'Add, edit & delete customers' },
+    ],
+  },
+  {
+    title: 'Carriers',
+    description: 'View is read-only. Manage allows add / edit / delete.',
+    items: [
+      { key: 'carriers',       label: 'View Carriers',   hint: 'See carrier list (read-only)' },
+      { key: 'carriers_write', label: 'Manage Carriers', hint: 'Add, edit & delete carriers' },
+    ],
+  },
+  {
+    title: 'Other Features',
+    description: 'Additional sections this user can open',
     items: [
       { key: 'accounting', label: 'Accounting', hint: 'Invoices, payments & settlements' },
-      { key: 'customers',  label: 'Customers',  hint: 'Manage customer records' },
-      { key: 'carriers',   label: 'Carriers',   hint: 'Manage carrier records' },
       { key: 'employees',  label: 'Employees',  hint: 'Manage staff (admin only)', adminOnly: true },
+      { key: 'subadmin',   label: 'Sub-Admin',  hint: 'Full access except editing main admin', adminOnly: true },
     ],
+  },
+];
+
+// One-click role presets — selecting one auto-checks the permissions below.
+const PRESETS = [
+  {
+    key: 'staff',
+    label: 'Staff',
+    hint: 'Work on orders, view customers & carriers',
+    permissions: ['regular', 'outsourcing', 'customers', 'carriers'],
+  },
+  {
+    key: 'accountant',
+    label: 'Accountant',
+    hint: 'Accounting + view customers & carriers',
+    permissions: ['accounting', 'customers', 'carriers'],
+  },
+  {
+    key: 'subadmin',
+    label: 'Sub-Admin',
+    hint: 'Full access (cannot edit main admin)',
+    adminOnly: true,
+    permissions: ['regular', 'outsourcing', 'accounting', 'customers', 'customers_write', 'carriers', 'carriers_write', 'employees', 'subadmin'],
   },
 ];
 
@@ -109,7 +147,27 @@ export default function ManageUserModulesModal({ isOpen, onClose, tenant }) {
     setModules(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const selectedCount = Object.values(modules).filter(Boolean).length;
+  // Apply a preset — only sets keys this admin is allowed to assign.
+  const applyPreset = (preset) => {
+    const next = emptyModules();
+    PERMISSION_GROUPS.forEach(g => g.items.forEach(item => {
+      if (preset.permissions.includes(item.key) && canAssign(item)) {
+        next[item.key] = true;
+      }
+    }));
+    setModules(next);
+  };
+
+  // Highlight a preset only when the current selection exactly matches it.
+  const currentKeys = Object.entries(modules).filter(([, v]) => v).map(([k]) => k).sort();
+  const activePresetKey = PRESETS.find(p => {
+    const presetKeys = [...p.permissions].filter(k => ALL_KEYS.includes(k)).sort();
+    return presetKeys.length === currentKeys.length && presetKeys.every((k, i) => k === currentKeys[i]);
+  })?.key;
+
+  const assignablePresets = PRESETS.filter(p => !p.adminOnly || isAdmin);
+
+  const selectedCount = currentKeys.length;
 
   const saveModules = async () => {
     if (!selectedUser) {
@@ -218,7 +276,37 @@ export default function ManageUserModulesModal({ isOpen, onClose, tenant }) {
                   </span>
                 </div>
 
-                <div className="space-y-5 max-h-80 overflow-auto pr-1">
+                {/* One-click role presets */}
+                {assignablePresets.length > 0 && (
+                  <div className="mb-4">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-gray-700 mb-2">Quick Presets</div>
+                    <div className="flex flex-wrap gap-2">
+                      {assignablePresets.map(preset => {
+                        const active = activePresetKey === preset.key;
+                        return (
+                          <button
+                            key={preset.key}
+                            type="button"
+                            title={preset.hint}
+                            onClick={() => applyPreset(preset)}
+                            className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                              active
+                                ? 'border-blue-500 bg-blue-600 text-white'
+                                : 'border-gray-300 bg-white text-gray-700 hover:border-blue-400 hover:bg-blue-50'
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="text-[11px] text-gray-400 mt-1.5">
+                      Pick a preset to auto-fill permissions, then fine-tune below.
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-5 pr-1">
                   {PERMISSION_GROUPS.map(group => {
                     const visibleItems = group.items.filter(canAssign);
                     if (visibleItems.length === 0) return null;

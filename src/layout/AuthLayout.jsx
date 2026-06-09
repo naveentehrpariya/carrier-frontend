@@ -229,7 +229,7 @@ export default function AuthLayout({children, heading}) {
             <div className="flex gap-2 items-center">
               <div className="hidden md:flex items-center">
                 <select
-                  value={selectedCurrency || 'CAD'}
+                  value={selectedCurrency || 'USD'}
                   onChange={(e) => setSelectedCurrency(e.target.value)}
                   className="bg-[#121625] text-white text-sm rounded-lg px-3 py-2 border border-white/10 focus:outline-none focus:ring-1 focus:ring-[#8B7CFF]"
                   aria-label="Display Currency"

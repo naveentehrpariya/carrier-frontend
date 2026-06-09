@@ -122,7 +122,7 @@ export default function CustomerOrders({isRecent, customerID, customer, carrier,
                                     <tr key={index}>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-center'>{index + 1}</td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start'><Link className='text-main' to={`/view/order/${item._id}`} >CMC{item.serial_no}</Link></td>
-                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'><Currency amount={item?.total_amount} currency={item?.revenue_currency || 'cad'} /></td>
+                                       <td className='p-2 border border-gray-700 !text-gray-400  text-start'><Currency amount={item?.input_total_amount > 0 ? item.input_total_amount : item?.total_amount} currency={item?.input_total_amount > 0 ? (item?.input_currency || item?.revenue_currency || 'usd') : (item?.revenue_currency || 'usd')} /></td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start '> <Badge title={true} status={item?.customer_payment_status} text={``} /></td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start'>{item.customer_payment_method || 'N/A'}</td>
                                        <td className='p-2 border border-gray-700 !text-gray-400  text-start'>{item?.customer_payment_date ? <TimeFormat date={item?.customer_payment_date || "--"} /> : '- - -'}</td>

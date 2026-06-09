@@ -10,7 +10,7 @@ export default function UserContextProvider(props) {
   const [company, setcompany] = useState(null);
   const [admin, setAdmin] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [selectedCurrency, setSelectedCurrency] = useState('CAD');
+  const [selectedCurrency, setSelectedCurrency] = useState('USD');
 
   // Check for existing authentication on component mount
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function UserContextProvider(props) {
       if (currencyPref && ['CAD', 'USD', 'INR'].includes(String(currencyPref).toUpperCase())) {
         setSelectedCurrency(String(currencyPref).toUpperCase());
       } else {
-        setSelectedCurrency('CAD');
+        setSelectedCurrency('USD');
       }
       setLoading(false);
     };
@@ -52,9 +52,9 @@ export default function UserContextProvider(props) {
   };
 
   const updateSelectedCurrency = (currencyCode) => {
-    const next = String(currencyCode || 'CAD').toUpperCase();
+    const next = String(currencyCode || 'USD').toUpperCase();
     const supported = ['CAD', 'USD', 'INR'];
-    const finalCode = supported.includes(next) ? next : 'CAD';
+    const finalCode = supported.includes(next) ? next : 'USD';
     setSelectedCurrency(finalCode);
     safeStorage.setItem('selectedCurrency', finalCode);
     safeSessionStorage.setItem('selectedCurrency', finalCode);

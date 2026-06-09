@@ -210,7 +210,7 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
   const tripPay = Number(summary?.totalPay || 0);
   const totalPayWithCity = tripPay + totalCityPay;
   const netPay = totalPayWithCity - totalDeductions;
-  const moneyCurrency = String(summary?.currency || 'CAD').toUpperCase();
+  const moneyCurrency = String(summary?.currency || 'USD').toUpperCase();
 
   const exportPDF = async () => {
     try {

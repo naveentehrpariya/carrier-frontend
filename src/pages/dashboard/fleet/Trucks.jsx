@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { TbTruckDelivery } from 'react-icons/tb';
 import { FaTrash, FaEdit } from 'react-icons/fa';
+import { ModalShell, ModalHeader, FormSection, Field, TextInput, SelectInput, ModalFooter, ACCENTS } from '../../../components/modal/ModalKit';
 import { Link } from 'react-router-dom';
 import { useSearchParams } from 'react-router-dom';
 
@@ -456,85 +457,69 @@ export default function Trucks() {
             <input className="input-sm !mt-0 w-full" placeholder="Search trucks…" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <Popup action={action} size="md:max-w-2xl" space='p-0' bg="bg-black" btnclasses="btn sm text-black font-bold whitespace-nowrap" btntext="Add Truck">
-          <div className='p-6 border-b border-gray-800 bg-gradient-to-r from-blue-700/40 to-cyan-700/20 rounded-t-[35px]'>
-            <div className='flex items-center gap-3'>
-              <div className='h-10 w-10 rounded-full bg-blue-600/30 flex items-center justify-center'>
-                <TbTruckDelivery className='text-blue-300' size={22} />
-              </div>
-              <div>
-                <h2 className='text-white text-xl font-bold'>Add Truck</h2>
-                <p className='text-gray-400 text-xs'>Register vehicle details and upload RC/ownership docs</p>
-              </div>
-            </div>
-          </div>
-          <div className='p-6'>
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Make</label>
-              <input name='make' value={form.make} onChange={updateForm} type='text' placeholder='Volvo' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Model</label>
-              <input name='model' value={form.model} onChange={updateForm} type='text' placeholder='FH16' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Year</label>
-              <input name='year' value={form.year} onChange={updateForm} type='number' placeholder='2022' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">VIN</label>
-              <input name='vin' value={form.vin} onChange={updateForm} type='text' placeholder='Vehicle Identification Number' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Plate Number</label>
-              <input name='plateNumber' value={form.plateNumber} onChange={updateForm} type='text' placeholder='ABC123' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Unit Number</label>
-              <input name='unitNumber' value={form.unitNumber} onChange={updateForm} type='text' placeholder='Unit number' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Capacity (lbs)</label>
-              <input name='capacity' value={form.capacity} onChange={updateForm} type='number' placeholder='e.g., 80000' className="input-sm" />
-            </div>
-            <div className='input-item col-span-2'>
-              <label className="mt-4 mb-0 flex items-center gap-2 text-sm text-gray-400">
+          <ModalShell accent={ACCENTS.truck}>
+          <ModalHeader
+            icon={TbTruckDelivery}
+            accent={ACCENTS.truck}
+            title="Add Truck"
+            subtitle="Register vehicle details and upload RC/ownership docs"
+          />
+          <FormSection title="Vehicle details">
+            <Field label="Make"><TextInput name='make' value={form.make} onChange={updateForm} type='text' placeholder='Volvo' /></Field>
+            <Field label="Model"><TextInput name='model' value={form.model} onChange={updateForm} type='text' placeholder='FH16' /></Field>
+            <Field label="Year"><TextInput name='year' value={form.year} onChange={updateForm} type='number' placeholder='2022' /></Field>
+            <Field label="VIN"><TextInput name='vin' value={form.vin} onChange={updateForm} type='text' placeholder='Vehicle Identification Number' /></Field>
+            <Field label="Plate Number"><TextInput name='plateNumber' value={form.plateNumber} onChange={updateForm} type='text' placeholder='ABC123' /></Field>
+            <Field label="Unit Number"><TextInput name='unitNumber' value={form.unitNumber} onChange={updateForm} type='text' placeholder='Unit number' /></Field>
+            <Field label="Capacity (lbs)"><TextInput name='capacity' value={form.capacity} onChange={updateForm} type='number' placeholder='e.g., 80000' /></Field>
+          </FormSection>
+
+          <FormSection title="Ownership" divider>
+            <Field full>
+              <label className="flex items-center gap-3 cursor-pointer select-none bg-white/[0.04] hover:bg-white/[0.07] px-4 py-3 rounded-xl border transition-colors"
+                style={{ borderColor: form.ownerOperated ? 'rgba(34,211,238,0.5)' : 'rgba(255,255,255,0.06)' }}>
                 <input
                   type="checkbox"
+                  className="sr-only"
                   checked={!!form.ownerOperated}
                   onChange={(e) => setForm((p) => ({ ...p, ownerOperated: e.target.checked, ownerOperator: e.target.checked ? p.ownerOperator : '' }))}
                 />
-                Owner Operated
+                <div className="w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0"
+                  style={form.ownerOperated ? { background: ACCENTS.truck, borderColor: ACCENTS.truck, color: '#000' } : { borderColor: 'rgba(255,255,255,0.25)' }}>
+                  {form.ownerOperated && <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>}
+                </div>
+                <span className="text-sm text-gray-200">Owner Operated</span>
               </label>
-            </div>
+            </Field>
             {form.ownerOperated && (
-              <div className='input-item col-span-2'>
-                <label className="mt-1 mb-0 block text-sm text-gray-400">Owner Operator</label>
-                <select
-                  className="input-sm"
-                  value={form.ownerOperator}
-                  onChange={(e) => setForm((p) => ({ ...p, ownerOperator: e.target.value }))}
-                >
-                  <option value="">Select owner operator</option>
+              <Field full label="Owner Operator">
+                <SelectInput value={form.ownerOperator} onChange={(e) => setForm((p) => ({ ...p, ownerOperator: e.target.value }))}>
+                  <option value="" className="text-black">Select owner operator</option>
                   {(ownerOperators || []).map((o) => (
-                    <option key={o._id} value={o._id}>{o.fullName} ({o.ownerOperatorId})</option>
+                    <option key={o._id} value={o._id} className="text-black">{o.fullName} ({o.ownerOperatorId})</option>
                   ))}
-                </select>
-              </div>
+                </SelectInput>
+              </Field>
             )}
-          </div>
-          <div className='input-item mb-4 '>
-            <label className="mt-4 mb-0 block text-sm text-gray-400">Notes</label>
-            <input name='notes' value={form.notes} onChange={updateForm} type='text' placeholder='Optional notes' className="input-sm" />
-          </div>
-          <div className='input-item mb-4'>
-            <label className="mt-2 mb-0 block text-sm text-gray-400">Documents</label>
-            <input className='input-sm' type='file' multiple onChange={(e)=>setAddDocs(Array.from(e.target.files || []))} />
-          </div>
-          <div className='flex justify-center items-center'>
-            <button onClick={addTruck} className="btn md mt-2 px-[50px] main-btn text-black font-bold">{loading ? "Saving..." : "Save"}</button>
-          </div>
-          </div>
+          </FormSection>
+
+          <FormSection title="Notes & documents" divider>
+            <Field full label="Notes">
+              <TextInput name='notes' value={form.notes} onChange={updateForm} type='text' placeholder='Optional notes' />
+            </Field>
+            <Field full label="Documents">
+              <input className='input-sm !mt-0 w-full file:mr-3 file:rounded-full file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-sm file:text-gray-200' type='file' multiple onChange={(e)=>setAddDocs(Array.from(e.target.files || []))} />
+            </Field>
+          </FormSection>
+
+          <ModalFooter
+            accent={ACCENTS.truck}
+            onCancel={() => { setAction('close'); setTimeout(() => setAction(), 300); }}
+            onSubmit={addTruck}
+            loading={loading}
+            submitLabel="Save Truck"
+          />
+          </ModalShell>
         </Popup>
         </div>
       </div>

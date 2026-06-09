@@ -39,7 +39,7 @@ export default function Overview() {
   const allowedModules = Array.isArray(currentUser?.permissions) ? currentUser.permissions : [];
   
   const [lists, setLists] = useState([]);
-  const [overviewBaseCurrency, setOverviewBaseCurrency] = useState('CAD');
+  const [overviewBaseCurrency, setOverviewBaseCurrency] = useState('USD');
   const [chartData, setChartData] = useState([]);
   const [adminData, setAdminData] = useState(null);
   const [carriersData, setCarriersData] = useState([]);
@@ -50,13 +50,13 @@ export default function Overview() {
   const [fleetStats, setFleetStats] = useState({ drivers: 0, trucks: 0, trailers: 0 });
   const [overviewFxRate, setOverviewFxRate] = useState(1);
 
-  const normalizeCurrencyCode = (code, fallback = 'CAD') => {
+  const normalizeCurrencyCode = (code, fallback = 'USD') => {
     const c = String(code || fallback).toUpperCase();
     return ['CAD', 'USD', 'INR'].includes(c) ? c : fallback;
   };
 
-  const selectedCode = normalizeCurrencyCode(selectedCurrency, 'CAD');
-  const baseCode = normalizeCurrencyCode(overviewBaseCurrency || 'CAD', 'CAD');
+  const selectedCode = normalizeCurrencyCode(selectedCurrency, 'USD');
+  const baseCode = normalizeCurrencyCode(overviewBaseCurrency || 'USD', 'USD');
 
   useEffect(() => {
     let mounted = true;
@@ -111,7 +111,7 @@ export default function Overview() {
     Api.get(`/overview?type=${activeModule}`).then((res) => {
       if (res.data.status === true) {
         setLists(res.data.lists);
-        setOverviewBaseCurrency(String(res.data.baseCurrency || 'CAD').toUpperCase());
+        setOverviewBaseCurrency(String(res.data.baseCurrency || 'USD').toUpperCase());
         if (res.data.chartData) {
           setChartData(res.data.chartData);
         }

@@ -6,6 +6,8 @@ import { UserContext } from '../../../context/AuthProvider';
 import { useAuth } from '../../../context/MultiTenantAuthProvider';
 import countries from './../../common/Countries';
 import GoogleAddressInput from '../../common/GoogleAddressInput';
+import { HiOutlineUserPlus } from 'react-icons/hi2';
+import { ModalShell, ModalHeader, FormSection, Field, TextInput, SelectInput, ModalFooter, ACCENTS } from '../../../components/modal/ModalKit';
 
 export default function AddEmployee({fetchLists, item, text, classes, defaultRole}){
     
@@ -18,10 +20,19 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
       { id: 'regular', label: 'Regular (Trucking & Fleet)' },
       { id: 'outsourcing', label: 'Outsourcing (Carriers)' },
       { id: 'accounting', label: 'Accounting & Payments' },
-      { id: 'customers', label: 'Manage Customers' },
+      { id: 'customers', label: 'View Customers' },
+      { id: 'customers_write', label: 'Manage Customers (add/edit)' },
+      { id: 'carriers', label: 'View Carriers' },
+      { id: 'carriers_write', label: 'Manage Carriers (add/edit)' },
       { id: 'employees', label: 'Manage Employees' },
-      { id: 'carriers', label: 'Manage Carriers' },
       { id: 'subadmin', label: 'Subadmin' },
+    ];
+
+    // One-click presets — selecting one auto-fills the permissions below.
+    const PRESETS = [
+      { key: 'staff',      label: 'Staff',     permissions: ['regular', 'outsourcing', 'customers', 'carriers'] },
+      { key: 'accountant', label: 'Accountant', permissions: ['accounting', 'customers', 'carriers'] },
+      { key: 'subadmin',   label: 'Sub-Admin', permissions: ['regular', 'outsourcing', 'accounting', 'customers', 'customers_write', 'carriers', 'carriers_write', 'employees', 'subadmin'] },
     ];
 
     const [data, setData] = useState({
@@ -51,6 +62,19 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
         return { ...prev, permissions: updated };
       });
     };
+
+    const applyPreset = (preset) => {
+      setData(prev => ({ ...prev, permissions: [...preset.permissions] }));
+    };
+
+    const activePresetKey = (() => {
+      const cur = [...(data.permissions || [])].sort();
+      const match = PRESETS.find(p => {
+        const pk = [...p.permissions].sort();
+        return pk.length === cur.length && pk.every((k, i) => k === cur[i]);
+      });
+      return match?.key;
+    })();
     
     const [loading, setLoading] = useState(false);
     const addEmployee = () => {
@@ -93,103 +117,130 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
       });
     }
 
+  const showCommission = data.permissions?.includes('regular') || data.permissions?.includes('outsourcing') || data.permissions?.includes('subadmin');
+
   return (
     <div>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={classes} btntext={text||"Add New Employee"} >
-         <h2 className='text-white font-bold'>Add New Employee</h2>
-         <div className='grid grid-cols-2 gap-4'>
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Name</label>
-               <input defaultValue={item?.name} required name='name' onChange={handleinput} type={'text'} placeholder={"Name"} className="input-sm" />
-            </div>
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Email</label>
-               <input defaultValue={item?.email} required name='email' onChange={handleinput} type={'email'} placeholder={"Email address"} className="input-sm" />
-            </div>
-            {(data.permissions?.includes('regular') || data.permissions?.includes('outsourcing') || data.permissions?.includes('subadmin')) && (
-              <div className='input-item'>
-                 <label className="mt-4 mb-0 block text-sm text-gray-400">Staff Commission</label>
-                 <select  defaultValue={item?.staff_commision} onChange={handleinput} name='staff_commision' className="input-sm" >
-                  <option className='text-black' value="">Choose Commission</option>
-                    {commisions && commisions.map((c, i)=>{
-                      return <option key={`comm-${i}`} value={c} className='text-black'>{c}% Commision</option>
-                    })}
-                 </select>
-              </div>
-            )}
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Country</label>
-               <select defaultValue={item?.country} onChange={handleinput} name='country' className="input-sm" >
-                <option className='text-black' value="">Choose Country</option>
-                  {countries && countries.map((c, i)=>{
-                    return <option key={`country-${i}`} value={c.label} className='text-black'>{c.label}</option>
-                  })}
-               </select>
-            </div> 
+      <Popup action={action} size="md:max-w-2xl" space='p-0' bg="bg-black" btnclasses={classes} btntext={text||"Add New Employee"} >
+       <ModalShell accent={ACCENTS.employee}>
+         <ModalHeader
+           icon={HiOutlineUserPlus}
+           accent={ACCENTS.employee}
+           title={item ? 'Edit Employee' : 'Add New Employee'}
+           subtitle={item ? 'Update contact details and access permissions' : 'Create a team member and assign their access'}
+         />
 
-         </div>
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Phone</label>
-               <input defaultValue={item?.phone} required name='phone' onChange={handleinput} type={'phone'} placeholder={"Phone Number"} className="input-sm" />
-            </div>
-            {item ? "" :
-              <>
-                <div className='input-item'>
-                  <label className="mt-4 mb-0 block text-sm text-gray-400">Password</label>
-                  <input required name='password' onChange={handleinput} type={'text'} placeholder={"Enter password"} className="input-sm" />
-                </div>
-              </>
-            }
-          <div className='input-item mb-4 '>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
+         <FormSection title="Personal details">
+            <Field label="Name" required>
+               <TextInput defaultValue={item?.name} name='name' onChange={handleinput} type='text' placeholder="Full name" />
+            </Field>
+            <Field label="Email" required>
+               <TextInput defaultValue={item?.email} name='email' onChange={handleinput} type='email' placeholder="Email address" />
+            </Field>
+            <Field label="Phone" required>
+               <TextInput defaultValue={item?.phone} name='phone' onChange={handleinput} type='tel' placeholder="Phone number" />
+            </Field>
+            <Field label="Country" required>
+               <SelectInput defaultValue={item?.country} onChange={handleinput} name='country'>
+                <option className='text-black' value="">Choose country</option>
+                  {countries && countries.map((c, i)=>(
+                    <option key={`country-${i}`} value={c.label} className='text-black'>{c.label}</option>
+                  ))}
+               </SelectInput>
+            </Field>
+            {showCommission && (
+              <Field label="Staff Commission" required>
+                 <SelectInput defaultValue={item?.staff_commision} onChange={handleinput} name='staff_commision'>
+                  <option className='text-black' value="">Choose commission</option>
+                    {commisions && commisions.map((c, i)=>(
+                      <option key={`comm-${i}`} value={c} className='text-black'>{c}% Commission</option>
+                    ))}
+                 </SelectInput>
+              </Field>
+            )}
+            {!item && (
+              <Field label="Password" hint="Leave empty to auto-generate a secure password.">
+                <TextInput name='password' onChange={handleinput} type='text' placeholder="Set a password (optional)" />
+              </Field>
+            )}
+            <Field label="Position">
+              <TextInput defaultValue={item?.position} name='position' onChange={handleinput} type='text' placeholder="e.g. Senior Manager" />
+            </Field>
+            <Field label="Address" required full>
               <GoogleAddressInput
                 value={data.address}
                 onChange={(v) => setData((prev) => ({ ...prev, address: v }))}
                 placeholder="Enter address"
-                className="input-sm"
+                className="input-sm !mt-0"
               />
-          </div>
-          <div className='input-item mb-4 '>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Position</label>
-              <input defaultValue={item?.position} required name='position' onChange={handleinput} type={'position'} placeholder={"eg. Senior Manger"} className="input-sm" />
-          </div>
+            </Field>
+         </FormSection>
 
-         <div className="mt-8 pt-6 border-t border-gray-800">
-           <label className="mb-3 block text-sm text-gray-400 text-center font-medium">Assign Permissions</label>
-           <div className="flex flex-wrap justify-center gap-4">
-             {availablePermissions.map(p => (
-               <label
-                 key={p.id}
-                 className="flex items-center gap-2 cursor-pointer group select-none bg-gray-900 px-4 py-2 rounded-xl"
-               >
-                 <input
-                   type="checkbox"
-                   className="sr-only"
-                   checked={!!data.permissions?.includes(p.id)}
-                   onChange={() => togglePermission(p.id)}
-                 />
-                 <div
-                   className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
-                     data.permissions?.includes(p.id)
-                       ? 'bg-main border-main text-black'
-                       : 'border-gray-600 group-hover:border-gray-400'
-                   }`}
-                 >
-                   {data.permissions?.includes(p.id) && (
-                     <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>
-                   )}
-                 </div>
-                 <span className="text-sm text-gray-300 capitalize">
-                   {p.label}
-                 </span>
-               </label>
-             ))}
-           </div>
-         </div>
+         <FormSection title="Access & permissions" divider>
+           <Field full label="Quick presets" hint="Pick a preset to auto-fill, then fine-tune the permissions below.">
+             <div className="flex flex-wrap gap-2.5">
+               {PRESETS.map(preset => {
+                 const active = activePresetKey === preset.key;
+                 return (
+                   <button
+                     key={preset.key}
+                     type="button"
+                     onClick={() => applyPreset(preset)}
+                     className="px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors"
+                     style={active
+                       ? { background: ACCENTS.employee, borderColor: ACCENTS.employee, color: '#000' }
+                       : { borderColor: 'rgba(255,255,255,0.18)', color: '#cbd5e1' }}
+                   >
+                     {preset.label}
+                   </button>
+                 );
+               })}
+             </div>
+           </Field>
 
-         <div className='flex justify-center items-center'>
-            <button  onClick={addEmployee} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Creating..." : "Create Account"}</button>
-         </div>
+           <Field full label="Assign permissions">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+               {availablePermissions.map(p => {
+                 const checked = !!data.permissions?.includes(p.id);
+                 return (
+                   <label
+                     key={p.id}
+                     className="flex items-center gap-3 cursor-pointer group select-none bg-white/[0.04] hover:bg-white/[0.07] px-3.5 py-2.5 rounded-xl border transition-colors"
+                     style={{ borderColor: checked ? 'rgba(160,145,255,0.5)' : 'rgba(255,255,255,0.06)' }}
+                   >
+                     <input
+                       type="checkbox"
+                       className="sr-only"
+                       checked={checked}
+                       onChange={() => togglePermission(p.id)}
+                     />
+                     <div
+                       className="w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0"
+                       style={checked
+                         ? { background: ACCENTS.employee, borderColor: ACCENTS.employee, color: '#000' }
+                         : { borderColor: 'rgba(255,255,255,0.25)' }}
+                     >
+                       {checked && (
+                         <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>
+                       )}
+                     </div>
+                     <span className="text-sm text-gray-300">{p.label}</span>
+                   </label>
+                 );
+               })}
+             </div>
+           </Field>
+         </FormSection>
+
+         <ModalFooter
+           accent={ACCENTS.employee}
+           onCancel={() => { setaction('close'); setTimeout(() => setaction(), 300); }}
+           onSubmit={addEmployee}
+           loading={loading}
+           loadingLabel={item ? 'Saving…' : 'Creating…'}
+           submitLabel={item ? 'Save Changes' : 'Create Account'}
+         />
+       </ModalShell>
       </Popup>
     </div>
   )

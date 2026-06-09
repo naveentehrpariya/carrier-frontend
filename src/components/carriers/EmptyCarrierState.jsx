@@ -17,7 +17,7 @@ export default function EmptyCarrierState({ fetchLists, user }) {
         Start building your carrier network by adding your first carrier. You can manage their contact information, addresses, and track their performance.
       </p>
       
-      {user?.is_admin === 1 || user?.permissions?.includes('carriers') || user?.permissions?.includes('subadmin') ? (
+      {user?.is_admin === 1 || user?.permissions?.includes('carriers_write') || user?.permissions?.includes('subadmin') ? (
         <AddCarrier 
           classes="btn md text-black font-bold bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl" 
           fetchLists={fetchLists} 

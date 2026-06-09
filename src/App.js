@@ -29,6 +29,7 @@ import DriversSalary from './pages/dashboard/accounts/DriversSalary';
 import TrucksGrossEarning from './pages/dashboard/accounts/TrucksGrossEarning';
 import OwnerOperatorSalary from './pages/dashboard/accounts/OwnerOperatorSalary';
 import OwnerOperatorStatement from './pages/dashboard/accounts/OwnerOperatorStatement';
+import FinancePage from './pages/dashboard/finance/FinancePage';
 import GlobalSearch from './pages/dashboard/search/GlobalSearch';
 import OrderPDF from './pages/dashboard/order/OrderPDF';
 import CustomerInvoice from './pages/dashboard/order/CustomerInvoice';
@@ -189,12 +190,12 @@ export default function App() {
                       </PrivateRoute>
                     } />
                     <Route path="/carriers" element={
-                      <ModuleBasedRoute allowedModules={['outsourcing']}>
+                      <ModuleBasedRoute allowedModules={['outsourcing']} allowedPermissions={['carriers', 'accounting']}>
                         <Carriers />
                       </ModuleBasedRoute>
                     } />
                     <Route path="/carrier/detail/:id" element={
-                      <ModuleBasedRoute allowedModules={['outsourcing']}>
+                      <ModuleBasedRoute allowedModules={['outsourcing']} allowedPermissions={['carriers', 'accounting']}>
                         <CarrierDetail />
                       </ModuleBasedRoute>
                     } />
@@ -274,6 +275,11 @@ export default function App() {
                         <ModuleBasedRoute allowedModules={['regular']}>
                           <OwnerOperatorStatement />
                         </ModuleBasedRoute>
+                      </RoleBasedRoute>
+                    } />
+                    <Route path="/finance" element={
+                      <RoleBasedRoute allowedRoles={['accounting']}>
+                        <FinancePage />
                       </RoleBasedRoute>
                     } />
                     <Route path="/search" element={

@@ -21,7 +21,9 @@ export default function MultiTenantAuthProvider(props) {
   const [company, setCompany] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSuperAdminUser, setIsSuperAdminUser] = useState(false);
-  
+  const [isEmulatingEmployee, setIsEmulatingEmployee] = useState(false);
+  const [emulatingEmployeeName, setEmulatingEmployeeName] = useState('');
+
   // New state for module switching
   const [activeModule, setActiveModule] = useState(() => {
     const savedModule = safeStorage.getItem(ACTIVE_MODULE_STORAGE_KEY);
@@ -107,6 +109,11 @@ export default function MultiTenantAuthProvider(props) {
               setCompany(latestCompany);
               setIsSuperAdminUser(latestIsSuperAdmin);
 
+              if (latestUser?.isEmulatingEmployee) {
+                setIsEmulatingEmployee(true);
+                setEmulatingEmployeeName(latestUser.name || '');
+              }
+
               // Update storage with latest data
               safeStorage.setItem('user', JSON.stringify(latestUser));
               if (latestCompany) safeStorage.setItem('company', JSON.stringify(latestCompany));
@@ -129,6 +136,10 @@ export default function MultiTenantAuthProvider(props) {
             setUser(parsedUser);
             setCompany(parsedCompany);
             setIsSuperAdminUser(parsedIsSuperAdmin);
+            if (parsedUser?.isEmulatingEmployee) {
+              setIsEmulatingEmployee(true);
+              setEmulatingEmployeeName(parsedUser.name || '');
+            }
             return;
           } catch (parseError) {
             console.error('❌ Error parsing stored user data:', parseError);
@@ -288,6 +299,69 @@ export default function MultiTenantAuthProvider(props) {
     if (companyData) safeStorage.setItem('company', JSON.stringify(companyData));
   };
 
+  const emulateEmployee = async (employeeId, employeeName) => {
+    if (isEmulatingEmployee) {
+      toast.error('Already emulating an employee. Stop emulation first.');
+      return false;
+    }
+    try {
+      const backup = {
+        token: safeStorage.getItem('token'),
+        user: safeStorage.getItem('user'),
+        tenantContext: safeStorage.getItem('tenantContext')
+      };
+      safeStorage.setItem('employeeEmulationBackup', JSON.stringify(backup));
+
+      const response = await Api.post('/api/tenant-admin/emulate-employee', { employeeId });
+
+      if (response.data.status) {
+        const { token, employee } = response.data;
+        safeStorage.setItem('token', token);
+        safeStorage.setItem('user', JSON.stringify({ ...employee, isEmulatingEmployee: true }));
+        setIsEmulatingEmployee(true);
+        setEmulatingEmployeeName(employee.name || employeeName || '');
+        toast.success(`Now viewing as ${employee.name}`);
+        window.location.href = '/home';
+        return true;
+      }
+    } catch (error) {
+      safeStorage.removeItem('employeeEmulationBackup');
+      toast.error(error.response?.data?.message || 'Failed to emulate employee');
+      return false;
+    }
+  };
+
+  const stopEmployeeEmulation = async () => {
+    try {
+      const response = await Api.post('/api/tenant-admin/stop-employee-emulation');
+      if (response.data.status) {
+        const { token } = response.data;
+        const backupRaw = safeStorage.getItem('employeeEmulationBackup');
+        if (backupRaw) {
+          try {
+            const backup = JSON.parse(backupRaw);
+            if (backup.token) safeStorage.setItem('token', backup.token);
+            if (backup.user) safeStorage.setItem('user', backup.user);
+            if (backup.tenantContext) safeStorage.setItem('tenantContext', backup.tenantContext);
+          } catch (_) {
+            safeStorage.setItem('token', token);
+          }
+        } else {
+          safeStorage.setItem('token', token);
+        }
+        safeStorage.removeItem('employeeEmulationBackup');
+        setIsEmulatingEmployee(false);
+        setEmulatingEmployeeName('');
+        toast.success('Returned to admin account');
+        window.location.href = '/employees';
+        return true;
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to stop emulation');
+      return false;
+    }
+  };
+
   const logout = async (navigateCallback = null) => {
     console.log('🔒 Starting logout process...');
     
@@ -300,12 +374,15 @@ export default function MultiTenantAuthProvider(props) {
         safeStorage.removeItem('company');
         safeStorage.removeItem('isSuperAdmin');
         safeStorage.removeItem(ACTIVE_MODULE_STORAGE_KEY);
-        
+        safeStorage.removeItem('employeeEmulationBackup');
+
         setIsAuthenticated(false);
         setUser(null);
         setCompany(null);
         setIsSuperAdminUser(false);
         setActiveModule('outsourcing');
+        setIsEmulatingEmployee(false);
+        setEmulatingEmployeeName('');
         
         toast.success(response.data.message || 'Logout successful');
         
@@ -397,25 +474,29 @@ export default function MultiTenantAuthProvider(props) {
     isSuperAdminUser,
     activeModule,
     setActiveModule,
-    
+    isEmulatingEmployee,
+    emulatingEmployeeName,
+
     // Authentication actions
     login,
     logout,
     legacyLogin,
-    
+    emulateEmployee,
+    stopEmployeeEmulation,
+
     // Permission checking
     checkSuperAdminAccess,
     checkTenantAdminAccess,
     getUserPermissions,
     hasPermission,
-    
+
     // Tenant-related
     getCurrentTenant,
     belongsToCurrentTenant,
-    
+
     // Utilities
     handleErrors,
-    
+
     // Legacy support
     setUser,
     setCompany,
@@ -425,6 +506,17 @@ export default function MultiTenantAuthProvider(props) {
 
   return (
     <AuthContext.Provider value={values}>
+      {isEmulatingEmployee && (
+        <div className="bg-purple-700 fixed bottom-0 left-0 right-0 z-[99999] text-white px-2 py-1 text-center text-[10px] font-medium">
+          <span>Viewing as: {emulatingEmployeeName}</span>
+          <button
+            onClick={stopEmployeeEmulation}
+            className="ml-4 px-2 py-1 bg-purple-900 rounded text-[10px] hover:bg-purple-950"
+          >
+            Return to Admin
+          </button>
+        </div>
+      )}
       {props.children}
     </AuthContext.Provider>
   );

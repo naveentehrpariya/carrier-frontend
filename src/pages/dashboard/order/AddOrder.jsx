@@ -11,6 +11,9 @@ import GetLocation from '../../common/GetLocation';
 import DistanceInMiles from '../../common/DistanceInMiles';
 import GetDeliveryLocation from '../../common/GetDeliveryLocation';
 import Loading from '../../common/Loading';
+import { TbUser, TbReceipt2, TbBuildingWarehouse, TbTruck, TbRoute } from "react-icons/tb";
+import { LuPackage, LuMapPin, LuPackageCheck, LuPlus, LuCalculator } from "react-icons/lu";
+import { FaTruckMoving } from "react-icons/fa6";
 
 // const revenueItemOptions = [
 //   { label: "Freight Charge", value: "Freight Charge" },
@@ -33,16 +36,43 @@ const weightUnits = [
   { value: 'LBS',  label: "LBS" },
 ];
 
+/* ── Shared presentational helpers (consistent with the order View page) ── */
+const fieldLabel = 'block text-[11px] font-semibold uppercase tracking-[0.1em] text-gray-400';
+
+// Render react-select menus in a body portal so they are never clipped by the
+// card's `overflow-hidden` or covered by following sections.
+const selectMenuProps = {
+  menuPortalTarget: typeof document !== 'undefined' ? document.body : undefined,
+  menuPosition: 'fixed',
+  styles: { menuPortal: (base) => ({ ...base, zIndex: 9999 }) },
+};
+
+const SectionCard = ({ title, subtitle, icon, accent = '#a091ff', children, className = '', right = null }) => (
+  <section className={`bg-dark1 border border-white/[0.06] rounded-2xl overflow-hidden ${className}`}>
+    <header className='flex flex-wrap items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.05]'>
+      <div className='flex items-center gap-3'>
+        <span className='flex items-center justify-center w-9 h-9 rounded-xl shrink-0' style={{ background: `${accent}1a`, color: accent }}>{icon}</span>
+        <div>
+          <h3 className='text-[13px] font-bold uppercase tracking-[0.14em] text-gray-200'>{title}</h3>
+          {subtitle ? <p className='text-[12px] text-gray-500 mt-0.5 normal-case tracking-normal'>{subtitle}</p> : null}
+        </div>
+      </div>
+      {right}
+    </header>
+    <div className='p-5 sm:p-6'>{children}</div>
+  </section>
+);
+
 export default function AddOrder({ isEdit = false }){
 
     const { id } = useParams();
     const [isEditMode, setIsEditMode] = useState(isEdit && id);
     const [existingOrder, setExistingOrder] = useState(null);
     const [initialLoading, setInitialLoading] = useState(isEdit && id);
-    
+
     const fetchOrder = () => {
       if (!isEdit || !id) return;
-      
+
       setInitialLoading(true);
       const resp = Api.get(`/order/detail/${id}`);
       resp.then((res) => {
@@ -99,7 +129,7 @@ export default function AddOrder({ isEdit = false }){
         const resp = Api.get(`/customer/listings`);
         resp.then((res) => {
           if (res.data.status === true) {
-            const lists = res.data.customers || []; 
+            const lists = res.data.customers || [];
             let arr = [];
             lists.forEach(element => {
               arr.push({
@@ -122,7 +152,7 @@ export default function AddOrder({ isEdit = false }){
         const resp = Api.get(`/carriers/listings`);
         resp.then((res) => {
           if (res.data.status === true) {
-            const lists = res.data.carriers || []; 
+            const lists = res.data.carriers || [];
             let arr = [];
             lists.forEach(e => {
               arr.push({
@@ -140,7 +170,7 @@ export default function AddOrder({ isEdit = false }){
           setCarrierListings([]);
         });
     }
-    useEffect(()=> { 
+    useEffect(()=> {
       fetchcustomers();
       fetchcarriers();
       fetchequipmentOptions();
@@ -150,7 +180,7 @@ export default function AddOrder({ isEdit = false }){
       }
     }, [isEdit, id]);
 
- 
+
 
     const [distance, setDistance] = useState(0);
     const getDistance = async () => {
@@ -189,7 +219,7 @@ export default function AddOrder({ isEdit = false }){
         return 0;
       }
     };
- 
+
     const [shippingDetails, setShippingDetails] = useState([
       {
         commodity: null,
@@ -215,7 +245,7 @@ export default function AddOrder({ isEdit = false }){
         ],
       },
     ]);
-    
+
     const handleShippingInputChange = (index, field, value) => {
       const updatedDetails = [...shippingDetails];
       updatedDetails[index][field] = value;
@@ -260,14 +290,14 @@ export default function AddOrder({ isEdit = false }){
       });
       setShippingDetails(updatedDetails);
     };
-    
+
     const removeLocation = (blockIndex, locationIndex) => {
       const updatedDetails = [...shippingDetails];
       updatedDetails[blockIndex].locations.splice(locationIndex, 1);
       setShippingDetails(updatedDetails);
     };
-    
-    
+
+
     const removeItemShipItem = (index) => {
       const updatedItems = shippingDetails.filter((_, i) => i !== index);
       setShippingDetails(updatedItems);
@@ -336,7 +366,7 @@ export default function AddOrder({ isEdit = false }){
 
 
     const {Errors, user: currentUser, selectedCurrency} = useContext(UserContext);
-    const selectedCurrencyCode = String(selectedCurrency || 'CAD').toLowerCase();
+    const selectedCurrencyCode = String(selectedCurrency || 'USD').toLowerCase();
 
     const [data, setData] = useState({
       "company_name" : "Cross Miles Carrier",
@@ -349,15 +379,15 @@ export default function AddOrder({ isEdit = false }){
       "carrier_payment_status" : "pending",
       "carrier_payment_method" : "",
       "revenue_currency" : selectedCurrencyCode,
-      "order_status" : "added", 
+      "order_status" : "added",
       "settle_amount": 0,
       "driver_assignment_mode": "company_driver",
     });
 
-    const chooseCustomer = (e) => { 
+    const chooseCustomer = (e) => {
       setData({ ...data, customer: e.value});
     }
-    const chooseCarrier = (e) => { 
+    const chooseCarrier = (e) => {
       setData({ ...data, carrier: e.value});
     }
 
@@ -376,7 +406,7 @@ export default function AddOrder({ isEdit = false }){
             .map((d) => pickId(d))
             .filter(Boolean)
         : (pickId(order.driver) ? [pickId(order.driver)] : []);
-      
+
       // Set basic order data
       setData({
         company_name: order.company_name || "Cross Miles Carrier",
@@ -388,7 +418,7 @@ export default function AddOrder({ isEdit = false }){
         payment_method: order.payment_method || "none",
         carrier_payment_status: order.carrier_payment_status || "pending",
         carrier_payment_method: order.carrier_payment_method || "",
-        revenue_currency: order.revenue_currency || 'cad',
+        revenue_currency: order.input_currency || order.revenue_currency || 'usd',
         order_status: order.order_status || "added",
         order_type: order.order_type || 'outsourcing',
         drivers: normalizedDrivers,
@@ -398,23 +428,23 @@ export default function AddOrder({ isEdit = false }){
         settle_amount: Number(order.settle_amount || 0),
         driver_assignment_mode: order.driver_assignment_mode || 'company_driver'
       });
-      
+
       // Set currency
-      setRevCurrency(order.revenue_currency || 'cad');
-      
+      setRevCurrency(order.input_currency || order.revenue_currency || 'usd');
+
       // Set distance
       setDistance(order.totalDistance || 0);
-      
+
       // Set shipping details
       if (order.shipping_details && order.shipping_details.length > 0) {
         setShippingDetails(order.shipping_details);
       }
-      
+
       // Set revenue items
       if (order.revenue_items && order.revenue_items.length > 0) {
         setRevenueItems(order.revenue_items);
       }
-      
+
       // Set carrier revenue items
       if (order.carrier_revenue_items && order.carrier_revenue_items.length > 0) {
         setCarrierRevenueItems(order.carrier_revenue_items);
@@ -422,7 +452,7 @@ export default function AddOrder({ isEdit = false }){
     };
 
     const [revCurrency, setRevCurrency] = useState(selectedCurrencyCode);
-    
+
     // Terminology constants
     const TERM_OUTSOURCING = 'Outsourcing (Carriers)';
     const TERM_REGULAR = 'Regular (Trucking, driver etc)';
@@ -433,11 +463,11 @@ export default function AddOrder({ isEdit = false }){
       ...(userModules.includes('regular') ? [{ label: TERM_REGULAR, value: 'regular' }] : []),
     ];
 
-    useEffect(() => {
-      const nextCurrency = String(selectedCurrency || 'CAD').toLowerCase();
-      setRevCurrency(nextCurrency);
-      setData((prev) => ({ ...prev, revenue_currency: nextCurrency }));
-    }, [selectedCurrency]);
+    const handleRevCurrencyChange = (code) => {
+      const next = String(code || 'USD').toLowerCase();
+      setRevCurrency(next);
+      setData((prev) => ({ ...prev, revenue_currency: next }));
+    };
 
     useEffect(() => {
       if (!data.order_type) {
@@ -495,8 +525,8 @@ export default function AddOrder({ isEdit = false }){
       }).catch(()=> setTrailers([]));
     };
 
-    useEffect(() => { 
-      fetchAssetLists(); 
+    useEffect(() => {
+      fetchAssetLists();
     }, []);
 
     const selectedTruckMeta = data.truck ? truckMetaMap[data.truck] : null;
@@ -536,7 +566,7 @@ export default function AddOrder({ isEdit = false }){
         ? (hasCompanyDriverSelected ? 'company_driver' : 'owner_driver')
         : 'company_driver';
 
-      const alldata = {...data, 
+      const alldata = {...data,
         order_type: orderType,
         "revenue_items"  : revenueItems || [],
         "carrier_revenue_items"  : isOutsourcing ? (carrierRevenueItems || []) : [],
@@ -583,7 +613,7 @@ export default function AddOrder({ isEdit = false }){
           }
         }
       }
-      
+
       if(alldata.customer === null || alldata.customer === '') {
         toast.error('Customer is required');
         setLoading(false);
@@ -625,7 +655,7 @@ export default function AddOrder({ isEdit = false }){
       // Determine if we're adding or updating
       const endpoint = isEditMode ? `/order/update/${id}` : `/order/add`;
       const method = isEditMode ? 'put' : 'post';
-      
+
       const resp = Api[method](endpoint, alldata);
       resp.then((res) => {
         setLoading(false);
@@ -640,9 +670,9 @@ export default function AddOrder({ isEdit = false }){
         Errors(err);
       });
     }
-    
-    
-  
+
+
+
 
   // Show loading while fetching order data for editing
   if (initialLoading) {
@@ -653,190 +683,199 @@ export default function AddOrder({ isEdit = false }){
     );
   }
 
+  const orderType = data.order_type || 'outsourcing';
+  const isOutsourcingUI = orderType === 'outsourcing';
+  const isRegularUI = orderType === 'regular';
+  const customerTotal = revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0);
+  const carrierTotal = carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0);
+  const selectedCustomerOpt = data.customer ? customersListing.find(c => c.value === data.customer) : null;
+
   return (
     <AuthLayout>
-      <div className="px-4 sm:px-0">
-         <h2 className='text-white heading xl text-xl sm:text-2xl '>{isEditMode ? `Edit Order #${existingOrder?.serial_no}` : 'Add New Order'}</h2>
+      <div className='max-w-[1400px] mx-auto pb-28'>
 
-         {/* Module Switcher Tabs */}
-         {availableOrderTypes.length > 1 && (
-           <div className="flex bg-[#1B1E27] p-1 rounded-xl border border-white/5 shadow-inner w-fit mt-6 mb-8">
-             <button
-               onClick={() => setData(prev => ({ ...prev, order_type: 'outsourcing' }))}
-               className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-8 rounded-lg transition-all duration-300 ${
-                 (data.order_type || 'outsourcing') === 'outsourcing' 
-                   ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' 
-                   : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
-               }`}
-             >
-               {TERM_OUTSOURCING}
-             </button>
-             <button
-               onClick={() => setData(prev => ({ ...prev, order_type: 'regular' }))}
-               className={`text-[11px] uppercase font-black tracking-wider py-2.5 px-8 rounded-lg transition-all duration-300 ${
-                 (data.order_type || 'outsourcing') === 'regular' 
-                   ? 'bg-gradient-to-r from-[#B39CF6] to-[#C3A9FF] text-white shadow-lg' 
-                   : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
-               }`}
-             >
-               {TERM_REGULAR}
-             </button>
-           </div>
-         )}
+        {/* ── Page header ─────────────────────────────────────── */}
+        <div className='flex flex-wrap items-end justify-between gap-4 mb-8 mt-2'>
+          <div>
+            <div className='flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-gray-500 mb-2'>
+              <span onClick={() => navigate('/orders')} className='cursor-pointer hover:text-gray-300 transition-colors'>Orders</span>
+              <span className='text-gray-700'>/</span>
+              <span className='text-gray-400'>{isEditMode ? 'Edit' : 'New'}</span>
+            </div>
+            <h2 className='text-3xl font-bold text-white font-mona'>{isEditMode ? `Edit Order #${existingOrder?.serial_no}` : 'Add New Order'}</h2>
+          </div>
 
-         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            {/* Common Customer Selection */}
-            <div className='input-item md:col-span-1'>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Customer</label>
-                <Select 
-                  classNamePrefix="react-select input"  
+          {/* Module Switcher Tabs */}
+          {availableOrderTypes.length > 1 && (
+            <div className="flex bg-[#0c1b26] p-1 rounded-xl border border-white/[0.07] shadow-inner w-fit">
+              <button
+                onClick={() => setData(prev => ({ ...prev, order_type: 'outsourcing' }))}
+                className={`text-[11px] uppercase font-bold tracking-wider py-2.5 px-5 sm:px-7 rounded-lg transition-all duration-300 flex items-center gap-2 ${
+                  isOutsourcingUI
+                    ? 'bg-gradient-to-r from-[#a091ff] to-[#c3a9ff] text-black shadow-lg shadow-[#a091ff]/20'
+                    : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
+                }`}
+              >
+                <TbBuildingWarehouse size={15} /> {TERM_OUTSOURCING}
+              </button>
+              <button
+                onClick={() => setData(prev => ({ ...prev, order_type: 'regular' }))}
+                className={`text-[11px] uppercase font-bold tracking-wider py-2.5 px-5 sm:px-7 rounded-lg transition-all duration-300 flex items-center gap-2 ${
+                  isRegularUI
+                    ? 'bg-gradient-to-r from-[#fb7185] to-[#f43f5e] text-white shadow-lg shadow-rose-500/20'
+                    : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
+                }`}
+              >
+                <FaTruckMoving size={13} /> {TERM_REGULAR}
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className='flex flex-col gap-6'>
+
+          {/* ── Order basics ──────────────────────────────────── */}
+          <SectionCard title='Order Basics' subtitle='Who the order is for and how to reference it' icon={<TbUser size={18} />} accent='#a091ff'>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
+              <div className='input-item'>
+                <label className={fieldLabel}>Customer</label>
+                <Select
+                  classNamePrefix="react-select input" {...selectMenuProps}
                   placeholder={'Search and choose customer...'}
                   isSearchable={true}
-                  value={data.customer ? customersListing.find(customer => customer.value === data.customer) : null}
+                  value={selectedCustomerOpt}
                   onChange={chooseCustomer}
-                  options={customersListing} 
+                  options={customersListing}
                 />
+              </div>
+              <div className='input-item'>
+                <label className={fieldLabel}>Customer Order No <span className='text-gray-600 normal-case font-normal'>(optional)</span></label>
+                <input
+                  className="input-sm"
+                  value={data.customer_order_no || ''}
+                  onChange={(e) => setData(prev => ({ ...prev, customer_order_no: e.target.value }))}
+                  placeholder="Enter customer order number"
+                />
+              </div>
+              <div className='input-item'>
+                <label className={fieldLabel}>Reference <span className='text-gray-600 normal-case font-normal'>(PO#, Load#, etc.)</span></label>
+                <input
+                  className="input-sm"
+                  value={shippingDetails?.[0]?.reference || ''}
+                  onChange={(e) => handleShippingInputChange(0, "reference", e.target.value)}
+                  placeholder="PO#, Load#, Customer Pickup#, Container#"
+                />
+              </div>
             </div>
-            <div className='input-item md:col-span-1'>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Customer Order No (Optional)</label>
-              <input
-                className="input-sm"
-                value={data.customer_order_no || ''}
-                onChange={(e) => setData(prev => ({ ...prev, customer_order_no: e.target.value }))}
-                placeholder="Enter customer order number"
-              />
-            </div>
-            <div className='input-item md:col-span-1'>
-              <label className="block text-sm font-medium text-gray-400 mb-2">Reference (PO#, Load#, etc.)</label>
-              <input
-                className="input-sm"
-                value={shippingDetails?.[0]?.reference || ''}
-                onChange={(e) => handleShippingInputChange(0, "reference", e.target.value)}
-                placeholder="PO#, Load#, Customer Pickup#, Container#"
-              />
-            </div>
-         </div>
+          </SectionCard>
 
-          <div>
-            {/* <div className="flex justify-between mt-12 mb-4 items-center">
-              <p className="text-gray-400 heading xl text-xl">Shipping Details</p>
-              <button
-                className="btn text-black font-bold"
-                onClick={addNewShippingBlock}> + Add New
-              </button>
-            </div> */}
-
-            {shippingDetails.map((detail, index) => (
-              <>
-              <div key={index}
-                className="mt-2 mb-6">
-                <div className='flex flex-col sm:flex-row mb-4 justify-between items-start sm:items-center gap-2 sm:gap-0'>
-                  <p className="text-gray-400 heading xl text-lg sm:text-xl ">Shipment Details
-                  </p>
-                  {index  ?<button  className="!text-red-500 !font-sm !font-normal !ms-3"
-                  onClick={() => removeItemShipItem(index)} >Remove
-                  </button> : ''}
+          {/* ── Shipment details ──────────────────────────────── */}
+          {shippingDetails.map((detail, index) => (
+            <SectionCard
+              key={index}
+              title={shippingDetails.length > 1 ? `Shipment #${index + 1}` : 'Shipment Details'}
+              subtitle='Commodity, equipment and route stops'
+              icon={<LuPackage size={18} />}
+              accent='#a091ff'
+              right={index ? (
+                <button className="text-[12px] font-semibold text-red-400 hover:text-red-300 transition-colors" onClick={() => removeItemShipItem(index)}>Remove shipment</button>
+              ) : null}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-4 pb-6 border-b border-white/[0.06] mb-2">
+                <div className="input-item">
+                  <label className={fieldLabel}>Commodity</label>
+                  <input
+                    required
+                    name="commodity"
+                    value={detail.commodity || ""}
+                    onChange={(e) =>handleShippingInputChange(index, "commodity", e.target.value)}
+                    type={"text"}
+                    placeholder={"Enter Commodity"}
+                    className="input-sm"
+                  />
                 </div>
-                  
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-8 border-b border-gray-800 mb-8">
+                {!(index === 0) && (
                   <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">Commodity</label>
+                    <label className={fieldLabel}>Reference <span className='text-gray-600 normal-case font-normal'>(PO#, Load#)</span></label>
                     <input
-                      required
-                      name="commodity"
-                      value={detail.commodity || ""}
-                      onChange={(e) =>handleShippingInputChange(index, "commodity", e.target.value)}
+                      name="reference"
+                      value={detail.reference || ""}
+                      onChange={(e) =>handleShippingInputChange(index, "reference", e.target.value)}
                       type={"text"}
-                      placeholder={"Enter Commodity"}
+                      placeholder={"PO#, Load#, Customer Pickup#, Container#"}
                       className="input-sm"
                     />
                   </div>
-                  {!(index === 0) && (
-                    <div className="input-item">
-                      <label className="mb-0 block text-sm text-gray-400">Reference (PO#, Load#, etc.)</label>
-                      <input
-                        name="reference"
-                        value={detail.reference || ""}
-                        onChange={(e) =>handleShippingInputChange(index, "reference", e.target.value)}
-                        type={"text"}
-                        placeholder={"PO#, Load#, Customer Pickup#, Container#"}
-                        className="input-sm"
-                      />
-                    </div>
-                  )}
-                  <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">Equipment</label>
-                    <Select
-                      classNamePrefix="react-select input"
-                      placeholder={"Equipment"}
-                      value={detail.equipment}
-                      onChange={(selected) =>handleShippingInputChange(index, "equipment", selected)}
-                      options={equipmentOptions}
-                    />
-                  </div>
-                  
-                  <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">Weight</label>
-                    <input
-                      required name="weight"
-                      value={detail.weight || ""}
-                      onChange={(e) =>
-                        handleShippingInputChange(index, "weight", e.target.value)
-                      }
-                      type={"text"} placeholder={"Enter Weight"}
-                      className="input-sm"
-                    />
-                  </div>
-                  <div className="input-item">
-                    <label className="mb-0 block text-sm text-gray-400">Weight Unit</label>
-                    <Select
-                      classNamePrefix="react-select input"
-                      placeholder={"Weight Unit"}
-                      value={detail.weight_unit ? weightUnits.find(option => option.value === detail.weight_unit) : null}
-                      onChange={(selected) =>
-                        handleShippingInputChange(index, "weight_unit", selected && selected.value)
-                      }
-                      options={weightUnits}
-                    />
-                  </div>
+                )}
+                <div className="input-item">
+                  <label className={fieldLabel}>Equipment</label>
+                  <Select
+                    classNamePrefix="react-select input" {...selectMenuProps}
+                    placeholder={"Equipment"}
+                    value={detail.equipment}
+                    onChange={(selected) =>handleShippingInputChange(index, "equipment", selected)}
+                    options={equipmentOptions}
+                  />
                 </div>
 
+                <div className="input-item">
+                  <label className={fieldLabel}>Weight</label>
+                  <input
+                    required name="weight"
+                    value={detail.weight || ""}
+                    onChange={(e) =>
+                      handleShippingInputChange(index, "weight", e.target.value)
+                    }
+                    type={"text"} placeholder={"Enter Weight"}
+                    className="input-sm"
+                  />
+                </div>
+                <div className="input-item">
+                  <label className={fieldLabel}>Weight Unit</label>
+                  <Select
+                    classNamePrefix="react-select input" {...selectMenuProps}
+                    placeholder={"Weight Unit"}
+                    value={detail.weight_unit ? weightUnits.find(option => option.value === detail.weight_unit) : null}
+                    onChange={(selected) =>
+                      handleShippingInputChange(index, "weight_unit", selected && selected.value)
+                    }
+                    options={weightUnits}
+                  />
+                </div>
+              </div>
+
+              {/* Route stops */}
+              <div className='mt-5'>
                 {detail && detail?.locations && (() => {
                     let pickupCount = 0;
                     let stopCount = 0;
                     return detail?.locations && detail?.locations.map((l, locationIndex)=>{
-                        if(l.type === 'pickup'){
+                        const isPickup = l.type === 'pickup';
+                        if(isPickup){
                           pickupCount = pickupCount+1;
                           const totalPickups = detail.locations.filter(loc => loc.type === 'pickup').length;
-                          return  <div key={`pickup-${locationIndex}`}>
-                <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 mt-6 gap-2 sm:gap-0'>
-                              <h2 className='text-white text-normal heading'>Pickup #{pickupCount}</h2>
+                          return  <div key={`pickup-${locationIndex}`} className='relative rounded-xl border border-emerald-400/15 bg-emerald-500/[0.04] p-4 sm:p-5 mb-4'>
+                            <div className='flex items-center justify-between mb-4'>
+                              <h4 className='flex items-center gap-2 text-emerald-300 text-[12px] font-bold uppercase tracking-[0.13em]'>
+                                <span className='flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500/10 border border-emerald-400/30'><LuMapPin size={14} /></span>
+                                Pickup #{pickupCount}
+                              </h4>
                               {totalPickups > 1 && (
-                                <button 
-                                  className="text-red-500 ms-4 text-sm font-normal hover:text-red-400"
+                                <button
+                                  className="text-[12px] font-semibold text-red-400 hover:text-red-300 transition-colors"
                                   onClick={() => removeLocation(index, locationIndex)}
                                 >
-                                  Remove Pickup
+                                  Remove
                                 </button>
                               )}
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-4">
                               <div className="input-item">
-                                <label className="mb-0 block text-sm text-gray-400">Pickup Location</label>
-                                {/* <input
-                                  required
-                                  onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', e.target.value)}
-                                  type={"text"} 
-                                  placeholder={"Enter Pickup location"} 
-                                  className="input-sm"
-                                /> */}
+                                <label className={fieldLabel}>Pickup Location</label>
                                 <GetLocation id="getpickup" initialValue={l.location || ""} placeholder={"Enter Pickup Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
-
                               </div>
                               <div className="input-item">
-                                <label className="mb-0 block text-sm text-gray-400">
-                                  Pickup Reference No.
-                                </label>
+                                <label className={fieldLabel}>Pickup Reference No.</label>
                                 <input
                                   required
                                   value={l.referenceNo || ""}
@@ -847,20 +886,16 @@ export default function AddOrder({ isEdit = false }){
                                 />
                               </div>
                               <div className="input-item">
-                                <label className="mb-0 block text-sm text-gray-400">
-                                   Appointment Time
-                                </label>
-                              <input
-                                type="time" defaultValue={l.appointment || "no"}
-                                onChange={(e) => handleNestedInputChange(index, 'locations', locationIndex, 'appointment', e.target.value || "no")}
-                                className="input-sm"
-                                placeholder="Select time"
-                              />
+                                <label className={fieldLabel}>Appointment Time</label>
+                                <input
+                                  type="time" defaultValue={l.appointment || "no"}
+                                  onChange={(e) => handleNestedInputChange(index, 'locations', locationIndex, 'appointment', e.target.value || "no")}
+                                  className="input-sm"
+                                  placeholder="Select time"
+                                />
                               </div>
                               <div className="input-item">
-                                <label className="mb-0 block text-sm text-gray-400">
-                                  Pickup Date
-                                </label>
+                                <label className={fieldLabel}>Pickup Date</label>
                                 <input
                                   required onClick={(e) => e.target.showPicker && e.target.showPicker()}
                                   value={l.date || ""}
@@ -876,36 +911,28 @@ export default function AddOrder({ isEdit = false }){
                         } else {
                           stopCount = stopCount+1;
                           const totalDeliveries = detail.locations.filter(loc => loc.type === 'delivery').length;
-                          return <div key={`delivery-${locationIndex}`}>
-                <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 mt-6 gap-2 sm:gap-0'>
-                              <h2 className='text-white text-normal heading'>Delivery #{stopCount}</h2>
+                          return <div key={`delivery-${locationIndex}`} className='relative rounded-xl border border-rose-400/15 bg-rose-500/[0.04] p-4 sm:p-5 mb-4'>
+                            <div className='flex items-center justify-between mb-4'>
+                              <h4 className='flex items-center gap-2 text-rose-300 text-[12px] font-bold uppercase tracking-[0.13em]'>
+                                <span className='flex items-center justify-center w-7 h-7 rounded-full bg-rose-500/10 border border-rose-400/30'><LuPackageCheck size={14} /></span>
+                                Delivery #{stopCount}
+                              </h4>
                               {totalDeliveries > 1 && (
-                                <button 
-                                  className="text-red-500 ms-4 text-sm font-normal hover:text-red-400"
+                                <button
+                                  className="text-[12px] font-semibold text-red-400 hover:text-red-300 transition-colors"
                                   onClick={() => removeLocation(index, locationIndex)}
                                 >
-                                  Remove Delivery
+                                  Remove
                                 </button>
                               )}
                             </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 ">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-4">
                               <div className="input-item">
-                                <label className="mb-0 block text-sm text-gray-400">Delivery Location</label>
-                                {/* 
-                                <input
-                                  required
-                                  onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', e.target.value)}
-                                  type={"text"} 
-                                  placeholder={"Enter Delivery location"} 
-                                  className="input-sm"
-                                /> 
-                                */}
+                                <label className={fieldLabel}>Delivery Location</label>
                                 <GetDeliveryLocation id="getdelivery"  initialValue={l.location || ""} placeholder={"Enter Delivery Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
                               </div>
                               <div className="input-item">
-                                <label className="mb-0 block text-sm text-gray-400">
-                                  Delivery Reference No.
-                                </label>
+                                <label className={fieldLabel}>Delivery Reference No.</label>
                                 <input
                                   required
                                   value={l.referenceNo || ""}
@@ -916,9 +943,7 @@ export default function AddOrder({ isEdit = false }){
                                 />
                               </div>
                               <div className="input-item">
-                                <label className="mb-0 block text-sm text-gray-400">
-                                  Delivery Appointment
-                                </label>
+                                <label className={fieldLabel}>Delivery Appointment</label>
                                 <input
                                   type="time" defaultValue={l.appointment || "no"}
                                   onChange={(e) => handleNestedInputChange(index, 'locations', locationIndex, 'appointment', e.target.value || "no")}
@@ -927,9 +952,7 @@ export default function AddOrder({ isEdit = false }){
                                 />
                               </div>
                               <div className="input-item">
-                                <label className="mb-0 block text-sm text-gray-400">
-                                  Delivery Date
-                                </label>
+                                <label className={fieldLabel}>Delivery Date</label>
                                 <input onClick={(e) => e.target.showPicker && e.target.showPicker()}
                                   required
                                   value={l.date || ""}
@@ -945,37 +968,44 @@ export default function AddOrder({ isEdit = false }){
                       })
                     })()}
 
-                <div className='flex flex-col sm:flex-row gap-2 sm:gap-0'>
-                  <button onClick={()=>addStop(index, 'pickup')} className='text-main  mt-4 me-8  ' >+ Add Pickup Stop</button>
-                  <button onClick={()=>addStop(index, 'delivery')} className='text-main  mt-4  ' >+ Add Delivery Stop</button>
+                <div className='flex flex-wrap gap-3 mt-1'>
+                  <button onClick={()=>addStop(index, 'pickup')} className='flex items-center gap-1.5 text-[13px] font-semibold text-emerald-400 hover:text-emerald-300 border border-emerald-400/20 hover:border-emerald-400/40 rounded-lg px-3 py-2 transition-colors'><LuPlus size={15} /> Add Pickup Stop</button>
+                  <button onClick={()=>addStop(index, 'delivery')} className='flex items-center gap-1.5 text-[13px] font-semibold text-rose-400 hover:text-rose-300 border border-rose-400/20 hover:border-rose-400/40 rounded-lg px-3 py-2 transition-colors'><LuPlus size={15} /> Add Delivery Stop</button>
                 </div>
-                <div className='border-t border-gray-700 my-8'></div>
-
               </div>
-              </>
-            ))}
-          </div>
+            </SectionCard>
+          ))}
 
-          <div className='customer'>
-            <div className="flex flex-col sm:flex-row justify-between mt-12 mb-4 items-start sm:items-center gap-4 sm:gap-0">
-              <p className="text-gray-400 heading xl text-lg sm:text-xl">Customer Revenue Items</p>
-              <div className='flex items-center'>
-                <span className='currency-drop bg-gray-800 text-white px-3 py-[6px] rounded-[10px] text-sm uppercase'>
-                  {revCurrency || 'cad'}
-                </span>
+          {/* ── Customer revenue ──────────────────────────────── */}
+          <SectionCard
+            title='Customer Revenue Items'
+            subtitle='Line items billed to the customer'
+            icon={<TbReceipt2 size={18} />}
+            accent='#a091ff'
+            right={
+              <div className='flex items-center gap-2'>
+                <span className='text-[11px] uppercase tracking-wider text-gray-500 font-semibold'>Order Currency</span>
+                <select
+                  value={(revCurrency || 'usd').toUpperCase()}
+                  onChange={(e) => handleRevCurrencyChange(e.target.value)}
+                  className='bg-[#0c1b26] text-white px-3 py-[7px] rounded-lg text-sm border border-white/10 focus:outline-none focus:ring-1 focus:ring-[#a091ff] uppercase'
+                >
+                  <option value="USD">USD</option>
+                  <option value="CAD">CAD</option>
+                  <option value="INR">INR</option>
+                </select>
               </div>
-            </div>
-
-
-            <div className="borders rounded-[20px] sbg-dark sborder-gray-900 p-6s">
+            }
+          >
+            <div className='flex flex-col gap-3'>
               {revenueItems.map((item, index) => {
                 const total  = item.rate * item.quantity;
-                return <div key={index} className="rev-items flex justify-between items-center mb-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 w-full gap-3">
+                return <div key={index} className="rev-items rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 w-full gap-x-4 gap-y-3 items-start">
                     <div className="input-item">
-                      <label className="block text-sm text-gray-400">Revenue Item</label>
+                      <label className={fieldLabel}>Revenue Item</label>
                       <Select
-                        classNamePrefix="react-select input"
+                        classNamePrefix="react-select input" {...selectMenuProps}
                         placeholder="Revenue Items"
                         onChange={(option) =>
                           handleCustomerRevInputChange(index, "revenue_item", option.value)
@@ -986,7 +1016,7 @@ export default function AddOrder({ isEdit = false }){
                     </div>
 
                     <div className="input-item">
-                      <label className="block text-sm text-gray-400">Note/Comment</label>
+                      <label className={fieldLabel}>Note/Comment</label>
                       <div className='relative'>
                           <input
                             required
@@ -1003,10 +1033,10 @@ export default function AddOrder({ isEdit = false }){
                     </div>
 
                     <div className="input-item">
-                      <label className="block text-sm text-gray-400">Rate</label>
+                      <label className={fieldLabel}>Rate</label>
                       <div className='relative'>
-                        <div className='absolute text-white top-[26px] left-4'>
-                            <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'cad'} />
+                        <div className='absolute text-gray-400 top-[26px] left-4 z-[1]'>
+                            <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'usd'} />
                         </div>
                           <input
                             required
@@ -1021,7 +1051,7 @@ export default function AddOrder({ isEdit = false }){
                     </div>
 
                     <div className="input-item">
-                      <label className="block text-sm text-gray-400">Quantity</label>
+                      <label className={fieldLabel}>Quantity</label>
                       <div className='relative'>
                           <input
                             required
@@ -1038,12 +1068,11 @@ export default function AddOrder({ isEdit = false }){
                     </div>
 
                     <div className="input-item relative">
-                      <label className="block text-sm text-gray-400 mb-2">Total</label>
-                      <div className='border border-gray-500 p-3 sm:p-4 rounded-xl relative'>
-                        <p className='text-white'> <Currency amount={total} currency={revCurrency || 'cad'} />
-                        </p>
+                      <label className={fieldLabel}>Total</label>
+                      <div className='border border-white/10 bg-[#0c1b26] mt-2.5 p-3 sm:p-4 rounded-[15px] relative flex items-center justify-between'>
+                        <p className='text-white font-semibold font-mona'> <Currency amount={total} currency={revCurrency || 'usd'} /></p>
                         { index > 0 ?
-                        <button className="text-red-700  absolute top-[7px] right-4 text-3xl"
+                        <button className="text-red-500 hover:text-red-400 text-2xl leading-none ms-2"
                         onClick={()=>removeCustomeRevenueLine(index)} >&times;
                         </button> : '' }
                       </div>
@@ -1051,28 +1080,26 @@ export default function AddOrder({ isEdit = false }){
                   </div>
                 </div>
               })}
-              <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0'>
-                  <button className="text-main ms-0 sm:ms-3 text-black font-bold" onClick={addCustomerRevItems}> + Add New Line </button>
-                  <h2 className='text-white'>Customer Total : <Currency amount={revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></h2>
+              <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-1'>
+                  <button className="flex items-center gap-1.5 text-[13px] font-semibold text-main border border-[#a091ff]/25 hover:border-[#a091ff]/50 rounded-lg px-3 py-2 transition-colors" onClick={addCustomerRevItems}><LuPlus size={15} /> Add New Line</button>
+                  <h2 className='text-[15px] text-gray-300'>Customer Total : <strong className='text-white font-mona'><Currency amount={customerTotal} currency={revCurrency || 'usd'} /></strong></h2>
               </div>
             </div>
-          </div>
+          </SectionCard>
 
 
           {/* CARRIER FINANCIALS - ONLY for Outsourcing */}
-          {(data.order_type || 'outsourcing') === 'outsourcing' && (
-          <>
-          <h2 className='heading text-lg sm:text-xl text-gray-400 pt-12 border-t border-gray-800 mt-12 mb-6'>Carrier Financials</h2>
-          <div className='customer'>
-            <div className="borders rounded-[20px] sbg-dark sborder-gray-900 p-6s">
+          {isOutsourcingUI && (
+          <SectionCard title='Carrier Financials' subtitle='Line items paid to the carrier' icon={<TbReceipt2 size={18} />} accent='#fbbf24'>
+            <div className='flex flex-col gap-3'>
               {carrierRevenueItems.map((item, index) => {
                 const total  = item.rate * item.quantity;
-                return <div key={index} className="rev-items flex justify-between items-center mb-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 w-full gap-3">
+                return <div key={index} className="rev-items rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 w-full gap-x-4 gap-y-3 items-start">
                     <div className="input-item">
-                      <label className="block text-sm text-gray-400">Revenue Item</label>
+                      <label className={fieldLabel}>Revenue Item</label>
                       <Select
-                        classNamePrefix="react-select input"
+                        classNamePrefix="react-select input" {...selectMenuProps}
                         placeholder="Revenue Items"
                         onChange={(option) =>
                           handleCarrierRevInputChange(index, "revenue_item", option.value)
@@ -1083,7 +1110,7 @@ export default function AddOrder({ isEdit = false }){
                     </div>
 
                     <div className="input-item">
-                      <label className="block text-sm text-gray-400">Note/Comment</label>
+                      <label className={fieldLabel}>Note/Comment</label>
                       <div className='relative'>
                           <input
                             required
@@ -1100,10 +1127,10 @@ export default function AddOrder({ isEdit = false }){
                     </div>
 
                     <div className="input-item">
-                      <label className="block text-sm text-gray-400">Rate</label>
+                      <label className={fieldLabel}>Rate</label>
                       <div className='relative'>
-                        <div className='absolute text-white top-[26px] left-4'>
-                            <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'cad'} />
+                        <div className='absolute text-gray-400 top-[26px] left-4 z-[1]'>
+                            <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'usd'} />
                         </div>
                           <input
                             required
@@ -1118,7 +1145,7 @@ export default function AddOrder({ isEdit = false }){
                     </div>
 
                     <div className="input-item">
-                      <label className="block text-sm text-gray-400">Quantity</label>
+                      <label className={fieldLabel}>Quantity</label>
                       <div className='relative'>
                           <input
                             required
@@ -1135,12 +1162,11 @@ export default function AddOrder({ isEdit = false }){
                     </div>
 
                     <div className="input-item relative">
-                      <label className="block text-sm text-gray-400 mb-2">Total</label>
-                      <div className='border border-gray-500 p-3 sm:p-4 rounded-xl relative'>
-                        <p className='text-white'> <Currency amount={total} currency={revCurrency || 'cad'} />
-                        </p>
+                      <label className={fieldLabel}>Total</label>
+                      <div className='border border-white/10 bg-[#0c1b26] mt-2.5 p-3 sm:p-4 rounded-[15px] relative flex items-center justify-between'>
+                        <p className='text-white font-semibold font-mona'> <Currency amount={total} currency={revCurrency || 'usd'} /></p>
                         { index > 0 ?
-                        <button className="text-red-700  absolute top-[7px] right-4 text-3xl"
+                        <button className="text-red-500 hover:text-red-400 text-2xl leading-none ms-2"
                         onClick={()=>removeCarrierRevenueLine(index)} >&times;
                         </button> : ""
                         }
@@ -1149,51 +1175,48 @@ export default function AddOrder({ isEdit = false }){
                   </div>
                 </div>
               })}
-              <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0'>
-                  <button className="text-main ms-0 sm:ms-3 text-black font-bold" onClick={addCarrierRevItems}> + Add New Line </button>
-                  <h2 className='text-white'>Carrier Total : <Currency amount={carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></h2>
+              <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-1'>
+                  <button className="flex items-center gap-1.5 text-[13px] font-semibold text-amber-300 border border-amber-400/25 hover:border-amber-400/50 rounded-lg px-3 py-2 transition-colors" onClick={addCarrierRevItems}><LuPlus size={15} /> Add New Line</button>
+                  <h2 className='text-[15px] text-gray-300'>Carrier Total : <strong className='text-white font-mona'><Currency amount={carrierTotal} currency={revCurrency || 'usd'} /></strong></h2>
               </div>
             </div>
-          </div>
-          </>
+          </SectionCard>
           )}
 
           {/* CARRIER SELECTION - ONLY for Outsourcing */}
-          {(data.order_type || 'outsourcing') === 'outsourcing' && (
-            <div className='mt-12 pt-12 border-t border-gray-800'>
-              <h2 className='heading text-lg sm:text-xl text-gray-400 mb-6'>Carrier Assignment</h2>
+          {isOutsourcingUI && (
+            <SectionCard title='Carrier Assignment' subtitle='Carrier handling this load' icon={<TbBuildingWarehouse size={18} />} accent='#fbbf24'>
               <div className='input-item md:max-w-md'>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Assign Carrier</label>
-                <Select 
-                  classNamePrefix="react-select input"  
+                <label className={fieldLabel}>Assign Carrier</label>
+                <Select
+                  classNamePrefix="react-select input" {...selectMenuProps}
                   placeholder={'Search and choose carrier...'}
                   isSearchable={true}
                   value={data.carrier ? carriersListing.find(carrier => carrier.value === data.carrier) : null}
                   onChange={chooseCarrier}
-                  options={carriersListing} 
+                  options={carriersListing}
                 />
               </div>
-            </div>
+            </SectionCard>
           )}
 
           {/* FLEET ASSIGNMENTS - ONLY for Regular */}
-          {(data.order_type || 'outsourcing') === 'regular' && (
-            <div className="mt-12 pt-12 border-t border-gray-800">
-              <h2 className='heading text-lg sm:text-xl text-gray-400 mb-6'>Fleet Assignments (Regular)</h2>
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
+          {isRegularUI && (
+            <SectionCard title='Fleet Assignments' subtitle='Truck, trailer and driver for this trip' icon={<FaTruckMoving size={16} />} accent='#fb7185'>
+              <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-4'>
                 <div className='input-item'>
-                  <label className="mt-2 mb-0 block text-sm text-gray-400">Truck</label>
-                  <Select classNamePrefix="react-select input" placeholder="Search and choose Truck" isSearchable={true} isClearable={true} options={trucks} value={trucks.find(t => t.value === data.truck) || null} onChange={chooseTruck} />
+                  <label className={fieldLabel}>Truck</label>
+                  <Select classNamePrefix="react-select input" {...selectMenuProps} placeholder="Search and choose Truck" isSearchable={true} isClearable={true} options={trucks} value={trucks.find(t => t.value === data.truck) || null} onChange={chooseTruck} />
                 </div>
                 <div className='input-item'>
-                  <label className="mt-2 mb-0 block text-sm text-gray-400">Trailer</label>
-                  <Select classNamePrefix="react-select input" placeholder="Search and choose Trailer" isSearchable={true} isClearable={true} options={trailers} value={trailers.find(t => t.value === data.trailer) || null} onChange={chooseTrailer} />
+                  <label className={fieldLabel}>Trailer</label>
+                  <Select classNamePrefix="react-select input" {...selectMenuProps} placeholder="Search and choose Trailer" isSearchable={true} isClearable={true} options={trailers} value={trailers.find(t => t.value === data.trailer) || null} onChange={chooseTrailer} />
                 </div>
                 <div className='input-item'>
-                  <label className="mt-2 mb-0 block text-sm text-gray-400">Driver(s)</label>
+                  <label className={fieldLabel}>Driver(s)</label>
                   <Select
                     isMulti
-                    classNamePrefix="react-select input"
+                    classNamePrefix="react-select input" {...selectMenuProps}
                     placeholder="Search and choose Driver(s)"
                     isSearchable={true}
                     isClearable={true}
@@ -1202,17 +1225,15 @@ export default function AddOrder({ isEdit = false }){
                     onChange={chooseDriver}
                   />
                 </div>
-               
-                
               </div>
               {!!selectedTruckMeta?.ownerOperated && (
-                <div className='mt-4 border border-orange-500/20 bg-orange-500/5 rounded-xl p-4'>
-                  <p className='text-orange-300 text-sm font-semibold'>
-                    Owner Operated Truck: {selectedTruckMeta?.ownerOperator?.fullName || selectedTruckMeta?.ownerOperator?.name || 'Assigned Owner Operator'}
+                <div className='mt-5 border border-orange-500/20 bg-orange-500/[0.06] rounded-xl p-4 sm:p-5'>
+                  <p className='flex items-center gap-2 text-orange-300 text-sm font-semibold'>
+                    <TbTruck size={16} /> Owner Operated Truck: {selectedTruckMeta?.ownerOperator?.fullName || selectedTruckMeta?.ownerOperator?.name || 'Assigned Owner Operator'}
                   </p>
-                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3'>
+                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4 mt-4'>
                     <div className='input-item'>
-                      <label className="mt-2 mb-0 block text-sm text-gray-400">Settle Amount</label>
+                      <label className={fieldLabel}>Settle Amount</label>
                       <input
                         className='input-sm'
                         type='number'
@@ -1224,101 +1245,75 @@ export default function AddOrder({ isEdit = false }){
                       />
                     </div>
                     <div className='input-item'>
-                      <label className="mt-2 mb-0 block text-sm text-gray-400">Driver Assignment</label>
+                      <label className={fieldLabel}>Driver Assignment</label>
                       <div className='input-sm flex items-center text-white'>
                         {hasCompanyDriverSelected ? 'Company Driver Assigned' : 'Owner Operator Driver (No company driver selected)'}
                       </div>
                     </div>
                   </div>
-                  <p className='text-xs text-gray-400 mt-2'>
-                    Owner Profit = Customer Total - Settle Amount
+                  <p className='text-xs text-gray-400 mt-3'>
+                    Owner Profit = Customer Total − Settle Amount
                   </p>
                 </div>
               )}
-            </div>
+            </SectionCard>
           )}
 
-          <div className='mt-6'>
+          {/* ── Summary + submit ──────────────────────────────── */}
+          <div className='rounded-2xl border border-[#a091ff]/20 bg-gradient-to-r from-[#a091ff]/[0.09] via-[#a091ff]/[0.03] to-transparent p-5 sm:p-6'>
+            <div className='flex flex-wrap items-end justify-between gap-x-10 gap-y-5'>
+              <div className='flex flex-col gap-1.5'>
+                <span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400'>Customer Total</span>
+                <span className='text-2xl font-bold text-white font-mona leading-none'><Currency amount={customerTotal} currency={revCurrency || 'usd'} /></span>
+              </div>
 
-            <div className='w-full subtotals flex justify-ends my-6 md:my-0'>
-              <ul className='flex flex-col sm:flex-row justify-between w-full bg-dark2 p-3 sm:p-4 border border-gray-700 rounded-xl gap-4 sm:gap-8 '>
-                <li className=' '>
-                  <p className='text-gray-400 me-4'>Customer Total : </p> 
-                  <strong className='text-white'> <Currency amount={revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong>
-                </li>
-                <li className=' '>
-                  <p className='text-gray-400 me-4'>Total Distance : </p>
-                <strong className='text-white'> <DistanceInMiles d={distance} />
-                  {distance > 1 ? <button
-                  className="text-main ms-2"
-                  onClick={getDistance}>Re-calculate
-                </button> : 
+              <div className='flex flex-col gap-1.5'>
+                <span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400'>Total Distance</span>
+                <span className='text-[15px] text-gray-100 flex items-center gap-2 flex-wrap'>
+                  <DistanceInMiles d={distance} />
                   <button
-                  className="text-main ms-2"
-                  onClick={getDistance}> Calculate Distance
-                </button>
-                }
-                </strong></li>
-                {(data.order_type || 'outsourcing') === 'outsourcing' && (
-                  <li className=''><p className='text-gray-400 me-4'>Carrier Total : </p> <strong className='text-white'>  <Currency amount={ carrierRevenueItems.reduce((a, b) => a + b.rate * b.quantity, 0)} currency={revCurrency || 'cad'} /></strong></li>
-                )}
-              {(data.order_type || 'outsourcing') === 'regular' && !!selectedTruckMeta?.ownerOperated && (
-                <li className='flex flex-col gap-2'>
-                  <div className='flex items-center justify-start sm:justify-end'>
-                    <p className='text-gray-400 me-4'>Settlement Amount : </p>
-                    <strong className='text-white'>
-                      <Currency amount={Number(data.settle_amount || 0)} currency={revCurrency || 'cad'} />
-                    </strong>
-                  </div>
-                  <div className='flex items-center justify-start sm:justify-end'>
-                    <p className='text-gray-400 me-4'>Owner Profit : </p>
-                    <strong className='text-white'>
-                      <Currency
-                        amount={(revenueItems.reduce((a, b) => a + b.rate * b.quantity, 0) - Number(data.settle_amount || 0))}
-                        currency={revCurrency || 'cad'}
-                      />
-                    </strong>
-                  </div>
-                </li>
-              )}
-              </ul>
-            </div>
+                    className="flex items-center gap-1 text-[12px] font-semibold text-main hover:underline"
+                    onClick={getDistance}>
+                    <LuCalculator size={13} /> {distance > 1 ? 'Re-calculate' : 'Calculate'}
+                  </button>
+                </span>
+              </div>
 
-            <div className='flex justify-center'>
-              <button 
-                onClick={addOrder}  
-                className={`btn md ${
-                  (data.order_type || 'outsourcing') === 'outsourcing' 
-                    ? (!data.carrier ? "disabled" : '')
-                    : ''
-                } px-8 mt-6 py-4 text-lg main-btn text-black font-bold w-full rounded-xl`}
-              > {loading ? (isEditMode ? "Updating..." : "Adding...") : (isEditMode ? "Update Order" : "Submit Order")}
-              </button>
-            </div>
-          </div>
-          {/* <div className='flex justify-end items-center mt-6'>
-            {distance ?
-            <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? "Adding..." : "Submit Order"}</button>
-            :
-          <Popup  size="md:max-w-xl" space='p-8' bg="bg-black" btnclasses={`btn md    px-[50px] text-sm ms-3 main-btn text-black font-bold`} 
-            btntext={<>Add Order</>} >
-                <h2 className='text-white font-bold text-center text-lg '>Add Order Without Total Distance.</h2>
-                <p className='text-white text-center my-4 text-lg'>
-                  You can add order without calculating total distance, but it is recommended to calculate distance before adding order.
-                </p>
-
-                { distance ?
-                <p className='text-white text-center my-4 text-lg'>Total Distance : <span className='text-gray-400'> <DistanceInMiles d={distance} /> </span></p>
-                : ''}
-                <div className='flex justify-center gap-3 items-center mt-6 '>
-                    <button onClick={getDistance} className={`btn bg-gray-700  md px-[50px] text-white font-bold`}>Calculate Distance</button>
-                    <button onClick={addOrder}  className={`btn md   ${data.carrier === '' ? "disabled" : ''} px-[50px] text-sm ms-3 main-btn text-black font-bold`}>{loading ? "Adding..." : "Submit Order"}</button>
+              {isOutsourcingUI && (
+                <div className='flex flex-col gap-1.5'>
+                  <span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400'>Carrier Total</span>
+                  <span className='text-xl font-bold text-gray-200 font-mona leading-none'><Currency amount={carrierTotal} currency={revCurrency || 'usd'} /></span>
                 </div>
-            </Popup>
-             
-            }
-            </div> */}
+              )}
 
+              {isRegularUI && !!selectedTruckMeta?.ownerOperated && (
+                <>
+                  <div className='flex flex-col gap-1.5'>
+                    <span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400'>Settlement Amount</span>
+                    <span className='text-xl font-bold text-gray-200 font-mona leading-none'><Currency amount={Number(data.settle_amount || 0)} currency={revCurrency || 'usd'} /></span>
+                  </div>
+                  <div className='flex flex-col gap-1.5'>
+                    <span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400'>Owner Profit</span>
+                    <span className='text-xl font-bold text-emerald-300 font-mona leading-none'>
+                      <Currency amount={(customerTotal - Number(data.settle_amount || 0))} currency={revCurrency || 'usd'} />
+                    </span>
+                  </div>
+                </>
+              )}
+            </div>
+
+            <button
+              onClick={addOrder}
+              disabled={loading}
+              className={`mt-6 w-full rounded-xl py-4 text-[15px] font-bold text-black bg-main hover:opacity-90 transition-opacity shadow-lg shadow-[#a091ff]/20 ${
+                (isOutsourcingUI && !data.carrier) ? 'opacity-50 pointer-events-none' : ''
+              }`}
+            >
+              {loading ? (isEditMode ? "Updating Order…" : "Adding Order…") : (isEditMode ? "Update Order" : "Submit Order")}
+            </button>
+          </div>
+
+        </div>
       </div>
     </AuthLayout>
   )

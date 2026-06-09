@@ -4,7 +4,6 @@ import AuthLayout from '../../../layout/AuthLayout';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import Loading from '../../common/Loading';
-import Logotext from '../../common/Logotext';
 
 export default function OwnerOperatorStatement() {
   const { id } = useParams();
@@ -28,7 +27,7 @@ export default function OwnerOperatorStatement() {
   const displayCurrency = useMemo(() => {
     const companyCurrency = String(company?.currency || '').trim().toUpperCase();
     const slipCurrency = String(slip?.currency || '').trim().toUpperCase();
-    return slipCurrency && slipCurrency !== 'CAD' ? slipCurrency : (companyCurrency || 'CAD');
+    return slipCurrency || companyCurrency || 'USD';
   }, [company, slip]);
 
   const formatCurrency = (amount) => `${displayCurrency} ${Number(amount || 0).toFixed(2)}`;
@@ -108,7 +107,7 @@ export default function OwnerOperatorStatement() {
         ownerOperatorId: String(ownerId),
         month: String(slipMonth),
         year: String(slipYear),
-        payoutCurrency: String(displayCurrency || 'CAD'),
+        payoutCurrency: String(displayCurrency || 'USD'),
         includePreviousDue: includePrevDueForStatement ? 'true' : 'false',
       });
       const [breakdownRes, recordsRes] = await Promise.all([
@@ -155,6 +154,7 @@ export default function OwnerOperatorStatement() {
 
   const statementSource = payload || slip;
   const ownerName = statementSource?.ownerOperator?.fullName || slip?.ownerOperator?.fullName || 'Owner Operator';
+  const ownerCompany = statementSource?.ownerOperator?.companyName || slip?.ownerOperator?.companyName || '';
   const ownerCode = statementSource?.ownerOperator?.ownerOperatorId || slip?.ownerOperator?.ownerOperatorId || '-';
   const ownerAddress = statementSource?.ownerOperator?.address || '';
   const ownerEmail = statementSource?.ownerOperator?.email || '';
@@ -164,13 +164,13 @@ export default function OwnerOperatorStatement() {
   const orders = Array.isArray(statementSource?.orderBreakdown) ? statementSource.orderBreakdown : [];
   const tableRows = orders.map((order) => {
     const route = extractRoute(order?.shipping_details, order?.orderCreatedAt || null);
-    const truckNo = order?.truck?.unitNumber || order?.truck?.plateNumber || '';
     const settleAmount = Number(order?.settleAmount || 0);
     const driverDeduction = Number(order?.driverDeduction || 0);
     return {
       trip: order?.serial_no ?? '',
       inv: order?.customer_order_no ?? '',
-      truck: truckNo || '',
+      truckUnit: order?.truck?.unitNumber || '',
+      truckPlate: order?.truck?.plateNumber || '',
       picked: shortDate(route.pickedDate || '') || '',
       from: route.fromCity || '',
       drop: shortDate(route.dropDate || '') || '',
@@ -178,6 +178,7 @@ export default function OwnerOperatorStatement() {
       miles: Number(order?.driverMiles || 0),
       settle: settleAmount,
       driverDed: driverDeduction,
+      driverNames: Array.isArray(order?.driverNames) ? order.driverNames : [],
       final: settleAmount - driverDeduction,
     };
   });
@@ -193,15 +194,9 @@ export default function OwnerOperatorStatement() {
   const totalDriverDeduction = Number(statementSource?.totalDriverDeduction || totals.driverDed);
   const manualAddition = Number(statementSource?.manualAddition || 0);
   const manualDeduction = Number(statementSource?.manualDeduction || 0);
-  const manualAdjustmentSummary =
-    manualAddition - manualDeduction;
+  const manualAdjustmentSummary = manualAddition - manualDeduction;
   const grossPay = Number(totals.settle || 0);
   const finalPayable = grossPay - totalDriverDeduction + previousDueAdded + manualAdjustmentSummary;
-  const totalAdjustments = previousDueAdded + manualAdjustmentSummary;
-
-  const adjustments = (records || [])
-    .filter((r) => r?.type === 'ADJUSTMENT')
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
   const paymentRows = (records || [])
     .filter((r) => r?.type === 'SALARY_PAYMENT')
@@ -263,7 +258,7 @@ export default function OwnerOperatorStatement() {
       setPdfProgress('Downloading PDF...');
       const includePrevDueForStatement = Number(slip?.previousDueAdded || 0) > 0;
       const qs = new URLSearchParams({
-        payoutCurrency: String(displayCurrency || 'CAD'),
+        payoutCurrency: String(displayCurrency || 'USD'),
         includePreviousDue: includePrevDueForStatement ? 'true' : 'false',
       });
       const res = await Api.get(`/owner-operators/salary/pdf/${id}?${qs.toString()}`, { responseType: 'blob' });
@@ -301,6 +296,16 @@ export default function OwnerOperatorStatement() {
     }
   };
 
+  const statementNo = slip?._id ? `OOS-${String(slip._id).slice(-8).toUpperCase()}` : '—';
+  const payStatus = String(statementSource?.paymentStatus || 'pending');
+  const statusStyle = payStatus === 'paid'
+    ? { bg: '#d1fae5', text: '#065f46', label: 'PAID' }
+    : payStatus === 'partial'
+      ? { bg: '#fef3c7', text: '#92400e', label: 'PARTIAL' }
+      : { bg: '#fee2e2', text: '#991b1b', label: 'PENDING' };
+  const balanceDue = Number(statementSource?.dueAmount ?? Math.max(finalPayable - Number(statementSource?.paidAmount || 0), 0));
+  const paidAmount = Number(statementSource?.paidAmount || 0);
+
   if (loading && !slip) {
     return (
       <AuthLayout>
@@ -326,415 +331,312 @@ export default function OwnerOperatorStatement() {
 
   return (
     <AuthLayout>
-      <div className="p-4 md:p-6 bg-white rounded-xl p-6">
-        
+      <style>{`
+        .inv-page { font-family: Arial, "Helvetica Neue", Helvetica, sans-serif; color: #0f172a; background: #fff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .inv-page * { box-sizing: border-box; }
+        .inv-tbl { width: 100%; border-collapse: collapse; }
+        .inv-tbl th { background: #1e3a5f !important; color: #fff !important; font-size: 10px; font-weight: 700; padding: 8px 9px; border: 1px solid #1e3a5f; text-align: left; white-space: nowrap; }
+        .inv-tbl td { font-size: 10px; padding: 7px 9px; border: 1px solid #e2e8f0; vertical-align: top; color: #0f172a; }
+        .inv-tbl tbody tr:nth-child(even) td { background: #f8fafc; }
+        .inv-tbl tfoot td { background: #eef2ff !important; font-weight: 700; border-top: 2px solid #1e3a5f; color: #1e3a5f; }
+        .inv-tbl .num { text-align: right; white-space: nowrap; font-family: "Courier New", monospace; }
+        .inv-rec-tbl { width: 100%; border-collapse: collapse; }
+        .inv-rec-tbl th { background: #374151 !important; color: #fff !important; font-size: 10px; font-weight: 700; padding: 7px 9px; border: 1px solid #374151; text-align: left; }
+        .inv-rec-tbl td { font-size: 10px; padding: 7px 9px; border: 1px solid #e2e8f0; vertical-align: top; color: #0f172a; }
+        .inv-rec-tbl tbody tr:nth-child(even) td { background: #f9fafb; }
+        .inv-rec-tbl .num { text-align: right; white-space: nowrap; font-family: "Courier New", monospace; }
+        .inv-mono { font-family: "Courier New", Courier, monospace; font-variant-numeric: tabular-nums; }
+        .inv-section { page-break-inside: avoid; break-inside: avoid; }
+      `}</style>
 
-        <style>
-          {`
-            .pdf-page {
-              background: #fff;
-              color: #0f172a;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
-              font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-              box-sizing: border-box;
-            }
-            .pdf-page * {
-              box-sizing: border-box;
-            }
-            .pdf-title {
-              font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-              font-size: 26px;
-              font-weight: 700;
-              margin: 0;
-            }
-            .pdf-subtitle {
-              font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-              font-size: 13px;
-              margin: 0;
-              color: #111827;
-            }
-            .pdf-mono {
-              font-family: "Courier New", Courier, monospace;
-              font-variant-numeric: tabular-nums;
-            }
-            .pdf-table {
-              width: 100%;
-              border-collapse: collapse;
-              color: #000 !important;
-              font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-            }
-            .pdf-table thead { display: table-header-group; }
-            .pdf-table tbody tr {
-              background-color: #ffffff !important;
-              color: #000 !important;
-            }
-            .pdf-table tbody tr:nth-child(even) {
-              background-color: #f8fafc !important;
-            }
-            .pdf-table th {
-              background-color: #e0ffff !important;
-              color: #000 !important;
-              font-size: 10px;
-              font-weight: 700;
-              text-align: left;
-              padding: 7px 8px;
-              border: 1px solid #e2e8f0 !important;
-              white-space: nowrap;
-            }
-            .pdf-table td {
-              font-size: 10px;
-              padding: 7px 8px;
-              border: 1px solid #e2e8f0 !important;
-              vertical-align: top;
-              color: #000 !important;
-              font-weight: 700;
-            }
-            .pdf-table tfoot tr {
-              background-color: #ffffff !important;
-              color: #0f172a !important;
-            }
-            .pdf-right {
-              text-align: right;
-              white-space: nowrap;
-            }
-            .pdf-h2 {
-              font-family: Arial, "Helvetica Neue", Helvetica, sans-serif;
-              font-size: 16px;
-              font-weight: 700;
-              margin: 0 0 10px 0;
-              color: #0f172a;
-            }
-            .pdf-section {
-              page-break-inside: avoid;
-              break-inside: avoid;
-              page-break-before: auto;
-              break-before: auto;
-            }
-            .pdf-page-break {
-              page-break-before: always;
-              break-before: page;
-            }
-            .pdf-inline-value {
-              display: inline-block;
-              max-width: calc(100% - 88px);
-              vertical-align: top;
-            }
-            .pdf-wrap-anywhere {
-              overflow-wrap: anywhere;
-              word-break: break-word;
-              white-space: normal;
-            }
-          `}
-        </style>
-
-        <div
-          style={{
-            width: '100%',
-            minWidth: '0',
-            maxWidth: '794px',
-            boxSizing: 'border-box',
-          }}
-          className="pb-6 flex flex-wrap justify-between items-center gap-3 mb-4 mx-auto"
-        >
-          <div className="flex flex-col">
-            <Link to="/accounts/owner-operator-salary" className="text-sm font-semibold text-indigo-600">Back</Link>
-            <div className="text-xl font-bold text-slate-900 mt-1">Owner Operator Statement</div>
-            <div className="text-sm text-slate-500">{ownerName} • {monthLabel}</div>
+      <div className="min-h-screen bg-slate-100 py-6 px-4">
+        {/* Toolbar */}
+        <div className="max-w-[900px] mx-auto mb-5 flex flex-wrap justify-between items-center gap-3">
+          <div>
+            <Link to="/accounts/owner-operator-salary" className="text-sm font-semibold text-indigo-600 hover:underline">← Back to Salary List</Link>
+            <div className="text-xs text-slate-400 mt-0.5">{ownerName} &bull; {monthLabel} &bull; {statementNo}</div>
           </div>
           <div className="flex items-center gap-3">
-            {pdfProgress ? <div className="text-xs text-slate-600">{pdfProgress}</div> : null}
+            {pdfProgress ? <span className="text-xs px-3 py-1 rounded-full bg-white border border-slate-200 text-slate-600">{pdfProgress}</span> : null}
             <button
-              className="h-10 px-4 rounded-xl text-[13px] font-semibold bg-indigo-600 text-white disabled:opacity-60"
+              className="h-9 px-5 rounded-lg text-[13px] font-semibold bg-indigo-600 text-white disabled:opacity-60 hover:bg-indigo-700 transition-colors"
               onClick={downloadPDF}
               disabled={downloadingPdf}
             >
-              {downloadingPdf ? 'Downloading...' : 'Export PDF'}
+              {downloadingPdf ? 'Generating PDF…' : '↓ Export PDF'}
             </button>
           </div>
         </div>
-        <div className="flex flex-col items-center pb-12">
-          <div 
-            ref={pdfRef} 
-            id="pdf-root" 
-            className="pdf-page bg-white"
-            style={{
-              width: '100%',
-              minWidth: '0',
-              maxWidth: '794px',
-              boxSizing: 'border-box',
-            }}
-          >
-            <div className="flex justify-between items-start gap-6 pdf-section mb-5 pb-4" style={{ borderBottom: '1px solid #e5e7eb' }}>
-              <div className="min-w-[220px]">
-                <Logotext black />
-                <div className="mt-0">
-                <p className="pdf-subtitle text-lg font-bold">PRO # CMC{tableRows[0]?.trip || '-'}</p>
-                <p className="pdf-subtitle mt-2">Date : <span className="pdf-mono">{fullDate(new Date())}</span></p>
-                <p className="pdf-subtitle">
-                  Pay Period : <span className="pdf-mono">{fullDate(payPeriodFrom)} to {fullDate(payPeriodTo)}</span>
-                </p>
-                <p className="pdf-subtitle">Statement : <span className="pdf-mono">{monthLabel}</span></p>
-              
+
+        {/* Invoice Document */}
+        <div
+          ref={pdfRef}
+          id="pdf-root"
+          className="inv-page max-w-[900px] mx-auto shadow-2xl rounded-lg overflow-hidden"
+        >
+          {/* ── Header Banner ── */}
+          <div style={{ background: 'linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%)', padding: '28px 36px 24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '20px' }}>
+              <div style={{ flex: 1 }}>
+                {company?.logo
+                  ? <img src={company.logo} alt="logo" style={{ maxHeight: '56px', maxWidth: '200px', display: 'block', marginBottom: '14px', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
+                  : (
+                    <div style={{ marginBottom: '14px' }}>
+                      <div style={{ fontSize: '22px', fontWeight: 900, color: '#fff', letterSpacing: '1.5px', lineHeight: 1 }}>{String(company?.name || 'COMPANY').toUpperCase()}</div>
+                      <div style={{ width: '40px', height: '3px', background: '#f59e0b', marginTop: '6px', borderRadius: '2px' }} />
+                    </div>
+                  )
+                }
+                <div style={{ color: '#93c5fd', fontSize: '11px', lineHeight: '1.7' }}>
+                  {company?.address && <div>{company.address}</div>}
+                  {company?.phone && <div>Tel: {company.phone}</div>}
+                  {company?.email && <div>{company.email}</div>}
                 </div>
               </div>
-              <div className="text-right">
-                  <p className="pdf-title pb-1">Payment Statement</p>
-                  <p className="pdf-subtitle font-bold text-lg">{String(company?.name || 'Company')}</p>
-                  {company?.address ? <p className="pdf-subtitle whitespace-pre-line">{String(company.address)}</p> : null}
-                  {company?.email ? <p className="pdf-subtitle">{String(company.email)}</p> : null}
-                  {company?.phone ? <p className="pdf-subtitle">{`PH : ${company.phone}`}</p> : null}
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontSize: '11px', color: '#93c5fd', letterSpacing: '3px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px' }}>Owner Operator</div>
+                <div style={{ fontSize: '20px', fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: '1px', padding: '10px 0' }}>PAYMENT <span style={{ color: '#f59e0b' }}>STATEMENT</span></div>
                 
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-col md:flex-row gap-8 pdf-section">
-              <div className="border border-slate-200 rounded-xl p-5 flex-1 min-w-0">
-                <div className="pdf-h2">Payment Details</div>
-                <div className="mt-2 text-sm text-slate-700 leading-relaxed">
-                  <div><span className="inline-block w-32">Payment # :</span> <span className="pdf-mono text-slate-900">{paymentNo || '-'}</span></div>
-                  <div><span className="inline-block w-32">Cheque # :</span> <span className="pdf-mono text-slate-900">-</span></div>
-                  <div><span className="inline-block w-32">Date :</span> <span className="pdf-mono text-slate-900">{paymentDate ? fullDate(paymentDate) : '-'}</span></div>
-                  <div><span className="inline-block w-32">Employee Code :</span> <span className="pdf-mono text-slate-900">{ownerCode}</span></div>
-                  <div><span className="inline-block w-32">Amount :</span> <span className="pdf-mono text-slate-900">{formatCurrency(finalPayable)}</span></div>
+                <div style={{ background: 'rgba(255,255,255,0.12)', borderRadius: '8px', padding: '10px 14px', textAlign: 'left', minWidth: '220px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                    <span style={{ fontSize: '10px', color: '#93c5fd', fontWeight: 600 }}>STATEMENT #</span>
+                    <span style={{ fontSize: '11px', color: '#fff', fontFamily: 'Courier New, monospace', fontWeight: 700 }}>{statementNo}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                    <span style={{ fontSize: '10px', color: '#93c5fd', fontWeight: 600 }}>DATE</span>
+                    <span style={{ fontSize: '11px', color: '#fff', fontFamily: 'Courier New, monospace' }}>{fullDate(new Date())}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+                    <span style={{ fontSize: '10px', color: '#93c5fd', fontWeight: 600 }}>PERIOD</span>
+                    <span style={{ fontSize: '11px', color: '#fff', fontFamily: 'Courier New, monospace' }}>{monthLabel}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ fontSize: '10px', color: '#93c5fd', fontWeight: 600 }}>STATUS</span>
+                    <span style={{ fontSize: '11px', fontWeight: 800, fontFamily: 'Courier New, monospace', color: payStatus === 'paid' ? '#4ade80' : payStatus === 'partial' ? '#fbbf24' : '#f87171' }}>
+                      {statusStyle.label}
+                    </span>
+                  </div>
                 </div>
               </div>
-              <div className="border border-slate-200 rounded-xl p-5 flex-1 min-w-0">
-                <div className="pdf-h2">Pay To</div>
-                <div className="mt-2 text-sm text-slate-700 leading-relaxed">
-                  <div className="text-slate-900 text-lg mb-1">{ownerName}</div>
-                  {ownerAddress ? <div className="whitespace-pre-line">{ownerAddress}</div> : null}
-                  {ownerEmail ? <div className="mt-2"><span className="inline-block w-20">Email :</span> <span className="pdf-mono text-slate-900 pdf-inline-value pdf-wrap-anywhere">{ownerEmail}</span></div> : null}
-                  {ownerPhone ? <div><span className="inline-block w-20">Phone :</span> <span className="pdf-mono text-slate-900">{ownerPhone}</span></div> : null}
+            </div>
+          </div>
+
+          {/* ── FROM / PAY TO ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: '1px solid #e2e8f0' }}>
+            <div style={{ padding: '20px 28px', borderRight: '1px solid #e2e8f0' }}>
+              <div style={{ fontSize: '9px', fontWeight: 800, color: '#64748b', letterSpacing: '1.5px', marginBottom: '10px', textTransform: 'uppercase' }}>From</div>
+              <div style={{ fontSize: '14px', fontWeight: 800, color: '#0f172a', marginBottom: '4px' }}>{String(company?.name || 'Company')}</div>
+              {company?.address && <div style={{ fontSize: '11px', color: '#475569', marginTop: '2px' }}>{company.address}</div>}
+              {company?.phone && <div style={{ fontSize: '11px', color: '#475569' }}>Tel: {company.phone}</div>}
+              {company?.email && <div style={{ fontSize: '11px', color: '#475569' }}>{company.email}</div>}
+              <div style={{ marginTop: '12px', padding: '8px 12px', background: '#f8fafc', borderRadius: '6px', borderLeft: '3px solid #1e3a5f' }}>
+                <div style={{ fontSize: '10px', color: '#64748b' }}>Pay Period</div>
+                <div style={{ fontSize: '11px', fontWeight: 700, color: '#1e3a5f', fontFamily: 'Courier New, monospace' }}>
+                  {fullDate(payPeriodFrom)} — {fullDate(payPeriodTo)}
                 </div>
               </div>
             </div>
+            <div style={{ padding: '20px 28px', background: '#f0f7ff' }}>
+              <div style={{ fontSize: '9px', fontWeight: 800, color: '#1e3a5f', letterSpacing: '1.5px', marginBottom: '10px', textTransform: 'uppercase' }}>Pay To</div>
+              <div style={{ fontSize: '18px', fontWeight: 900, color: '#0f172a', marginBottom: '2px' }}>{ownerName}</div>
+              {ownerCompany && <div style={{ fontSize: '12px', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>{ownerCompany}</div>}
+              <div style={{ display: 'inline-block', fontSize: '10px', fontWeight: 700, color: '#1e40af', background: '#dbeafe', padding: '2px 8px', borderRadius: '12px', marginBottom: '8px', fontFamily: 'Courier New, monospace' }}>
+                ID: {ownerCode}
+              </div>
+              {ownerAddress && <div style={{ fontSize: '11px', color: '#475569', marginTop: '3px', whiteSpace: 'pre-line' }}>{ownerAddress}</div>}
+              {ownerEmail && <div style={{ fontSize: '11px', color: '#475569', marginTop: '4px' }}>✉ {ownerEmail}</div>}
+              {ownerPhone && <div style={{ fontSize: '11px', color: '#475569' }}>✆ {ownerPhone}</div>}
+            </div>
+          </div>
 
-            <div className="mt-6 pdf-section">
-              <div className="overflow-x-auto">
-                <table className="pdf-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '6%' }}>Trip#</th>
-                      <th style={{ width: '10%' }}>Sett. Inv.#</th>
-                      <th style={{ width: '6%' }}>Truck#</th>
-                      <th style={{ width: '20%' }}>Pickup</th>
-                      <th style={{ width: '20%' }}>Delivery</th>
-                      <th className="pdf-right" style={{ width: '7%' }}>Miles</th>
-                      <th className="pdf-right" style={{ width: '11%' }}>Driver Salary</th>
-                      <th align="right" className="pdf-right text-right" style={{ width: '20%' }}>Settlement / Final</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tableRows.length === 0 ? (
-                      <tr>
-                        <td colSpan={8} className="pdf-right">—</td>
-                      </tr>
-                    ) : (
-                      tableRows.map((r, idx) => (
-                        <tr key={`row-${idx}`}>
-                          <td className="pdf-mono">{r.trip}</td>
-                          <td className="pdf-mono">{r.inv}</td>
-                          <td className="pdf-mono">{r.truck}</td>
-                          <td>
-                            <div className="pdf-mono">{r.picked}</div>
-                            <div>{r.from}</div>
-                          </td>
-                          <td>
-                            <div className="pdf-mono">{r.drop}</div>
-                            <div>{r.to}</div>
-                          </td>
-                          <td className="pdf-right pdf-mono">{Number(r.miles || 0).toFixed(0)}</td>
-                          <td className="pdf-right pdf-mono">-{formatCurrency(r.driverDed)}</td>
-                          <td className="pdf-right">
-                            <div className="pdf-mono">{formatCurrency(r.settle)}</div>
-                            <div className="pdf-mono" style={{ marginTop: '2px', fontWeight: 700 }}>{formatCurrency(r.final)}</div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan={5}><span className="pdf-mono">Total</span></td>
-                      <td className="pdf-right pdf-mono">{Number(totals.miles || 0).toFixed(0)}</td>
-                      <td className="pdf-right pdf-mono">-{formatCurrency(totals.driverDed)}</td>
-                      <td className="pdf-right">
-                        <div className="pdf-mono">{formatCurrency(totals.settle)}</div>
-                        <div className="pdf-mono" style={{ marginTop: '2px', fontWeight: 700 }}>{formatCurrency(totals.final)}</div>
+          {/* ── Order Breakdown Table ── */}
+          <div style={{ padding: '20px 28px 0' }} className="inv-section">
+            <div style={{ fontSize: '10px', fontWeight: 800, color: '#1e3a5f', letterSpacing: '1.5px', marginBottom: '10px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '4px', height: '16px', background: '#1e3a5f', borderRadius: '2px', flexShrink: 0 }} />
+              Order Breakdown &mdash; {monthLabel}
+              <span style={{ fontSize: '10px', fontWeight: 600, color: '#64748b', marginLeft: '4px' }}>({tableRows.length} orders)</span>
+            </div>
+            <div style={{ overflowX: 'auto' }}>
+              <table className="inv-tbl">
+                <thead>
+                  <tr>
+                    <th style={{ width: '6%' }}>Trip #</th>
+                    <th style={{ width: '10%' }}>Invoice #</th>
+                    <th style={{ width: '8%' }}>Truck</th>
+                    <th style={{ width: '20%' }}>Pickup</th>
+                    <th style={{ width: '20%' }}>Delivery</th>
+                    <th className="num" style={{ width: '7%' }}>Miles</th>
+                    <th className="num" style={{ width: '14%' }}>Settlement</th>
+                    <th className="num" style={{ width: '15%' }}>Driver Cost</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {tableRows.length === 0 ? (
+                    <tr><td colSpan={8} style={{ textAlign: 'center', color: '#94a3b8', padding: '20px', fontStyle: 'italic' }}>No orders found for this period</td></tr>
+                  ) : tableRows.map((r, idx) => (
+                    <tr key={`ord-${idx}`}>
+                      <td className="inv-mono" style={{ fontWeight: 700, color: '#1e40af' }}>{r.trip || '—'}</td>
+                      <td className="inv-mono">{r.inv || '—'}</td>
+                      <td>
+                        {r.truckUnit && <div className="inv-mono" style={{ fontWeight: 700 }}>{r.truckUnit}</div>}
+                        {r.truckPlate && <div style={{ fontSize: '9px', color: '#64748b' }}>{r.truckPlate}</div>}
+                        {!r.truckUnit && !r.truckPlate && <span style={{ color: '#94a3b8' }}>—</span>}
+                      </td>
+                      <td>
+                        {r.picked && <div className="inv-mono" style={{ fontSize: '9px', color: '#64748b' }}>{r.picked}</div>}
+                        <div style={{ fontWeight: 600, fontSize: '11px' }}>{r.from || '—'}</div>
+                      </td>
+                      <td>
+                        {r.drop && <div className="inv-mono" style={{ fontSize: '9px', color: '#64748b' }}>{r.drop}</div>}
+                        <div style={{ fontWeight: 600, fontSize: '11px' }}>{r.to || '—'}</div>
+                      </td>
+                      <td className="num inv-mono">{Number(r.miles || 0).toFixed(0)}</td>
+                      <td className="num inv-mono" style={{ color: '#1e40af', fontWeight: 700 }}>{formatCurrency(r.settle)}</td>
+                      <td className="num inv-mono" style={{ fontSize: '12px', color: r.driverDed > 0 ? '#dc2626' : '#94a3b8' }}>
+                        {r.driverDed > 0 ? `-${formatCurrency(r.driverDed)}` : '—'}
+                        {r.driverNames?.length > 0 && (
+                          <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 600, marginTop: '2px' }}>{r.driverNames.join(', ')}</div>
+                        )}
                       </td>
                     </tr>
-                  </tfoot>
-                </table>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colSpan={5} style={{ fontWeight: 800, fontSize: '11px', letterSpacing: '0.5px' }}>TOTAL</td>
+                    <td className="num inv-mono">{Number(totals.miles || 0).toFixed(0)}</td>
+                    <td className="num inv-mono" style={{ color: '#1e40af', fontSize: '12px' }}>{formatCurrency(totals.settle)}</td>
+                    <td className="num inv-mono" style={{ color: totals.driverDed > 0 ? '#dc2626' : '#94a3b8', fontSize: '12px' }}>
+                      {totals.driverDed > 0 ? `-${formatCurrency(totals.driverDed)}` : '—'}
+                    </td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          {/* ── Transaction Records + Earnings Summary ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0', padding: '20px 28px', alignItems: 'start', borderTop: '1px solid #f1f5f9', marginTop: '20px' }}>
+
+            {/* Left: Transaction Records */}
+            <div style={{ paddingRight: '20px' }} className="inv-section">
+              <div style={{ fontSize: '10px', fontWeight: 800, color: '#374151', letterSpacing: '1.5px', marginBottom: '10px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '4px', height: '14px', background: '#374151', borderRadius: '2px', flexShrink: 0 }} />
+                Transaction Records
               </div>
+              <table className="inv-rec-tbl">
+                <thead>
+                  <tr>
+                    <th style={{ width: '25%' }}>Date</th>
+                    <th style={{ width: '28%' }}>Type</th>
+                    <th className="num" style={{ width: '27%' }}>Amount</th>
+                    <th style={{ width: '20%' }}>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recordsForStatement.length === 0 ? (
+                    <tr><td colSpan={4} style={{ textAlign: 'center', color: '#94a3b8', padding: '14px', fontStyle: 'italic' }}>No records</td></tr>
+                  ) : recordsForStatement.map((r) => {
+                    const type = String(r?.type || '').toUpperCase();
+                    const expenseType = String(r?.meta?.expenseType || '').toLowerCase();
+                    const isDeduction = type === 'DRIVER_DEDUCTION' || (type === 'ADJUSTMENT' && expenseType === 'deduction');
+                    const isPayment = type === 'SALARY_PAYMENT';
+                    const label =
+                      type === 'SALARY_PAYMENT' ? 'Payment' :
+                      type === 'DRIVER_DEDUCTION' ? 'Driver Ded.' :
+                      type === 'PREVIOUS_DUE' ? 'Prev. Due' :
+                      type === 'ADJUSTMENT' ? (isDeduction ? 'Deduction' : 'Addition') : type;
+                    const amount = Number(r?.amount || 0);
+                    const signed = isDeduction ? -Math.abs(amount) : (isPayment ? Math.abs(amount) : amount);
+                    const isNeg = signed < 0;
+                    return (
+                      <tr key={String(r?._id)}>
+                        <td className="inv-mono" style={{ fontSize: '9px' }}>{fullDate(r?.createdAt)}</td>
+                        <td style={{ fontSize: '10px' }}>{label}</td>
+                        <td className="num inv-mono" style={{ color: isNeg ? '#dc2626' : '#065f46', fontWeight: 700 }}>
+                          {isNeg ? `-${formatCurrency(Math.abs(signed))}` : `+${formatCurrency(Math.abs(signed))}`}
+                        </td>
+                        <td style={{ fontSize: '9px', color: '#64748b' }}>{String(r?.notes || '').slice(0, 28)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
 
-            <div className="mt-8 pdf-section">
-              <div className="pdf-h2">Records (Deductions / Additions / Payments)</div>
-              <div className="overflow-x-auto">
-                <table className="pdf-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '14%' }}>Date</th>
-                      <th style={{ width: '10%' }}>Month</th>
-                      <th style={{ width: '16%' }}>Type</th>
-                      <th className="pdf-right" style={{ width: '14%' }}>Amount</th>
-                      <th style={{ width: '12%' }}>Status</th>
-                      <th style={{ width: '34%' }}>Notes</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {recordsForStatement.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="pdf-right">—</td>
-                      </tr>
-                    ) : (
-                      recordsForStatement.map((r) => {
-                        const type = String(r?.type || '').toUpperCase();
-                        const expenseType = String(r?.meta?.expenseType || '').toLowerCase();
-                        const isDeduction = type === 'DRIVER_DEDUCTION' || (type === 'ADJUSTMENT' && expenseType === 'deduction');
-                        const isPayment = type === 'SALARY_PAYMENT';
-                        const label =
-                          type === 'SALARY_PAYMENT' ? 'Payment' :
-                          type === 'DRIVER_DEDUCTION' ? 'Driver Deduction' :
-                          type === 'PREVIOUS_DUE' ? 'Previous Due' :
-                          (type === 'ADJUSTMENT' ? (isDeduction ? 'Deduction' : 'Addition') : type);
-                        const status = String(r?.salary?.paymentStatus || r?.paymentStatus || statementSource?.paymentStatus || 'pending');
-                        const amount = Number(r?.amount || 0);
-                        const signed = isDeduction ? -Math.abs(amount) : (isPayment ? Math.abs(amount) : amount);
-                        const prefix = signed < 0 ? '-' : '+';
-                        return (
-                          <tr key={String(r?._id)}>
-                            <td className="pdf-mono">{fullDate(r?.createdAt)}</td>
-                            <td className="pdf-mono">{`${slipMonth} / ${slipYear}`}</td>
-                            <td>{label}</td>
-                            <td className="pdf-right pdf-mono">{`${prefix}${formatCurrency(Math.abs(signed))}`}</td>
-                            <td>{status.charAt(0).toUpperCase() + status.slice(1)}</td>
-                            <td>{String(r?.notes || '')}</td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                </table>
+            {/* Right: Earnings Summary */}
+            <div style={{ paddingLeft: '20px', borderLeft: '1px solid #e2e8f0' }} className="inv-section">
+              <div style={{ fontSize: '10px', fontWeight: 800, color: '#1e3a5f', letterSpacing: '1.5px', marginBottom: '10px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '4px', height: '14px', background: '#1e3a5f', borderRadius: '2px', flexShrink: 0 }} />
+                Earnings Summary
               </div>
-            </div>
 
-             <div className="mt-10 pdf-section">
-              <div className="pdf-h2">Adjustments</div>
-              <div className="overflow-x-auto">
-                <table className="pdf-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: '14%' }}>Date</th>
-                      <th style={{ width: '14%' }}>Type</th>
-                      <th style={{ width: '42%' }}>Notes</th>
-                      <th className="pdf-right" style={{ width: '10%' }}>US$</th>
-                      <th className="pdf-right" style={{ width: '10%' }}>CDN$</th>
-                      <th className="pdf-right" style={{ width: '10%' }}>Charged</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {adjustments.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} className="pdf-right">—</td>
-                      </tr>
-                    ) : (
-                      adjustments.map((r) => {
-                        const isDeduction = String(r?.meta?.expenseType || '').toLowerCase() === 'deduction';
-                        const signed = isDeduction ? -Math.abs(Number(r?.amount || 0)) : Math.abs(Number(r?.amount || 0));
-                        const usd = displayCurrency === 'USD' ? signed : 0;
-                        const cad = displayCurrency === 'CAD' ? signed : 0;
-                        return (
-                          <tr key={String(r?._id)}>
-                            <td className="pdf-mono">{fullDate(r?.createdAt)}</td>
-                            <td>{isDeduction ? 'Deduction' : 'Addition'}</td>
-                            <td>{String(r?.notes || '')}</td>
-                            <td className="pdf-right pdf-mono">{`USD ${Number(usd || 0).toFixed(2)}`}</td>
-                            <td className="pdf-right pdf-mono">{`CAD ${Number(cad || 0).toFixed(2)}`}</td>
-                            <td className="pdf-right pdf-mono">{formatCurrency(signed)}</td>
-                          </tr>
-                        );
-                      })
-                    )}
-                  </tbody>
-                  <tfoot>
-                    <tr>
-                      <td colSpan={4} className="pdf-right" style={{ fontWeight: 700 }}>Settlement Total</td>
-                      <td colSpan={2} className="pdf-right pdf-mono" style={{ fontWeight: 700 }}>{formatCurrency(grossPay)}</td>
-                    </tr>
-                    <tr>
-                      <td colSpan={4} className="pdf-right" style={{ fontWeight: 700 }}>Driver Salary Deduction</td>
-                      <td colSpan={2} className="pdf-right pdf-mono" style={{ fontWeight: 700 }}>{`-${formatCurrency(totalDriverDeduction)}`}</td>
-                    </tr>
-                    <tr>
-                      <td colSpan={4} className="pdf-right" style={{ fontWeight: 700 }}>Total Adjustments</td>
-                      <td colSpan={2} className="pdf-right pdf-mono" style={{ fontWeight: 700 }}>{formatCurrency(totalAdjustments)}</td>
-                    </tr>
-                    <tr>
-                      <td colSpan={4} className="pdf-right" style={{ fontWeight: 700 }}>Net Pay</td>
-                      <td colSpan={2} className="pdf-right pdf-mono" style={{ fontWeight: 700 }}>{formatCurrency(finalPayable)}</td>
-                    </tr>
-                  </tfoot>
-                </table>
-              </div>
-            </div>
-
-            <div className="mt-8 pdf-section">
-              <div className="overflow-x-auto">
-                <table className="pdf-table" style={{ width: '100%' }}>
-                  <thead>
-                    <tr>
-                      <th style={{ width: '45%', fontSize: '12px' }}>Summary</th>
-                      <th style={{ width: '35%', fontSize: '12px' }}>Date</th>
-                      <th className="pdf-right" style={{ width: '20%', fontSize: '12px' }}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td style={{ fontSize: '12px', padding: '10px' }}>Settlement Total</td>
-                      <td style={{ fontSize: '12px', padding: '10px' }} />
-                      <td className="pdf-right pdf-mono" style={{ fontSize: '12px', padding: '10px' }}>{formatCurrency(grossPay)}</td>
-                    </tr>
-                    <tr>
-                      <td style={{ fontSize: '12px', padding: '10px' }}>Driver Salary Deduction</td>
-                      <td style={{ fontSize: '12px', padding: '10px' }} />
-                      <td className="pdf-right pdf-mono" style={{ fontSize: '12px', padding: '10px' }}>-{formatCurrency(totalDriverDeduction)}</td>
-                    </tr>
-                    {previousDueAdded > 0 && (
-                      <tr>
-                        <td style={{ fontSize: '12px', padding: '10px' }}>Previous Month Due (Carry Forward)</td>
-                        <td style={{ fontSize: '12px', padding: '10px' }} />
-                        <td className="pdf-right pdf-mono" style={{ fontSize: '12px', padding: '10px' }}>{formatCurrency(previousDueAdded)}</td>
-                      </tr>
-                    )}
-                    <tr>
-                      <td style={{ fontSize: '12px', padding: '10px' }}>Manual Adjustments</td>
-                      <td style={{ fontSize: '12px', padding: '10px' }} />
-                      <td className="pdf-right pdf-mono" style={{ fontSize: '12px', padding: '10px' }}>{formatCurrency(manualAdjustmentSummary)}</td>
-                    </tr>
-                    <tr style={{ backgroundColor: '#f1f5f9' }}>
-                      <td style={{ padding: '12px' }}>
-                        <div style={{ fontWeight: 700, fontSize: '16px', lineHeight: '20px' }}>Net Pay</div>
-                      </td>
-                      <td style={{ padding: '12px' }}>
-                        <div className="pdf-mono" style={{ fontSize: '11px', color: '#334155' }}>
-                          Pay Period: {fullDate(payPeriodFrom)} to {fullDate(payPeriodTo)}
-                        </div>
-                        <div className="pdf-mono" style={{ marginTop: '2px', fontSize: '11px', color: '#334155' }}>
-                          Payment Date: {paymentDate ? fullDate(paymentDate) : '-'} • Receipt: {paymentNo || '-'}
-                        </div>
-                      </td>
-                      <td className="pdf-right pdf-mono" style={{ padding: '12px' }}>
-                        <span style={{ fontWeight: 700, fontSize: '16px' }}>{formatCurrency(finalPayable)}</span>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <tbody>
+                  {[
+                    { label: 'Gross Settlement', amount: grossPay, color: '#0f172a', sign: '', bold: false },
+                    { label: 'Driver Salary Deduction', amount: totalDriverDeduction, color: '#dc2626', sign: '−', bold: false },
+                    ...(previousDueAdded > 0 ? [{ label: 'Previous Month Due', amount: previousDueAdded, color: '#065f46', sign: '+', bold: false }] : []),
+                    ...(manualAddition > 0 ? [{ label: 'Manual Addition', amount: manualAddition, color: '#065f46', sign: '+', bold: false }] : []),
+                    ...(manualDeduction > 0 ? [{ label: 'Manual Deduction', amount: manualDeduction, color: '#dc2626', sign: '−', bold: false }] : []),
+                  ].map((row, i) => (
+                    <tr key={i}>
+                      <td style={{ padding: '7px 10px', fontSize: '11px', color: '#777a7f', borderBottom: '1px solid #f1f5f9' }}>{row.label}</td>
+                      <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'Courier New, monospace', fontSize: '11px', fontWeight: 700, color: row.color, borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}>
+                        {row.sign}&nbsp;{formatCurrency(row.amount)}
                       </td>
                     </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+                  ))}
+                  <tr>
+                    <td colSpan={2} style={{ padding: '1px 0', borderBottom: '2px solid #1e3a5f' }} />
+                  </tr>
+                  <tr style={{ background: '#f0f7ff' }}>
+                    <td style={{ padding: '10px', fontSize: '13px', fontWeight: 800, color: '#bac5d2' }}>Net Payable</td>
+                    <td style={{ padding: '10px', textAlign: 'right', fontFamily: 'Courier New, monospace', fontSize: '15px', fontWeight: 900, color: '#1e3a5f', whiteSpace: 'nowrap' }}>
+                      {formatCurrency(finalPayable)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '7px 10px', fontSize: '11px', color: '#c9cfd7', borderBottom: '1px solid #f1f5f9' }}>Amount Paid</td>
+                    <td style={{ padding: '7px 10px', textAlign: 'right', fontFamily: 'Courier New, monospace', fontSize: '11px', color: '#065f46', fontWeight: 700, borderBottom: '1px solid #f1f5f9', whiteSpace: 'nowrap' }}>
+                      &minus;&nbsp;{formatCurrency(paidAmount)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
 
-           
+              {/* Balance Due Box */}
+              <div style={{ marginTop: '12px', background: 'linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%)', borderRadius: '10px', padding: '16px 18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ color: '#93c5fd', fontSize: '9px', fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase' }}>Balance Due</div>
+                  {paymentDate && (
+                    <div style={{ color: '#64748b', fontSize: '9px', marginTop: '2px' }}>
+                      Last payment: {fullDate(paymentDate)}
+                    </div>
+                  )}
+                </div>
+                <div style={{ color: '#f59e0b', fontSize: '22px', fontWeight: 900, fontFamily: 'Courier New, monospace', letterSpacing: '-0.5px' }}>
+                  {formatCurrency(balanceDue)}
+                </div>
+              </div>
+
+              {/* Payment Info */}
+              {paymentNo && (
+                <div style={{ marginTop: '8px', fontSize: '9px', color: '#94a3b8', textAlign: 'right', fontFamily: 'Courier New, monospace' }}>
+                  Receipt: {paymentNo}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ── Footer ── */}
+          <div style={{ background: '#f8fafc', borderTop: '1px solid #e2e8f0', padding: '14px 36px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '8px' }}>
+            <div style={{ fontSize: '9px', color: '#94a3b8' }}>
+              {statementNo} &nbsp;&bull;&nbsp; {monthLabel} &nbsp;&bull;&nbsp; Generated {fullDate(new Date())}
+            </div>
+            <div style={{ fontSize: '9px', color: '#94a3b8', textAlign: 'right' }}>
+              Computer-generated statement &mdash; No signature required
+            </div>
           </div>
         </div>
       </div>

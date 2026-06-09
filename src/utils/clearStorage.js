@@ -13,8 +13,8 @@ const clearAllStorage = () => {
     
     // Clear specific keys we know about
     const keys = [
-      'token', 'user', 'company', 'admin', 
-      'tenantContext', 'emulationBackup'
+      'token', 'user', 'company', 'admin',
+      'tenantContext', 'emulationBackup', 'employeeEmulationBackup'
     ];
     
     keys.forEach(key => {

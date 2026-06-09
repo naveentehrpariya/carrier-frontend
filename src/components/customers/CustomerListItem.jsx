@@ -111,7 +111,7 @@ export default function CustomerListItem({
         {/* Right: Actions & Expand Toggle */}
         <div className="flex items-center gap-3 flex-shrink-0">
           {/* Admin Actions */}
-          {(user?.is_admin === 1 || user?.permissions?.includes('customers') || user?.permissions?.includes('subadmin')) && (
+          {(user?.is_admin === 1 || user?.permissions?.includes('customers_write') || user?.permissions?.includes('subadmin')) && (
             <div className="hidden sm:flex items-center gap-2">
               <AddCustomer 
                 classes="text-purple-400 hover:text-purple-300 transition-colors text-sm font-medium focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:outline-none rounded px-2 py-1"
@@ -250,7 +250,7 @@ export default function CustomerListItem({
           </div>
 
           {/* Mobile Actions Row */}
-          {(user?.is_admin === 1 || user?.permissions?.includes('customers') || user?.permissions?.includes('subadmin')) && (
+          {(user?.is_admin === 1 || user?.permissions?.includes('customers_write') || user?.permissions?.includes('subadmin')) && (
             <div className="sm:hidden border-t border-gray-800 p-3 flex items-center justify-center gap-4">
               <AddCustomer 
                 classes="text-purple-400 hover:text-purple-300 transition-colors text-sm font-medium" 

@@ -14,7 +14,7 @@ export default function OwnerOperatorSalary() {
   const [reportLoading, setReportLoading] = useState(true);
   const [salaryMonth, setSalaryMonth] = useState(new Date().getMonth() + 1);
   const [salaryYear, setSalaryYear] = useState(new Date().getFullYear());
-  const [salaryCurrency, setSalaryCurrency] = useState(String(selectedCurrency || 'CAD').toUpperCase());
+  const [salaryCurrency, setSalaryCurrency] = useState(String(selectedCurrency || 'USD').toUpperCase());
   const [generatingForOwner, setGeneratingForOwner] = useState('');
   const [payslips, setPayslips] = useState([]);
   const [payslipsLoading, setPayslipsLoading] = useState(true);
@@ -28,7 +28,7 @@ export default function OwnerOperatorSalary() {
   const [popupGenerating, setPopupGenerating] = useState(false);
   const [popupPayments, setPopupPayments] = useState([]);
   const [popupPaymentsLoading, setPopupPaymentsLoading] = useState(false);
-  const [popupPayoutCurrency, setPopupPayoutCurrency] = useState('CAD');
+  const [popupPayoutCurrency, setPopupPayoutCurrency] = useState('USD');
   const [includePreviousDue, setIncludePreviousDue] = useState(true);
   const [expensePopupOpen, setExpensePopupOpen] = useState(false);
   const [expenseType, setExpenseType] = useState('deduction');
@@ -71,10 +71,10 @@ export default function OwnerOperatorSalary() {
     []
   );
   useEffect(() => {
-    setSalaryCurrency(String(selectedCurrency || 'CAD').toUpperCase());
+    setSalaryCurrency(String(selectedCurrency || 'USD').toUpperCase());
   }, [selectedCurrency]);
   const formatCurrency = useCallback((amount, currency = salaryCurrency) => {
-    const code = String(currency || 'CAD').toUpperCase();
+    const code = String(currency || 'USD').toUpperCase();
     return `${code} ${Number(amount || 0).toFixed(2)}`;
   }, [salaryCurrency]);
   const formatDistanceWithKm = useCallback((miles) => {
@@ -167,7 +167,7 @@ export default function OwnerOperatorSalary() {
         ownerOperatorId: String(ownerId),
         month: String(month),
         year: String(year),
-        payoutCurrency: String(payoutCurrency || 'CAD'),
+        payoutCurrency: String(payoutCurrency || 'USD'),
         includePreviousDue: String(includePrevDue),
       });
       const res = await Api.get(`/owner-operators/reports/breakdown?${qs.toString()}`);
@@ -269,7 +269,7 @@ export default function OwnerOperatorSalary() {
       const qs = new URLSearchParams({
         month: String(month),
         year: String(year),
-        targetCurrency: String(payoutCurrency || 'CAD'),
+        targetCurrency: String(payoutCurrency || 'USD'),
       });
       await Api.get(`/owner-operators/fx-rates?${qs.toString()}`);
     } catch {
@@ -282,8 +282,8 @@ export default function OwnerOperatorSalary() {
       await Api.post('/owner-operators/fx-rates/auto', {
         month,
         year,
-        targetCurrency: String(payoutCurrency || 'CAD').toUpperCase(),
-        sourceCurrencies: currencyOptions.filter((code) => code !== String(payoutCurrency || 'CAD').toUpperCase()),
+        targetCurrency: String(payoutCurrency || 'USD').toUpperCase(),
+        sourceCurrencies: currencyOptions.filter((code) => code !== String(payoutCurrency || 'USD').toUpperCase()),
       });
     } catch {
       await loadPopupFxRates(month, year, payoutCurrency);
@@ -299,7 +299,7 @@ export default function OwnerOperatorSalary() {
     setPopupLoading(true);
     setPopupPaymentsLoading(true);
     setIncludePreviousDue(true);
-    const initialCurrency = String(presetCurrency || salaryCurrency || 'CAD').toUpperCase();
+    const initialCurrency = String(presetCurrency || salaryCurrency || 'USD').toUpperCase();
     setPopupPayoutCurrency(initialCurrency);
     setSalaryPopupOpen(true);
     await autoSyncPopupFxRates(salaryMonth, salaryYear, initialCurrency);
@@ -335,7 +335,7 @@ export default function OwnerOperatorSalary() {
 
   const onPopupCurrencyChange = async (currency) => {
     if (!selectedOwner?._id) return;
-    const target = String(currency || 'CAD').toUpperCase();
+    const target = String(currency || 'USD').toUpperCase();
     setPopupPayoutCurrency(target);
     setSalaryCurrency(target);
     await autoSyncPopupFxRates(popupMonth, popupYear, target);
@@ -483,7 +483,7 @@ export default function OwnerOperatorSalary() {
       });
       let listRes = await Api.get(`/owner-operators/salary/listings?${qs.toString()}`);
       let salaryRecord = listRes.data?.lists?.[0] || null;
-      if (!salaryRecord?._id || String(salaryRecord?.currency || '').toUpperCase() !== String(popupPayoutCurrency || 'CAD').toUpperCase()) {
+      if (!salaryRecord?._id || String(salaryRecord?.currency || '').toUpperCase() !== String(popupPayoutCurrency || 'USD').toUpperCase()) {
         const generateRes = await Api.post('/owner-operators/salary/generate', {
           ownerOperatorId: selectedOwner._id,
           month: popupMonth,
@@ -554,7 +554,7 @@ export default function OwnerOperatorSalary() {
     setPaymentSaving(true);
     try {
       let salaryRecord = paymentSalaryRecord;
-      if (!salaryRecord?._id || String(salaryRecord?.currency || '').toUpperCase() !== String(popupPayoutCurrency || 'CAD').toUpperCase()) {
+      if (!salaryRecord?._id || String(salaryRecord?.currency || '').toUpperCase() !== String(popupPayoutCurrency || 'USD').toUpperCase()) {
         const generateRes = await Api.post('/owner-operators/salary/generate', {
           ownerOperatorId: paymentOwner._id,
           month: paymentMonth,
@@ -720,7 +720,7 @@ export default function OwnerOperatorSalary() {
               className="input-sm min-w-[100px]"
               value={salaryCurrency}
               onChange={(e) => {
-                const next = String(e.target.value || 'CAD').toUpperCase();
+                const next = String(e.target.value || 'USD').toUpperCase();
                 setSalaryCurrency(next);
                 setSelectedCurrency(next);
               }}
@@ -786,7 +786,7 @@ export default function OwnerOperatorSalary() {
               <tr key={owner._id} className="border-t border-white/5">
                 <td className="px-4 py-3">
                   <div className="font-semibold">{owner?.fullName || '—'}</div>
-                  <div className="text-xs text-gray-400">{owner?.ownerOperatorId || ''}</div>
+                  <div className="text-xs text-gray-400">{owner?.companyName || owner?.ownerOperatorId || ''}</div>
                 </td>
                 <td className="px-4 py-3 text-right">{perf?.orders || 0}</td>
                 <td className="px-4 py-3 text-right">
@@ -876,7 +876,7 @@ export default function OwnerOperatorSalary() {
                 <td className="px-4 py-3">
                   <div className="font-semibold">{slip?.ownerOperator?.fullName || '—'}</div>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-gray-400">{slip?.ownerOperator?.ownerOperatorId || ''}</span>
+                    <span className="text-xs text-gray-400">{slip?.ownerOperator?.companyName || slip?.ownerOperator?.ownerOperatorId || ''}</span>
                     <span className={`px-2 py-0.5 text-[10px] rounded-lg capitalize ${
                       slip?.paymentStatus === 'paid'
                         ? 'bg-green-500/20 text-green-300'

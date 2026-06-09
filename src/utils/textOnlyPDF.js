@@ -43,7 +43,7 @@ export const generateTextOnlyPDF = (order, company, filename, options = {}) => {
     yPosition += 5;
     doc.text(`Customer: ${order?.customer?.name || 'N/A'}`, 20, yPosition);
     yPosition += 5;
-    doc.text(`Amount: ${order?.total_amount || 0} ${order?.revenue_currency || 'CAD'}`, 20, yPosition);
+    doc.text(`Amount: ${order?.total_amount || 0} ${order?.revenue_currency || 'USD'}`, 20, yPosition);
     yPosition += 10;
 
     // Revenue items (simplified)

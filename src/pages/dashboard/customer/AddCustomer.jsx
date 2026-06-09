@@ -7,6 +7,8 @@ import countries from './../../common/Countries';
 import Select from 'react-select'
 import DynamicEmailInput from '../../../components/DynamicEmailInput'
 import GoogleAddressInput from '../../common/GoogleAddressInput';
+import { HiOutlineBuildingOffice2 } from 'react-icons/hi2';
+import { ModalShell, ModalHeader, FormSection, Field, TextInput, SelectInput, ModalFooter, ACCENTS } from '../../../components/modal/ModalKit';
 
 export default function AddCustomer({item, fetchLists, classes, text}){
 
@@ -136,57 +138,52 @@ export default function AddCustomer({item, fetchLists, classes, text}){
 
   return (
     <div>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={classes} btntext={text || "Add New Customer"} >
-         <h2 className='text-white font-bold'>Add New Customer</h2>
+      <Popup action={action} size="md:max-w-2xl" space='p-0' bg="bg-black" btnclasses={classes} btntext={text || "Add New Customer"} >
+       <ModalShell accent={ACCENTS.customer}>
+         <ModalHeader
+           icon={HiOutlineBuildingOffice2}
+           accent={ACCENTS.customer}
+           title={item ? 'Edit Customer' : 'Add New Customer'}
+           subtitle={item ? 'Update customer contact and assignment details' : 'Create a customer profile and assign an owner'}
+         />
 
-         <div className='input-item'>
-            <label className="mt-4 mb-0 block text-sm text-gray-400">Assigned To</label>
-            <Select defaultValue={(staffLists && staffLists.find(e => e.value === item?.assigned_to?._id)) || null} classNamePrefix="react-select input"  placeholder={'Choose Staff'}
-              onChange={chooseStaff}
-              isClearable={true}
-              options={[{ label: 'Unassigned (Visible to all staff)', value: null }, ...staffLists]} />
-          </div>
+         <FormSection title="Profile & contact">
+            <Field full label="Assigned To" hint="Leave unassigned to make this customer visible to all staff.">
+              <Select
+                defaultValue={(staffLists && staffLists.find(e => e.value === item?.assigned_to?._id)) || null}
+                classNamePrefix="react-select input"
+                placeholder={'Choose staff'}
+                onChange={chooseStaff}
+                isClearable={true}
+                options={[{ label: 'Unassigned (Visible to all staff)', value: null }, ...staffLists]} />
+            </Field>
 
-          <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Name</label>
-              <input defaultValue={item?.name}   name='name' onChange={handleinput} type={'text'} placeholder={"Name"} className="input-sm" />
-          </div>
-         <div className='grid grid-cols-2 gap-3'>
+            <Field full label="Name" required>
+              <TextInput defaultValue={item?.name} name='name' onChange={handleinput} type='text' placeholder="Customer name" />
+            </Field>
 
-
-            {/* <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">MC Code</label>
-               <input  defaultValue={item?.mc_code} name='mc_code' onChange={handleinput} type={'number'} placeholder={"MC Code"} className="input-sm" />
-            </div> */}
-
-            {/* Dynamic Email Input Component */}
-            <div className='col-span-2'>
-              <DynamicEmailInput 
-                existingCustomer={item}
-                onChange={handleEmailsChange}
-              />
+            <div className="sm:col-span-2">
+              <DynamicEmailInput existingCustomer={item} onChange={handleEmailsChange} />
             </div>
 
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Primary Phone</label>
-               <input  defaultValue={item?.phone} name='phone' onChange={handleinput} type={'number'} placeholder={"Phone Number"} className="input-sm" />
-            </div>
+            <Field label="Primary Phone">
+              <TextInput defaultValue={item?.phone} name='phone' onChange={handleinput} type='number' placeholder="Phone number" />
+            </Field>
 
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Additional Phone</label>
+            <Field label="Additional Phone">
               {showSecondaryPhone ? (
                 <div className="flex items-center gap-2">
-                  <input
+                  <TextInput
                     defaultValue={item?.secondary_phone}
                     name="secondary_phone"
                     onChange={handleinput}
                     type="number"
                     placeholder="Additional phone"
-                    className="input-sm flex-1"
+                    className="flex-1"
                   />
                   <button
                     type="button"
-                    className="text-red-400 hover:text-red-300 text-normal p-1"
+                    className="text-red-400 hover:text-red-300 p-2 shrink-0"
                     onClick={(e) => {
                       e.preventDefault();
                       setData((prev) => ({ ...prev, secondary_phone: "" }));
@@ -200,65 +197,52 @@ export default function AddCustomer({item, fetchLists, classes, text}){
               ) : (
                 <button
                   type="button"
-                  className="mt-1 text-blue-400 hover:text-blue-300 text-normal flex items-center cursor-pointer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowSecondaryPhone(true);
-                  }}
+                  className="h-[51px] w-full rounded-[15px] border border-dashed border-gray-700 text-sm text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors flex items-center justify-center gap-1.5"
+                  onClick={(e) => { e.preventDefault(); setShowSecondaryPhone(true); }}
                 >
-                  <span className="mr-1">+</span> Add Another Phone
+                  <span className="text-base leading-none">+</span> Add another phone
                 </button>
               )}
-            </div>
+            </Field>
+         </FormSection>
 
-            
-            </div>
-            <div className='grid grid-cols-1 gap-3'>
-              <div className='input-item'>
-                  <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
-                  <GoogleAddressInput
-                    value={data.address || ''}
-                    onChange={(v) => setData((prev) => ({ ...prev, address: v }))}
-                    placeholder="Address"
-                    className="input-sm"
-                  />
-              </div>
-            </div>
-            <div className='grid grid-cols-2 gap-3'>
+         <FormSection title="Address" divider>
+            <Field full label="Address">
+              <GoogleAddressInput
+                value={data.address || ''}
+                onChange={(v) => setData((prev) => ({ ...prev, address: v }))}
+                placeholder="Search address"
+                className="input-sm !mt-0"
+              />
+            </Field>
+            <Field label="Country">
+               <SelectInput defaultValue={item?.country} onChange={handleinput} name='country'>
+                <option value="" className='text-black'>Choose country</option>
+                  {countries && countries.map((c, i)=>(
+                    <option key={`country-${i}`} value={c.label} className='text-black'>{c.label}</option>
+                  ))}
+               </SelectInput>
+            </Field>
+            <Field label="State">
+              <TextInput defaultValue={item?.state} name='state' onChange={handleinput} type='text' placeholder="State" />
+            </Field>
+            <Field label="City">
+              <TextInput defaultValue={item?.city} name='city' onChange={handleinput} type='text' placeholder="City" />
+            </Field>
+            <Field label="Zipcode">
+              <TextInput defaultValue={item?.zipcode} name='zipcode' onChange={handleinput} type='text' placeholder="Zipcode" />
+            </Field>
+         </FormSection>
 
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Country</label>
-               <select defaultValue={item?.country} onChange={handleinput} name='country' className="input-sm" >
-                <option selected disabled className='text-black'>Choose Country</option>
-                  {countries && countries.map((c, i)=>{
-                    return <option value={c.label} className='text-black'>{c.label}</option>
-                  })}
-               </select>
-            </div> 
-        
-
-
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">State</label>
-               <input  defaultValue={item?.state} name='state' onChange={handleinput} type={'state'} placeholder={"State"} className="input-sm" />
-            </div>
-
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">City</label>
-               <input  defaultValue={item?.city} name='city' onChange={handleinput} type={'city'} placeholder={"City"} className="input-sm" />
-            </div>
-
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Zipcode</label>
-               <input  defaultValue={item?.zipcode} name='zipcode' onChange={handleinput} type={'zipcode'} placeholder={"Zipcode"} className="input-sm" />
-            </div>
-         </div>
-
-         
-
-         <div className='flex justify-center items-center'>
-            <button  onClick={add_customer} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Updating..." : "Submit"}</button>
-         </div>
+         <ModalFooter
+           accent={ACCENTS.customer}
+           onCancel={() => { setaction('close'); setTimeout(() => setaction(), 300); }}
+           onSubmit={add_customer}
+           loading={loading}
+           loadingLabel={item ? 'Saving…' : 'Creating…'}
+           submitLabel={item ? 'Save Changes' : 'Add Customer'}
+         />
+       </ModalShell>
       </Popup>
     </div>
   )

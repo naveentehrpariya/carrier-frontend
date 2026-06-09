@@ -19,7 +19,7 @@ export default function EmployeeCard({
   fetchLists,
   onDeleteRequest
 }) {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, emulateEmployee, isEmulatingEmployee } = useAuth();
   // Generate initials for avatar placeholder
   const getInitials = (name) => {
     return name
@@ -52,34 +52,27 @@ export default function EmployeeCard({
       {/* Header: Avatar, Name, Status */}
       <div className="mb-4">
           {/* Name and role */}
-          <div className="min-w-0">
-            <div className='flex items-center mb-2 '>
-              <div className="w-12 h-12 bg-gray-800 text-gray-300 rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0">
+          <div className="min-w-0 w-full overflow-hidden">
+            <div className='flex w-full items-center mb-2 '>
+              <div className="w-[70px] h-[70px] bg-gray-800 text-gray-300 rounded-[20px] flex items-center justify-center text-sm font-semibold flex-shrink-0">
                 {getInitials(employee.name)}
               </div>
-              <div className='ps-3'>
+              <div className='ps-3 w-full overflow-hidden'>
                 <Link 
                   to={(employee?.permissions?.includes('driver') || employee?.role === 0) ? `/driver/detail/${employee._id}` : `/employee/detail/${employee._id}`}
-                  className="text-lg  font-semibold text-gray-100 hover:text-blue-400 transition-colors leading-tight block truncate focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none rounded"
+                  className="text-lg  font-semibold text-gray-100 capitalize hover:text-blue-400 transition-colors leading-tight block line-clamp-1 truncate focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:outline-none rounded"
                   aria-label={`View details for ${employee.name}, ${roleInfo.text}, status: ${employee.status}`} >
                   {employee.name}
                 </Link>
                   {employee.position && (
-                    <p className="text-xs mt-1 text-gray-400" aria-label={`Position: ${employee.position}`}>
-                      {employee.position}
+                    <p className="text-xs mt-1 mb-2 text-gray-400" aria-label={`Position: ${employee.position}`}>
+                      {employee.position} 
                     </p>
                   )}
+                  <Badge   status={employee.status} />
               </div>
             </div>
-            <div className="flex items-center justify-between gap-2 mt-2">
-              <span 
-                className={`text-xs px-2 py-1 rounded-full border ${roleInfo.color}`}
-                aria-label={`Role: ${roleInfo.text}`}
-              >
-                {roleInfo.text}
-              </span>
-              <Badge title={true} status={employee.status} />
-            </div>
+             
             {/* Module access badges */}
             <div className="flex flex-wrap gap-1 mt-3">
               {[...new Set(Array.isArray(employee.effectiveAllowedModules) && employee.effectiveAllowedModules.length
@@ -132,7 +125,7 @@ export default function EmployeeCard({
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400 uppercase tracking-wide">Solo Rate/Mile</span>
                   <span className="text-sm text-rose-400 font-medium">
-                    <Currency amount={Number(employee.driverProfile.ratePerMileSolo || employee.driverProfile.ratePerMile || 0)} currency="CAD" />
+                    <Currency amount={Number(employee.driverProfile.ratePerMileSolo || employee.driverProfile.ratePerMile || 0)} currency="USD" />
                   </span>
                 </div>
               )}
@@ -140,7 +133,7 @@ export default function EmployeeCard({
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400 uppercase tracking-wide">Team Rate/Mile</span>
                   <span className="text-sm text-rose-400 font-medium">
-                    <Currency amount={Number(employee.driverProfile.ratePerMileTeam || employee.driverProfile.ratePerMile || 0)} currency="CAD" />
+                    <Currency amount={Number(employee.driverProfile.ratePerMileTeam || employee.driverProfile.ratePerMile || 0)} currency="USD" />
                   </span>
                 </div>
               )}
@@ -148,7 +141,7 @@ export default function EmployeeCard({
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400 uppercase tracking-wide">City Rate/Hr</span>
                   <span className="text-sm text-rose-400 font-medium">
-                    <Currency amount={Number(employee.driverProfile.cityHoursRate || 0)} currency="CAD" />
+                    <Currency amount={Number(employee.driverProfile.cityHoursRate || 0)} currency="USD" />
                   </span>
                 </div>
               )}
@@ -208,7 +201,7 @@ export default function EmployeeCard({
       </div>
 
       {/* Footer: Documents and Actions */}
-      <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-800">
+      <div className="flex items-center justify-between  pt-2  ">
         <div className="flex  flex-wrap items-center gap-2 flex-1 min-w-0">
           <button
             onClick={(e) => {
@@ -216,23 +209,23 @@ export default function EmployeeCard({
               e.stopPropagation();
               onOpenDocuments(employee);
             }}
-            className="h-9 px-3 rounded-xl bg-gray-800/60 hover:bg-gray-800 border border-gray-700 text-sm font-semibold text-gray-100 transition-colors"
+            className="text-main rounded-xl !text-[13px] me-2  font-semibold text-gray-100 transition-colors"
             aria-label={`View documents for ${employee.name}`}
           >
-            Documents
+            Files
           </button>
           {(employee?.permissions?.includes('driver') || employee?.role === 0) && (
             <>
               <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLogs(true); }}
-                className="h-9 px-3 rounded-xl bg-gray-800/60 hover:bg-gray-800 border border-gray-700 text-sm font-semibold text-gray-100 transition-colors"
+                className="text-main rounded-xl !text-[13px] me-2  font-semibold text-gray-100 transition-colors"
                 aria-label={`View logs for ${employee.name}`}
               >
                 Logs
               </button>
               <button
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowEarnings(true); }}
-                className="h-9 px-3 rounded-xl bg-gray-800/60 hover:bg-gray-800 border border-gray-700 text-sm font-semibold text-gray-100 transition-colors"
+                className="text-main rounded-xl !text-[13px] me-2  font-semibold text-gray-100 transition-colors"
                 aria-label={`View earnings for ${employee.name}`}
               >
                 Earnings
@@ -240,6 +233,19 @@ export default function EmployeeCard({
             </>
           )}
         </div>
+
+        {/* Emulate button — visible to admins only, not for self, not when already emulating */}
+        {(currentUser?.is_admin === 1 || currentUser?.role === 3) &&
+          !isEmulatingEmployee &&
+          currentUser?._id !== employee._id && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); emulateEmployee(employee._id, employee.name); }}
+            className="text-purple-400 hover:text-purple-300 rounded-xl !text-[13px] me-2 font-semibold transition-colors"
+            title={`View as ${employee.name}`}
+          >
+            Emulate
+          </button>
+        )}
 
         {/* Actions dropdown */}
         {(currentUser?.is_admin === 1 || currentUser?.permissions?.includes('employees') || currentUser?.permissions?.includes('subadmin')) && (

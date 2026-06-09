@@ -13,7 +13,7 @@ import { useAuth } from '../context/MultiTenantAuthProvider';
 import { useMultiTenant } from '../context/MultiTenantProvider';
 import { useLocation } from 'react-router-dom';
 import { TbListDetails } from "react-icons/tb";
-import { MdOutlineDocumentScanner } from "react-icons/md";
+import { MdOutlineDocumentScanner, MdOutlineBarChart } from "react-icons/md";
 import { IoMdAddCircle } from "react-icons/io";
 import { HiOutlineUserCircle } from "react-icons/hi2";
 import { FaCrown } from "react-icons/fa";
@@ -466,6 +466,17 @@ export default function Sidebar({toggle}) {
                   >
                     <FaUsers className={`${location.pathname === '/accounts/owner-operator-salary' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.1rem'} />
                     <span className="font-medium">Owner Operator Salary</span>
+                  </Link>
+                  <Link
+                    className={`group transition-all duration-300 ${
+                      location.pathname === '/finance'
+                        ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_6px_16px_rgba(139,92,246,0.35)]"
+                        : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'
+                    } py-[10px] px-[14px] border border-white/5 rounded-2xl flex items-center`}
+                    to={'/finance'}
+                  >
+                    <MdOutlineBarChart className={`${location.pathname === '/finance' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.1rem'} />
+                    <span className="font-medium">Finance Report</span>
                   </Link>
                 </div>
               </div>

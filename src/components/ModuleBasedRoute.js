@@ -2,7 +2,10 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/MultiTenantAuthProvider';
 
-const ModuleBasedRoute = ({ children, allowedModules }) => {
+// allowedModules  → grants access if the user has the matching order module (regular/outsourcing)
+// allowedPermissions → ALSO grants access if the user has any of these feature permissions
+//                      (e.g. an accountant with 'carriers' can open the carriers page)
+const ModuleBasedRoute = ({ children, allowedModules = [], allowedPermissions = [] }) => {
   const { isAuthenticated, user, loading } = useAuth();
 
   if (loading) {
@@ -17,17 +20,18 @@ const ModuleBasedRoute = ({ children, allowedModules }) => {
     return <Navigate to="/login" replace />;
   }
 
-  const userModules = Array.isArray(user.permissions) ? user.permissions.filter(p => ['regular', 'outsourcing'].includes(p)) : [];
-  
-  // If user has NO modules allowed, they shouldn't access module-specific pages
-  if (userModules.length === 0) {
-    return <Navigate to="/unauthorized" replace />;
-  }
+  // Admins & sub-admins bypass module restrictions
+  const isAdmin = user?.is_admin === 1 || Number(user?.role) === 3 || user?.permissions?.includes('subadmin');
+  if (isAdmin) return children;
 
-  // If user has AT LEAST ONE of the allowedModules, they can access the page
-  const hasAccess = allowedModules.some(m => userModules.includes(m));
+  const perms = Array.isArray(user.permissions) ? user.permissions : [];
+  const userModules = perms.filter(p => ['regular', 'outsourcing'].includes(p));
 
-  if (!hasAccess) {
+  // Access if the user has a matching order module OR a matching feature permission
+  const hasModuleAccess = allowedModules.some(m => userModules.includes(m));
+  const hasPermissionAccess = allowedPermissions.some(p => perms.includes(p));
+
+  if (!hasModuleAccess && !hasPermissionAccess) {
     return <Navigate to="/unauthorized" replace />;
   }
 

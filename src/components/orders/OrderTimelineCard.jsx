@@ -101,7 +101,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
               <span className="text-[10px] text-emerald-500/80 uppercase tracking-wider font-medium">Revenue</span>
             </div>
             <p className="text-sm font-bold text-emerald-400">
-              <Currency amount={order?.total_amount} currency={order?.revenue_currency || 'cad'} />
+              <Currency amount={order?.input_total_amount > 0 ? order.input_total_amount : order?.total_amount} currency={order?.input_total_amount > 0 ? (order?.input_currency || order?.revenue_currency || 'usd') : (order?.revenue_currency || 'usd')} />
             </p>
           </div>
 
@@ -112,7 +112,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
               <span className="text-[10px] text-orange-500/80 uppercase tracking-wider font-medium">Cost</span>
             </div>
             <p className="text-sm font-bold text-orange-400">
-              <Currency amount={order?.carrier_amount} currency={order?.revenue_currency || 'cad'} />
+              <Currency amount={order?.input_carrier_amount > 0 ? order.input_carrier_amount : order?.carrier_amount} currency={order?.input_carrier_amount > 0 ? (order?.input_currency || order?.revenue_currency || 'usd') : (order?.revenue_currency || 'usd')} />
             </p>
           </div>
 
@@ -123,7 +123,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
               <span className="text-[10px] text-blue-400/80 uppercase tracking-wider font-medium">Profit</span>
             </div>
             <p className="text-sm font-bold text-blue-300">
-              <Currency amount={order?.profit} currency={order?.revenue_currency || 'cad'} />
+              <Currency amount={order?.profit} currency={order?.revenue_currency || 'usd'} />
             </p>
           </div>
         </div>
@@ -353,7 +353,7 @@ export default function OrderTimelineCard({ order, user, fetchLists, activeQuick
                       />
                     </li>
                   )}
-                  {user?.is_admin === 1 && (
+                  {(user?.is_admin === 1 || Number(user?.role) === 3 || user?.permissions?.includes('subadmin')) && (
                     <>
                       <li className="list-none text-sm">
                         <LockOrder order={order} fetchLists={fetchLists} />

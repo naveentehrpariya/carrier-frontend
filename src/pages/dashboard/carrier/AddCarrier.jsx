@@ -6,6 +6,8 @@ import { UserContext } from '../../../context/AuthProvider';
 import countries from './../../common/Countries';
 import DynamicCarrierEmailInput from '../../../components/DynamicCarrierEmailInput';
 import GoogleAddressInput from '../../common/GoogleAddressInput';
+import { HiOutlineTruck } from 'react-icons/hi2';
+import { ModalShell, ModalHeader, FormSection, Field, TextInput, SelectInput, ModalFooter, ACCENTS } from '../../../components/modal/ModalKit';
 
 export default function AddCarrier({item, fetchLists, classes, text}){
 
@@ -102,43 +104,42 @@ export default function AddCarrier({item, fetchLists, classes, text}){
 
   return (
     <div>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={classes}  btntext={text || "Add New Carrier"} >
-         <h2 className='text-white font-bold'>{item ? "Update" : "Add New"} Carrier</h2>
-         <div className='grid grid-cols-2 gap-5'>
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Name</label>
-               <input defaultValue={item?.name} required name='name' onChange={handleinput} type={'text'} placeholder={"Name"} className="input-sm" />
+      <Popup action={action} size="md:max-w-2xl" space='p-0' bg="bg-black" btnclasses={classes}  btntext={text || "Add New Carrier"} >
+       <ModalShell accent={ACCENTS.carrier}>
+         <ModalHeader
+           icon={HiOutlineTruck}
+           accent={ACCENTS.carrier}
+           title={item ? 'Edit Carrier' : 'Add New Carrier'}
+           subtitle={item ? 'Update carrier contact and location details' : 'Register a carrier with contacts and location'}
+         />
+
+         <FormSection title="Carrier & contact">
+            <Field label="Name" required>
+               <TextInput defaultValue={item?.name} name='name' onChange={handleinput} type='text' placeholder="Carrier name" />
+            </Field>
+            <Field label="MC Code" required>
+               <TextInput defaultValue={item?.mc_code} name='mc_code' onChange={handleinput} type='number' placeholder="MC code" />
+            </Field>
+            <div className='sm:col-span-2'>
+              <DynamicCarrierEmailInput existingCarrier={item} onChange={handleEmailsChange} />
             </div>
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">MC Code</label>
-               <input defaultValue={item?.mc_code} required name='mc_code' onChange={handleinput} type={'number'} placeholder={"MC code"} className="input-sm" />
-            </div>
-            {/* Dynamic Email Input Component */}
-            <div className='col-span-2'>
-              <DynamicCarrierEmailInput 
-                existingCarrier={item}
-                onChange={handleEmailsChange}
-              />
-            </div>
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Primary Phone</label>
-               <input defaultValue={item?.phone} required name='phone' onChange={handleinput} type='number' placeholder={"Primary phone"} className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Additional Phone</label>
+            <Field label="Primary Phone" required>
+               <TextInput defaultValue={item?.phone} name='phone' onChange={handleinput} type='number' placeholder="Primary phone" />
+            </Field>
+            <Field label="Additional Phone">
               {showSecondaryPhone ? (
                 <div className="flex items-center gap-2">
-                  <input
+                  <TextInput
                     defaultValue={item?.secondary_phone}
                     name="secondary_phone"
                     onChange={handleinput}
                     type="number"
                     placeholder="Additional phone"
-                    className="input-sm flex-1"
+                    className="flex-1"
                   />
                   <button
                     type="button"
-                    className="text-red-400 hover:text-red-300 text-normal p-1"
+                    className="text-red-400 hover:text-red-300 p-2 shrink-0"
                     onClick={(e) => {
                       e.preventDefault();
                       setData((prev) => ({ ...prev, secondary_phone: "" }));
@@ -152,61 +153,52 @@ export default function AddCarrier({item, fetchLists, classes, text}){
               ) : (
                 <button
                   type="button"
-                  className="mt-1 text-blue-400 hover:text-blue-300 text-normal flex items-center cursor-pointer"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setShowSecondaryPhone(true);
-                  }}
+                  className="h-[51px] w-full rounded-[15px] border border-dashed border-gray-700 text-sm text-gray-400 hover:border-gray-500 hover:text-gray-300 transition-colors flex items-center justify-center gap-1.5"
+                  onClick={(e) => { e.preventDefault(); setShowSecondaryPhone(true); }}
                 >
-                  <span className="mr-1">+</span> Add Another Phone
+                  <span className="text-base leading-none">+</span> Add another phone
                 </button>
               )}
-            </div>
-            </div>
+            </Field>
+         </FormSection>
 
-            <div className='grid grid-cols-1 gap-5'>
-              <div className='input-item'>
-                <label className="mt-4 mb-0 block text-sm text-gray-400">Address</label>
-                <GoogleAddressInput
-                  value={data.location}
-                  onChange={(v) => setData((prev) => ({ ...prev, location: v }))}
-                  placeholder="Enter location"
-                  className="input-sm"
-                />
-              </div>
-            </div>
-            
-            <div className='grid grid-cols-2 gap-5'>
+         <FormSection title="Address" divider>
+            <Field full label="Address">
+              <GoogleAddressInput
+                value={data.location}
+                onChange={(v) => setData((prev) => ({ ...prev, location: v }))}
+                placeholder="Search location"
+                className="input-sm !mt-0"
+              />
+            </Field>
+            <Field label="Country">
+               <SelectInput defaultValue={item?.country} onChange={handleinput} name='country'>
+                <option value="" className='text-black'>Choose country</option>
+                  {countries && countries.map((c, i)=>(
+                    <option key={`country-${i}`} value={c.label} className='text-black'>{c.label}</option>
+                  ))}
+               </SelectInput>
+            </Field>
+            <Field label="State" required>
+               <TextInput defaultValue={item?.state} name='state' onChange={handleinput} type='text' placeholder="State" />
+            </Field>
+            <Field label="City">
+               <TextInput defaultValue={item?.city} name='city' onChange={handleinput} type='text' placeholder="City" />
+            </Field>
+            <Field label="Zipcode">
+               <TextInput defaultValue={item?.zipcode} name='zipcode' onChange={handleinput} type='text' placeholder="Zipcode" />
+            </Field>
+         </FormSection>
 
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Country</label>
-               <select defaultValue={item?.country} onChange={handleinput} name='country' className="input-sm" >
-                <option selected disabled className='text-black'>Choose Country</option>
-                  {countries && countries.map((c, i)=>{
-                    return <option value={c.label} className='text-black'>{c.label}</option>
-                  })}
-               </select>
-            </div> 
-
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">State</label>
-               <input defaultValue={item?.state} required name='state' onChange={handleinput} type={'state'} placeholder={"State"} className="input-sm" />
-            </div>
-
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">City</label>
-               <input defaultValue={item?.city}  name='city' onChange={handleinput} type={'city'} placeholder={"City"} className="input-sm" />
-            </div>
-
-            <div className='input-item'>
-               <label className="mt-4 mb-0 block text-sm text-gray-400">Zipcode</label>
-               <input defaultValue={item?.zipcode} name='zipcode' onChange={handleinput} type={'zipcode'} placeholder={"Zipcode"} className="input-sm" />
-            </div>
-
-         </div>
-        <div className='flex justify-center'>
-        <button  onClick={addcarrier} className="btn md mt-6 px-[50px] main-btn text-black font-bold">{loading ? "Logging in..." : <>{item ? "Update Carrier" : "Add Carrier"}</>}</button>
-        </div>
+         <ModalFooter
+           accent={ACCENTS.carrier}
+           onCancel={() => { setaction('close'); setTimeout(() => setaction(), 300); }}
+           onSubmit={addcarrier}
+           loading={loading}
+           loadingLabel={item ? 'Saving…' : 'Adding…'}
+           submitLabel={item ? 'Update Carrier' : 'Add Carrier'}
+         />
+       </ModalShell>
       </Popup>
     </div>
   )
