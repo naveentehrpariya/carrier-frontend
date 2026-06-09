@@ -39,7 +39,6 @@ export default function CustomerDetail() {
                      <div class=" text-center lg:text-left">
                         <div class="block lg:hidden rounded-full shadow-xl mx-auto -mt-16 h-48 w-48 bg-cover bg-center" ></div>
                         <h1 class="text-3xl text-white font-bold pt-8 lg:pt-0  capitalize">{customer?.name}</h1>
-                        <div class="mx-auto lg:mx-0 w-4/5 pt-3 border-b-2 border-gray-500 opacity-25"></div>
                         
                         <p class="pt-4  flex items-center  text-white justify-center lg:justify-start">
                            </p>
@@ -49,8 +48,18 @@ export default function CustomerDetail() {
                            Phone : {customer?.phone},  {customer?.secondary_phone}</p>
                         <p class="pt-2 text-white flex items-center justify-center lg:justify-start">
                            Email : {customer?.email},  {customer?.secondary_email}</p>
-                        <p class="pt-2 text-white flex items-center justify-center lg:justify-start">
-                           Assigned To : {customer?.assigned_to?.name}({customer?.assigned_to?.phone})</p>
+                        <div className="pt-2 text-white flex items-start justify-center lg:justify-start gap-1 flex-wrap">
+                           <span className="text-gray-400 shrink-0">Assigned To:</span>
+                           {Array.isArray(customer?.assigned_to) && customer.assigned_to.length > 0
+                             ? customer.assigned_to.map((u, i) => u && (
+                               <span key={u._id || i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-500/15 border border-blue-500/30 text-blue-300 text-xs font-medium">
+                                 {u.name}
+                                 {u.is_admin === 1 && <span className="text-violet-300">(Admin)</span>}
+                               </span>
+                             ))
+                             : <span className="text-gray-500 italic text-sm">None assigned</span>
+                           }
+                        </div>
                      </div>
                   </div>
                   <div className='text-file'>

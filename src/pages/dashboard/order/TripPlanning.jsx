@@ -1,5 +1,5 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
 import AuthLayout from '../../../layout/AuthLayout';
@@ -8,14 +8,44 @@ import TimeFormat from '../../common/TimeFormat';
 import DistanceInMiles from '../../common/DistanceInMiles';
 import { getOrderNumber } from '../../../utils/orderPrefix';
 import { FaTrash } from 'react-icons/fa';
-import { TbTruckDelivery } from 'react-icons/tb';
+import { TbTruckDelivery, TbRoute, TbListDetails, TbBuildingWarehouse, TbArrowRight } from 'react-icons/tb';
 import { FiBox } from 'react-icons/fi';
+import { LuMapPin, LuPackageCheck, LuPlus, LuMap } from 'react-icons/lu';
+import { FaTruckMoving } from 'react-icons/fa6';
 import Select from 'react-select';
 import toast from 'react-hot-toast';
 import Popup from '../../common/Popup';
 import GetLocation from '../../common/GetLocation';
 
+/* ── Shared presentational helpers (consistent with the order View / Add pages) ── */
+const fieldLabel = 'block text-[11px] font-semibold uppercase tracking-[0.1em] text-gray-400';
+
+// Render react-select menus in a body portal so they are never clipped by the
+// card's `overflow-hidden` or the scrollable segment list.
+const selectMenuProps = {
+  menuPortalTarget: typeof document !== 'undefined' ? document.body : undefined,
+  menuPosition: 'fixed',
+  styles: { menuPortal: (base) => ({ ...base, zIndex: 9999 }) },
+};
+
+const SectionCard = ({ title, subtitle, icon, accent = '#a091ff', children, className = '', right = null, bodyClass = 'p-5 sm:p-6' }) => (
+  <section className={`bg-dark1 border border-white/[0.06] rounded-2xl overflow-hidden ${className}`}>
+    <header className='flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-white/[0.05]'>
+      <div className='flex items-center gap-3 min-w-0'>
+        <span className='flex items-center justify-center w-8 h-8 rounded-xl shrink-0' style={{ background: `${accent}1a`, color: accent }}>{icon}</span>
+        <div className='min-w-0'>
+          <h3 className='text-[12px] font-bold uppercase tracking-[0.14em] text-gray-200 truncate'>{title}</h3>
+          {subtitle ? <p className='text-[11px] text-gray-500 mt-0.5 normal-case tracking-normal truncate'>{subtitle}</p> : null}
+        </div>
+      </div>
+      {right}
+    </header>
+    <div className={bodyClass}>{children}</div>
+  </section>
+);
+
 export default function TripPlanning() {
+    const navigate = useNavigate();
     const { id } = useParams();
     const { Errors, user, company } = useContext(UserContext);
     const [order, setOrder] = useState(null);
@@ -413,91 +443,98 @@ export default function TripPlanning() {
 
     return (
         <AuthLayout>
-            <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6'>
+            <div className='flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-6 mt-2'>
                 <div className='min-w-0'>
-                    <h1 className='text-white text-lg sm:text-xl font-bold truncate'>
-                        Trip Planning For: {getOrderNumber(order, user, company, null)}
-                    </h1>
-                    <p className='text-gray-400 text-xs truncate'>Cust: {order.customer?.name} • Total Order Distance: <DistanceInMiles d={order.totalDistance} /></p>
+                    <div className='flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-gray-500 mb-2'>
+                        <span onClick={() => navigate('/orders')} className='cursor-pointer hover:text-gray-300 transition-colors'>Orders</span>
+                        <span className='text-gray-700'>/</span>
+                        <span className='text-gray-400'>Trip Planning</span>
+                    </div>
+                    <div className='flex items-center gap-3 flex-wrap'>
+                        <h1 className='text-2xl sm:text-3xl font-bold text-white font-mona truncate flex items-center gap-2.5'>
+                            <span className='flex items-center justify-center w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-400/20 text-rose-400 shrink-0'><TbRoute size={20} /></span>
+                            Order {getOrderNumber(order, user, company, null)}
+                        </h1>
+                        <span className={`text-[10px] font-bold uppercase tracking-[0.14em] px-2.5 py-1 rounded-full border ${(order.order_type || '').toLowerCase() === 'outsourcing' ? 'text-amber-300 border-amber-400/30 bg-amber-400/10' : 'text-rose-300 border-rose-400/30 bg-rose-400/10'}`}>
+                            {(order.order_type || '').toLowerCase() === 'outsourcing' ? 'Outsourcing' : 'Regular'}
+                        </span>
+                    </div>
+                    <p className='text-gray-400 text-[12px] mt-1.5 truncate'>{order.customer?.name} <span className='text-gray-600 mx-1'>•</span> Total distance <span className='text-gray-200'><DistanceInMiles d={order.totalDistance} /></span></p>
                 </div>
-                <div className='flex flex-wrap gap-2 w-full sm:w-auto'>
-                    <Link to="/orders" className='btn sm bg-gray-800 text-gray-400 text-[10px] uppercase font-bold px-4 flex-1 sm:flex-none text-center'>Back to Orders</Link>
-                    <button className='btn sm main-btn text-black text-[10px] uppercase font-bold px-4 flex-1 sm:flex-none' onClick={saveSplit}>Save All Trips</button>
+                <div className='flex flex-wrap gap-2.5 w-full sm:w-auto'>
+                    <Link to="/orders" className='text-[12px] uppercase font-bold tracking-wider px-4 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/[0.04] transition-colors flex-1 sm:flex-none text-center'>Back</Link>
+                    <button className='text-[12px] uppercase font-bold tracking-wider px-5 py-2.5 rounded-xl bg-main text-black hover:opacity-90 transition-opacity shadow-lg shadow-[#a091ff]/20 flex-1 sm:flex-none' onClick={saveSplit}>Save All Trips</button>
                 </div>
             </div>
 
-            <div className='-mx-6 md:-mx-8 mb-6'>
-                <div className='px-6 md:px-8'>
-                    <div className='bg-gradient-to-r from-gray-900 via-gray-900/90 to-gray-900 border border-gray-800/80 ring-1 ring-white/5 rounded-3xl overflow-hidden shadow-2xl backdrop-blur'>
-                        <div className='p-4 sm:p-6'>
-                            <div className='grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 items-center'>
-                                <div className='lg:col-span-4 flex items-center gap-3 sm:gap-4 min-w-0'>
-                                    <div className='w-12 h-12 rounded-2xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400 font-black text-lg flex-shrink-0'>P</div>
-                                    <div className='min-w-0'>
-                                        <p className='text-white font-bold text-sm sm:text-base truncate'>{order.locations[0]?.location || order.locations[0]?.address || 'Pickup'}</p>
-                                        <p className='text-gray-400 text-[10px] sm:text-xs truncate'>{order.locations[0]?.city || ''} {order.locations[0]?.state || ''}</p>
-                                    </div>
+            <div className='mb-6'>
+                <div className='bg-dark1 border border-white/[0.06] rounded-2xl overflow-hidden'>
+                    <div className='p-5 sm:p-6'>
+                        <div className='grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-6 items-center'>
+                            <div className='lg:col-span-4 flex items-center gap-4 min-w-0'>
+                                <div className='w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-400/30 flex items-center justify-center text-emerald-400 flex-shrink-0'><LuMapPin size={19} /></div>
+                                <div className='min-w-0'>
+                                    <p className='text-[10px] font-semibold uppercase tracking-[0.13em] text-emerald-300/80 mb-0.5'>Origin</p>
+                                    <p className='text-white font-semibold text-sm sm:text-[15px] truncate'>{order.locations[0]?.location || order.locations[0]?.address || 'Pickup'}</p>
+                                    <p className='text-gray-500 text-[11px] truncate'>{order.locations[0]?.city || ''} {order.locations[0]?.state || ''}</p>
                                 </div>
+                            </div>
 
-                                <div className='lg:col-span-4 flex flex-col items-center gap-2'>
-                                    <div className='bg-orange-500 text-white px-4 py-2 rounded-full flex items-center gap-2 shadow-lg shadow-orange-500/20'>
-                                        <TbTruckDelivery size={16} />
-                                        <span className='font-black text-[11px] sm:text-xs'>
-                                            {(() => {
-                                                const miles = Number(order?.totalDistance || 0);
-                                                const km = miles * 1.60934;
-                                                return `${miles.toFixed(2)} mi (${km.toFixed(2)} km)`;
-                                            })()}
-                                        </span>
-                                    </div>
-                                    <div className='text-[10px] text-gray-300 bg-gray-800/50 border border-gray-800 px-3 py-1 rounded-full'>
-                                        {(order.order_type || '').toLowerCase() === 'outsourcing' ? 'Outsourcing' : 'Regular'}
-                                    </div>
-                                    <div className='hidden lg:block w-full max-w-[520px] h-0.5 bg-gray-800/80 relative'>
-                                        <div className='absolute inset-0 flex justify-between -top-1'>
-                                            <div className='w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.35)]'></div>
-                                            <div className='w-2.5 h-2.5 rounded-full bg-gray-700'></div>
-                                            <div className='w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.25)]'></div>
-                                        </div>
-                                    </div>
-                                    <div className='text-[10px] text-gray-300 bg-gray-800/40 border border-gray-800 px-3 py-1 rounded-full max-w-full truncate'>
+                            <div className='lg:col-span-4 flex flex-col items-center gap-2.5'>
+                                <div className='bg-main text-black px-4 py-2 rounded-full flex items-center gap-2 shadow-lg shadow-[#a091ff]/20'>
+                                    <TbTruckDelivery size={16} />
+                                    <span className='font-bold text-[11px] sm:text-xs font-mona'>
                                         {(() => {
-                                            const t = trips[activeTripIndex];
-                                            if (!t) return '';
-                                            const miles = Number(t.miles) || sumMilesBetween(t.start_stop_index, t.end_stop_index);
-                                            const km = (Number(t.total_km) > 0) ? Number(t.total_km) : (miles * 1.60934);
-                                            const label = order.order_type === 'regular'
-                                                ? (drivers.find(d => d.value === t.driver)?.label || 'Unassigned')
-                                                : (carriers.find(c => c.value === t.carrier)?.label || 'Unassigned');
-                                            return `Active Trip #${activeTripIndex + 1} • ${miles.toFixed(2)} mi (${km.toFixed(2)} km) • ${label}`;
+                                            const miles = Number(order?.totalDistance || 0);
+                                            const km = miles * 1.60934;
+                                            return `${miles.toFixed(2)} mi (${km.toFixed(2)} km)`;
                                         })()}
-                                    </div>
+                                    </span>
                                 </div>
+                                <div className='hidden lg:flex w-full max-w-[420px] items-center gap-1.5'>
+                                    <div className='w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(34,197,94,0.4)]'></div>
+                                    <div className='flex-1 h-0.5 bg-gradient-to-r from-emerald-500/40 via-white/10 to-rose-500/40'></div>
+                                    <div className='w-2 h-2 rounded-full bg-gray-600'></div>
+                                    <div className='flex-1 h-0.5 bg-gradient-to-r from-emerald-500/40 via-white/10 to-rose-500/40'></div>
+                                    <div className='w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.3)]'></div>
+                                </div>
+                                <div className='text-[10px] text-gray-300 bg-white/[0.04] border border-white/[0.08] px-3 py-1 rounded-full max-w-full truncate'>
+                                    {(() => {
+                                        const t = trips[activeTripIndex];
+                                        if (!t) return '';
+                                        const miles = Number(t.miles) || sumMilesBetween(t.start_stop_index, t.end_stop_index);
+                                        const km = (Number(t.total_km) > 0) ? Number(t.total_km) : (miles * 1.60934);
+                                        const label = order.order_type === 'regular'
+                                            ? (drivers.find(d => d.value === t.driver)?.label || 'Unassigned')
+                                            : (carriers.find(c => c.value === t.carrier)?.label || 'Unassigned');
+                                        return `Active Trip #${activeTripIndex + 1} • ${miles.toFixed(2)} mi (${km.toFixed(2)} km) • ${label}`;
+                                    })()}
+                                </div>
+                            </div>
 
-                                <div className='lg:col-span-4 flex items-center gap-3 sm:gap-4 min-w-0 justify-between lg:justify-end'>
-                                    <div className='min-w-0 lg:text-right'>
-                                        <p className='text-white font-bold text-sm sm:text-base truncate'>{order.locations[order.locations.length-1]?.location || order.locations[order.locations.length-1]?.address || 'Delivery'}</p>
-                                        <p className='text-gray-400 text-[10px] sm:text-xs truncate'>{order.locations[order.locations.length-1]?.city || ''} {order.locations[order.locations.length-1]?.state || ''}</p>
-                                    </div>
-                                    <div className='w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-300 font-black text-lg flex-shrink-0'>D</div>
+                            <div className='lg:col-span-4 flex items-center gap-4 min-w-0 justify-between lg:justify-end lg:flex-row-reverse'>
+                                <div className='w-11 h-11 rounded-xl bg-rose-500/10 border border-rose-400/30 flex items-center justify-center text-rose-300 flex-shrink-0'><LuPackageCheck size={19} /></div>
+                                <div className='min-w-0 lg:text-right'>
+                                    <p className='text-[10px] font-semibold uppercase tracking-[0.13em] text-rose-300/80 mb-0.5'>Destination</p>
+                                    <p className='text-white font-semibold text-sm sm:text-[15px] truncate'>{order.locations[order.locations.length-1]?.location || order.locations[order.locations.length-1]?.address || 'Delivery'}</p>
+                                    <p className='text-gray-500 text-[11px] truncate'>{order.locations[order.locations.length-1]?.city || ''} {order.locations[order.locations.length-1]?.state || ''}</p>
                                 </div>
                             </div>
                         </div>
-                        <div className='h-px bg-gradient-to-r from-transparent via-gray-700/50 to-transparent'></div>
                     </div>
                 </div>
             </div>
 
             <div className='lg:hidden mb-4'>
-                <div className='grid grid-cols-2 bg-gray-900 border border-gray-800 rounded-2xl p-1'>
+                <div className='grid grid-cols-2 bg-[#0c1b26] border border-white/[0.07] rounded-xl p-1'>
                     <button
-                        className={`py-2 rounded-xl text-[10px] uppercase font-black transition-all ${mobileTab === 'trips' ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'text-gray-300'}`}
+                        className={`py-2.5 rounded-lg text-[11px] uppercase font-bold tracking-wider transition-all ${mobileTab === 'trips' ? 'bg-gradient-to-r from-[#fb7185] to-[#f43f5e] text-white shadow-lg shadow-rose-500/20' : 'text-gray-400'}`}
                         onClick={() => setMobileTab('trips')}
                     >
                         Trips & Assets
                     </button>
                     <button
-                        className={`py-2 rounded-xl text-[10px] uppercase font-black transition-all ${mobileTab === 'route' ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/20' : 'text-gray-300'}`}
+                        className={`py-2.5 rounded-lg text-[11px] uppercase font-bold tracking-wider transition-all ${mobileTab === 'route' ? 'bg-gradient-to-r from-[#fb7185] to-[#f43f5e] text-white shadow-lg shadow-rose-500/20' : 'text-gray-400'}`}
                         onClick={() => setMobileTab('route')}
                     >
                         Route
@@ -509,20 +546,22 @@ export default function TripPlanning() {
                 <div className={`${mobileTab === 'trips' ? 'block' : 'hidden'} lg:block lg:col-span-4`}>
                     <div className='space-y-4'>
                         {/* Trip Selector */}
-                        <div className='bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl'>
-                            <div className='bg-gradient-to-r from-gray-800/70 to-gray-900/40 px-4 py-3 border-b border-gray-800 flex justify-between items-center'>
-                                <span className='text-[10px] font-black text-gray-200 uppercase tracking-widest'>Current Trip Segments</span>
-                                <span className='text-[10px] bg-rose-500/15 text-rose-300 px-2 py-0.5 rounded-full border border-rose-500/20'>{trips.length} Total</span>
-                            </div>
-                            <div className='p-2 space-y-1 max-h-[260px] sm:max-h-[300px] overflow-y-auto'>
+                        <SectionCard
+                            title='Trip Segments'
+                            icon={<TbListDetails size={16} />}
+                            accent='#fb7185'
+                            bodyClass='p-2'
+                            right={<span className='text-[10px] font-bold bg-rose-500/15 text-rose-300 px-2.5 py-1 rounded-full border border-rose-500/20'>{trips.length} Total</span>}
+                        >
+                            <div className='space-y-1 max-h-[260px] sm:max-h-[320px] overflow-y-auto pr-1'>
                                 {trips.map((trip, i) => (
-                                    <div 
-                                        key={i} 
+                                    <div
+                                        key={i}
                                         onClick={() => setActiveTripIndex(i)}
-                                        className={`flex items-center justify-between p-3 rounded-2xl cursor-pointer transition-all border ${activeTripIndex === i ? 'bg-rose-500/10 border-rose-500/30 shadow-lg shadow-rose-500/5' : 'bg-gray-900/30 border-transparent hover:border-gray-800 hover:bg-gray-800/40'}`}
+                                        className={`flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all border ${activeTripIndex === i ? 'bg-rose-500/10 border-rose-500/30' : 'bg-white/[0.015] border-transparent hover:border-white/[0.08] hover:bg-white/[0.03]'}`}
                                     >
-                                        <div className='flex items-center gap-2 sm:gap-3 min-w-0'>
-                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${activeTripIndex === i ? 'bg-rose-500 text-white' : 'bg-gray-800 text-gray-400'}`}>
+                                        <div className='flex items-center gap-3 min-w-0'>
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold font-mona shrink-0 ${activeTripIndex === i ? 'bg-rose-500 text-white' : 'bg-white/[0.06] text-gray-400'}`}>
                                                 {i + 1}
                                             </div>
                                             <div className='min-w-0'>
@@ -563,24 +602,25 @@ export default function TripPlanning() {
                                     </div>
                                 ))}
                             </div>
-                        </div>
+                        </SectionCard>
 
                         {/* Assets for Active Trip */}
-                        <div className='bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl'>
-                            <div className='bg-gradient-to-r from-gray-800/70 to-gray-900/40 px-4 py-3 border-b border-gray-800 flex items-center justify-between'>
-                                <span className='text-[10px] font-black text-gray-200 uppercase tracking-widest'>Trip #{activeTripIndex + 1} Assets & Pay</span>
-                                <span className='text-[10px] text-gray-500'>{order.order_type === 'regular' ? 'Driver' : 'Carrier'}</span>
-                            </div>
-                            <div className='p-5 space-y-4'>
+                        <SectionCard
+                            title={`Trip #${activeTripIndex + 1} · Assets & Pay`}
+                            icon={order.order_type === 'regular' ? <FaTruckMoving size={14} /> : <TbBuildingWarehouse size={16} />}
+                            accent={order.order_type === 'regular' ? '#fb7185' : '#fbbf24'}
+                            right={<span className='text-[10px] uppercase tracking-wider text-gray-500 font-semibold'>{order.order_type === 'regular' ? 'Driver' : 'Carrier'}</span>}
+                        >
+                            <div className='space-y-4'>
                                 {order.order_type === 'regular' ? (
                                     <>
                                         <div className='input-item'>
-                                            <label className='text-[10px] text-gray-500 uppercase font-bold mb-1 block'>Driver(s)</label>
+                                            <label className={fieldLabel}>Driver(s)</label>
                                             <Select 
                                                 isMulti
                                                 options={drivers} 
                                                 isSearchable={true}
-                                                classNamePrefix="react-select input"
+                                                classNamePrefix="react-select input" {...selectMenuProps}
                                                 placeholder="Choose Driver(s)"
                                                 value={drivers.filter(d => (trips[activeTripIndex]?.drivers || []).includes(d.value))}
                                                 onChange={(opts) => {
@@ -597,11 +637,11 @@ export default function TripPlanning() {
                                         </div>
                                         <div className='grid grid-cols-2 gap-4'>
                                             <div className='input-item'>
-                                                <label className='text-[10px] text-gray-500 uppercase font-bold mb-1 block'>Truck</label>
+                                                <label className={fieldLabel}>Truck</label>
                                                 <Select 
                                                     options={trucks} 
                                                     isSearchable={true}
-                                                    classNamePrefix="react-select input"
+                                                    classNamePrefix="react-select input" {...selectMenuProps}
                                                     placeholder="Truck"
                                                     value={trucks.find(t => t.value === trips[activeTripIndex]?.truck)}
                                                     onChange={(opt) => {
@@ -612,11 +652,11 @@ export default function TripPlanning() {
                                                 />
                                             </div>
                                             <div className='input-item'>
-                                                <label className='text-[10px] text-gray-500 uppercase font-bold mb-1 block'>Trailer</label>
+                                                <label className={fieldLabel}>Trailer</label>
                                                 <Select 
                                                     options={trailers} 
                                                     isSearchable={true}
-                                                    classNamePrefix="react-select input"
+                                                    classNamePrefix="react-select input" {...selectMenuProps}
                                                     placeholder="Trailer"
                                                     value={trailers.find(t => t.value === trips[activeTripIndex]?.trailer)}
                                                     onChange={(opt) => {
@@ -662,11 +702,11 @@ export default function TripPlanning() {
                                     </>
                                 ) : (
                                     <div className='input-item'>
-                                        <label className='text-[10px] text-gray-500 uppercase font-bold mb-1 block'>Carrier</label>
+                                        <label className={fieldLabel}>Carrier</label>
                                         <Select 
                                             options={carriers} 
                                             isSearchable={true}
-                                            classNamePrefix="react-select input"
+                                            classNamePrefix="react-select input" {...selectMenuProps}
                                             placeholder="Choose Carrier"
                                             value={carriers.find(c => c.value === trips[activeTripIndex]?.carrier)}
                                             onChange={(opt) => {
@@ -681,7 +721,7 @@ export default function TripPlanning() {
                                     </div>
                                 )}
                                 <div className='input-item'>
-                                    <label className='text-[10px] text-gray-500 uppercase font-bold mb-1 block'>Segment Miles</label>
+                                    <label className={fieldLabel}>Segment Miles</label>
                                     <div className='relative'>
                                         <input 
                                             type="number" 
@@ -716,7 +756,7 @@ export default function TripPlanning() {
                                 )}
 
                                 <div className='input-item'>
-                                    <label className='text-[10px] text-gray-500 uppercase font-bold mb-1 block'>Special Instructions</label>
+                                    <label className={fieldLabel}>Special Instructions</label>
                                     <textarea 
                                         className='input-sm min-h-[80px] py-2 text-xs' 
                                         placeholder='Instructions for this specific trip segment...'

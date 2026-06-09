@@ -3,7 +3,7 @@ import { LuBuilding2, LuSearch, LuUsers, LuUserCheck } from "react-icons/lu";
 
 export default function CustomerStats({ totalCustomers, isSearching, searchTerm, customers }) {
   // Calculate statistics
-  const assignedCustomers = customers?.filter(c => c.assigned_to).length || 0;
+  const assignedCustomers = customers?.filter(c => Array.isArray(c.assigned_to) && c.assigned_to.length > 0).length || 0;
   const unassignedCustomers = totalCustomers - assignedCustomers;
 
   if (isSearching && totalCustomers === 0) {

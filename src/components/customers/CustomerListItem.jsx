@@ -74,10 +74,11 @@ export default function CustomerListItem({
               <span className="text-xs px-2 py-1 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
                 #{customer.customerCode || 'N/A'}
               </span>
-              {customer.assigned_to && (
+              {Array.isArray(customer.assigned_to) && customer.assigned_to.length > 0 && (
                 <span className="text-xs text-gray-400 flex items-center gap-1">
                   <LuUser size={12} />
-                  {customer.assigned_to.name}
+                  {customer.assigned_to.slice(0, 2).map(u => u?.name).filter(Boolean).join(', ')}
+                  {customer.assigned_to.length > 2 && ` +${customer.assigned_to.length - 2}`}
                 </span>
               )}
             </div>
@@ -224,23 +225,28 @@ export default function CustomerListItem({
               <div>
                 <h4 className="text-sm font-medium text-gray-300 flex items-center gap-2 mb-3">
                   <LuBuilding2 size={16} />
-                  Assignment
+                  Assigned Staff
                 </h4>
                 <div className="pl-6 space-y-2">
-                  {customer.assigned_to && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center">
-                        <LuUser size={14} className="text-blue-400" />
+                  {Array.isArray(customer.assigned_to) && customer.assigned_to.length > 0 ? (
+                    customer.assigned_to.map((u, i) => u && (
+                      <div key={u._id || i} className="flex items-center gap-2">
+                        <div className="w-8 h-8 bg-blue-500/20 rounded-full flex items-center justify-center shrink-0">
+                          <LuUser size={14} className="text-blue-400" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-300">
+                            {u.name}
+                            {u.is_admin === 1 && <span className="ml-1.5 text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 font-semibold">Admin</span>}
+                          </p>
+                          <p className="text-xs text-gray-500">{u.email}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-300">{customer.assigned_to.name}</p>
-                        <p className="text-xs text-gray-500">
-                          {customer.assigned_to.position || customer.assigned_to.phone || 'Staff Member'}
-                        </p>
-                      </div>
-                    </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-gray-500 italic">No staff assigned</p>
                   )}
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                  <div className="flex items-center gap-2 text-xs text-gray-500 pt-1">
                     <LuCalendar size={12} />
                     Added on <TimeFormat date={customer.createdAt || "--"} time={false} />
                   </div>

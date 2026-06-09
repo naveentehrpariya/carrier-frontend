@@ -12,6 +12,13 @@ import { ModalShell, ModalHeader, FormSection, Field, TextInput, SelectInput, Mo
 
 export default function AddCustomer({item, fetchLists, classes, text}){
 
+    // Normalize existing assigned_to (could be single object, array, or null after migration)
+    const normalizeAssignedTo = (val) => {
+      if (!val) return [];
+      if (Array.isArray(val)) return val.map(u => u._id || u).filter(Boolean);
+      return [val._id || val].filter(Boolean);
+    };
+
     const [data, setData] = useState({
       // mc_code:  item?.mc_code || "",
       phone: item?.phone || "",
@@ -24,7 +31,7 @@ export default function AddCustomer({item, fetchLists, classes, text}){
       state:  item?.state || "",
       city: item?.city || "",
       zipcode: item?.zipcode || "",
-      assigned_to: item?.assigned_to?._id || null,
+      assigned_to: normalizeAssignedTo(item?.assigned_to),
     });
     const [emails, setEmails] = useState([]);
     const [showSecondaryPhone, setShowSecondaryPhone] = useState(!!item?.secondary_phone);
@@ -42,34 +49,28 @@ export default function AddCustomer({item, fetchLists, classes, text}){
 
     const [staffLists, setStaffListing] = useState([]);
     const fetchStaffLists = () => {
-        const resp = Api.get(`/user/staff-listing`);
+        const resp = Api.get(`/user/assignable-listing`);
         resp.then((res) => {
           if (res.data.status === true) {
-            const lists = res.data.users || []; 
-            let arr = [];
-            lists.forEach(e => {
-              arr.push({
-                _id: e._id,
-                label: `${e.name} - ${e.country} (${e.email})`,
-                value: e._id,
-                corporateID: e.corporateID
-              })
-            });
+            const lists = res.data.users || [];
+            const arr = lists.map(e => ({
+              _id: e._id,
+              label: `${e.name}${e.is_admin === 1 ? ' (Admin)' : ''} — ${e.email}`,
+              value: e._id,
+            }));
             setStaffListing(arr);
           } else {
             setStaffListing([]);
           }
-        }).catch((err) => {
-          setStaffListing([]);
-        });
+        }).catch(() => setStaffListing([]));
     }
 
     useEffect(()=>{
       fetchStaffLists();
     },[]);
 
-    const chooseStaff = (e) => { 
-      setData({ ...data, assigned_to: e ? e.value : null});
+    const chooseStaff = (selected) => {
+      setData({ ...data, assigned_to: selected ? selected.map(s => s.value) : [] });
     }
 
     const handleEmailsChange = (emailsArray) => {
@@ -91,7 +92,11 @@ export default function AddCustomer({item, fetchLists, classes, text}){
       const validEmails = emails.filter(e => e.email && e.email.trim() !== '');
       if(validEmails.length === 0){
         toast.error("Please provide at least one valid email address.");
-        return false
+        return false;
+      }
+      if (!data.assigned_to || data.assigned_to.length === 0) {
+        toast.error("Please assign at least one staff member to this customer.");
+        return false;
       }
      
       setLoading(true);
@@ -119,7 +124,7 @@ export default function AddCustomer({item, fetchLists, classes, text}){
             state:  "",
             city: "",
             zipcode: "",
-            assigned_to: null,
+            assigned_to: [],
           });
           setShowSecondaryPhone(false);
           setTimeout(() => {
@@ -148,14 +153,14 @@ export default function AddCustomer({item, fetchLists, classes, text}){
          />
 
          <FormSection title="Profile & contact">
-            <Field full label="Assigned To" hint="Leave unassigned to make this customer visible to all staff.">
+            <Field full label="Assign Staff" required hint="At least one staff member required. Only assigned staff can see this customer.">
               <Select
-                defaultValue={(staffLists && staffLists.find(e => e.value === item?.assigned_to?._id)) || null}
+                isMulti
+                value={staffLists.filter(s => (data.assigned_to || []).includes(s.value))}
                 classNamePrefix="react-select input"
-                placeholder={'Choose staff'}
+                placeholder={'Choose one or more staff…'}
                 onChange={chooseStaff}
-                isClearable={true}
-                options={[{ label: 'Unassigned (Visible to all staff)', value: null }, ...staffLists]} />
+                options={staffLists} />
             </Field>
 
             <Field full label="Name" required>

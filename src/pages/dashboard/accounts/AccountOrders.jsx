@@ -248,7 +248,16 @@ export default function AccountOrders() {
                                        </li>
                                     )}
                                  </Dropdown>
-                                 <OrderView text={<><TbLayoutSidebarLeftCollapse size={20} /></>} order={c} fetchLists={fetchLists} />
+                                 <OrderView
+                                    text={
+                                      <span className='inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.05] border border-white/[0.08] hover:bg-purple-500/15 hover:border-purple-500/30 transition-all text-gray-300 hover:text-purple-300 text-[11px] font-medium'>
+                                        <TbLayoutSidebarLeftCollapse size={14} />
+                                        Quick View
+                                      </span>
+                                    }
+                                    order={c}
+                                    fetchLists={fetchLists}
+                                  />
                               </div>
                            </div>
 

@@ -16,16 +16,15 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
     const commisions = Array.from({ length: 100 }, (_, index) => (index + 1) * 1);
     const [staffType, setStaffType] = useState(0);
     const availablePermissions = [
-      // { id: 'driver', label: 'Driver' }, // Commented to prevent assigning driver role from here
-      { id: 'regular', label: 'Regular (Trucking & Fleet)' },
-      { id: 'outsourcing', label: 'Outsourcing (Carriers)' },
-      { id: 'accounting', label: 'Accounting & Payments' },
-      { id: 'customers', label: 'View Customers' },
-      { id: 'customers_write', label: 'Manage Customers (add/edit)' },
-      { id: 'carriers', label: 'View Carriers' },
-      { id: 'carriers_write', label: 'Manage Carriers (add/edit)' },
-      { id: 'employees', label: 'Manage Employees' },
-      { id: 'subadmin', label: 'Subadmin' },
+      { id: 'regular',         label: 'Regular',                desc: 'Fleet management — trucks, trailers, drivers, trips, regular orders.' },
+      { id: 'outsourcing',     label: 'Outsourcing',            desc: 'Carrier orders — create & manage outsourcing orders, carrier sheets.' },
+      { id: 'accounting',      label: 'Accounting',             desc: 'Full financial access — payment updates, profit reports, all customers & carriers visible.' },
+      { id: 'customers',       label: 'View Customers',         desc: 'See customers assigned to this user. Without this, customer pages are hidden.' },
+      { id: 'customers_write', label: 'Manage Customers',       desc: 'Add and edit customers (requires View Customers).' },
+      { id: 'carriers',        label: 'View Carriers',          desc: 'See carriers assigned to this user. Without this, carrier pages are hidden.' },
+      { id: 'carriers_write',  label: 'Manage Carriers',        desc: 'Add and edit carriers (requires View Carriers).' },
+      { id: 'employees',       label: 'Manage Employees',       desc: 'View and manage staff profiles, but cannot change admin settings.' },
+      { id: 'subadmin',        label: 'Sub-Admin',              desc: 'All permissions above — sees everything an admin sees except billing and tenant settings.' },
     ];
 
     // One-click presets — selecting one auto-fills the permissions below.
@@ -205,7 +204,7 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
                  return (
                    <label
                      key={p.id}
-                     className="flex items-center gap-3 cursor-pointer group select-none bg-white/[0.04] hover:bg-white/[0.07] px-3.5 py-2.5 rounded-xl border transition-colors"
+                     className="flex items-start gap-3 cursor-pointer group select-none bg-white/[0.04] hover:bg-white/[0.07] px-3.5 py-3 rounded-xl border transition-colors"
                      style={{ borderColor: checked ? 'rgba(160,145,255,0.5)' : 'rgba(255,255,255,0.06)' }}
                    >
                      <input
@@ -215,7 +214,7 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
                        onChange={() => togglePermission(p.id)}
                      />
                      <div
-                       className="w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0"
+                       className="w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0 mt-0.5"
                        style={checked
                          ? { background: ACCENTS.employee, borderColor: ACCENTS.employee, color: '#000' }
                          : { borderColor: 'rgba(255,255,255,0.25)' }}
@@ -224,7 +223,10 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
                          <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>
                        )}
                      </div>
-                     <span className="text-sm text-gray-300">{p.label}</span>
+                     <div className="min-w-0">
+                       <span className="text-sm font-medium text-gray-200 block">{p.label}</span>
+                       <span className="text-xs text-gray-500 leading-snug">{p.desc}</span>
+                     </div>
                    </label>
                  );
                })}

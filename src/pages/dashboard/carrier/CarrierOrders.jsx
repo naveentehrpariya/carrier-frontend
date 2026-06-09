@@ -88,7 +88,7 @@ export default function CarrierOrders({isRecent, carrierID, customer, carrier, s
                <div>
                   <h2 className='text-white text-2xl mb-1 md:mb-0'>{title ? title : "Orders"}</h2>
                   {user && (user?.permissions?.includes('regular') || user?.permissions?.includes('outsourcing') || user?.permissions?.includes('subadmin')) && (
-                     <p className='text-gray-400 text-sm mb-4 md:mb-0'>Showing only orders created by you</p>
+                     <p className='text-gray-400 text-sm mb-4'>Showing only orders created by you</p>
                   )}
                </div>
                <div className='sm:flex items-center justify-between md:justify-end'>
