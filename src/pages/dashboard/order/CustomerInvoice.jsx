@@ -72,6 +72,37 @@ export default function CustomerInvoice() {
       if (order) setInvoiceNo(`${order?.serial_no}-${todaydate.getMonth() + 1}${todaydate.getDate()}${Math.floor(Math.random() * 1000)}`);
    }, [order]); // eslint-disable-line react-hooks/exhaustive-deps
 
+   const getLogoBase64 = async (url) => {
+      if (!url || url.startsWith('data:')) return url;
+      try {
+         const resp = await fetch(url);
+         if (!resp.ok) return null;
+         const blob = await resp.blob();
+         const blobUrl = URL.createObjectURL(blob);
+         return await new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+               const MAX_W = 600;
+               const scale = img.naturalWidth > MAX_W ? MAX_W / img.naturalWidth : 1;
+               const canvas = document.createElement('canvas');
+               canvas.width = Math.round(img.naturalWidth * scale);
+               canvas.height = Math.round(img.naturalHeight * scale);
+               canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+               URL.revokeObjectURL(blobUrl);
+               try { resolve(canvas.toDataURL('image/png')); }
+               catch {
+                  const fr = new FileReader();
+                  fr.onload = () => resolve(fr.result);
+                  fr.onerror = () => resolve(null);
+                  fr.readAsDataURL(blob);
+               }
+            };
+            img.onerror = () => { URL.revokeObjectURL(blobUrl); resolve(null); };
+            img.src = blobUrl;
+         });
+      } catch { return null; }
+   };
+
    const downloadPDF = async () => {
       setDownloadingPdf(true);
       setPdfProgress('Preparing...');
@@ -80,13 +111,22 @@ export default function CustomerInvoice() {
       if (!element) { setDownloadingPdf(false); setPdfProgress(''); return; }
       try {
          setPdfProgress('Generating PDF...');
+         const logoUrl = company?.pdf_logo || company?.logo;
+         const logoBase64 = logoUrl ? await getLogoBase64(logoUrl) : null;
          const clone = element.cloneNode(true);
+         clone.style.zoom = '1';
          clone.querySelectorAll('img').forEach(img => {
-            if (img.src.startsWith('/')) img.src = window.location.origin + img.getAttribute('src');
+            const alt = img.getAttribute('alt');
+            if ((alt === 'logo' || alt === 'Logo') && logoBase64) {
+               img.src = logoBase64;
+            } else if (img.src.startsWith('/')) {
+               img.src = window.location.origin + img.getAttribute('src');
+            }
          });
          const res = await Api.post('/order/generate-pdf', {
             html: clone.outerHTML,
-            filename: `CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`
+            filename: `CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`,
+            ...(logoBase64 && { logoBase64 }),
          }, { responseType: 'blob' });
          const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
          const a = document.createElement('a');

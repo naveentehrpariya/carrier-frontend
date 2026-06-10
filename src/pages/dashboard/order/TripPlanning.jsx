@@ -667,9 +667,9 @@ export default function TripPlanning() {
                                                 />
                                             </div>
                                         </div>
-                                        <div className='flex gap-3'>
-                                            <button 
-                                                className='btn bg-gray-800 text-white'
+                                        <div className='flex flex-wrap gap-2.5'>
+                                            <button
+                                                className='text-[12px] font-semibold px-3.5 py-2 rounded-lg border border-white/10 text-gray-300 hover:bg-white/[0.04] transition-colors'
                                                 onClick={() => {
                                                     const newTrips = [...trips];
                                                     newTrips[activeTripIndex].drivers = [];
@@ -679,10 +679,10 @@ export default function TripPlanning() {
                                                     setTrips(newTrips);
                                                 }}
                                             >
-                                                Clear This Segment
+                                                Clear Segment
                                             </button>
-                                            <button 
-                                                className='btn bg-gray-700 text-white'
+                                            <button
+                                                className='text-[12px] font-semibold px-3.5 py-2 rounded-lg border border-[#a091ff]/25 text-main hover:border-[#a091ff]/50 transition-colors'
                                                 onClick={() => {
                                                     const base = trips[activeTripIndex];
                                                     const newTrips = trips.map((t, idx) => idx <= activeTripIndex ? t : ({
@@ -746,12 +746,12 @@ export default function TripPlanning() {
 
                                 {/* Salary Calculation Preview */}
                                 {order.order_type === 'regular' && trips[activeTripIndex]?.driver && trips[activeTripIndex]?.miles > 0 && (
-                                    <div className='bg-gradient-to-r from-green-500/10 to-transparent border border-green-500/20 rounded-2xl p-4'>
+                                    <div className='bg-gradient-to-r from-emerald-500/[0.12] to-transparent border border-emerald-500/20 rounded-xl p-4'>
                                         <div className='flex justify-between items-center'>
-                                            <span className='text-[10px] text-gray-400 uppercase font-bold tracking-widest'>Driver Pay</span>
-                                            <span className='text-green-500 font-black text-lg'>${calculateDriverPay(trips[activeTripIndex]).toFixed(2)}</span>
+                                            <span className='text-[10px] text-gray-400 uppercase font-bold tracking-[0.13em]'>Driver Pay</span>
+                                            <span className='text-emerald-400 font-bold text-xl font-mona'>${calculateDriverPay(trips[activeTripIndex]).toFixed(2)}</span>
                                         </div>
-                                        <p className='text-[9px] text-gray-500 mt-1 italic'>Based on {trips[activeTripIndex].miles} miles @ ${drivers.find(d => d.value === trips[activeTripIndex].driver)?.ratePerMile}/mile</p>
+                                        <p className='text-[10px] text-gray-500 mt-1'>Based on {trips[activeTripIndex].miles} miles @ ${drivers.find(d => d.value === trips[activeTripIndex].driver)?.ratePerMile}/mile</p>
                                     </div>
                                 )}
 
@@ -769,22 +769,26 @@ export default function TripPlanning() {
                                     />
                                 </div>
                             </div>
-                        </div>
+                        </SectionCard>
                     </div>
                 </div>
 
                 <div className={`${mobileTab === 'route' ? 'block' : 'hidden'} lg:block lg:col-span-8 space-y-6`}>
-                    <div className='bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-2xl'>
-                        <div className='bg-gradient-to-r from-gray-800/70 to-gray-900/40 px-4 py-3 border-b border-gray-800 flex justify-between items-center'>
-                            <span className='text-[10px] font-black text-gray-200 uppercase tracking-widest'>Route & Splitting Points</span>
-                            <span className='hidden sm:inline text-[10px] text-gray-500 italic'>Add relay points to create trip segments</span>
-                        </div>
-                        <div className='p-4 sm:p-6'>
+                    <SectionCard
+                        title='Route & Splitting Points'
+                        icon={<LuMap size={16} />}
+                        accent='#a091ff'
+                        subtitle='Add relay points to create trip segments'
+                        bodyClass='p-4 sm:p-6'
+                    >
                             <div className='relative space-y-4'>
                                 {order.locations.map((loc, idx) => {
                                     const tripForThisStop = trips.find(t => idx >= t.start_stop_index && idx <= t.end_stop_index);
                                     const isActiveSegment = trips[activeTripIndex] === tripForThisStop;
                                     const isSplitPoint = trips.some(t => t.start_stop_index === idx && idx !== 0);
+                                    const locType = loc.location_type || loc.type;
+                                    const isPickup = locType === 'pickup';
+                                    const isRelay = locType === 'relay';
 
                                     return (
                                         <div key={idx} className='relative'>
@@ -792,25 +796,26 @@ export default function TripPlanning() {
                                             {isSplitPoint && (
                                                 <div className='flex items-center gap-2 mb-4'>
                                                     <div className='h-px flex-1 bg-rose-500/30'></div>
-                                                    <div className='px-3 py-1 bg-rose-500/10 border border-rose-500/30 rounded-full text-[8px] font-black text-rose-500 tracking-widest uppercase'>New Trip Segment Below</div>
+                                                    <div className='px-3 py-1 bg-rose-500/10 border border-rose-500/30 rounded-full text-[9px] font-bold text-rose-400 tracking-[0.13em] uppercase'>New Trip Segment Below</div>
                                                     <div className='h-px flex-1 bg-rose-500/30'></div>
                                                 </div>
                                             )}
 
-                                            <div className={`group relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 p-4 rounded-3xl border transition-all duration-300 ${isActiveSegment ? 'bg-gradient-to-r from-rose-500/10 to-transparent border-rose-500/25' : 'bg-gray-900/40 border-gray-800/60 hover:border-gray-700'}`}>
-                                                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center text-xs font-black shadow-xl ${loc.location_type === 'pickup' ? 'bg-green-500/10 text-green-400 border border-green-500/20' : 'bg-rose-500/10 text-rose-300 border border-rose-500/20'}`}>
-                                                    {idx + 1}
+                                            <div className={`group relative flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-5 p-4 rounded-2xl border transition-all duration-300 ${isActiveSegment ? 'bg-gradient-to-r from-rose-500/[0.08] to-transparent border-rose-500/25' : 'bg-white/[0.015] border-white/[0.06] hover:border-white/[0.12]'}`}>
+                                                <div className={`relative w-11 h-11 rounded-full flex items-center justify-center shrink-0 border ${isPickup ? 'bg-emerald-500/10 text-emerald-400 border-emerald-400/30' : isRelay ? 'bg-amber-500/10 text-amber-300 border-amber-400/30' : 'bg-rose-500/10 text-rose-300 border-rose-400/30'}`}>
+                                                    {isPickup ? <LuMapPin size={17} /> : isRelay ? <TbArrowRight size={17} /> : <LuPackageCheck size={17} />}
+                                                    <span className='absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-dark1 border border-white/15 text-[10px] font-bold text-gray-300 flex items-center justify-center font-mona'>{idx + 1}</span>
                                                 </div>
-                                                
+
                                                 <div className='flex-1 min-w-0'>
-                                                    <div className='flex items-center gap-2'>
-                                                        <p className='text-white font-bold text-sm truncate'>{loc.location || loc.address || 'No Address'}</p>
-                                                        <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter ${loc.location_type === 'pickup' ? 'bg-green-500/10 text-green-500' : 'bg-rose-500/10 text-rose-500'}`}>{loc.location_type || loc.type}</span>
+                                                    <div className='flex items-center gap-2 flex-wrap'>
+                                                        <p className='text-white font-semibold text-sm truncate'>{loc.location || loc.address || 'No Address'}</p>
+                                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-[0.08em] ${isPickup ? 'bg-emerald-500/10 text-emerald-300' : isRelay ? 'bg-amber-500/10 text-amber-300' : 'bg-rose-500/10 text-rose-300'}`}>{locType}</span>
                                                     </div>
-                                                    {loc.city && <p className='text-gray-400 text-[11px] truncate'>{loc.city}, {loc.state} {loc.zip}</p>}
+                                                    {loc.city && <p className='text-gray-400 text-[11px] truncate mt-0.5'>{loc.city}, {loc.state} {loc.zip}</p>}
                                                     <div className='flex flex-wrap items-center gap-x-4 gap-y-1 mt-2'>
                                                         <p className='text-gray-500 text-[10px] flex items-center gap-1'><TimeFormat date={loc.date} time={true} /></p>
-                                                        {loc.referenceNo && <p className='text-[10px] text-gray-600 font-medium flex items-center gap-1'><FiBox size={10} className='text-gray-500' /> Ref: {loc.referenceNo}</p>}
+                                                        {loc.referenceNo && <p className='text-[10px] text-gray-500 font-medium flex items-center gap-1'><FiBox size={10} className='text-gray-500' /> Ref: {loc.referenceNo}</p>}
                                                     </div>
                                                 </div>
 
@@ -844,51 +849,47 @@ export default function TripPlanning() {
                                                                     setLoading(false);
                                                                 }
                                                             }}
-                                                            className='px-3 py-2 bg-gray-800 text-gray-300 rounded-xl text-[10px] font-bold border border-gray-700 hover:bg-gray-700 transition-all'
+                                                            className='px-3 py-2 bg-white/[0.04] text-gray-300 rounded-lg text-[11px] font-semibold border border-white/10 hover:bg-white/[0.08] transition-all'
                                                             title='Remove this relay point'
                                                         >
                                                             Remove
                                                         </button>
                                                     )}
-                                                    
-                                                    <div className='hidden sm:flex flex-col items-end gap-1'>
-                                                        <div className='flex items-center gap-2'>
-                                                            <span className='text-[10px] text-gray-500 font-bold uppercase'>Arrived</span>
-                                                            <div className='w-4 h-4 rounded bg-gray-900 border border-gray-800 flex items-center justify-center'>
-                                                                <input type="checkbox" className='hidden' />
-                                                            </div>
-                                                        </div>
-                                                        <div className='flex items-center gap-2'>
-                                                            <span className='text-[10px] text-gray-500 font-bold uppercase'>Departed</span>
-                                                            <div className='w-4 h-4 rounded bg-gray-900 border border-gray-800 flex items-center justify-center'>
-                                                                <input type="checkbox" className='hidden' />
-                                                            </div>
-                                                        </div>
+
+                                                    <div className='hidden sm:flex flex-col items-end gap-1.5'>
+                                                        <label className='flex items-center gap-2 cursor-pointer'>
+                                                            <span className='text-[10px] text-gray-500 font-semibold uppercase tracking-wider'>Arrived</span>
+                                                            <input type="checkbox" className='w-4 h-4 rounded border-white/15 bg-white/[0.04] accent-[#a091ff]' />
+                                                        </label>
+                                                        <label className='flex items-center gap-2 cursor-pointer'>
+                                                            <span className='text-[10px] text-gray-500 font-semibold uppercase tracking-wider'>Departed</span>
+                                                            <input type="checkbox" className='w-4 h-4 rounded border-white/15 bg-white/[0.04] accent-[#a091ff]' />
+                                                        </label>
                                                     </div>
                                                 </div>
-                                                
+
                                                 {/* Segment Indicator Bar */}
-                                                <div className={`absolute -left-1 top-4 bottom-4 w-1 rounded-full transition-all ${isActiveSegment ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.4)]' : 'bg-gray-800'}`}></div>
+                                                <div className={`absolute -left-px top-4 bottom-4 w-1 rounded-full transition-all ${isActiveSegment ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.4)]' : 'bg-white/[0.06]'}`}></div>
                                             </div>
                                             
                                             {/* Connector Line & Add Relay Button */}
                                             {idx < order.locations.length - 1 && (
-                                                <div className='relative ml-9 my-2 h-16 w-full'>
+                                                <div className='relative ml-[26px] my-1 h-16 w-full'>
                                                     {/* Vertical connector line centered */}
-                                                    <div className='absolute left-1/2 -translate-x-1/2 top-0 bottom-0 w-0.5 bg-gray-800/50'></div>
+                                                    <div className='absolute left-0 top-0 bottom-0 w-px bg-gradient-to-b from-white/20 to-white/5'></div>
                                                     <div className='absolute inset-0 flex flex-col items-center justify-center gap-2 px-2'>
-                                                        <span className='inline-block whitespace-nowrap text-[10px] px-2 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-300 shadow-sm pointer-events-none max-w-[75vw] sm:max-w-none truncate'>
+                                                        <span className='inline-block whitespace-nowrap text-[10px] px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/10 text-gray-300 pointer-events-none max-w-[75vw] sm:max-w-none truncate'>
                                                             {(() => {
                                                                 const m = Number(pairDistances[idx] || 0);
                                                                 const k = (m * 1.60934);
                                                                 return `${m.toFixed(2)} mi (${k.toFixed(2)} km)`;
                                                             })()}
                                                         </span>
-                                                        <button 
+                                                        <button
                                                             onClick={() => setRelayModal(idx)}
-                                                            className='bg-gray-800 hover:bg-gray-700 text-[9px] text-gray-400 font-black px-3 py-1 rounded-full border border-gray-700 transition-all hover:scale-110 uppercase tracking-widest whitespace-nowrap max-w-[75vw] truncate'
+                                                            className='flex items-center gap-1 bg-[#a091ff]/10 hover:bg-[#a091ff]/20 text-[10px] text-main font-bold px-3 py-1.5 rounded-full border border-[#a091ff]/25 transition-all uppercase tracking-[0.1em] whitespace-nowrap max-w-[75vw] truncate'
                                                         >
-                                                            + Add Relay Point
+                                                            <LuPlus size={12} /> Add Relay Point
                                                         </button>
                                                     </div>
                                                 </div>
@@ -897,8 +898,7 @@ export default function TripPlanning() {
                                     );
                                 })}
                             </div>
-                        </div>
-                    </div>
+                    </SectionCard>
                 </div>
             </div>
 
@@ -911,21 +911,24 @@ export default function TripPlanning() {
                 btnclasses="hidden"
             >
                 <div className='p-6'>
-                    <h2 className='text-white font-bold text-lg mb-4'>Add Relay / Hand-off Point</h2>
+                    <div className='flex items-center gap-3 mb-2'>
+                        <span className='flex items-center justify-center w-9 h-9 rounded-xl bg-[#a091ff]/10 text-main border border-[#a091ff]/20'><TbArrowRight size={18} /></span>
+                        <h2 className='text-white font-bold text-lg font-mona'>Add Relay / Hand-off Point</h2>
+                    </div>
                     <p className='text-gray-400 text-xs mb-6'>Insert a location where you want to change drivers or trucks.</p>
-                    
+
                     <div className='input-item mb-8'>
-                        <label className='text-[10px] text-gray-500 uppercase font-bold mb-2 block'>Relay Location</label>
-                        <GetLocation 
-                            id="relay-point" 
-                            placeholder="Search location (City, Warehouse, etc.)" 
-                            onchange={(val) => setNewRelayLocation(val)} 
+                        <label className={`${fieldLabel} mb-2`}>Relay Location</label>
+                        <GetLocation
+                            id="relay-point"
+                            placeholder="Search location (City, Warehouse, etc.)"
+                            onchange={(val) => setNewRelayLocation(val)}
                         />
                     </div>
 
                     <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
-                        <button className='btn bg-gray-800 text-white' onClick={() => setRelayModal(null)}>Cancel</button>
-                        <button className='btn main-btn text-black font-bold' onClick={addRelayPoint}>Add Location & Create Trips</button>
+                        <button className='text-[13px] font-semibold px-4 py-3 rounded-xl border border-white/10 text-gray-300 hover:bg-white/[0.04] transition-colors' onClick={() => setRelayModal(null)}>Cancel</button>
+                        <button className='text-[13px] font-bold px-4 py-3 rounded-xl bg-main text-black hover:opacity-90 transition-opacity' onClick={addRelayPoint}>Add & Create Trips</button>
                     </div>
                 </div>
             </Popup>
