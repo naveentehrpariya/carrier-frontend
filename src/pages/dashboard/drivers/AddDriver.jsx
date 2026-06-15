@@ -76,7 +76,16 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
   
   const submit = async () => {
     if (!name || !email || !phone || !country || !address) {
+      setActiveTab('general');
       return toast.error('Please fill all required fields');
+    }
+    // Pay rates are mandatory — all three must be set. Bounce to the Payment
+    // Profile tab so the user can fill them.
+    const ratesFilled = [ratePerMileSolo, ratePerMileTeam, cityHoursRate]
+      .every((r) => String(r).trim() !== '' && !isNaN(Number(r)) && Number(r) > 0);
+    if (!ratesFilled) {
+      setActiveTab('payment');
+      return toast.error('Please enter all pay rates before saving the driver profile.');
     }
     setLoading(true);
     try {
@@ -110,7 +119,8 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
         toast.success(resp.data.message || 'Driver added');
         setOpen(false);
         resetForm();
-        fetchLists && fetchLists();
+        // Pass the created driver so callers (e.g. AddOrder) can auto-select it.
+        fetchLists && fetchLists(newUser);
       } else {
         toast.error(resp.data.message || 'Failed to add driver');
       }

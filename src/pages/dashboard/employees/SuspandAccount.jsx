@@ -4,10 +4,11 @@ import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 
-export default function SuspandAccount({item, fetchLists, text}){
+export default function SuspandAccount({item, fetchLists, text, open, onClose}){
    const {Errors} = useContext(UserContext);
    const [action, setaction] = useState();
    const [loading, setLoading] = useState(false)
+   const controlled = open !== undefined;
     const suspandAccount = () => {
       setLoading(true);
       const account = Api.get(`/user/suspanduser/${item._id}`);
@@ -16,10 +17,14 @@ export default function SuspandAccount({item, fetchLists, text}){
         if (res.data.status === true) {
           toast.success(res.data.message);
           fetchLists && fetchLists();
-          setaction('close');
-          setTimeout(() => {
-            setaction();
-          }, 1000);
+          if (controlled) {
+            onClose && onClose();
+          } else {
+            setaction('close');
+            setTimeout(() => {
+              setaction();
+            }, 1000);
+          }
         } else {
           toast.error(res.data.message);
         }
@@ -31,7 +36,7 @@ export default function SuspandAccount({item, fetchLists, text}){
 
   return (
     <div>
-      <Popup action={action} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={'p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block'} btntext={text || "Add New Carrier"} >
+      <Popup action={action} open={open} onClose={onClose} showTrigger={!controlled} size="md:max-w-2xl" space='p-8' bg="bg-black" btnclasses={'p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block'} btntext={text || "Add New Carrier"} >
          <h2 className='text-white font-bold text-xl text-center pt-6 '>Confirm Action</h2>
          <p className='text-center text-gray-400 text-lg mt-2 max-w-[400px] m-auto '>Are you sure you want to {item.status === 'active' ? "suspand" : "reactivate"} this user ?</p>
         <div className='flex justify-center'>

@@ -442,16 +442,20 @@ export function CustomerInvoicePdfxDocument(props: CustomerInvoicePdfxProps) {
 
 function CustomerInvoicePdfxContent({ order, company, invoiceNo, issuedAt, logoSrc }: CustomerInvoicePdfxProps) {
   const issued = issuedAt ?? new Date();
-  const currency = order?.revenue_currency;
+  // Invoice in the currency the customer was quoted (input_*); revenue_items rates are stored in base.
+  const invHasInput = Number(order?.input_total_amount) > 0;
+  const currency = invHasInput ? (order?.input_currency || order?.revenue_currency) : order?.revenue_currency;
+  const itemFactor = (invHasInput && Number(order?.total_amount) > 0)
+    ? Number(order.input_total_amount) / Number(order.total_amount) : 1;
   const logo = logoSrc || company?.pdf_logo || company?.logo || company?.logo_url || companyLogoFallback;
   const mailTo = company?.remittance_primary_email || company?.email || '';
   const cc = company?.remittance_secondary_email ? encodeURIComponent(company.remittance_secondary_email) : '';
   const mailToHref = mailTo ? `mailto:${mailTo}${cc ? `?cc=${cc}` : ''}` : '';
 
   const total = (order?.revenue_items || []).reduce(
-    (acc: number, r: any) => acc + (Number(r?.rate) || 0) * (Number(r?.quantity) || 0), 0
+    (acc: number, r: any) => acc + (Number(r?.rate) || 0) * (Number(r?.quantity) || 0) * itemFactor, 0
   );
-  const displayTotal = order?.total_amount ?? total;
+  const displayTotal = invHasInput ? Number(order.input_total_amount) : (order?.total_amount ?? total);
 
   return (
     <Document title={`Invoice ${invoiceNo || ''}`}>
@@ -617,10 +621,10 @@ function CustomerInvoicePdfxContent({ order, company, invoiceNo, issuedAt, logoS
                 <PDFText style={[styles.tableCell, { width: col.charge }]}>{r?.revenue_item || ''}</PDFText>
                 <PDFText style={[styles.tableCellMuted, { width: col.notes }]}>{r?.note || ''}</PDFText>
                 <PDFText style={[styles.tableCellMuted, { width: col.rate, textAlign: 'center' }]}>
-                  {`${formatMoney(r?.rate || 0, currency)} × ${r?.quantity || 0}`}
+                  {`${formatMoney((r?.rate || 0) * itemFactor, currency)} × ${r?.quantity || 0}`}
                 </PDFText>
                 <PDFText style={[styles.tableCell, { width: col.amount, textAlign: 'right', fontFamily: 'Helvetica-Bold' }]}>
-                  {formatMoney((r?.rate || 0) * (r?.quantity || 0), currency)}
+                  {formatMoney((r?.rate || 0) * (r?.quantity || 0) * itemFactor, currency)}
                 </PDFText>
               </View>
             ))}

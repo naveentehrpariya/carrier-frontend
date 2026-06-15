@@ -43,7 +43,18 @@ export const generateTextOnlyPDF = (order, company, filename, options = {}) => {
     yPosition += 5;
     doc.text(`Customer: ${order?.customer?.name || 'N/A'}`, 20, yPosition);
     yPosition += 5;
-    doc.text(`Amount: ${order?.total_amount || 0} ${order?.revenue_currency || 'USD'}`, 20, yPosition);
+    // Show amounts in the currency the user originally entered (input_*), falling back to base.
+    const hasInput = Number(order?.input_total_amount) > 0;
+    const dispCurrency = (hasInput ? (order?.input_currency || order?.revenue_currency) : order?.revenue_currency || 'USD').toUpperCase();
+    const dispAmount = hasInput ? order.input_total_amount : (order?.total_amount || 0);
+    // Factor to convert base-stored revenue_items rates back to the displayed currency.
+    const itemFactor = (hasInput && Number(order?.total_amount) > 0)
+      ? Number(order.input_total_amount) / Number(order.total_amount)
+      : 1;
+    const carrierFactor = (Number(order?.input_carrier_amount) > 0 && Number(order?.carrier_amount) > 0)
+      ? Number(order.input_carrier_amount) / Number(order.carrier_amount)
+      : 1;
+    doc.text(`Amount: ${dispAmount} ${dispCurrency}`, 20, yPosition);
     yPosition += 10;
 
     // Revenue items (simplified)
@@ -56,7 +67,8 @@ export const generateTextOnlyPDF = (order, company, filename, options = {}) => {
           doc.addPage();
           yPosition = 20;
         }
-        doc.text(`${item.revenue_item}: ${item.rate} x ${item.quantity} = ${item.rate * item.quantity}`, 20, yPosition);
+        const rate = Number((Number(item.rate || 0) * itemFactor).toFixed(2));
+        doc.text(`${item.revenue_item}: ${rate} x ${item.quantity} = ${Number((rate * Number(item.quantity || 0)).toFixed(2))} ${dispCurrency}`, 20, yPosition);
         yPosition += 4;
       });
     }
@@ -143,7 +155,8 @@ export const generateTextOnlyOrderPDF = (order, company, filename, options = {})
           doc.addPage();
           yPosition = 20;
         }
-        doc.text(`${item.revenue_item}: ${item.rate} x ${item.quantity} = ${item.rate * item.quantity}`, 20, yPosition);
+        const rate = Number((Number(item.rate || 0) * carrierFactor).toFixed(2));
+        doc.text(`${item.revenue_item}: ${rate} x ${item.quantity} = ${Number((rate * Number(item.quantity || 0)).toFixed(2))} ${dispCurrency}`, 20, yPosition);
         yPosition += 4;
       });
     }

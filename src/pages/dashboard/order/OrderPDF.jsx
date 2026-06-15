@@ -141,6 +141,12 @@ Cross-border shipments require custom stamps or deductions may apply.`;
    const td = { padding: '7px 10px', borderBottom: '1px solid #e5e7eb', fontSize: '11px', verticalAlign: 'top' };
    const th = { ...td, fontWeight: '600', color: '#374151', background: '#f9fafb', borderBottom: '2px solid #e5e7eb' };
 
+   // Show carrier charges in the currency the carrier was quoted (input_*); rates are stored in base.
+   const carHasInput = Number(order?.input_carrier_amount) > 0;
+   const carCurrency = carHasInput ? (order?.input_currency || 'usd') : (order?.revenue_currency || 'usd');
+   const carFactor = (carHasInput && Number(order?.carrier_amount) > 0)
+      ? Number(order.input_carrier_amount) / Number(order.carrier_amount) : 1;
+
    return (
       <AuthLayout>
          {loading ? <Loading /> :
@@ -256,14 +262,14 @@ Cross-border shipments require custom stamps or deductions may apply.`;
                                           <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
                                              <td style={td}>{r?.revenue_item}</td>
                                              <td style={{ ...td, color: '#6b7280' }}>{r?.note}</td>
-                                             <td style={td}><Currency onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}×{r?.quantity || 0}</td>
-                                             <td style={{ ...td, textAlign: 'right', fontWeight: '600' }}><Currency amount={r?.rate * r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
+                                             <td style={td}><Currency onlySymbol={true} currency={carCurrency} />{Number(((r?.rate || 0) * carFactor).toFixed(2))}×{r?.quantity || 0}</td>
+                                             <td style={{ ...td, textAlign: 'right', fontWeight: '600' }}><Currency amount={(r?.rate * r?.quantity || 0) * carFactor} currency={carCurrency} /></td>
                                           </tr>
                                        ))}
                                        <tr style={{ background: '#f9fafb', borderTop: '2px solid #111827' }}>
                                           <td colSpan={3} style={{ ...td, fontWeight: '700', textAlign: 'right', borderBottom: 'none' }}>Total</td>
                                           <td style={{ ...td, fontWeight: '700', textAlign: 'right', fontSize: '13px', borderBottom: 'none' }}>
-                                             <Currency amount={order.carrier_revenue_items.reduce((a, r) => a + r.rate * r.quantity, 0)} currency={order?.revenue_currency || 'cad'} />
+                                             <Currency amount={order.carrier_revenue_items.reduce((a, r) => a + r.rate * r.quantity, 0) * carFactor} currency={carCurrency} />
                                           </td>
                                        </tr>
                                     </tbody>

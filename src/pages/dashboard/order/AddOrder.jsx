@@ -14,6 +14,11 @@ import Loading from '../../common/Loading';
 import { TbUser, TbReceipt2, TbBuildingWarehouse, TbTruck, TbRoute } from "react-icons/tb";
 import { LuPackage, LuMapPin, LuPackageCheck, LuPlus, LuCalculator } from "react-icons/lu";
 import { FaTruckMoving } from "react-icons/fa6";
+import AddCustomer from '../customer/AddCustomer';
+import AddCarrier from '../carrier/AddCarrier';
+import QuickAddItem from '../../../components/order/QuickAddItem';
+import QuickAddAsset from '../../../components/order/QuickAddAsset';
+import AddDriver from '../drivers/AddDriver';
 
 // const revenueItemOptions = [
 //   { label: "Freight Charge", value: "Freight Charge" },
@@ -387,6 +392,67 @@ export default function AddOrder({ isEdit = false }){
     const chooseCustomer = (e) => {
       setData({ ...data, customer: e.value});
     }
+
+    // Admin / customers_write / subadmin can add a customer inline from the order form.
+    const canAddCustomer = currentUser?.is_admin === 1
+      || Number(currentUser?.role) === 3
+      || (Array.isArray(currentUser?.permissions) && (
+        currentUser.permissions.includes('customers_write') || currentUser.permissions.includes('subadmin')
+      ));
+
+    // Refresh the listing and auto-select the freshly created customer.
+    const handleCustomerAdded = (newCustomer) => {
+      fetchcustomers();
+      if (newCustomer && newCustomer._id) {
+        const opt = {
+          _id: newCustomer._id,
+          label: `${newCustomer.name} (Ref: ${newCustomer.customerCode})  `,
+          value: newCustomer._id,
+          mc_code: newCustomer.customerCode,
+        };
+        setCustomersListing(prev => prev.some(c => c.value === opt.value) ? prev : [opt, ...prev]);
+        setData(prev => ({ ...prev, customer: newCustomer._id }));
+      }
+    }
+
+    // Admin / carriers_write / subadmin can add a carrier inline.
+    const canAddCarrier = currentUser?.is_admin === 1
+      || Number(currentUser?.role) === 3
+      || (Array.isArray(currentUser?.permissions) && (
+        currentUser.permissions.includes('carriers_write') || currentUser.permissions.includes('subadmin')
+      ));
+
+    // Equipment & charge items are tenant settings — admin-only (mirrors the
+    // /commodity-and-equipments admin page).
+    const canManageSettings = currentUser?.is_admin === 1 || Number(currentUser?.role) === 3;
+
+    const handleCarrierAdded = (newCarrier) => {
+      fetchcarriers();
+      if (newCarrier && newCarrier._id) {
+        const opt = {
+          _id: newCarrier._id,
+          label: `${newCarrier.name} | ${newCarrier.country}(${newCarrier.mc_code})`,
+          value: newCarrier._id,
+          carrierID: newCarrier.carrierID,
+        };
+        setCarrierListings(prev => prev.some(c => c.value === opt.value) ? prev : [opt, ...prev]);
+        setData(prev => ({ ...prev, carrier: newCarrier._id }));
+      }
+    }
+
+    // Equipment add returns the created doc; charges does not — refetch covers both,
+    // optimistic prepend makes the new option appear instantly.
+    const handleEquipmentAdded = (value, doc) => {
+      fetchequipmentOptions();
+      const opt = { value: doc?.name || value, label: doc?.name || value, _id: doc?._id };
+      setequipmentOptions(prev => prev.some(o => o.value === opt.value) ? prev : [opt, ...prev]);
+    }
+
+    const handleChargeAdded = (value) => {
+      fetchCharges();
+      const opt = { value, label: value };
+      setRevenueItemOptions(prev => prev.some(o => o.value === opt.value) ? prev : [opt, ...prev]);
+    }
     const chooseCarrier = (e) => {
       setData({ ...data, carrier: e.value});
     }
@@ -440,14 +506,32 @@ export default function AddOrder({ isEdit = false }){
         setShippingDetails(order.shipping_details);
       }
 
+      // Revenue/carrier items are stored in base currency (revenue_currency, usually USD),
+      // but the form edits values in input_currency. Convert rates back so the displayed
+      // amounts match what the user originally typed (input_total_amount / input_carrier_amount).
+      const inputCur = (order.input_currency || order.revenue_currency || 'usd');
+      const baseCur = (order.revenue_currency || 'usd');
+      const needsBackConvert = inputCur !== baseCur;
+
+      const backConvert = (items, inputTotal, baseTotal) => {
+        const factor = (needsBackConvert && Number(baseTotal) > 0 && Number(inputTotal) > 0)
+          ? Number(inputTotal) / Number(baseTotal)
+          : 1;
+        if (factor === 1) return items;
+        return items.map((item) => ({
+          ...item,
+          rate: Number((Number(item.rate || 0) * factor).toFixed(2)),
+        }));
+      };
+
       // Set revenue items
       if (order.revenue_items && order.revenue_items.length > 0) {
-        setRevenueItems(order.revenue_items);
+        setRevenueItems(backConvert(order.revenue_items, order.input_total_amount, order.total_amount));
       }
 
       // Set carrier revenue items
       if (order.carrier_revenue_items && order.carrier_revenue_items.length > 0) {
-        setCarrierRevenueItems(order.carrier_revenue_items);
+        setCarrierRevenueItems(backConvert(order.carrier_revenue_items, order.input_carrier_amount, order.carrier_amount));
       }
     };
 
@@ -548,6 +632,48 @@ export default function AddOrder({ isEdit = false }){
       }));
     };
     const chooseTrailer = (e) => setData(prev => ({ ...prev, trailer: e?.value || null }));
+
+    // Admin / regular-module users can add fleet assets (truck/trailer/driver) inline.
+    // Mirrors requireModuleAccess('regular') on the fleet create routes; this whole
+    // section only renders for regular orders anyway.
+    const canManageFleet = currentUser?.is_admin === 1
+      || Number(currentUser?.role) === 3
+      || (Array.isArray(currentUser?.permissions) && currentUser.permissions.includes('regular'));
+
+    const handleTruckAdded = (doc) => {
+      fetchAssetLists();
+      if (doc && doc._id) {
+        const tName = [doc.make, doc.model].filter(Boolean).join(' ') || doc.unitNumber || 'Unnamed Truck';
+        const opt = {
+          value: doc._id,
+          label: `${`${tName} ${doc.plateNumber ? `(${doc.plateNumber})` : ''}`.trim() || 'No Unit/Plate'}${doc.ownerOperated ? ' • Owner Operated' : ''}`,
+          ownerOperated: !!doc.ownerOperated,
+          ownerOperatorName: doc?.ownerOperator?.fullName || '',
+        };
+        setTrucks(prev => prev.some(t => t.value === opt.value) ? prev : [opt, ...prev]);
+        setTruckMetaMap(prev => ({ ...prev, [doc._id]: doc }));
+        setData(prev => ({ ...prev, truck: doc._id, settle_amount: doc.ownerOperated ? prev.settle_amount : 0 }));
+      }
+    }
+
+    const handleTrailerAdded = (doc) => {
+      fetchAssetLists();
+      if (doc && doc._id) {
+        const tName = [doc.make, doc.model].filter(Boolean).join(' ') || doc.type || 'Unnamed Trailer';
+        const opt = { value: doc._id, label: `${tName} ${doc.unitNumber ? `(${doc.unitNumber})` : ''}`.trim() || 'No Unit/Plate' };
+        setTrailers(prev => prev.some(t => t.value === opt.value) ? prev : [opt, ...prev]);
+        setData(prev => ({ ...prev, trailer: doc._id }));
+      }
+    }
+
+    const handleDriverAdded = (user) => {
+      fetchAssetLists();
+      if (user && user._id) {
+        const opt = { value: user._id, label: `${user.name} (${user.corporateID || 'No ID'})` };
+        setDrivers(prev => prev.some(d => d.value === opt.value) ? prev : [opt, ...prev]);
+        setData(prev => ({ ...prev, drivers: [...(prev.drivers || []), user._id] }));
+      }
+    }
 
     const addOrder = async () => {
 
@@ -738,7 +864,16 @@ export default function AddOrder({ isEdit = false }){
           <SectionCard title='Order Basics' subtitle='Who the order is for and how to reference it' icon={<TbUser size={18} />} accent='#a091ff'>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
               <div className='input-item'>
-                <label className={fieldLabel}>Customer</label>
+                <div className='flex items-center justify-between gap-2 mb-1'>
+                  <label className={fieldLabel}>Customer</label>
+                  {canAddCustomer && (
+                    <AddCustomer
+                      fetchLists={handleCustomerAdded}
+                      classes="text-[11px] font-semibold text-[#a091ff] hover:text-[#c3a9ff] transition-colors flex items-center gap-1"
+                      text={<><LuPlus size={12} /> New customer</>}
+                    />
+                  )}
+                </div>
                 <Select
                   classNamePrefix="react-select input" {...selectMenuProps}
                   placeholder={'Search and choose customer...'}
@@ -808,7 +943,22 @@ export default function AddOrder({ isEdit = false }){
                   </div>
                 )}
                 <div className="input-item">
-                  <label className={fieldLabel}>Equipment</label>
+                  <div className='flex items-center justify-between gap-2 mb-1'>
+                    <label className={fieldLabel}>Equipment</label>
+                    {canManageSettings && (
+                      <QuickAddItem
+                        endpoint="/api/tenant/addEquipment"
+                        title="Add Equipment"
+                        subtitle="Create a new equipment type for this tenant"
+                        label="Equipment name"
+                        icon={LuPackage}
+                        accent="#22d3ee"
+                        onAdded={handleEquipmentAdded}
+                        classes="text-[11px] font-semibold text-[#22d3ee] hover:text-[#67e8f9] transition-colors flex items-center gap-1"
+                        text={<><LuPlus size={12} /> New</>}
+                      />
+                    )}
+                  </div>
                   <Select
                     classNamePrefix="react-select input" {...selectMenuProps}
                     placeholder={"Equipment"}
@@ -1003,7 +1153,22 @@ export default function AddOrder({ isEdit = false }){
                 return <div key={index} className="rev-items rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 w-full gap-x-4 gap-y-3 items-start">
                     <div className="input-item">
-                      <label className={fieldLabel}>Revenue Item</label>
+                      <div className='flex items-center justify-between gap-2 mb-1'>
+                        <label className={fieldLabel}>Revenue Item</label>
+                        {canManageSettings && (
+                          <QuickAddItem
+                            endpoint="/api/tenant/addCharge"
+                            title="Add Revenue Item"
+                            subtitle="Create a new charge item for this tenant"
+                            label="Revenue item name"
+                            icon={TbReceipt2}
+                            accent="#a091ff"
+                            onAdded={handleChargeAdded}
+                            classes="text-[11px] font-semibold text-[#a091ff] hover:text-[#c3a9ff] transition-colors flex items-center gap-1"
+                            text={<><LuPlus size={12} /> New</>}
+                          />
+                        )}
+                      </div>
                       <Select
                         classNamePrefix="react-select input" {...selectMenuProps}
                         placeholder="Revenue Items"
@@ -1097,7 +1262,22 @@ export default function AddOrder({ isEdit = false }){
                 return <div key={index} className="rev-items rounded-xl border border-white/[0.06] bg-white/[0.015] p-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 w-full gap-x-4 gap-y-3 items-start">
                     <div className="input-item">
-                      <label className={fieldLabel}>Revenue Item</label>
+                      <div className='flex items-center justify-between gap-2 mb-1'>
+                        <label className={fieldLabel}>Revenue Item</label>
+                        {canManageSettings && (
+                          <QuickAddItem
+                            endpoint="/api/tenant/addCharge"
+                            title="Add Revenue Item"
+                            subtitle="Create a new charge item for this tenant"
+                            label="Revenue item name"
+                            icon={TbReceipt2}
+                            accent="#fbbf24"
+                            onAdded={handleChargeAdded}
+                            classes="text-[11px] font-semibold text-[#fbbf24] hover:text-[#fcd34d] transition-colors flex items-center gap-1"
+                            text={<><LuPlus size={12} /> New</>}
+                          />
+                        )}
+                      </div>
                       <Select
                         classNamePrefix="react-select input" {...selectMenuProps}
                         placeholder="Revenue Items"
@@ -1187,7 +1367,16 @@ export default function AddOrder({ isEdit = false }){
           {isOutsourcingUI && (
             <SectionCard title='Carrier Assignment' subtitle='Carrier handling this load' icon={<TbBuildingWarehouse size={18} />} accent='#fbbf24'>
               <div className='input-item md:max-w-md'>
-                <label className={fieldLabel}>Assign Carrier</label>
+                <div className='flex items-center justify-between gap-2 mb-1'>
+                  <label className={fieldLabel}>Assign Carrier</label>
+                  {canAddCarrier && (
+                    <AddCarrier
+                      fetchLists={handleCarrierAdded}
+                      classes="text-[11px] font-semibold text-[#fbbf24] hover:text-[#fcd34d] transition-colors flex items-center gap-1"
+                      text={<><LuPlus size={12} /> New carrier</>}
+                    />
+                  )}
+                </div>
                 <Select
                   classNamePrefix="react-select input" {...selectMenuProps}
                   placeholder={'Search and choose carrier...'}
@@ -1205,15 +1394,54 @@ export default function AddOrder({ isEdit = false }){
             <SectionCard title='Fleet Assignments' subtitle='Truck, trailer and driver for this trip' icon={<FaTruckMoving size={16} />} accent='#fb7185'>
               <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 gap-y-4'>
                 <div className='input-item'>
-                  <label className={fieldLabel}>Truck</label>
+                  <div className='flex items-center justify-between gap-2 mb-1'>
+                    <label className={fieldLabel}>Truck</label>
+                    {canManageFleet && (
+                      <QuickAddAsset
+                        endpoint="/fleet/trucks/add"
+                        docKey="truck"
+                        title="Add Truck"
+                        subtitle="Create a new truck for this tenant"
+                        icon={TbTruck}
+                        accent="#22d3ee"
+                        onAdded={handleTruckAdded}
+                        classes="text-[11px] font-semibold text-[#22d3ee] hover:text-[#67e8f9] transition-colors flex items-center gap-1"
+                        text={<><LuPlus size={12} /> New</>}
+                      />
+                    )}
+                  </div>
                   <Select classNamePrefix="react-select input" {...selectMenuProps} placeholder="Search and choose Truck" isSearchable={true} isClearable={true} options={trucks} value={trucks.find(t => t.value === data.truck) || null} onChange={chooseTruck} />
                 </div>
                 <div className='input-item'>
-                  <label className={fieldLabel}>Trailer</label>
+                  <div className='flex items-center justify-between gap-2 mb-1'>
+                    <label className={fieldLabel}>Trailer</label>
+                    {canManageFleet && (
+                      <QuickAddAsset
+                        endpoint="/fleet/trailers/add"
+                        docKey="trailer"
+                        title="Add Trailer"
+                        subtitle="Create a new trailer for this tenant"
+                        icon={TbTruck}
+                        accent="#e879f9"
+                        onAdded={handleTrailerAdded}
+                        classes="text-[11px] font-semibold text-[#e879f9] hover:text-[#f0abfc] transition-colors flex items-center gap-1"
+                        text={<><LuPlus size={12} /> New</>}
+                      />
+                    )}
+                  </div>
                   <Select classNamePrefix="react-select input" {...selectMenuProps} placeholder="Search and choose Trailer" isSearchable={true} isClearable={true} options={trailers} value={trailers.find(t => t.value === data.trailer) || null} onChange={chooseTrailer} />
                 </div>
                 <div className='input-item'>
-                  <label className={fieldLabel}>Driver(s)</label>
+                  <div className='flex items-center justify-between gap-2 mb-1'>
+                    <label className={fieldLabel}>Driver(s)</label>
+                    {canManageFleet && (
+                      <AddDriver
+                        fetchLists={handleDriverAdded}
+                        classes="text-[11px] font-semibold text-[#fb7185] hover:text-[#fda4af] transition-colors flex items-center gap-1"
+                        text={<><LuPlus size={12} /> New driver</>}
+                      />
+                    )}
+                  </div>
                   <Select
                     isMulti
                     classNamePrefix="react-select input" {...selectMenuProps}

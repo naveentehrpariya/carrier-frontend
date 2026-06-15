@@ -47,6 +47,8 @@ export default function EmployeeCard({
 
   const [showEarnings, setShowEarnings] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
+  const [showStatus, setShowStatus] = useState(false);
+  const canChangeStatus = currentUser?.is_admin === 1 || currentUser?.permissions?.includes('employees') || currentUser?.permissions?.includes('subadmin');
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-[30px] p-6 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 hover:ring-1 hover:ring-gray-700 focus-within:ring-1 focus-within:ring-gray-700">
       {/* Header: Avatar, Name, Status */}
@@ -69,7 +71,19 @@ export default function EmployeeCard({
                       {employee.position} 
                     </p>
                   )}
-                  <Badge   status={employee.status} />
+                  {canChangeStatus ? (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowStatus(true); }}
+                      className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 rounded-full"
+                      title="Change account status"
+                      aria-label={`Change account status for ${employee.name}`}
+                    >
+                      <Badge status={employee.status} />
+                    </button>
+                  ) : (
+                    <Badge status={employee.status} />
+                  )}
               </div>
             </div>
              
@@ -294,6 +308,9 @@ export default function EmployeeCard({
       )}
       {(employee?.permissions?.includes('driver') || employee?.role === 0) && (
         <DriverLogsPopup driver={employee} open={showLogs} onClose={() => setShowLogs(false)} />
+      )}
+      {canChangeStatus && (
+        <SuspandAccount item={employee} fetchLists={fetchLists} open={showStatus} onClose={() => setShowStatus(false)} />
       )}
     </div>
   );

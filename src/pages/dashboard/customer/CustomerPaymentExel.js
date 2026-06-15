@@ -54,7 +54,7 @@ export default function CustomerPaymentExel({data, text, customer}) {
                   'Payment Status' : e?.customer_payment_status || 'None',
                   'Payment Method' : e?.customer_payment_method || 'None',
                   'Admin Approval' : e?.customer_payment_approved_by_admin ? "YES" : 'NO',
-                  'Total Amount' :formattedValue((e?.revenue_currency||'cad'), e?.total_amount),
+                  'Total Amount' :formattedValue((e?.input_total_amount > 0 ? (e?.input_currency||'usd') : (e?.revenue_currency||'usd')), (e?.input_total_amount > 0 ? e.input_total_amount : e?.total_amount)),
                });
             } else {
                if(t === e?.customer_payment_status){
@@ -67,7 +67,7 @@ export default function CustomerPaymentExel({data, text, customer}) {
                      'Payment Status' : e?.customer_payment_status || 'None',
                      'Payment Method' : e?.customer_payment_method || 'None',
                      'Admin Approval' : e?.customer_payment_approved_by_admin ? "YES" : 'NO',
-                     'Total Amount' :formattedValue((e?.revenue_currency||'cad'), e?.total_amount),
+                     'Total Amount' :formattedValue((e?.input_total_amount > 0 ? (e?.input_currency||'usd') : (e?.revenue_currency||'usd')), (e?.input_total_amount > 0 ? e.input_total_amount : e?.total_amount)),
                   });
                }
             }

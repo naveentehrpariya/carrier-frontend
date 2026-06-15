@@ -493,7 +493,8 @@ export default function FinancePage() {
   const outsourcingMetrics = [
     { label: 'Total Revenue', value: fmtFull(summary.totalRevenue, currency), accent: '#00D4FF' },
     { label: 'Carrier Cost', value: fmtFull(summary.totalCarrierCost, currency), accent: '#FF3B5C' },
-    { label: 'Gross Profit', value: fmtFull(summary.grossProfit, currency), accent: '#00E599' },
+    { label: 'Commission', value: fmtFull(summary.totalCommission, currency), accent: '#FFB800' },
+    { label: 'Net Profit', value: fmtFull(summary.netProfit, currency), accent: '#00E599' },
     { label: 'Margin', value: pct(summary.profitMargin), accent: '#A78BFA' },
     {
       label: 'Pending (Customer)',
@@ -731,13 +732,23 @@ export default function FinancePage() {
 }
 
 function OutsourcingTable({ orders, currency }) {
+  const orderCommission = (o) => {
+    const net = Number(o.total_amount || 0) - Number(o.carrier_amount || 0);
+    const rate = Number(o.created_by?.staff_commision) || 0;
+    return net * (rate / 100);
+  };
   const totals = orders.reduce(
-    (acc, o) => ({
-      revenue: acc.revenue + Number(o.total_amount || 0),
-      cost: acc.cost + Number(o.carrier_amount || 0),
-      profit: acc.profit + (Number(o.total_amount || 0) - Number(o.carrier_amount || 0)),
-    }),
-    { revenue: 0, cost: 0, profit: 0 }
+    (acc, o) => {
+      const net = Number(o.total_amount || 0) - Number(o.carrier_amount || 0);
+      const comm = orderCommission(o);
+      return {
+        revenue: acc.revenue + Number(o.total_amount || 0),
+        cost: acc.cost + Number(o.carrier_amount || 0),
+        commission: acc.commission + comm,
+        profit: acc.profit + (net - comm),
+      };
+    },
+    { revenue: 0, cost: 0, commission: 0, profit: 0 }
   );
 
   return (
@@ -751,6 +762,7 @@ function OutsourcingTable({ orders, currency }) {
             <th>Route</th>
             <th className="r">Revenue</th>
             <th className="r">Carrier Cost</th>
+            <th className="r">Commission</th>
             <th className="r">Profit</th>
             <th className="c">Cust. Pay</th>
             <th className="c">Carrier Pay</th>
@@ -758,7 +770,8 @@ function OutsourcingTable({ orders, currency }) {
         </thead>
         <tbody>
           {orders.map((o, i) => {
-            const profit = Number(o.total_amount || 0) - Number(o.carrier_amount || 0);
+            const commission = orderCommission(o);
+            const profit = Number(o.total_amount || 0) - Number(o.carrier_amount || 0) - commission;
             return (
               <tr key={i}>
                 <td>
@@ -797,6 +810,9 @@ function OutsourcingTable({ orders, currency }) {
                   <span className="fr-num fr-red">{fmtFull(o.carrier_amount, currency)}</span>
                 </td>
                 <td className="r">
+                  <span className="fr-num fr-amber">{fmtFull(commission, currency)}</span>
+                </td>
+                <td className="r">
                   <span className={`fr-num ${profit >= 0 ? 'fr-green' : 'fr-red'}`}>
                     {fmtFull(profit, currency)}
                   </span>
@@ -832,6 +848,9 @@ function OutsourcingTable({ orders, currency }) {
             </td>
             <td className="r">
               <span className="fr-num fr-red" style={{ fontSize: 13 }}>{fmtFull(totals.cost, currency)}</span>
+            </td>
+            <td className="r">
+              <span className="fr-num fr-amber" style={{ fontSize: 13 }}>{fmtFull(totals.commission, currency)}</span>
             </td>
             <td className="r">
               <span

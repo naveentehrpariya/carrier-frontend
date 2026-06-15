@@ -17,8 +17,8 @@ const CustomerAccessControl = ({ children, customerId }) => {
         return;
       }
 
-      // Admin (role 3) has access to all customers
-      if (user.role === 3 && user.is_admin === 1) {
+      // Admin / subadmin / accounting have access to all customers
+      if (user.is_admin === 1 || Number(user.role) === 3 || user.permissions?.includes('subadmin') || user.permissions?.includes('accounting')) {
         setHasAccess(true);
         setLoading(false);
         return;

@@ -63,11 +63,13 @@ export default function ViewOrder() {
    const [paymentLogs, setPaymentLogs] = useState([]);
    const [trips, setTrips] = useState([]);
    const [loading, setLoading] = useState(true);
+   const [accessError, setAccessError] = useState(null);
    const {Errors,user, company} = useContext(UserContext);
    const { id } = useParams();
 
    const fetchOrder = () => {
       setLoading(true);
+      setAccessError(null);
       const resp = Api.get(`/order/detail/${id}`);
       resp.then((res) => {
          setLoading(false);
@@ -80,11 +82,17 @@ export default function ViewOrder() {
             });
          } else {
             setOrder(null);
+            setAccessError(res.data.message || "Order not found.");
          }
          setLoading(false);
       }).catch((err) => {
          setLoading(false);
-         Errors(err);
+         setOrder(null);
+         if (err?.response?.status === 403) {
+            setAccessError(err.response.data?.message || "You don't have permission to view this order.");
+         } else {
+            Errors(err);
+         }
       });
    }
 
@@ -95,6 +103,24 @@ export default function ViewOrder() {
    const cur = order?.input_currency || order?.revenue_currency || 'usd';
    const isOutsourcing = order?.order_type === 'outsourcing';
    const isRegular = order?.order_type === 'regular';
+
+   // revenue_items rates are stored in base currency; back-convert to input currency for display
+   // so line items match the input_* footer totals. Factor = 1 for legacy/same-currency orders.
+   const revFactor = (order?.input_total_amount > 0 && order?.total_amount > 0)
+      ? Number(order.input_total_amount) / Number(order.total_amount) : 1;
+   const carrierFactor = (order?.input_carrier_amount > 0 && order?.carrier_amount > 0)
+      ? Number(order.input_carrier_amount) / Number(order.carrier_amount) : 1;
+
+   if (!loading && accessError) {
+      return <AuthLayout>
+         <div className='flex flex-col items-center justify-center text-center min-h-[60vh]'>
+            <FaLock className='text-rose-500 text-4xl mb-4' />
+            <h2 className='text-white text-2xl font-bold mb-2 font-mona'>Access denied</h2>
+            <p className='text-gray-400 max-w-md mb-6'>{accessError}</p>
+            <Link to='/orders' className='bg-main text-black font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity'>Back to Orders</Link>
+         </div>
+      </AuthLayout>;
+   }
 
    return <AuthLayout>
       {/* ── Top bar: title + actions ─────────────────────────────── */}
@@ -354,13 +380,13 @@ export default function ViewOrder() {
             {/* ── Revenue items ──────────────────────────────────── */}
             {order && order.revenue_items && order.revenue_items.length > 0 && (
                <SectionCard title='Customer Revenue Items' icon={<TbReceipt2 size={16} />} accent='#a091ff' className='mb-5'>
-                  <RevenueTable items={order.revenue_items} cur={cur} order={order} />
+                  <RevenueTable items={order.revenue_items} cur={cur} order={order} factor={revFactor} />
                </SectionCard>
             )}
 
             {isOutsourcing && order?.carrier_revenue_items && order?.carrier_revenue_items.length > 0 && (
                <SectionCard title='Carrier Revenue Items' icon={<TbReceipt2 size={16} />} accent='#fbbf24' className='mb-5'>
-                  <RevenueTable items={order.carrier_revenue_items} cur={cur} order={order} />
+                  <RevenueTable items={order.carrier_revenue_items} cur={cur} order={order} factor={carrierFactor} />
                </SectionCard>
             )}
 
@@ -393,7 +419,7 @@ export default function ViewOrder() {
 }
 
 /* ── Revenue table ───────────────────────────────────────────────── */
-const RevenueTable = ({ items, cur, order }) => (
+const RevenueTable = ({ items, cur, order, factor = 1 }) => (
    <div className='overflow-x-auto -mx-1'>
       <table className='w-full min-w-[560px] border-collapse'>
          <thead>
@@ -411,10 +437,10 @@ const RevenueTable = ({ items, cur, order }) => (
                      {r?.note ? <div className='text-[11.5px] text-gray-500 mt-1'>{r.note}</div> : null}
                   </td>
                   <td className='py-3.5 pe-4 text-[13px] text-gray-300 whitespace-nowrap'>
-                     <Currency amount={r?.rate || 0} currency={cur} /> <span className='text-gray-600'>×</span> {r.quantity}
+                     <Currency amount={(r?.rate || 0) * factor} currency={cur} /> <span className='text-gray-600'>×</span> {r.quantity}
                   </td>
                   <td className='py-3.5 pe-1 text-[13.5px] font-semibold text-white text-right whitespace-nowrap font-mona'>
-                     <Currency amount={r?.rate * r.quantity || 0} currency={cur} />
+                     <Currency amount={(r?.rate * r.quantity || 0) * factor} currency={cur} />
                   </td>
                </tr>
             ))}

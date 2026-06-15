@@ -111,7 +111,8 @@ export default function AddCustomer({item, fetchLists, classes, text}){
         setLoading(false);
         if (res.data.status === true) {
           toast.success(res.data.message);
-          fetchLists && fetchLists();
+          // Pass the created/updated customer so callers (e.g. AddOrder) can auto-select it.
+          fetchLists && fetchLists(res.data.customers);
           setaction('close');
           setData({
             phone: "",

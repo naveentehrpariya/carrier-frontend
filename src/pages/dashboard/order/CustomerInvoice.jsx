@@ -175,6 +175,14 @@ export default function CustomerInvoice() {
       </svg>
    );
 
+   // Invoice the customer in the currency they were originally quoted (input_*),
+   // not the internal base currency. revenue_items rates are stored in base, so back-convert.
+   const invHasInput = Number(order?.input_total_amount) > 0;
+   const invCurrency = invHasInput ? (order?.input_currency || 'usd') : (order?.revenue_currency || 'usd');
+   const invFactor = (invHasInput && Number(order?.total_amount) > 0)
+      ? Number(order.input_total_amount) / Number(order.total_amount) : 1;
+   const invTotal = invHasInput ? order.input_total_amount : (order?.total_amount || 0);
+
    return (
       <AuthLayout>
          {loading ? <Loading /> :
@@ -254,7 +262,7 @@ export default function CustomerInvoice() {
                                  <div><div style={S.label}>Order No</div><div style={{ ...S.value, color: '#2563eb' }}>#CMC{order?.serial_no}</div></div>
                                  {order?.order_type === 'regular' && order?.customer_order_no && <div><div style={S.label}>Cust. Order No</div><div style={S.value}>{order.customer_order_no}</div></div>}
                                  <div><div style={S.label}>Invoice Date</div><div style={{ ...S.value, fontSize: '10px', fontWeight: '500' }}><TimeFormat time={true} date={Date.now()} /></div></div>
-                                 <div><div style={S.label}>Amount Due</div><div style={S.value}><Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} /></div></div>
+                                 <div><div style={S.label}>Amount Due</div><div style={S.value}><Currency amount={invTotal} currency={invCurrency} /></div></div>
                               </div>
                            </div>
                         </div>
@@ -322,14 +330,14 @@ export default function CustomerInvoice() {
                                     <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#fafafa' }}>
                                        <td style={td}>{r?.revenue_item}</td>
                                        <td style={{ ...td, color: '#6b7280' }}>{r?.note}</td>
-                                       <td style={td}><Currency onlySymbol={true} currency={order?.revenue_currency || 'cad'} />{r?.rate}×{r?.quantity || 0}</td>
-                                       <td style={{ ...td, textAlign: 'right', fontWeight: '600' }}><Currency amount={r?.rate * r?.quantity || 0} currency={order?.revenue_currency || 'cad'} /></td>
+                                       <td style={td}><Currency onlySymbol={true} currency={invCurrency} />{Number(((r?.rate || 0) * invFactor).toFixed(2))}×{r?.quantity || 0}</td>
+                                       <td style={{ ...td, textAlign: 'right', fontWeight: '600' }}><Currency amount={(r?.rate * r?.quantity || 0) * invFactor} currency={invCurrency} /></td>
                                     </tr>
                                  ))}
                                  <tr style={{ background: '#f9fafb', borderTop: '2px solid #111827' }}>
                                     <td colSpan={3} style={{ ...td, fontWeight: '700', textAlign: 'right', borderBottom: 'none' }}>Total</td>
                                     <td style={{ ...td, fontWeight: '700', textAlign: 'right', fontSize: '13px', borderBottom: 'none' }}>
-                                       <Currency amount={order?.total_amount || 0} currency={order?.revenue_currency || 'cad'} />
+                                       <Currency amount={invTotal} currency={invCurrency} />
                                     </td>
                                  </tr>
                               </tbody>
