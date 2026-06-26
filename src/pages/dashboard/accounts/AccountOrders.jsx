@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import Api from '../../../api/Api';
+import { getTruckLabel } from '../../../utils/truckLabel';
 import AuthLayout from '../../../layout/AuthLayout';
 import TimeFormat from '../../common/TimeFormat';
 import Badge from '../../common/Badge';
@@ -313,10 +314,10 @@ export default function AccountOrders() {
                                           <span className='text-gray-400'>Truck:</span>{' '}
                                           {c?.truck?._id ? (
                                              <Link className="text-main" to={`/truck/detail/${c.truck._id}`}>
-                                                {[c?.truck?.make, c?.truck?.model].filter(Boolean).join(' ') || c?.truck?.unitNumber || '—'} {c?.truck?.plateNumber ? `(${c.truck.plateNumber})` : ''}
+                                                {getTruckLabel(c?.truck)}
                                              </Link>
                                           ) : (
-                                             <span>{[c?.truck?.make, c?.truck?.model].filter(Boolean).join(' ') || c?.truck?.unitNumber || '—'} {c?.truck?.plateNumber ? `(${c.truck.plateNumber})` : ''}</span>
+                                             <span>{getTruckLabel(c?.truck)}</span>
                                           )}
                                        </div>
                                        <div className="mt-1">

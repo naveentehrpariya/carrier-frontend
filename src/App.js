@@ -50,6 +50,7 @@ import Drivers from './pages/dashboard/drivers/Drivers';
 import Trucks from './pages/dashboard/fleet/Trucks';
 import Trailers from './pages/dashboard/fleet/Trailers';
 import OwnerOperators from './pages/dashboard/fleet/OwnerOperators';
+import OwnerOperatorDetail from './pages/dashboard/fleet/OwnerOperatorDetail';
 import TruckDetail from './pages/dashboard/fleet/TruckDetail';
 import TrailerDetail from './pages/dashboard/fleet/TrailerDetail';
 import ActivityLogs from './pages/tenant-admin/ActivityLogs';
@@ -217,6 +218,11 @@ export default function App() {
                     <Route path="/owner-operators" element={
                       <ModuleBasedRoute allowedModules={['regular']}>
                         <OwnerOperators />
+                      </ModuleBasedRoute>
+                    } />
+                    <Route path="/owner-operators/:id" element={
+                      <ModuleBasedRoute allowedModules={['regular']}>
+                        <OwnerOperatorDetail />
                       </ModuleBasedRoute>
                     } />
                     <Route path="/truck/detail/:id" element={

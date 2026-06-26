@@ -18,6 +18,7 @@ import AddCustomer from '../customer/AddCustomer';
 import AddCarrier from '../carrier/AddCarrier';
 import QuickAddItem from '../../../components/order/QuickAddItem';
 import QuickAddAsset from '../../../components/order/QuickAddAsset';
+import { getTruckLabel } from '../../../utils/truckLabel';
 import AddDriver from '../drivers/AddDriver';
 
 // const revenueItemOptions = [
@@ -543,6 +544,28 @@ export default function AddOrder({ isEdit = false }){
       return null;
     };
 
+    // Build react-select option objects from a populated asset doc, matching the label
+    // formats used by fetchAssetLists so fallback options look identical.
+    const buildTruckOption = (t) => {
+      if (!t || typeof t !== 'object' || !t._id) return null;
+      const tName = ([t.make, t.model].filter(Boolean).join(' ') + ((t.truckNumber || t.unitNumber) ? ` ${t.truckNumber || t.unitNumber}` : '')).trim() || 'Unnamed Truck';
+      return {
+        value: String(t._id),
+        label: `${`${tName} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate'}${t.ownerOperated ? ' • Owner Operated' : ''}`,
+        ownerOperated: !!t.ownerOperated,
+        ownerOperatorName: t?.ownerOperator?.fullName || '',
+      };
+    };
+    const buildTrailerOption = (t) => {
+      if (!t || typeof t !== 'object' || !t._id) return null;
+      const tName = [t.make, t.model].filter(Boolean).join(' ') || t.type || 'Unnamed Trailer';
+      return { value: String(t._id), label: `${tName} ${t.unitNumber ? `(${t.unitNumber})` : ''}`.trim() || 'No Unit/Plate' };
+    };
+    const buildDriverOption = (d) => {
+      if (!d || typeof d !== 'object' || !d._id) return null;
+      return { value: String(d._id), label: `${d.name} (${d.corporateID || 'No ID'})` };
+    };
+
     const populateOrderData = (order) => {
       if (!order) return;
       const normalizedDrivers = Array.isArray(order.drivers)
@@ -571,6 +594,18 @@ export default function AddOrder({ isEdit = false }){
         trailer: pickId(order.trailer),
         settle_amount: Number(order.settle_amount || 0),
         driver_assignment_mode: order.driver_assignment_mode || 'company_driver'
+      });
+
+      // The asset listings are scoped (by company) and may not contain this order's
+      // saved truck/trailer/driver. Keep the populated docs as fallback options so the
+      // Selects stay prefilled regardless of what the listing endpoints return.
+      setSavedAssetOptions({
+        truck: buildTruckOption(order.truck),
+        trailer: buildTrailerOption(order.trailer),
+        drivers: [
+          ...(Array.isArray(order.drivers) ? order.drivers : []),
+          order.driver,
+        ].map(buildDriverOption).filter(Boolean),
       });
 
       // Set currency
@@ -652,6 +687,9 @@ export default function AddOrder({ isEdit = false }){
     const [trucks, setTrucks] = useState([]);
     const [truckMetaMap, setTruckMetaMap] = useState({});
     const [trailers, setTrailers] = useState([]);
+    // Fallback options for the order's saved assets (populate of order detail), used when
+    // the scoped listing endpoints don't return them so edit stays prefilled.
+    const [savedAssetOptions, setSavedAssetOptions] = useState({ truck: null, trailer: null, drivers: [] });
     const fetchAssetLists = () => {
       // Fetch drivers
       Api.get(`/driver/listings`).then(res => {
@@ -665,7 +703,7 @@ export default function AddOrder({ isEdit = false }){
         const lists = res.data?.lists || res.data?.trucks || [];
         const nextMeta = {};
         const opts = lists.map(t => {
-            const tName = [t.make, t.model].filter(Boolean).join(' ') || t.unitNumber || 'Unnamed Truck';
+            const tName = getTruckLabel(t, 'Unnamed Truck');
             nextMeta[t._id] = t;
             return {
               value: t._id,
@@ -692,6 +730,14 @@ export default function AddOrder({ isEdit = false }){
     useEffect(() => {
       fetchAssetLists();
     }, []);
+
+    // Merge saved-asset fallbacks into the scoped listing options so edit prefills even
+    // when the order's asset belongs to another company / isn't returned by the listing.
+    const mergeOpt = (opts, extra) =>
+      (!extra || opts.some((o) => o.value === extra.value)) ? opts : [extra, ...opts];
+    const truckOptions = mergeOpt(trucks, savedAssetOptions.truck);
+    const trailerOptions = mergeOpt(trailers, savedAssetOptions.trailer);
+    const driverOptions = (savedAssetOptions.drivers || []).reduce(mergeOpt, drivers);
 
     const selectedTruckMeta = data.truck ? truckMetaMap[data.truck] : null;
     const hasCompanyDriverSelected = Array.isArray(data.drivers) && data.drivers.length > 0;
@@ -723,7 +769,7 @@ export default function AddOrder({ isEdit = false }){
     const handleTruckAdded = (doc) => {
       fetchAssetLists();
       if (doc && doc._id) {
-        const tName = [doc.make, doc.model].filter(Boolean).join(' ') || doc.unitNumber || 'Unnamed Truck';
+        const tName = getTruckLabel(doc, 'Unnamed Truck');
         const opt = {
           value: doc._id,
           label: `${`${tName} ${doc.plateNumber ? `(${doc.plateNumber})` : ''}`.trim() || 'No Unit/Plate'}${doc.ownerOperated ? ' • Owner Operated' : ''}`,
@@ -1484,7 +1530,7 @@ export default function AddOrder({ isEdit = false }){
                       />
                     )}
                   </div>
-                  <Select classNamePrefix="react-select input" {...selectMenuProps} placeholder="Search and choose Truck" isSearchable={true} isClearable={true} options={trucks} value={trucks.find(t => t.value === data.truck) || null} onChange={chooseTruck} />
+                  <Select classNamePrefix="react-select input" {...selectMenuProps} placeholder="Search and choose Truck" isSearchable={true} isClearable={true} options={truckOptions} value={truckOptions.find(t => t.value === data.truck) || null} onChange={chooseTruck} />
                 </div>
                 <div className='input-item'>
                   <div className='flex items-center justify-between gap-2 mb-1'>
@@ -1503,7 +1549,7 @@ export default function AddOrder({ isEdit = false }){
                       />
                     )}
                   </div>
-                  <Select classNamePrefix="react-select input" {...selectMenuProps} placeholder="Search and choose Trailer" isSearchable={true} isClearable={true} options={trailers} value={trailers.find(t => t.value === data.trailer) || null} onChange={chooseTrailer} />
+                  <Select classNamePrefix="react-select input" {...selectMenuProps} placeholder="Search and choose Trailer" isSearchable={true} isClearable={true} options={trailerOptions} value={trailerOptions.find(t => t.value === data.trailer) || null} onChange={chooseTrailer} />
                 </div>
                 <div className='input-item'>
                   <div className='flex items-center justify-between gap-2 mb-1'>
@@ -1522,8 +1568,8 @@ export default function AddOrder({ isEdit = false }){
                     placeholder="Search and choose Driver(s)"
                     isSearchable={true}
                     isClearable={true}
-                    options={drivers}
-                    value={drivers.filter(d => (data.drivers || []).includes(d.value))}
+                    options={driverOptions}
+                    value={driverOptions.filter(d => (data.drivers || []).includes(d.value))}
                     onChange={chooseDriver}
                   />
                 </div>

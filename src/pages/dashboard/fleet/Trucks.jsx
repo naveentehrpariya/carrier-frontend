@@ -8,6 +8,7 @@ import { FaTrash, FaEdit } from 'react-icons/fa';
 import { ModalShell, ModalHeader, FormSection, Field, TextInput, SelectInput, ModalFooter, ACCENTS } from '../../../components/modal/ModalKit';
 import { Link } from 'react-router-dom';
 import { useSearchParams } from 'react-router-dom';
+import { getTruckLabel } from '../../../utils/truckLabel';
 
 const toISODate = (d) => {
   const pad = (n) => String(n).padStart(2, '0');
@@ -38,6 +39,7 @@ export default function Trucks() {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
     plateNumber: '',
+    truckNumber: '',
     unitNumber: '',
     make: '',
     model: '',
@@ -63,6 +65,7 @@ export default function Trucks() {
   const [editItem, setEditItem] = useState(null);
   const [editForm, setEditForm] = useState({
     plateNumber: '',
+    truckNumber: '',
     unitNumber: '',
     make: '',
     model: '',
@@ -135,6 +138,7 @@ export default function Trucks() {
     return (lists || []).filter((t) => {
       const hay = [
         t?.plateNumber,
+        t?.truckNumber,
         t?.unitNumber,
         t?.vin,
         t?.make,
@@ -155,6 +159,7 @@ export default function Trucks() {
     setEditItem(t);
     setEditForm({
       plateNumber: t.plateNumber || '',
+      truckNumber: t.truckNumber || '',
       unitNumber: t.unitNumber || '',
       make: t.make || '',
       model: t.model || '',
@@ -333,6 +338,7 @@ export default function Trucks() {
         setTimeout(() => setAction(undefined), 500);
         setForm({
           plateNumber: '',
+          truckNumber: '',
           unitNumber: '',
           make: '',
           model: '',
@@ -470,6 +476,7 @@ export default function Trucks() {
             <Field label="Year"><TextInput name='year' value={form.year} onChange={updateForm} type='number' placeholder='2022' /></Field>
             <Field label="VIN"><TextInput name='vin' value={form.vin} onChange={updateForm} type='text' placeholder='Vehicle Identification Number' /></Field>
             <Field label="Plate Number"><TextInput name='plateNumber' value={form.plateNumber} onChange={updateForm} type='text' placeholder='ABC123' /></Field>
+            <Field label="Truck No"><TextInput name='truckNumber' value={form.truckNumber} onChange={updateForm} type='text' placeholder='e.g., 101' /></Field>
             <Field label="Unit Number"><TextInput name='unitNumber' value={form.unitNumber} onChange={updateForm} type='text' placeholder='Unit number' /></Field>
             <Field label="Capacity (lbs)"><TextInput name='capacity' value={form.capacity} onChange={updateForm} type='number' placeholder='e.g., 80000' /></Field>
           </FormSection>
@@ -530,7 +537,7 @@ export default function Trucks() {
             {filteredLists.map((t) => (
               <div key={t._id} className='bg-gray-900 border border-gray-800 rounded-[20px] p-4 flex flex-col h-full'>
                 <div className='flex flex-wrap items-center gap-2 mb-3'>
-                  <h3 className='text-white font-bold text-lg capitalize'>{t.make && t.model ? `${t.make} ${t.model}` : t.unitNumber || t.plateNumber || 'Unnamed Truck'}</h3>
+                  <h3 className='text-white font-bold text-lg capitalize'>{getTruckLabel(t, 'Unnamed Truck')}</h3>
                   {/* {t.ownerOperated && (
                     <span className='text-[10px] bg-orange-500/10 border border-orange-500/30 text-orange-300 rounded-lg px-2 py-0.5'>
                       Owner Operated
@@ -540,6 +547,7 @@ export default function Trucks() {
                 
                 <div className='flex-1 mb-4'>
                   <p className='text-gray-400 text-sm'>Plate: <span className='text-gray-200'>{t.plateNumber || '—'}</span></p>
+                  {t.truckNumber && <p className='text-gray-400 text-sm mt-1'>Truck No: <span className='text-gray-200'>{t.truckNumber}</span></p>}
                   {t.unitNumber && <p className='text-gray-400 text-sm mt-1'>Unit: <span className='text-gray-200'>{t.unitNumber}</span></p>}
                   {t.lastLocation && <p className='text-gray-500 text-xs mt-2 line-clamp-2' title={t.lastLocation}>Last Location: {t.lastLocation}</p>}
                   
@@ -597,7 +605,7 @@ export default function Trucks() {
             <div className="min-w-0">
               <h2 className="text-lg sm:text-xl font-bold truncate">Truck Distance</h2>
               <p className="text-xs text-gray-400 truncate">
-                {(statsTruck?.make || '').trim()} {(statsTruck?.model || '').trim()} • Plate: {statsTruck?.plateNumber || '—'}
+                {getTruckLabel(statsTruck, '')} • Plate: {statsTruck?.plateNumber || '—'}
               </p>
             </div>
             <button className="text-gray-400 hover:text-white text-xl leading-none" onClick={() => setStatsOpen(false)} aria-label="Close">×</button>
@@ -750,7 +758,7 @@ export default function Trucks() {
             <div className="min-w-0">
               <h2 className="text-lg sm:text-xl font-bold truncate">Truck Logs</h2>
               <p className="text-xs text-gray-400 truncate">
-                {(logsTruck?.make || '').trim()} {(logsTruck?.model || '').trim()} • Plate: {logsTruck?.plateNumber || '—'}
+                {getTruckLabel(logsTruck, '')} • Plate: {logsTruck?.plateNumber || '—'}
               </p>
             </div>
             <button className="text-gray-400 hover:text-white text-xl leading-none" onClick={() => setLogsOpen(false)} aria-label="Close">×</button>
@@ -975,6 +983,10 @@ export default function Trucks() {
             <div className='input-item'>
               <label className="mt-4 mb-0 block text-sm text-gray-400">Plate Number</label>
               <input name='plateNumber' value={editForm.plateNumber} onChange={updateEditForm} type='text' placeholder='ABC123' className="input-sm" />
+            </div>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Truck No</label>
+              <input name='truckNumber' value={editForm.truckNumber} onChange={updateEditForm} type='text' placeholder='e.g., 101' className="input-sm" />
             </div>
             <div className='input-item'>
               <label className="mt-4 mb-0 block text-sm text-gray-400">Unit Number</label>

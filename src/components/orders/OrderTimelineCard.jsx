@@ -1,5 +1,6 @@
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { getTruckLabel } from '../../utils/truckLabel';
 import {
   LuMapPin,
   LuPackageCheck,
@@ -271,10 +272,10 @@ export default function OrderTimelineCard({ order, user: userProp, fetchLists })
                 <span className='text-gray-400'>Truck:</span>{' '}
                 {order?.truck?._id ? (
                   <Link className='capitalize text-main' to={`/truck/detail/${order.truck._id}`}>
-                    {[order?.truck?.make, order?.truck?.model].filter(Boolean).join(' ') || order?.truck?.unitNumber || '—'}{order?.truck?.plateNumber ? ` (${order.truck.plateNumber})` : ''}
+                    {getTruckLabel(order?.truck)}
                   </Link>
                 ) : (
-                  <span>{[order?.truck?.make, order?.truck?.model].filter(Boolean).join(' ') || order?.truck?.unitNumber || '—'}{order?.truck?.plateNumber ? ` (${order.truck.plateNumber})` : ''}</span>
+                  <span>{getTruckLabel(order?.truck)}</span>
                 )}
               </div>
               <div className='line-clamp-1'>

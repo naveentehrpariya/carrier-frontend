@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Popup from '../../pages/common/Popup';
 import Api from '../../api/Api';
+import { getTruckLabel } from '../../utils/truckLabel';
 import { toast } from 'react-hot-toast';
 import TimeFormat from '../../pages/common/TimeFormat';
 import { Link } from 'react-router-dom';
@@ -284,7 +285,7 @@ export default function DriverLogsPopup({ driver, open, onClose }) {
                       )}
                     </td>
                     <td className="px-3 py-2 max-w-[320px] truncate">{l.type === 'empty' ? l.to_location : l.end_location}</td>
-                    <td className="px-3 py-2">{l.type === 'trip' && l.truck ? `${[l.truck.make, l.truck.model].filter(Boolean).join(' ') || l.truck.unitNumber || '—'} ${l.truck.plateNumber ? `(${l.truck.plateNumber})` : ''}` : '—'}</td>
+                    <td className="px-3 py-2">{l.type === 'trip' && l.truck ? getTruckLabel(l.truck) : '—'}</td>
                     <td className="px-3 py-2 text-right">
                       {typeof l.miles === 'number' ? fmtMilesKm(l.miles || 0) : '—'}
                     </td>

@@ -151,7 +151,7 @@ export default function GlobalSearch() {
                             className="block bg-gray-900 border border-gray-800 rounded-xl px-3 py-2 hover:border-gray-700"
                           >
                             <div className="text-white font-semibold">
-                              {(it.unitNumber ? `${it.unitNumber} • ` : '') + (it.plateNumber || 'Truck')}
+                              {(it.truckNumber ? `${it.truckNumber} • ` : '') + (it.unitNumber ? `${it.unitNumber} • ` : '') + (it.plateNumber || 'Truck')}
                             </div>
                             <div className="text-xs text-gray-400">{[it.make, it.model, it.vin].filter(Boolean).join(' • ')}</div>
                           </Link>

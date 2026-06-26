@@ -254,7 +254,11 @@ export default function OwnerOperators() {
                 filtered.map((item) => (
                   <tr key={item._id} className="border-t border-white/5">
                     <td className="px-4 py-3">{item.ownerOperatorId}</td>
-                    <td className="px-4 py-3">{item.fullName}</td>
+                    <td className="px-4 py-3">
+                      <Link to={`/owner-operators/${item._id}`} className="text-[#38bdf8] hover:underline font-semibold">
+                        {item.fullName}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3">{item.companyName || '—'}</td>
                     <td className="px-4 py-3">{item.phone || '—'}</td>
                     <td className="px-4 py-3">{item.email || '—'}</td>

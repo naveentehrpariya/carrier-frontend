@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import AuthLayout from '../../../layout/AuthLayout';
 import Api from '../../../api/Api';
+import { getTruckLabel } from '../../../utils/truckLabel';
 import Loading from '../../common/Loading';
 import TimeFormat from '../../common/TimeFormat';
 import OrderItem from '../order/OrderItem';
@@ -59,10 +60,10 @@ export default function TruckDetail() {
             <div>
               <div className="text-gray-400 text-xs">Truck Details</div>
               <h2 className="text-2xl font-bold">
-                {(truck?.make || '')} {(truck?.model || '')}
+                {getTruckLabel(truck)}
               </h2>
               <div className="text-gray-400 text-sm mt-1">
-                Plate: {truck?.plateNumber || '—'}{truck?.unitNumber ? ` • Unit: ${truck.unitNumber}` : ''}
+                Plate: {truck?.plateNumber || '—'}{truck?.truckNumber ? ` • Truck No: ${truck.truckNumber}` : ''}{truck?.unitNumber ? ` • Unit: ${truck.unitNumber}` : ''}
               </div>
             </div>
             <Link to="/trucks" className="btn bg-gray-800 text-white rounded-2xl px-4 py-2">Back</Link>

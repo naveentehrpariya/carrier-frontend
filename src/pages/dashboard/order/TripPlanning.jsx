@@ -2,6 +2,7 @@ import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
+import { getTruckLabel } from '../../../utils/truckLabel';
 import AuthLayout from '../../../layout/AuthLayout';
 import Loading from '../../common/Loading';
 import TimeFormat from '../../common/TimeFormat';
@@ -142,7 +143,7 @@ export default function TripPlanning() {
             }
             if (trucksRes.data.status) {
                 const truckOptions = (trucksRes.data.lists || []).map(t => {
-                    const tName = [t.make, t.model].filter(Boolean).join(' ') || t.unitNumber || 'Unnamed Truck';
+                    const tName = getTruckLabel(t, 'Unnamed Truck');
                     return { 
                         value: t._id, 
                         label: `${tName} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate'
@@ -173,6 +174,9 @@ export default function TripPlanning() {
                 const mappedTrips = tripsRes.data.trips.map(t => ({
                     ...t,
                     driver: t.driver?._id || null,
+                    drivers: (Array.isArray(t.drivers) ? t.drivers : [])
+                        .map(d => (d && typeof d === 'object') ? d._id : d)
+                        .filter(Boolean),
                     truck: t.truck?._id || null,
                     trailer: t.trailer?._id || null,
                     carrier: t.carrier?._id || null,
@@ -341,6 +345,31 @@ export default function TripPlanning() {
             totalPay += ((Number(trip.miles) || 0) / effDrivers) * rate;
         });
         return totalPay;
+    };
+
+    // Per-driver pay breakdown for a trip (miles split evenly across drivers).
+    const calculateDriverPayBreakdown = (trip) => {
+        const driversList = (trip.drivers && trip.drivers.length > 0)
+            ? trip.drivers
+            : (trip.driver ? [trip.driver] : []);
+        const effDrivers = Math.max(driversList.length, 1);
+        const rateType = effDrivers > 1 ? 'team' : 'solo';
+        const miles = Number(trip.miles) || 0;
+        const share = miles / effDrivers;
+        const rows = driversList.map((dVal) => {
+            const drv = drivers.find(d => d.value === dVal);
+            const rate = rateType === 'team'
+                ? (drv?.ratePerMileTeam || drv?.ratePerMile || 0)
+                : (drv?.ratePerMileSolo || drv?.ratePerMile || 0);
+            return {
+                label: (drv?.label || 'Unassigned').split('(')[0].trim(),
+                miles: share,
+                rate,
+                rateType,
+                pay: share * rate,
+            };
+        });
+        return { rows, total: rows.reduce((s, r) => s + r.pay, 0) };
     };
 
     const [relayModal, setRelayModal] = useState(null); // stores the index after which to insert
@@ -745,15 +774,32 @@ export default function TripPlanning() {
                                 </div>
 
                                 {/* Salary Calculation Preview */}
-                                {order.order_type === 'regular' && trips[activeTripIndex]?.driver && trips[activeTripIndex]?.miles > 0 && (
+                                {order.order_type === 'regular'
+                                    && ((trips[activeTripIndex]?.drivers && trips[activeTripIndex].drivers.length > 0) || trips[activeTripIndex]?.driver)
+                                    && trips[activeTripIndex]?.miles > 0 && (() => {
+                                    const breakdown = calculateDriverPayBreakdown(trips[activeTripIndex]);
+                                    const multi = breakdown.rows.length > 1;
+                                    return (
                                     <div className='bg-gradient-to-r from-emerald-500/[0.12] to-transparent border border-emerald-500/20 rounded-xl p-4'>
-                                        <div className='flex justify-between items-center'>
-                                            <span className='text-[10px] text-gray-400 uppercase font-bold tracking-[0.13em]'>Driver Pay</span>
-                                            <span className='text-emerald-400 font-bold text-xl font-mona'>${calculateDriverPay(trips[activeTripIndex]).toFixed(2)}</span>
+                                        {multi && breakdown.rows.map((r, i) => (
+                                            <div key={i} className='flex justify-between items-center mb-2'>
+                                                <div className='flex flex-col'>
+                                                    <span className='text-xs text-gray-300 font-semibold'>{r.label}</span>
+                                                    <span className='text-[10px] text-gray-500'>{r.miles.toFixed(2)} mi @ ${r.rate}/mile <span className='text-emerald-500/70 uppercase font-semibold'>({r.rateType})</span></span>
+                                                </div>
+                                                <span className='text-emerald-300 font-semibold text-sm font-mona'>${r.pay.toFixed(2)}</span>
+                                            </div>
+                                        ))}
+                                        <div className={`flex justify-between items-center ${multi ? 'pt-2 border-t border-emerald-500/20' : ''}`}>
+                                            <span className='text-[10px] text-gray-400 uppercase font-bold tracking-[0.13em]'>{multi ? 'Total Driver Pay' : 'Driver Pay'}</span>
+                                            <span className='text-emerald-400 font-bold text-xl font-mona'>${breakdown.total.toFixed(2)}</span>
                                         </div>
-                                        <p className='text-[10px] text-gray-500 mt-1'>Based on {trips[activeTripIndex].miles} miles @ ${drivers.find(d => d.value === trips[activeTripIndex].driver)?.ratePerMile}/mile</p>
+                                        {!multi && breakdown.rows[0] && (
+                                            <p className='text-[10px] text-gray-500 mt-1'>Based on {trips[activeTripIndex].miles} miles @ ${breakdown.rows[0].rate}/mile <span className='text-emerald-500/70 uppercase font-semibold'>({breakdown.rows[0].rateType})</span></p>
+                                        )}
                                     </div>
-                                )}
+                                    );
+                                })()}
 
                                 <div className='input-item'>
                                     <label className={fieldLabel}>Special Instructions</label>

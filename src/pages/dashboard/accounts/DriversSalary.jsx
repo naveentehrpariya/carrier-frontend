@@ -59,18 +59,15 @@ export default function DriversSalary() {
       </div>
 
       <div className="mt-6 bg-[#11131A] border border-white/5 rounded-2xl overflow-hidden">
-        <div className="overflow-auto">
-          <table className="min-w-[1200px] w-full text-sm text-white">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-white table-fixed">
             <thead className="bg-[#12161d] text-[#8A8FA3]">
               <tr>
-                <th className="text-left px-4 py-3 font-bold">Driver</th>
-                <th className="text-left px-4 py-3 font-bold">Corporate ID</th>
-                <th className="text-left px-4 py-3 font-bold">Email</th>
-                <th className="text-left px-4 py-3 font-bold">License Details</th>
-                <th className="text-left px-4 py-3 font-bold">Province</th>
-                <th className="text-left px-4 py-3 font-bold">Address</th>
-                <th className="text-left px-4 py-3 font-bold">Rate/Mile</th>
-                <th className="text-right px-4 py-3 font-bold">Action</th>
+                <th className="text-left px-4 py-3 font-bold w-[24%]">Driver</th>
+                <th className="text-left px-4 py-3 font-bold w-[22%]">License &amp; Province</th>
+                <th className="text-left px-4 py-3 font-bold w-[26%]">Address</th>
+                <th className="text-left px-4 py-3 font-bold w-[12%]">Rate/Mile</th>
+                <th className="text-right px-4 py-3 font-bold w-[16%]">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -90,10 +87,14 @@ export default function DriversSalary() {
               )}
               {!loading &&
                 filtered.map((d) => (
-                  <tr key={d._id} className="border-t border-white/5">
-                    <td className="px-4 py-3 font-semibold">{d?.name || '—'}</td>
-                    <td className="px-4 py-3">{d?.corporateID || '—'}</td>
-                    <td className="px-4 py-3">{d?.email || '—'}</td>
+                  <tr key={d._id} className="border-t border-white/5 align-top">
+                    <td className="px-4 py-3">
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-white">{d?.name || '—'}</span>
+                        <span className="text-xs text-gray-400 mt-0.5">{d?.corporateID || '—'}</span>
+                        <span className="text-xs text-gray-500 mt-0.5 truncate" title={d?.email || ''}>{d?.email || '—'}</span>
+                      </div>
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-col">
                         <span className="font-medium text-gray-200">{d?.driverProfile?.licenseNumber || '—'}</span>
@@ -102,11 +103,11 @@ export default function DriversSalary() {
                           <span className="text-gray-600">→</span>
                           <span>{d?.driverProfile?.licenseExpiry ? String(d.driverProfile.licenseExpiry).slice(0, 10) : '—'}</span>
                         </div>
+                        <span className="text-xs text-gray-400 mt-1">{d?.driverProfile?.licenseState || '—'}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">{d?.driverProfile?.licenseState || '—'}</td>
-                    <td className="px-4 py-3 max-w-[360px] truncate">{d?.address || '—'}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-gray-300 truncate" title={d?.address || ''}>{d?.address || '—'}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
                       {Number(d?.driverProfile?.ratePerMileSolo ?? d?.driverProfile?.ratePerMile ?? 0).toFixed(2)} /{' '}
                       {Number(d?.driverProfile?.ratePerMileTeam ?? d?.driverProfile?.ratePerMile ?? 0).toFixed(2)}
                     </td>

@@ -1,6 +1,7 @@
 import React, { useContext, useEffect, useRef, useState } from 'react'
 import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
+import { getTruckLabel } from '../../../utils/truckLabel';
 import { Link, useParams } from 'react-router-dom';
 import AuthLayout from '../../../layout/AuthLayout';
 import TimeFormat from '../../common/TimeFormat';
@@ -272,7 +273,7 @@ export default function ViewOrder() {
                               <Field label='Driver Assignment'>{order?.driver_assignment_mode === 'owner_driver' ? 'Owner Operator Driver' : 'Company Driver'}</Field>
                            )}
                            <Field label='Driver'>{order?.drivers && order.drivers.length > 0 ? order.drivers.map(d => d.name).join(', ') : (order?.driver?.name || "N/A")}</Field>
-                           <Field label='Truck'>{order?.truck ? `${[order.truck.make, order.truck.model].filter(Boolean).join(' ') || order.truck.unitNumber || '—'} ${order.truck.plateNumber ? `(${order.truck.plateNumber})` : ''}` : "N/A"}</Field>
+                           <Field label='Truck'>{order?.truck ? getTruckLabel(order.truck) : "N/A"}</Field>
                            <Field label='Trailer'>{order?.trailer ? `${[order.trailer.make, order.trailer.model].filter(Boolean).join(' ') || order.trailer.type || '—'} ${order.trailer.unitNumber ? `(${order.trailer.unitNumber})` : ''}` : "N/A"}</Field>
                         </div>
                      </SectionCard>
@@ -304,7 +305,7 @@ export default function ViewOrder() {
                                     {order?.order_type !== 'outsourcing' && (
                                        <>
                                           <Field label='Drivers'>{trip.drivers && trip.drivers.length > 0 ? trip.drivers.map(d => d.name).join(', ') : (trip.driver?.name || 'Unassigned')}</Field>
-                                          <Field label='Truck'>{trip.truck ? `${[trip.truck.make, trip.truck.model].filter(Boolean).join(' ') || trip.truck.unitNumber || '—'} ${trip.truck.plateNumber ? `(${trip.truck.plateNumber})` : ''}` : "N/A"}</Field>
+                                          <Field label='Truck'>{trip.truck ? getTruckLabel(trip.truck) : "N/A"}</Field>
                                           <Field label='Trailer'>{trip.trailer ? `${[trip.trailer.make, trip.trailer.model].filter(Boolean).join(' ') || trip.trailer.type || '—'} ${trip.trailer.unitNumber ? `(${trip.trailer.unitNumber})` : ''}` : "N/A"}</Field>
                                        </>
                                     )}

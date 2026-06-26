@@ -204,7 +204,7 @@ export default function AuthLayout({children, heading}) {
                                               : k === 'drivers'
                                                 ? `${it.corporateID ? `${it.corporateID} • ` : ''}${it.email || ''}${it.phone ? ` • ${it.phone}` : ''}`
                                                 : k === 'trucks'
-                                                  ? [it.make, it.model, it.vin].filter(Boolean).join(' • ')
+                                                  ? [it.make, it.model, (it.truckNumber || it.unitNumber), it.vin].filter(Boolean).join(' • ')
                                                   : [it.type, it.vin, it.licenseNumber].filter(Boolean).join(' • ');
                                       return (
                                         <a key={it._id} href="/" onClick={onClick} className="block px-2 py-2 rounded-lg hover:bg-gray-900">
