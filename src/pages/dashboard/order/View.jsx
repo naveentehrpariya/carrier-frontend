@@ -155,7 +155,7 @@ export default function ViewOrder() {
                 <FaTruckMoving className='me-2' size='18px' /> Trip Planning
               </Link>
             )}
-            {(user?.is_admin === 1 || (!user?.permissions?.includes('regular') && !user?.permissions?.includes('outsourcing') && !user?.permissions?.includes('subadmin'))) && (
+            {(user?.is_admin === 1 || Number(user?.role) === 3 || user?.permissions?.includes('invoices') || user?.permissions?.includes('subadmin') || user?.permissions?.includes('accounting')) && (
               <Link to={`/order/customer/invoice/${order?._id}`} className='bg-main text-black font-semibold px-4 py-2.5 rounded-xl flex items-center hover:opacity-90 transition-opacity'> <LuDownload className='me-2' size='18px' /> Invoice</Link>
             )}
             <Dropdown classes={'relative top-1'} iconsize={'30px '}>
@@ -196,7 +196,7 @@ export default function ViewOrder() {
                 <Link className={`p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block ${order?.lock ? 'opacity-50 pointer-events-none' : ''}`} to={`/edit/order/${order?._id}`}>{order?.lock ? <FaLock size={12} className='me-1 inline' /> : ""} Edit Order</Link>
               </li>
             )}
-            {(user?.is_admin === 1 || (!user?.permissions?.includes('regular') && !user?.permissions?.includes('outsourcing') && !user?.permissions?.includes('subadmin'))) && (
+            {(user?.is_admin === 1 || Number(user?.role) === 3 || user?.permissions?.includes('invoices') || user?.permissions?.includes('subadmin') || user?.permissions?.includes('accounting')) && (
               <li className='list-none text-sm'>
                 <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${order?._id}`}>Download Customer Invoice</Link>
               </li>

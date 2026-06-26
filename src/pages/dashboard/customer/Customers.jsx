@@ -15,8 +15,11 @@ export default function Customers() {
    const [searchTerm, setSearchTerm] = useState('');
 
    const fetchLists = (search) => {
+      // AddCustomer reuses this callback but passes the created customer object
+      // (for AddOrder auto-select); ignore anything that isn't a search string.
+      const q = typeof search === 'string' ? search : '';
       setLoading(true);
-      const resp = Api.get(`/customer/listings?${search ?`search=${search}` : ''}`);
+      const resp = Api.get(`/customer/listings?${q ? `search=${q}` : ''}`);
       resp.then((res) => {
          setLoading(false);
          if (res.data.status === true) {

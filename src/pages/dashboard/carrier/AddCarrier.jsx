@@ -37,7 +37,20 @@ export default function AddCarrier({item, fetchLists, classes, text}){
     const handleinput = (e) => {
       setData({ ...data, [e.target.name]: e.target.value});
     }
-    
+
+    // Autofill columns from a Google Place selection (street-only stays in `location`).
+    const handleAddressSelect = (p) => {
+      const match = countries.find((c) => c.countryCode === p.countryCode);
+      setData((prev) => ({
+        ...prev,
+        location: p.line1 || prev.location,
+        country: match ? match.label : (p.country || prev.country),
+        state: p.state || prev.state,
+        city: p.city || prev.city,
+        zipcode: p.zipcode || prev.zipcode,
+      }));
+    }
+
     const handleEmailsChange = (emailsArray) => {
       console.log('Carrier emails changed:', emailsArray);
       setEmails(emailsArray);
@@ -168,12 +181,13 @@ export default function AddCarrier({item, fetchLists, classes, text}){
               <GoogleAddressInput
                 value={data.location}
                 onChange={(v) => setData((prev) => ({ ...prev, location: v }))}
+                onAddressSelect={handleAddressSelect}
                 placeholder="Search location"
                 className="input-sm !mt-0"
               />
             </Field>
             <Field label="Country">
-               <SelectInput defaultValue={item?.country} onChange={handleinput} name='country'>
+               <SelectInput value={data.country || ''} onChange={handleinput} name='country'>
                 <option value="" className='text-black'>Choose country</option>
                   {countries && countries.map((c, i)=>(
                     <option key={`country-${i}`} value={c.label} className='text-black'>{c.label}</option>
@@ -181,13 +195,13 @@ export default function AddCarrier({item, fetchLists, classes, text}){
                </SelectInput>
             </Field>
             <Field label="State" required>
-               <TextInput defaultValue={item?.state} name='state' onChange={handleinput} type='text' placeholder="State" />
+               <TextInput value={data.state || ''} name='state' onChange={handleinput} type='text' placeholder="State" />
             </Field>
             <Field label="City">
-               <TextInput defaultValue={item?.city} name='city' onChange={handleinput} type='text' placeholder="City" />
+               <TextInput value={data.city || ''} name='city' onChange={handleinput} type='text' placeholder="City" />
             </Field>
             <Field label="Zipcode">
-               <TextInput defaultValue={item?.zipcode} name='zipcode' onChange={handleinput} type='text' placeholder="Zipcode" />
+               <TextInput value={data.zipcode || ''} name='zipcode' onChange={handleinput} type='text' placeholder="Zipcode" />
             </Field>
          </FormSection>
 

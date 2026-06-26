@@ -12,7 +12,7 @@ import DistanceInMiles from '../../common/DistanceInMiles';
 import GetDeliveryLocation from '../../common/GetDeliveryLocation';
 import Loading from '../../common/Loading';
 import { TbUser, TbReceipt2, TbBuildingWarehouse, TbTruck, TbRoute } from "react-icons/tb";
-import { LuPackage, LuMapPin, LuPackageCheck, LuPlus, LuCalculator } from "react-icons/lu";
+import { LuPackage, LuMapPin, LuPackageCheck, LuPlus, LuCalculator, LuArrowRight } from "react-icons/lu";
 import { FaTruckMoving } from "react-icons/fa6";
 import AddCustomer from '../customer/AddCustomer';
 import AddCarrier from '../carrier/AddCarrier';
@@ -52,6 +52,82 @@ const selectMenuProps = {
   styles: { menuPortal: (base) => ({ ...base, zIndex: 9999 }) },
 };
 
+/* ── Order-type picker (gate shown before the form on a new order) ── */
+const ORDER_TYPE_CHOICES = {
+  outsourcing: {
+    accent: '#a091ff',
+    icon: <TbBuildingWarehouse size={26} />,
+    eyebrow: 'External carrier',
+    title: 'Outsourcing',
+    desc: 'Hand the load to an outside carrier. Track carrier cost, your margin and the paperwork.',
+    points: ['Assign a carrier', 'Capture cost & profit', 'Carrier documents'],
+  },
+  regular: {
+    accent: '#fb7185',
+    icon: <FaTruckMoving size={22} />,
+    eyebrow: 'Your fleet',
+    title: 'Fleet',
+    desc: 'Run it on your own trucks and drivers. Plan trips, assign assets and track driver pay.',
+    points: ['Assign truck & driver', 'Plan trips & route', 'Owner-operator pay'],
+  },
+};
+
+const OrderTypePicker = ({ choices, onPick }) => (
+  <div className='max-w-[920px] mx-auto'>
+    <div className='text-center mb-10 mt-4'>
+      <p className='text-[11px] uppercase tracking-[0.22em] text-gray-500 mb-3'>New order</p>
+      <h2 className='text-3xl sm:text-4xl font-bold text-white font-mona'>What kind of order is this?</h2>
+      <p className='text-[13px] text-gray-500 mt-3'>Pick how the load is moved. You can switch this later while filling the form.</p>
+    </div>
+
+    <div className='grid grid-cols-1 sm:grid-cols-2 gap-5'>
+      {choices.map(({ value }, i) => {
+        const c = ORDER_TYPE_CHOICES[value];
+        if (!c) return null;
+        return (
+          <button
+            key={value}
+            type='button'
+            onClick={() => onPick(value)}
+            style={{ '--accent': c.accent, animationDelay: `${i * 70}ms` }}
+            className='order-type-card group relative text-left bg-dark1 border border-white/[0.07] rounded-2xl p-6 sm:p-7
+                       transition-all duration-300 hover:border-[var(--accent)] hover:-translate-y-1
+                       focus:outline-none focus-visible:border-[var(--accent)] focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40
+                       overflow-hidden'
+          >
+            {/* ambient glow */}
+            <span aria-hidden className='pointer-events-none absolute -top-16 -right-16 w-40 h-40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl'
+                  style={{ background: c.accent }} />
+
+            <span className='relative flex items-center justify-center w-14 h-14 rounded-2xl mb-5'
+                  style={{ background: `${c.accent}1a`, color: c.accent }}>
+              {c.icon}
+            </span>
+
+            <p className='relative text-[10px] uppercase tracking-[0.18em] mb-1.5' style={{ color: c.accent }}>{c.eyebrow}</p>
+            <h3 className='relative text-2xl font-bold text-white font-mona mb-2'>{c.title}</h3>
+            <p className='relative text-[13px] leading-relaxed text-gray-400 mb-5'>{c.desc}</p>
+
+            <ul className='relative space-y-1.5 mb-6'>
+              {c.points.map((p) => (
+                <li key={p} className='flex items-center gap-2 text-[12px] text-gray-500'>
+                  <span className='w-1.5 h-1.5 rounded-full shrink-0' style={{ background: c.accent }} />
+                  {p}
+                </li>
+              ))}
+            </ul>
+
+            <span className='relative flex items-center gap-2 text-[12px] font-bold uppercase tracking-wider transition-colors text-gray-500 group-hover:text-[var(--accent)]'>
+              Start this order
+              <LuArrowRight size={15} className='transition-transform duration-300 group-hover:translate-x-1' />
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
 const SectionCard = ({ title, subtitle, icon, accent = '#a091ff', children, className = '', right = null }) => (
   <section className={`bg-dark1 border border-white/[0.06] rounded-2xl overflow-hidden ${className}`}>
     <header className='flex flex-wrap items-center justify-between gap-3 px-5 sm:px-6 py-4 border-b border-white/[0.05]'>
@@ -72,6 +148,8 @@ export default function AddOrder({ isEdit = false }){
 
     const { id } = useParams();
     const [isEditMode, setIsEditMode] = useState(isEdit && id);
+    // Order-type chosen via the picker gate. Edit mode skips the gate entirely.
+    const [typeChosen, setTypeChosen] = useState(!!(isEdit && id));
     const [existingOrder, setExistingOrder] = useState(null);
     const [initialLoading, setInitialLoading] = useState(isEdit && id);
 
@@ -537,6 +615,14 @@ export default function AddOrder({ isEdit = false }){
 
     const [revCurrency, setRevCurrency] = useState(selectedCurrencyCode);
 
+    // New orders are entered in the header (global) display currency. Keep the form's
+    // currency synced to the header selector; edit mode keeps the order's saved currency.
+    useEffect(() => {
+      if (isEditMode) return;
+      setRevCurrency(selectedCurrencyCode);
+      setData((prev) => ({ ...prev, revenue_currency: selectedCurrencyCode }));
+    }, [selectedCurrencyCode, isEditMode]);
+
     // Terminology constants
     const TERM_OUTSOURCING = 'Outsourcing (Carriers)';
     const TERM_REGULAR = 'Regular (Trucking, driver etc)';
@@ -546,12 +632,6 @@ export default function AddOrder({ isEdit = false }){
       ...(userModules.includes('outsourcing') ? [{ label: TERM_OUTSOURCING, value: 'outsourcing' }] : []),
       ...(userModules.includes('regular') ? [{ label: TERM_REGULAR, value: 'regular' }] : []),
     ];
-
-    const handleRevCurrencyChange = (code) => {
-      const next = String(code || 'USD').toLowerCase();
-      setRevCurrency(next);
-      setData((prev) => ({ ...prev, revenue_currency: next }));
-    };
 
     useEffect(() => {
       if (!data.order_type) {
@@ -809,6 +889,27 @@ export default function AddOrder({ isEdit = false }){
     );
   }
 
+  // Gate: on a brand-new order with more than one module available, ask the
+  // user which kind of order they're creating before showing the full form.
+  if (!isEditMode && !typeChosen && availableOrderTypes.length > 1) {
+    const pickType = (value) => {
+      setData(prev => ({ ...prev, order_type: value }));
+      setTypeChosen(true);
+    };
+    return (
+      <AuthLayout>
+        <div className='max-w-[1400px] mx-auto pb-28'>
+          <div className='flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-gray-500 mb-2 mt-2'>
+            <span onClick={() => navigate('/orders')} className='cursor-pointer hover:text-gray-300 transition-colors'>Orders</span>
+            <span className='text-gray-700'>/</span>
+            <span className='text-gray-400'>New</span>
+          </div>
+          <OrderTypePicker choices={availableOrderTypes} onPick={pickType} />
+        </div>
+      </AuthLayout>
+    );
+  }
+
   const orderType = data.order_type || 'outsourcing';
   const isOutsourcingUI = orderType === 'outsourcing';
   const isRegularUI = orderType === 'regular';
@@ -831,31 +932,18 @@ export default function AddOrder({ isEdit = false }){
             <h2 className='text-3xl font-bold text-white font-mona'>{isEditMode ? `Edit Order #${existingOrder?.serial_no}` : 'Add New Order'}</h2>
           </div>
 
-          {/* Module Switcher Tabs */}
-          {availableOrderTypes.length > 1 && (
-            <div className="flex bg-[#0c1b26] p-1 rounded-xl border border-white/[0.07] shadow-inner w-fit">
-              <button
-                onClick={() => setData(prev => ({ ...prev, order_type: 'outsourcing' }))}
-                className={`text-[11px] uppercase font-bold tracking-wider py-2.5 px-5 sm:px-7 rounded-lg transition-all duration-300 flex items-center gap-2 ${
-                  isOutsourcingUI
-                    ? 'bg-gradient-to-r from-[#a091ff] to-[#c3a9ff] text-black shadow-lg shadow-[#a091ff]/20'
-                    : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
-                }`}
-              >
-                <TbBuildingWarehouse size={15} /> {TERM_OUTSOURCING}
-              </button>
-              <button
-                onClick={() => setData(prev => ({ ...prev, order_type: 'regular' }))}
-                className={`text-[11px] uppercase font-bold tracking-wider py-2.5 px-5 sm:px-7 rounded-lg transition-all duration-300 flex items-center gap-2 ${
-                  isRegularUI
-                    ? 'bg-gradient-to-r from-[#fb7185] to-[#f43f5e] text-white shadow-lg shadow-rose-500/20'
-                    : 'text-[#8A8FA3] hover:text-[#EDEFF6]'
-                }`}
-              >
-                <FaTruckMoving size={13} /> {TERM_REGULAR}
-              </button>
-            </div>
-          )}
+          {/* Current order-type badge (read-only — type is chosen up front) */}
+          {(() => {
+            const c = ORDER_TYPE_CHOICES[orderType];
+            if (!c) return null;
+            return (
+              <div className='flex items-center gap-2 py-2 px-3.5 rounded-xl border w-fit'
+                   style={{ background: `${c.accent}14`, borderColor: `${c.accent}40`, color: c.accent }}>
+                {React.cloneElement(c.icon, { size: 15 })}
+                <span className='text-[11px] uppercase font-bold tracking-wider'>{c.title}</span>
+              </div>
+            );
+          })()}
         </div>
 
         <div className='flex flex-col gap-6'>
@@ -1132,20 +1220,6 @@ export default function AddOrder({ isEdit = false }){
             subtitle='Line items billed to the customer'
             icon={<TbReceipt2 size={18} />}
             accent='#a091ff'
-            right={
-              <div className='flex items-center gap-2'>
-                <span className='text-[11px] uppercase tracking-wider text-gray-500 font-semibold'>Order Currency</span>
-                <select
-                  value={(revCurrency || 'usd').toUpperCase()}
-                  onChange={(e) => handleRevCurrencyChange(e.target.value)}
-                  className='bg-[#0c1b26] text-white px-3 py-[7px] rounded-lg text-sm border border-white/10 focus:outline-none focus:ring-1 focus:ring-[#a091ff] uppercase'
-                >
-                  <option value="USD">USD</option>
-                  <option value="CAD">CAD</option>
-                  <option value="INR">INR</option>
-                </select>
-              </div>
-            }
           >
             <div className='flex flex-col gap-3'>
               {revenueItems.map((item, index) => {
@@ -1201,7 +1275,7 @@ export default function AddOrder({ isEdit = false }){
                       <label className={fieldLabel}>Rate</label>
                       <div className='relative'>
                         <div className='absolute text-gray-400 top-[26px] left-4 z-[1]'>
-                            <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'usd'} />
+                            <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'usd'} noConvert={true} />
                         </div>
                           <input
                             required
@@ -1235,7 +1309,7 @@ export default function AddOrder({ isEdit = false }){
                     <div className="input-item relative">
                       <label className={fieldLabel}>Total</label>
                       <div className='border border-white/10 bg-[#0c1b26] mt-2.5 p-3 sm:p-4 rounded-[15px] relative flex items-center justify-between'>
-                        <p className='text-white font-semibold font-mona'> <Currency amount={total} currency={revCurrency || 'usd'} /></p>
+                        <p className='text-white font-semibold font-mona'> <Currency amount={total} currency={revCurrency || 'usd'} noConvert={true} /></p>
                         { index > 0 ?
                         <button className="text-red-500 hover:text-red-400 text-2xl leading-none ms-2"
                         onClick={()=>removeCustomeRevenueLine(index)} >&times;
@@ -1247,7 +1321,7 @@ export default function AddOrder({ isEdit = false }){
               })}
               <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-1'>
                   <button className="flex items-center gap-1.5 text-[13px] font-semibold text-main border border-[#a091ff]/25 hover:border-[#a091ff]/50 rounded-lg px-3 py-2 transition-colors" onClick={addCustomerRevItems}><LuPlus size={15} /> Add New Line</button>
-                  <h2 className='text-[15px] text-gray-300'>Customer Total : <strong className='text-white font-mona'><Currency amount={customerTotal} currency={revCurrency || 'usd'} /></strong></h2>
+                  <h2 className='text-[15px] text-gray-300'>Customer Total : <strong className='text-white font-mona'><Currency amount={customerTotal} currency={revCurrency || 'usd'} noConvert={true} /></strong></h2>
               </div>
             </div>
           </SectionCard>
@@ -1310,7 +1384,7 @@ export default function AddOrder({ isEdit = false }){
                       <label className={fieldLabel}>Rate</label>
                       <div className='relative'>
                         <div className='absolute text-gray-400 top-[26px] left-4 z-[1]'>
-                            <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'usd'} />
+                            <Currency onlySymbol={true} amount={item.rate*(distance)} currency={revCurrency || 'usd'} noConvert={true} />
                         </div>
                           <input
                             required
@@ -1344,7 +1418,7 @@ export default function AddOrder({ isEdit = false }){
                     <div className="input-item relative">
                       <label className={fieldLabel}>Total</label>
                       <div className='border border-white/10 bg-[#0c1b26] mt-2.5 p-3 sm:p-4 rounded-[15px] relative flex items-center justify-between'>
-                        <p className='text-white font-semibold font-mona'> <Currency amount={total} currency={revCurrency || 'usd'} /></p>
+                        <p className='text-white font-semibold font-mona'> <Currency amount={total} currency={revCurrency || 'usd'} noConvert={true} /></p>
                         { index > 0 ?
                         <button className="text-red-500 hover:text-red-400 text-2xl leading-none ms-2"
                         onClick={()=>removeCarrierRevenueLine(index)} >&times;
@@ -1357,7 +1431,7 @@ export default function AddOrder({ isEdit = false }){
               })}
               <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-1'>
                   <button className="flex items-center gap-1.5 text-[13px] font-semibold text-amber-300 border border-amber-400/25 hover:border-amber-400/50 rounded-lg px-3 py-2 transition-colors" onClick={addCarrierRevItems}><LuPlus size={15} /> Add New Line</button>
-                  <h2 className='text-[15px] text-gray-300'>Carrier Total : <strong className='text-white font-mona'><Currency amount={carrierTotal} currency={revCurrency || 'usd'} /></strong></h2>
+                  <h2 className='text-[15px] text-gray-300'>Carrier Total : <strong className='text-white font-mona'><Currency amount={carrierTotal} currency={revCurrency || 'usd'} noConvert={true} /></strong></h2>
               </div>
             </div>
           </SectionCard>
@@ -1492,7 +1566,7 @@ export default function AddOrder({ isEdit = false }){
             <div className='flex flex-wrap items-end justify-between gap-x-10 gap-y-5'>
               <div className='flex flex-col gap-1.5'>
                 <span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400'>Customer Total</span>
-                <span className='text-2xl font-bold text-white font-mona leading-none'><Currency amount={customerTotal} currency={revCurrency || 'usd'} /></span>
+                <span className='text-2xl font-bold text-white font-mona leading-none'><Currency amount={customerTotal} currency={revCurrency || 'usd'} noConvert={true} /></span>
               </div>
 
               <div className='flex flex-col gap-1.5'>
@@ -1510,7 +1584,7 @@ export default function AddOrder({ isEdit = false }){
               {isOutsourcingUI && (
                 <div className='flex flex-col gap-1.5'>
                   <span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400'>Carrier Total</span>
-                  <span className='text-xl font-bold text-gray-200 font-mona leading-none'><Currency amount={carrierTotal} currency={revCurrency || 'usd'} /></span>
+                  <span className='text-xl font-bold text-gray-200 font-mona leading-none'><Currency amount={carrierTotal} currency={revCurrency || 'usd'} noConvert={true} /></span>
                 </div>
               )}
 
@@ -1518,12 +1592,12 @@ export default function AddOrder({ isEdit = false }){
                 <>
                   <div className='flex flex-col gap-1.5'>
                     <span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400'>Settlement Amount</span>
-                    <span className='text-xl font-bold text-gray-200 font-mona leading-none'><Currency amount={Number(data.settle_amount || 0)} currency={revCurrency || 'usd'} /></span>
+                    <span className='text-xl font-bold text-gray-200 font-mona leading-none'><Currency amount={Number(data.settle_amount || 0)} currency={revCurrency || 'usd'} noConvert={true} /></span>
                   </div>
                   <div className='flex flex-col gap-1.5'>
                     <span className='text-[10px] font-semibold uppercase tracking-[0.14em] text-gray-400'>Owner Profit</span>
                     <span className='text-xl font-bold text-emerald-300 font-mona leading-none'>
-                      <Currency amount={(customerTotal - Number(data.settle_amount || 0))} currency={revCurrency || 'usd'} />
+                      <Currency amount={(customerTotal - Number(data.settle_amount || 0))} currency={revCurrency || 'usd'} noConvert={true} />
                     </span>
                   </div>
                 </>

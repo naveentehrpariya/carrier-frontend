@@ -126,6 +126,7 @@ export default function CustomerInvoice() {
          const res = await Api.post('/order/generate-pdf', {
             html: clone.outerHTML,
             filename: `CMC${order?.serial_no || ''}_invoice-${invoiceNo}.pdf`,
+            docType: 'invoice',
             ...(logoBase64 && { logoBase64 }),
          }, { responseType: 'blob' });
          const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));

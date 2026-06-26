@@ -27,11 +27,16 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
       { id: 'subadmin',        label: 'Sub-Admin',              desc: 'All permissions above — sees everything an admin sees except billing and tenant settings.' },
     ];
 
+    // Advanced permissions — sensitive grants kept out of the default staff set.
+    const advancedPermissions = [
+      { id: 'invoices',        label: 'Download Invoices',      desc: 'Open and download customer invoice PDFs. Without this, the invoice page and download buttons are hidden.' },
+    ];
+
     // One-click presets — selecting one auto-fills the permissions below.
     const PRESETS = [
-      { key: 'staff',      label: 'Staff',     permissions: ['regular', 'outsourcing', 'customers', 'carriers'] },
-      { key: 'accountant', label: 'Accountant', permissions: ['accounting', 'customers', 'carriers'] },
-      { key: 'subadmin',   label: 'Sub-Admin', permissions: ['regular', 'outsourcing', 'accounting', 'customers', 'customers_write', 'carriers', 'carriers_write', 'employees', 'subadmin'] },
+      { key: 'staff',      label: 'Staff',     permissions: ['regular', 'outsourcing', 'customers', 'carriers', 'invoices'] },
+      { key: 'accountant', label: 'Accountant', permissions: ['accounting', 'customers', 'carriers', 'invoices'] },
+      { key: 'subadmin',   label: 'Sub-Admin', permissions: ['regular', 'outsourcing', 'accounting', 'customers', 'customers_write', 'carriers', 'carriers_write', 'employees', 'subadmin', 'invoices'] },
     ];
 
     const [data, setData] = useState({
@@ -40,16 +45,32 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
       phone: item?.phone || '',
       country: item?.country || '',
       address: item?.address || '',
+      state: item?.state || '',
+      city: item?.city || '',
+      zipcode: item?.zipcode || '',
       position: item?.position || '',
       staff_commision: item?.staff_commision || '',
       password: '',
-      permissions: item?.permissions || ['regular', 'outsourcing']
+      permissions: item?.permissions || ['regular', 'outsourcing', 'invoices']
     });
     
     const [action, setaction] = useState();
     const {Errors} = useContext(UserContext);
     const handleinput = (e) => {
       setData({ ...data, [e.target.name]: e.target.value});
+    }
+
+    // Autofill columns from a Google Place selection (street-only stays in `address`).
+    const handleAddressSelect = (p) => {
+      const match = countries.find((c) => c.countryCode === p.countryCode);
+      setData((prev) => ({
+        ...prev,
+        address: p.line1 || prev.address,
+        country: match ? match.label : (p.country || prev.country),
+        state: p.state || prev.state,
+        city: p.city || prev.city,
+        zipcode: p.zipcode || prev.zipcode,
+      }));
     }
 
     const togglePermission = (perm) => {
@@ -140,7 +161,7 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
                <TextInput defaultValue={item?.phone} name='phone' onChange={handleinput} type='tel' placeholder="Phone number" />
             </Field>
             <Field label="Country" required>
-               <SelectInput defaultValue={item?.country} onChange={handleinput} name='country'>
+               <SelectInput value={data.country || ''} onChange={handleinput} name='country'>
                 <option className='text-black' value="">Choose country</option>
                   {countries && countries.map((c, i)=>(
                     <option key={`country-${i}`} value={c.label} className='text-black'>{c.label}</option>
@@ -169,9 +190,19 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
               <GoogleAddressInput
                 value={data.address}
                 onChange={(v) => setData((prev) => ({ ...prev, address: v }))}
+                onAddressSelect={handleAddressSelect}
                 placeholder="Enter address"
                 className="input-sm !mt-0"
               />
+            </Field>
+            <Field label="State">
+              <TextInput value={data.state || ''} name='state' onChange={handleinput} type='text' placeholder="State" />
+            </Field>
+            <Field label="City">
+              <TextInput value={data.city || ''} name='city' onChange={handleinput} type='text' placeholder="City" />
+            </Field>
+            <Field label="Zipcode">
+              <TextInput value={data.zipcode || ''} name='zipcode' onChange={handleinput} type='text' placeholder="Zipcode" />
             </Field>
          </FormSection>
 
@@ -200,6 +231,42 @@ export default function AddEmployee({fetchLists, item, text, classes, defaultRol
            <Field full label="Assign permissions">
              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                {availablePermissions.map(p => {
+                 const checked = !!data.permissions?.includes(p.id);
+                 return (
+                   <label
+                     key={p.id}
+                     className="flex items-start gap-3 cursor-pointer group select-none bg-white/[0.04] hover:bg-white/[0.07] px-3.5 py-3 rounded-xl border transition-colors"
+                     style={{ borderColor: checked ? 'rgba(160,145,255,0.5)' : 'rgba(255,255,255,0.06)' }}
+                   >
+                     <input
+                       type="checkbox"
+                       className="sr-only"
+                       checked={checked}
+                       onChange={() => togglePermission(p.id)}
+                     />
+                     <div
+                       className="w-5 h-5 rounded-md border flex items-center justify-center transition-all shrink-0 mt-0.5"
+                       style={checked
+                         ? { background: ACCENTS.employee, borderColor: ACCENTS.employee, color: '#000' }
+                         : { borderColor: 'rgba(255,255,255,0.25)' }}
+                     >
+                       {checked && (
+                         <svg className="w-3 h-3 fill-current" viewBox="0 0 20 20"><path d="M0 11l2-2 5 5L18 3l2 2L7 18z"/></svg>
+                       )}
+                     </div>
+                     <div className="min-w-0">
+                       <span className="text-sm font-medium text-gray-200 block">{p.label}</span>
+                       <span className="text-xs text-gray-500 leading-snug">{p.desc}</span>
+                     </div>
+                   </label>
+                 );
+               })}
+             </div>
+           </Field>
+
+           <Field full label="Advanced permissions">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+               {advancedPermissions.map(p => {
                  const checked = !!data.permissions?.includes(p.id);
                  return (
                    <label

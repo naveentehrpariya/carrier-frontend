@@ -45,6 +45,19 @@ export default function AddCustomer({item, fetchLists, classes, text}){
     const handleinput = (e) => {
       setData({ ...data, [e.target.name]: e.target.value});
     }
+
+    // Autofill columns from a Google Place selection (street-only stays in `address`).
+    const handleAddressSelect = (p) => {
+      const match = countries.find((c) => c.countryCode === p.countryCode);
+      setData((prev) => ({
+        ...prev,
+        address: p.line1 || prev.address,
+        country: match ? match.label : (p.country || prev.country),
+        state: p.state || prev.state,
+        city: p.city || prev.city,
+        zipcode: p.zipcode || prev.zipcode,
+      }));
+    }
     const [loading, setLoading] = useState(false);
 
     const [staffLists, setStaffListing] = useState([]);
@@ -94,11 +107,7 @@ export default function AddCustomer({item, fetchLists, classes, text}){
         toast.error("Please provide at least one valid email address.");
         return false;
       }
-      if (!data.assigned_to || data.assigned_to.length === 0) {
-        toast.error("Please assign at least one staff member to this customer.");
-        return false;
-      }
-     
+
       setLoading(true);
       const requestData = { ...data, emails: validEmails };
       let customerInstance;
@@ -154,7 +163,7 @@ export default function AddCustomer({item, fetchLists, classes, text}){
          />
 
          <FormSection title="Profile & contact">
-            <Field full label="Assign Staff" required hint="At least one staff member required. Only assigned staff can see this customer.">
+            <Field full label="Assign Staff" hint="Optional. Unassigned customers are visible to all company staff with regular-orders permission. Assigned staff always see this customer.">
               <Select
                 isMulti
                 value={staffLists.filter(s => (data.assigned_to || []).includes(s.value))}
@@ -217,12 +226,13 @@ export default function AddCustomer({item, fetchLists, classes, text}){
               <GoogleAddressInput
                 value={data.address || ''}
                 onChange={(v) => setData((prev) => ({ ...prev, address: v }))}
+                onAddressSelect={handleAddressSelect}
                 placeholder="Search address"
                 className="input-sm !mt-0"
               />
             </Field>
             <Field label="Country">
-               <SelectInput defaultValue={item?.country} onChange={handleinput} name='country'>
+               <SelectInput value={data.country || ''} onChange={handleinput} name='country'>
                 <option value="" className='text-black'>Choose country</option>
                   {countries && countries.map((c, i)=>(
                     <option key={`country-${i}`} value={c.label} className='text-black'>{c.label}</option>
@@ -230,13 +240,13 @@ export default function AddCustomer({item, fetchLists, classes, text}){
                </SelectInput>
             </Field>
             <Field label="State">
-              <TextInput defaultValue={item?.state} name='state' onChange={handleinput} type='text' placeholder="State" />
+              <TextInput value={data.state || ''} name='state' onChange={handleinput} type='text' placeholder="State" />
             </Field>
             <Field label="City">
-              <TextInput defaultValue={item?.city} name='city' onChange={handleinput} type='text' placeholder="City" />
+              <TextInput value={data.city || ''} name='city' onChange={handleinput} type='text' placeholder="City" />
             </Field>
             <Field label="Zipcode">
-              <TextInput defaultValue={item?.zipcode} name='zipcode' onChange={handleinput} type='text' placeholder="Zipcode" />
+              <TextInput value={data.zipcode || ''} name='zipcode' onChange={handleinput} type='text' placeholder="Zipcode" />
             </Field>
          </FormSection>
 

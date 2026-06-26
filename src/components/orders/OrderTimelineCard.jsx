@@ -74,6 +74,9 @@ export default function OrderTimelineCard({ order, user: userProp, fetchLists })
             {typeMeta.label}
           </span>
           <Badge classes={'p-0'} status={order.order_status} />
+          <span className='inline-flex items-center px-2 py-[3px] rounded-full border border-white/10 bg-white/[0.04] text-[10px] font-semibold uppercase tracking-wide text-gray-300' title='Order currency'>
+            {String(order?.input_currency || order?.revenue_currency || 'usd').toUpperCase()}
+          </span>
           <div className='text-[12px] text-gray-500 flex items-center gap-x-3 gap-y-1 flex-wrap w-full sm:w-auto'>
             <TimeFormat date={order.createdAt || '--'} />
             <span className='text-gray-600'>Docs: {order?.documents_count ?? 0}</span>
@@ -184,11 +187,13 @@ export default function OrderTimelineCard({ order, user: userProp, fetchLists })
                 )}
               </>
             )}
-            <li className='list-none text-sm'>
-              <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${order._id}`}>
-                Download Customer Invoice
-              </Link>
-            </li>
+            {(user?.is_admin === 1 || Number(user?.role) === 3 || user?.permissions?.includes('invoices') || user?.permissions?.includes('subadmin') || user?.permissions?.includes('accounting')) && (
+              <li className='list-none text-sm'>
+                <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${order._id}`}>
+                  Download Customer Invoice
+                </Link>
+              </li>
+            )}
             {order?.order_type === 'outsourcing' && (
               <li className='list-none text-sm'>
                 <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/detail/${order._id}`}>

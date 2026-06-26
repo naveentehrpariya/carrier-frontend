@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { MdOutlineMyLocation } from "react-icons/md";
 
 function LocationSearch({ name, formData, setFormData }) {
-  const googlemap = 'AIzaSyARl049FrKlkbob8QImlI5LAa8QmzReNBw';
+  const googlemap = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
   const inputRef = useRef(null);
 
   useEffect(() => {

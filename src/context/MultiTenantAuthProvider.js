@@ -121,7 +121,26 @@ export default function MultiTenantAuthProvider(props) {
               return;
             }
           } catch (apiError) {
-            console.warn('⚠️ Profile fetch failed, falling back to stored data:', apiError.message);
+            // If the server actively rejected the token (401/403), it is invalid or
+            // expired. Clear the dead session instead of restoring it from storage —
+            // restoring leaves the dashboard authenticated with a bad token, which makes
+            // every widget request 401 and triggers a storm of "not logged in" toasts.
+            const status = apiError?.response?.status;
+            if (status === 401 || status === 403) {
+              console.warn('🔒 Stored token rejected, clearing session');
+              safeStorage.removeItem('token');
+              safeSessionStorage.removeItem('token');
+              safeStorage.removeItem('user');
+              safeStorage.removeItem('company');
+              safeStorage.removeItem('isSuperAdmin');
+              setIsAuthenticated(false);
+              setUser(null);
+              setCompany(null);
+              setIsSuperAdminUser(false);
+              return;
+            }
+            // Network/transient error: fall back to stored data below.
+            console.warn('⚠️ Profile fetch failed (non-401), falling back to stored data:', apiError.message);
           }
         }
 
@@ -411,7 +430,7 @@ export default function MultiTenantAuthProvider(props) {
     }
     
     if (checkTenantAdminAccess()) {
-      return ['tenant_admin', 'user_management', 'tenant_settings', 'reports', 'admin', 'regular', 'outsourcing', 'accounting', 'customers', 'employees', 'carriers', 'payments', 'orders', 'subadmin'];
+      return ['tenant_admin', 'user_management', 'tenant_settings', 'reports', 'admin', 'regular', 'outsourcing', 'accounting', 'customers', 'employees', 'carriers', 'payments', 'orders', 'subadmin', 'invoices'];
     }
     
     return user?.permissions || [];

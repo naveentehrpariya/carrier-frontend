@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { loadGoogleMapsScript } from "../utils/googleMapsLoader"; // adjust path as needed
 
 export default function GetLocation({ index, onchange, placeholder, id, initialValue }) {
-  const apiKey = 'AIzaSyARl049FrKlkbob8QImlI5LAa8QmzReNBw';
+  const apiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY;
   const inputRef = useRef(null);
  const [inputText, setInputText] = useState(initialValue || "");
 

@@ -156,6 +156,9 @@ export default function AccountOrders() {
                                     {typeMeta.label}
                                  </span>
                                  <Badge classes={'p-0'} status={c.order_status} />
+                                 <span className='inline-flex items-center px-2 py-[3px] rounded-full border border-white/10 bg-white/[0.04] text-[10px] font-semibold uppercase tracking-wide text-gray-300' title='Order currency'>
+                                    {String(c?.input_currency || c?.revenue_currency || 'usd').toUpperCase()}
+                                 </span>
                                  <div className='text-[12px] text-gray-500 flex items-center gap-x-3 gap-y-1 flex-wrap w-full sm:w-auto'>
                                     <TimeFormat date={c.createdAt || "--"} />
                                     <span className='text-gray-600'>Docs: {c?.documents_count ?? 0}</span>
@@ -237,7 +240,7 @@ export default function AccountOrders() {
                                           </Link>
                                        </li>
                                     )}
-                                    {(user?.is_admin === 1 || !(user?.permissions?.includes('regular') || user?.permissions?.includes('outsourcing') || user?.permissions?.includes('subadmin'))) && (
+                                    {(user?.is_admin === 1 || Number(user?.role) === 3 || user?.permissions?.includes('invoices') || user?.permissions?.includes('subadmin') || user?.permissions?.includes('accounting')) && (
                                        <li className='list-none text-sm'>
                                           <Link className='p-3 hover:bg-gray-100 w-full text-start rounded-xl text-gray-700 block' to={`/order/customer/invoice/${c._id}`}>Download Customer Invoice</Link>
                                        </li>

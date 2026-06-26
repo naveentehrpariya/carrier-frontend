@@ -75,7 +75,7 @@ async function getRate(source, target) {
   return finalRate;
 }
 
-export default function Currency({ amount, currency, onlySymbol }) {
+export default function Currency({ amount, currency, onlySymbol, noConvert }) {
   const [finalAmount, setFinalAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const { selectedCurrency } = useContext(UserContext);
@@ -83,13 +83,18 @@ export default function Currency({ amount, currency, onlySymbol }) {
   useEffect(() => {
     let mounted = true;
     const sourceCurrency = normalizeCode(currency, "USD");
-    const targetCurrency = normalizeCode(selectedCurrency, "USD");
+    // noConvert: display the amount exactly in `currency` (no FX conversion to the
+    // header-selected currency). Used by the order add/edit form where the value is
+    // entered and stored in the chosen per-order currency.
+    const targetCurrency = noConvert
+      ? sourceCurrency
+      : normalizeCode(selectedCurrency, "USD");
 
     const formatOutput = async () => {
       if (!onlySymbol) setLoading(true);
       let displayAmount = Number(amount || 0);
       try {
-        const rate = await getRate(sourceCurrency, targetCurrency);
+        const rate = noConvert ? 1 : await getRate(sourceCurrency, targetCurrency);
         displayAmount = Number(displayAmount) * Number(rate || 1);
       } catch {
         // Fallback to unconverted amount if rate fetch fails
@@ -123,7 +128,7 @@ export default function Currency({ amount, currency, onlySymbol }) {
     return () => {
       mounted = false;
     };
-  }, [amount, currency, onlySymbol, selectedCurrency]);
+  }, [amount, currency, onlySymbol, selectedCurrency, noConvert]);
 
   if (!onlySymbol && loading) {
     return (

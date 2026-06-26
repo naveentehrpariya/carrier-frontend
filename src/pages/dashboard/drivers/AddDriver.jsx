@@ -15,6 +15,9 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
   const [phone, setPhone] = useState(item?.phone || "");
   const [country, setCountry] = useState(item?.country || "");
   const [address, setAddress] = useState(item?.address || "");
+  const [state, setState] = useState(item?.state || "");
+  const [city, setCity] = useState(item?.city || "");
+  const [zipcode, setZipcode] = useState(item?.zipcode || "");
   const [ratePerMileSolo, setRatePerMileSolo] = useState(item?.driverProfile?.ratePerMileSolo ?? item?.driverProfile?.ratePerMile ?? "");
   const [ratePerMileTeam, setRatePerMileTeam] = useState(item?.driverProfile?.ratePerMileTeam ?? item?.driverProfile?.ratePerMile ?? "");
   const [cityHoursRate, setCityHoursRate] = useState(item?.driverProfile?.cityHoursRate ?? "");
@@ -43,8 +46,18 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
   
+  // Autofill columns from a Google Place selection (street-only stays in `address`).
+  const handleAddressSelect = (p) => {
+    setAddress(p.line1 || "");
+    if (p.country) setCountry(p.country);
+    if (p.state) setState(p.state);
+    if (p.city) setCity(p.city);
+    if (p.zipcode) setZipcode(p.zipcode);
+  };
+
   const resetForm = () => {
     setName(""); setEmail(""); setPhone(""); setCountry(""); setAddress("");
+    setState(""); setCity(""); setZipcode("");
     setRatePerMileSolo(""); setRatePerMileTeam(""); setCityHoursRate("");
     setLicenseNumber(""); setLicenseIssueDate(""); setLicenseExpiry(""); setLicenseState("");
     setNotes(""); setLicenseDocs([]);
@@ -90,7 +103,7 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
     setLoading(true);
     try {
       const body = {
-        name, email, phone, country, address,
+        name, email, phone, country, address, state, city, zipcode,
         ratePerMileSolo, ratePerMileTeam, cityHoursRate,
         licenseNumber, licenseIssueDate, licenseExpiry, licenseState,
         notes,
@@ -182,7 +195,16 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
                   <TextInput value={country} onChange={(e)=>setCountry(e.target.value)} placeholder='Country' />
                 </Field>
                 <Field full label="Complete Address" required>
-                  <GoogleAddressInput value={address} onChange={setAddress} placeholder="Complete address" className="input-sm !mt-0" />
+                  <GoogleAddressInput value={address} onChange={setAddress} onAddressSelect={handleAddressSelect} placeholder="Complete address" className="input-sm !mt-0" />
+                </Field>
+                <Field label="State">
+                  <TextInput value={state} onChange={(e)=>setState(e.target.value)} placeholder='State' />
+                </Field>
+                <Field label="City">
+                  <TextInput value={city} onChange={(e)=>setCity(e.target.value)} placeholder='City' />
+                </Field>
+                <Field label="Zipcode">
+                  <TextInput value={zipcode} onChange={(e)=>setZipcode(e.target.value)} placeholder='Zipcode' />
                 </Field>
                 <Field label="License Number">
                   <TextInput value={licenseNumber} onChange={(e)=>setLicenseNumber(e.target.value)} placeholder='License number' />

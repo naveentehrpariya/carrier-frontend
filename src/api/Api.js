@@ -112,6 +112,29 @@ Api.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Centralised 401 handling. Without this, a stale token makes every concurrent
+    // dashboard request 401 and each component's own catch fires a duplicate
+    // "not logged in" toast (the storm). Here we clear the dead session once,
+    // show a single toast, and redirect — guarded so it runs only once.
+    try {
+      const status = error?.response?.status;
+      const reqUrl = error?.config?.url || '';
+      const isAuthEndpoint = /multitenant-login|\/user\/login|\/forgot|\/reset/.test(reqUrl);
+      if (status === 401 && !isAuthEndpoint && typeof window !== 'undefined') {
+        const onLoginPage = window.location.pathname.includes('multitenant-login');
+        if (!window.__sessionExpiredHandled && !onLoginPage) {
+          window.__sessionExpiredHandled = true;
+          safeStorage.removeItem('token');
+          safeStorage.removeItem('user');
+          safeStorage.removeItem('company');
+          safeStorage.removeItem('isSuperAdmin');
+          window.dispatchEvent(new CustomEvent('auth:session-expired'));
+          window.location.replace('/multitenant-login');
+        }
+      }
+    } catch (e) {
+      // never let the handler itself break the rejection
+    }
     return Promise.reject(error);
   }
 );

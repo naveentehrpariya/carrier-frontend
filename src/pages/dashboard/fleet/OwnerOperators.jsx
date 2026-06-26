@@ -5,6 +5,7 @@ import AuthLayout from '../../../layout/AuthLayout';
 import Api from '../../../api/Api';
 import Popup from '../../common/Popup';
 import GoogleAddressInput from '../../common/GoogleAddressInput';
+import countries from '../../common/Countries';
 import { HiOutlineIdentification } from 'react-icons/hi2';
 import { ModalShell, ModalHeader, FormSection, Field, TextInput, SelectInput, ModalFooter, ACCENTS } from '../../../components/modal/ModalKit';
 
@@ -14,6 +15,10 @@ const initialForm = {
   phone: '',
   email: '',
   address: '',
+  country: '',
+  state: '',
+  city: '',
+  zipcode: '',
   status: 'active',
   notes: '',
 };
@@ -80,10 +85,27 @@ export default function OwnerOperators() {
       phone: item.phone || '',
       email: item.email || '',
       address: item.address || '',
+      country: item.country || '',
+      state: item.state || '',
+      city: item.city || '',
+      zipcode: item.zipcode || '',
       status: item.status || 'active',
       notes: item.notes || '',
     });
     setAction('open');
+  };
+
+  // Autofill columns from a Google Place selection (street-only stays in `address`).
+  const handleAddressSelect = (p) => {
+    const match = countries.find((c) => c.countryCode === p.countryCode);
+    setForm((prev) => ({
+      ...prev,
+      address: p.line1 || prev.address,
+      country: match ? match.label : (p.country || prev.country),
+      state: p.state || prev.state,
+      city: p.city || prev.city,
+      zipcode: p.zipcode || prev.zipcode,
+    }));
   };
 
   const onSave = async () => {
@@ -286,9 +308,27 @@ export default function OwnerOperators() {
               <GoogleAddressInput
                 value={form.address}
                 onChange={(value) => setForm((p) => ({ ...p, address: value }))}
+                onAddressSelect={handleAddressSelect}
                 placeholder="Search and select address"
                 className="input-sm !mt-0"
               />
+            </Field>
+            <Field label="Country">
+              <SelectInput value={form.country} onChange={(e) => setForm((p) => ({ ...p, country: e.target.value }))}>
+                <option value="" className="text-black">Choose country</option>
+                {countries && countries.map((c, i) => (
+                  <option key={`country-${i}`} value={c.label} className="text-black">{c.label}</option>
+                ))}
+              </SelectInput>
+            </Field>
+            <Field label="State">
+              <TextInput value={form.state} onChange={(e) => setForm((p) => ({ ...p, state: e.target.value }))} placeholder="State" />
+            </Field>
+            <Field label="City">
+              <TextInput value={form.city} onChange={(e) => setForm((p) => ({ ...p, city: e.target.value }))} placeholder="City" />
+            </Field>
+            <Field label="Zipcode">
+              <TextInput value={form.zipcode} onChange={(e) => setForm((p) => ({ ...p, zipcode: e.target.value }))} placeholder="Zipcode" />
             </Field>
             <Field full label="Notes">
               <TextInput value={form.notes} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} placeholder="Optional notes" />

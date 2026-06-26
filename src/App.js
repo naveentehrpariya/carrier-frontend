@@ -165,7 +165,7 @@ export default function App() {
                       </PrivateRoute>
                     } />
                     <Route path="/order/customer/invoice/:id" element={
-                      <RoleBasedRoute allowedRoles={['accounting', 'regular', 'outsourcing', 'subadmin']}>
+                      <RoleBasedRoute allowedRoles={['invoices', 'accounting', 'subadmin']}>
                         <CustomerInvoice />
                       </RoleBasedRoute>
                     } />
