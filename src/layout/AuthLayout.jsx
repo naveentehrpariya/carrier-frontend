@@ -12,6 +12,7 @@ import { TbLogout } from "react-icons/tb";
 import { Link, useNavigate } from "react-router-dom";
 import safeStorage from "../utils/safeStorage";
 import Api from "../api/Api";
+import SubscriptionBanner from "../components/SubscriptionBanner";
 
 
 export default function AuthLayout({children, heading}) {
@@ -260,7 +261,8 @@ export default function AuthLayout({children, heading}) {
           <div className="flex w-full  ">
             <Sidebar  logout={handleLogout}  toggle={toggle} />
             <div className="content lg:w-[calc(100%-300px)] p-6 md:p-8 !pt-[100px] md:!pt-[130px] lg:!pt-[140px] !pb-[100px] w-full max-h-[100vh] overflow-hidden overflow-y-auto" >
-                {children} 
+                {window.location.pathname !== '/billing' && <SubscriptionBanner />}
+                {children}
             </div>
           </div>
         </main>

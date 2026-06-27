@@ -16,12 +16,181 @@ function Field({ label, children }) {
   );
 }
 
+// Monthly base price + per-cycle discount %, with a live effective-price preview.
+function PricingFields({ form, onChange, onDiscountChange, cyclePreview }) {
+  const cur = form.currency || 'USD';
+  return (
+    <div className="mt-2 mb-1 rounded-xl border border-gray-800 bg-gray-800/30 p-4">
+      <div className="grid grid-cols-2 gap-4 mb-3">
+        <Field label="Monthly price">
+          <input type="number" min="0" step="0.01" className="input-sm" value={form.monthlyPrice ?? 0}
+            onChange={e => onChange('monthlyPrice', e.target.value)} />
+        </Field>
+        <Field label="Currency">
+          <input className="input-sm uppercase" value={cur} onChange={e => onChange('currency', e.target.value)} maxLength={3} />
+        </Field>
+      </div>
+      <label className="block text-sm text-gray-300 mb-2">Discount % per billing cycle</label>
+      <div className="grid grid-cols-3 gap-3">
+        {['monthly', 'quarterly', 'yearly'].map((c) => (
+          <div key={c}>
+            <div className="flex items-center gap-1">
+              <input type="number" min="0" max="100" className="input-sm" value={form.discounts?.[c] ?? 0}
+                onChange={e => onDiscountChange(c, e.target.value)} />
+              <span className="text-gray-500 text-sm">%</span>
+            </div>
+            <div className="text-[11px] text-gray-400 mt-1 capitalize">
+              {c}: <span className="text-gray-200">{cur} {cyclePreview(c)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Plan limits. A plan is metered by ORDERS PER MONTH plus a total TEAM SEAT count.
+// Customers, carriers and fleet are intentionally NOT capped (master data).
+function LimitsFields({ form, onLimitChange }) {
+  const cell = (k, label, hint) => (
+    <div>
+      <label className="block text-xs text-gray-400 mb-1">{label}</label>
+      <input
+        type="number" min="0" className="input-sm"
+        value={form?.limits?.[k] ?? ''}
+        onChange={(e) => onLimitChange(k, e.target.value)}
+        placeholder="0 = unlimited"
+      />
+      <p className="text-[11px] text-gray-500 mt-1">{hint}</p>
+    </div>
+  );
+  return (
+    <div className="mt-2 mb-1 rounded-xl border border-gray-800 bg-gray-800/30 p-4">
+      <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+        <span className="text-sm font-semibold text-white">Plan limits</span>
+        <span className="text-[11px] text-gray-500">0 = unlimited</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {cell('maxOrders', 'Orders / month', 'Resets every month')}
+        {cell('maxUsers', 'Team members', 'Total seats (not monthly)')}
+      </div>
+    </div>
+  );
+}
+
 function Toggle({ label, checked, onChange }) {
   return (
     <label className="flex items-center gap-2 text-sm mb-2">
       <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} />
       <span className="text-gray-300">{label}</span>
     </label>
+  );
+}
+
+const ACCENT = '#a091ff';
+const fmtNum = (n) => (Number(n) || 0).toLocaleString();
+const planCycle = (p, cycle) => {
+  const months = cycle === 'yearly' ? 12 : cycle === 'quarterly' ? 3 : 1;
+  const base = (Number(p.monthlyPrice) || 0) * months;
+  const disc = Math.min(100, Math.max(0, Number(p.discounts?.[cycle]) || 0));
+  return { price: Math.round(base * (1 - disc / 100) * 100) / 100, disc };
+};
+
+// Premium catalog card: price-forward, per-cycle pricing, quiet stats.
+function PlanCard({ p, onEdit, onDelete }) {
+  const cur = p.currency || 'USD';
+  const mods = Array.isArray(p.allowedModules) ? p.allowedModules : [];
+  const orders = (p?.limits?.maxOrders ?? 0) === 0 ? '∞' : fmtNum(p.limits.maxOrders);
+  const team = (p?.limits?.maxUsers ?? 0) === 0 ? '∞' : fmtNum(p.limits.maxUsers);
+  const cycles = [['Mo', 'monthly'], ['Qtr', 'quarterly'], ['Yr', 'yearly']];
+
+  return (
+    <div className="group relative rounded-2xl bg-dark1 border border-white/[0.07] overflow-hidden transition-all duration-300 hover:border-[#a091ff]/45 hover:shadow-[0_18px_40px_-20px_rgba(160,145,255,0.5)]">
+      {/* top accent */}
+      <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${ACCENT}, ${ACCENT}33)` }} />
+      <div className="p-6">
+        {/* header */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h3 className="text-white font-mona font-bold text-xl tracking-tight truncate">{p.name}</h3>
+            <span className="inline-block mt-1 text-[11px] font-mono text-gray-500 bg-white/[0.04] px-2 py-0.5 rounded">{p.slug}</span>
+          </div>
+          <span
+            className="shrink-0 inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full"
+            style={p.isActive
+              ? { color: '#34d399', background: 'rgba(52,211,153,0.12)' }
+              : { color: '#9ca3af', background: 'rgba(156,163,175,0.12)' }}
+          >
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: p.isActive ? '#34d399' : '#9ca3af' }} />
+            {p.isActive ? 'Active' : 'Inactive'}
+          </span>
+        </div>
+
+        {/* price hero */}
+        <div className="mt-5 flex items-baseline gap-1.5">
+          <span className="text-gray-400 text-sm font-medium">{cur}</span>
+          <span className="text-white font-mona font-bold text-4xl tracking-tight">{fmtNum(p.monthlyPrice ?? 0)}</span>
+          <span className="text-gray-500 text-sm">/mo</span>
+        </div>
+
+        {/* per-cycle pricing */}
+        <div className="mt-3 flex gap-2">
+          {cycles.map(([label, key]) => {
+            const c = planCycle(p, key);
+            return (
+              <div key={key} className="flex-1 rounded-xl bg-white/[0.03] border border-white/[0.06] px-2.5 py-2 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-gray-500">{label}</div>
+                <div className="text-sm font-semibold text-gray-100">{cur} {fmtNum(c.price)}</div>
+                {c.disc > 0 && <div className="text-[10px] font-semibold" style={{ color: ACCENT }}>−{c.disc}%</div>}
+              </div>
+            );
+          })}
+        </div>
+
+        {p.description && <p className="mt-4 text-gray-400 text-sm leading-relaxed line-clamp-2">{p.description}</p>}
+
+        {/* stats */}
+        <div className="mt-5 flex items-stretch rounded-xl bg-white/[0.03] border border-white/[0.06] divide-x divide-white/[0.06]">
+          <div className="flex-1 px-4 py-3">
+            <div className="text-[11px] uppercase tracking-wider text-gray-500">Orders / mo</div>
+            <div className="text-lg font-mona font-bold text-white mt-0.5">{orders}</div>
+          </div>
+          <div className="flex-1 px-4 py-3">
+            <div className="text-[11px] uppercase tracking-wider text-gray-500">Team seats</div>
+            <div className="text-lg font-mona font-bold text-white mt-0.5">{team}</div>
+          </div>
+        </div>
+
+        {/* modules */}
+        <div className="mt-4 flex flex-wrap gap-1.5">
+          {mods.length ? mods.map((m) => (
+            <span key={m} className="px-2.5 py-1 rounded-lg text-[11px] font-semibold uppercase tracking-wider"
+              style={{ color: ACCENT, background: `${ACCENT}14`, border: `1px solid ${ACCENT}2e` }}>
+              {m === 'outsourcing' ? 'Outsourcing' : 'Trucking'}
+            </span>
+          )) : (
+            <span className="px-2.5 py-1 rounded-lg text-[11px] font-semibold uppercase tracking-wider text-gray-500 bg-white/[0.04] border border-white/[0.06]">No modules</span>
+          )}
+        </div>
+
+        {/* actions */}
+        <div className="mt-6 flex gap-2.5">
+          <button
+            onClick={onEdit}
+            className="flex-1 rounded-xl py-2.5 text-sm font-bold transition-colors"
+            style={{ background: ACCENT, color: '#000' }}
+          >
+            Edit
+          </button>
+          <button
+            onClick={onDelete}
+            className="px-4 rounded-xl py-2.5 text-sm font-semibold text-rose-300 bg-rose-500/10 border border-rose-500/25 hover:bg-rose-500/20 transition-colors"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -39,7 +208,10 @@ export default function SubscriptionPlans() {
     slug: '',
     description: '',
     isActive: true,
-    limits: { maxUsers: 10, maxOrders: 1000, maxCustomers: 1000, maxCarriers: 500 },
+    monthlyPrice: 0,
+    currency: 'USD',
+    discounts: { monthly: 0, quarterly: 0, yearly: 0 },
+    limits: { maxUsers: 10, maxOrders: 1000, maxCustomers: 1000, maxCarriers: 500, maxDrivers: 0, maxTrucks: 0, maxTrailers: 0, maxOwnerOperators: 0 },
     allowedModules: ['outsourcing', 'regular'],
     featuresInput: ''
   });
@@ -84,6 +256,15 @@ export default function SubscriptionPlans() {
 
   const onChange = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
   const onLimitChange = (key, value) => setForm(prev => ({ ...prev, limits: { ...prev.limits, [key]: value } }));
+  const onDiscountChange = (cycle, value) => setForm(prev => ({ ...prev, discounts: { ...prev.discounts, [cycle]: value } }));
+
+  // Preview the effective price for a cycle from the current form state.
+  const cyclePreview = (cycle) => {
+    const months = cycle === 'yearly' ? 12 : cycle === 'quarterly' ? 3 : 1;
+    const base = (Number(form.monthlyPrice) || 0) * months;
+    const disc = Math.min(100, Math.max(0, Number(form.discounts?.[cycle]) || 0));
+    return Math.round(base * (1 - disc / 100) * 100) / 100;
+  };
   
   const onModuleToggle = (module) => {
     setForm(prev => {
@@ -102,7 +283,7 @@ export default function SubscriptionPlans() {
       slug: '',
       description: '',
       isActive: true,
-      limits: { maxUsers: 10, maxOrders: 1000, maxCustomers: 1000, maxCarriers: 500 },
+      limits: { maxUsers: 10, maxOrders: 1000, maxCustomers: 1000, maxCarriers: 500, maxDrivers: 0, maxTrucks: 0, maxTrailers: 0, maxOwnerOperators: 0 },
       allowedModules: ['outsourcing', 'regular'],
       featuresInput: ''
     });
@@ -132,11 +313,18 @@ export default function SubscriptionPlans() {
         slug: form.slug || form.name.toLowerCase().replace(/\s+/g, '-'),
         description: String(form.description || '').trim(),
         isActive: form.isActive,
+        monthlyPrice: Number(form.monthlyPrice) || 0,
+        currency: (form.currency || 'USD').toUpperCase(),
+        discounts: {
+          monthly: Number(form.discounts?.monthly) || 0,
+          quarterly: Number(form.discounts?.quarterly) || 0,
+          yearly: Number(form.discounts?.yearly) || 0
+        },
         limits: {
-          ...(form?.limits?.maxUsers ? { maxUsers: Number(form.limits.maxUsers) } : {}),
-          ...(form?.limits?.maxOrders ? { maxOrders: Number(form.limits.maxOrders) } : {}),
-          ...(form?.limits?.maxCustomers ? { maxCustomers: Number(form.limits.maxCustomers) } : {}),
-          ...(form?.limits?.maxCarriers ? { maxCarriers: Number(form.limits.maxCarriers) } : {})
+          maxUsers: Number(form?.limits?.maxUsers) || 0,
+          maxOrders: Number(form?.limits?.maxOrders) || 0,
+          maxCustomers: Number(form?.limits?.maxCustomers) || 0,
+          maxCarriers: Number(form?.limits?.maxCarriers) || 0
         },
         features,
         allowedModules
@@ -168,11 +356,22 @@ export default function SubscriptionPlans() {
       slug: plan.slug,
       description: plan.description || '',
       isActive: plan.isActive,
+      monthlyPrice: plan.monthlyPrice ?? 0,
+      currency: plan.currency || 'USD',
+      discounts: {
+        monthly: plan.discounts?.monthly ?? 0,
+        quarterly: plan.discounts?.quarterly ?? 0,
+        yearly: plan.discounts?.yearly ?? 0
+      },
       limits: {
-        maxUsers: plan.limits?.maxUsers || 10,
-        maxOrders: plan.limits?.maxOrders || 1000,
-        maxCustomers: plan.limits?.maxCustomers || 1000,
-        maxCarriers: plan.limits?.maxCarriers || 500
+        maxUsers: plan.limits?.maxUsers ?? 10,
+        maxOrders: plan.limits?.maxOrders ?? 1000,
+        maxCustomers: plan.limits?.maxCustomers ?? 1000,
+        maxCarriers: plan.limits?.maxCarriers ?? 500,
+        maxDrivers: plan.limits?.maxDrivers ?? 0,
+        maxTrucks: plan.limits?.maxTrucks ?? 0,
+        maxTrailers: plan.limits?.maxTrailers ?? 0,
+        maxOwnerOperators: plan.limits?.maxOwnerOperators ?? 0
       },
       allowedModules: sanitizeAllowedModules(plan.allowedModules).length ? sanitizeAllowedModules(plan.allowedModules) : ['outsourcing'],
       featuresInput: Array.isArray(plan.features) ? plan.features.join(', ') : ''
@@ -205,11 +404,18 @@ export default function SubscriptionPlans() {
         slug: form.slug,
         description: String(form.description || '').trim(),
         isActive: form.isActive,
+        monthlyPrice: Number(form.monthlyPrice) || 0,
+        currency: (form.currency || 'USD').toUpperCase(),
+        discounts: {
+          monthly: Number(form.discounts?.monthly) || 0,
+          quarterly: Number(form.discounts?.quarterly) || 0,
+          yearly: Number(form.discounts?.yearly) || 0
+        },
         limits: {
-          maxUsers: Number(form.limits.maxUsers),
-          maxOrders: Number(form.limits.maxOrders),
-          maxCustomers: Number(form.limits.maxCustomers),
-          maxCarriers: Number(form.limits.maxCarriers)
+          maxUsers: Number(form.limits.maxUsers) || 0,
+          maxOrders: Number(form.limits.maxOrders) || 0,
+          maxCustomers: Number(form.limits.maxCustomers) || 0,
+          maxCarriers: Number(form.limits.maxCarriers) || 0
         },
         features,
         allowedModules
@@ -280,8 +486,8 @@ export default function SubscriptionPlans() {
       <div className="">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-2xl text-white font-semibold mb-2">Pricing Plans</h2>
-            <p className="text-sm text-gray-400">Manage public plans displayed on register page</p>
+            <h2 className="text-2xl text-white font-mona font-bold mb-1">Pricing Plans</h2>
+            <p className="text-sm text-gray-400">{plans.length} plan{plans.length === 1 ? '' : 's'} · tenant admins choose one from their billing page</p>
           </div>
           <div className="flex gap-2">
             <Popup action={action} btntext='New Plan' btnclasses={'btn'} bg={'bg-gray-900'} >
@@ -301,25 +507,8 @@ export default function SubscriptionPlans() {
                         <input className="input-sm" value={form.description} onChange={e => onChange('description', e.target.value)} required />
                       </Field>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-                      <Field label="Max Users">
-                        <input type="number" className="input-sm" value={form?.limits?.maxUsers ?? ''} onChange={e => onLimitChange('maxUsers', e.target.value)} min="1" />
-                      </Field>
-                      <Field label="Max Orders">
-                        <input type="number" className="input-sm" value={form?.limits?.maxOrders ?? ''} onChange={e => onLimitChange('maxOrders', e.target.value)} min="0" />
-                      </Field>
-                      <Field label="Max Customers">
-                        <input type="number" className="input-sm" value={form?.limits?.maxCustomers ?? ''} onChange={e => onLimitChange('maxCustomers', e.target.value)} min="0" />
-                      </Field>
-                      <Field label="Max Carriers">
-                        <input type="number" className="input-sm" value={form?.limits?.maxCarriers ?? ''} onChange={e => onLimitChange('maxCarriers', e.target.value)} min="0" />
-                      </Field>
-
-                      {/* <Field label="Features (comma-separated)">
-                        <input className="input-sm" value={form.featuresInput} onChange={e => onChange('featuresInput', e.target.value)} placeholder="orders, customers, carriers" />
-                      </Field> */}
-                    </div>
+                    <PricingFields form={form} onChange={onChange} onDiscountChange={onDiscountChange} cyclePreview={cyclePreview} />
+                    <LimitsFields form={form} onLimitChange={onLimitChange} />
 
                     <div className="mt-4">
                       <label className="block text-sm text-gray-300 mb-2">Included Modules</label>
@@ -372,51 +561,7 @@ export default function SubscriptionPlans() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {plans.map((p) => (
-              <div key={p._id || p.slug} className="rounded-2xl bg-dark2 border border-gray-800 p-6 hover:border-gray-700 transition-all">
-                <div className="flex items-start justify-between">
-                  <div> 
-                    <div className="text-white font-semibold text-lg uppercase">{p.name}</div>
-                    <div className="text-gray-500 text-xs mt-1">{p.slug}</div>
-                    {p.description && <div className="mt-2 text-gray-300 text-sm">{p.description}</div>}
-                  </div>
-                  <span className={`px-2 py-1 rounded-full text-xs ${p.isActive ? 'bg-green-700 text-white' : 'bg-gray-700 text-gray-300'}`}>{p.isActive ? 'Active' : 'Inactive'}</span>
-                </div>
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="text-center flex items-center p-3 justify-center bg-gray-800/60 text-gray-200 rounded-xl py-3">
-                    <div className="text-sm pe-2  text-gray-400">Users : </div>
-                    <div className="text-sm  font-semibold">{p?.limits?.maxUsers ?? '—'}</div>
-                  </div>
-                  <div className="text-center flex items-center p-3 justify-center bg-gray-800/60 text-gray-200 rounded-xl py-3">
-                    <div className="text-sm pe-2  text-gray-400">Orders : </div>
-                    <div className="text-sm  font-semibold">{p?.limits?.maxOrders ?? '—'}</div>
-                  </div>
-                  <div className="text-center flex items-center p-3 justify-center bg-gray-800/60 text-gray-200 rounded-xl py-3">
-                    <div className="text-sm pe-2  text-gray-400">Customers : </div>
-                    <div className="text-sm  font-semibold">{p?.limits?.maxCustomers ?? '—'}</div>
-                  </div>
-                  <div className="text-center flex items-center p-3 justify-center bg-gray-800/60 text-gray-200 rounded-xl py-3">
-                    <div className="text-sm pe-2  text-gray-400">Carriers : </div>
-                    <div className="text-sm  font-semibold">{p?.limits?.maxCarriers ?? '—'}</div>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2 mt-4">
-                  {(Array.isArray(p.allowedModules) ? p.allowedModules : []).length > 0 ? (
-                    (Array.isArray(p.allowedModules) ? p.allowedModules : []).map(m => (
-                      <span key={m} className="px-3 py-1 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-300 font-bold uppercase tracking-wider">
-                        {m === 'outsourcing' ? 'Outsourcing' : 'Regular'}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="px-3 py-1 bg-gray-800 border border-gray-700 rounded-lg text-xs text-gray-400 font-bold uppercase tracking-wider">
-                      No Modules
-                    </span>
-                  )}
-                </div>
-                <div className="mt-6 flex gap-3 justify-between">
-                  <button onClick={() => startEdit(p)} className="w-full rounded-xl btn px-4 text-xs py-2">Edit</button>
-                  <button onClick={() => startDelete(p)} className="w-full px-4 py-2 bg-red-600 text-xs text-white rounded-xl hover:bg-red-700">Delete</button>
-                </div>
-              </div>
+              <PlanCard key={p._id || p.slug} p={p} onEdit={() => startEdit(p)} onDelete={() => startDelete(p)} />
             ))}
           </div>
         )}
@@ -440,20 +585,8 @@ export default function SubscriptionPlans() {
                   <Field label="Description">
                     <textarea className="input-sm" value={form.description} onChange={e => onChange('description', e.target.value)} rows={3} required />
                   </Field>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Field label="Max Users">
-                      <input type="number" className="input-sm" value={form?.limits?.maxUsers ?? ''} onChange={e => onLimitChange('maxUsers', e.target.value)} min="0" />
-                    </Field>
-                    <Field label="Max Orders">
-                      <input type="number" className="input-sm" value={form?.limits?.maxOrders ?? ''} onChange={e => onLimitChange('maxOrders', e.target.value)} min="0" />
-                    </Field>
-                    <Field label="Max Customers">
-                      <input type="number" className="input-sm" value={form?.limits?.maxCustomers ?? ''} onChange={e => onLimitChange('maxCustomers', e.target.value)} min="0" />
-                    </Field>
-                    <Field label="Max Carriers">
-                      <input type="number" className="input-sm" value={form?.limits?.maxCarriers ?? ''} onChange={e => onLimitChange('maxCarriers', e.target.value)} min="0" />
-                    </Field>
-                  </div>
+                  <PricingFields form={form} onChange={onChange} onDiscountChange={onDiscountChange} cyclePreview={cyclePreview} />
+                  <LimitsFields form={form} onLimitChange={onLimitChange} />
                   <Field label="Features (comma-separated)">
                     <input className="input-sm" value={form.featuresInput} onChange={e => onChange('featuresInput', e.target.value)} placeholder="analytics, priority-support, custom-reports" />
                   </Field>

@@ -20,14 +20,27 @@ const ModuleBasedRoute = ({ children, allowedModules = [], allowedPermissions = 
     return <Navigate to="/login" replace />;
   }
 
-  // Admins & sub-admins bypass module restrictions
-  const isAdmin = user?.is_admin === 1 || Number(user?.role) === 3 || user?.permissions?.includes('subadmin');
+  const VALID = ['regular', 'outsourcing'];
+  const perms = Array.isArray(user.permissions) ? user.permissions : [];
+
+  // Tenant plan modules (sent at login as user.allowedModules; admin gets the plan's modules).
+  // Backward-compat: if unset, treat both modules as enabled so legacy tenants aren't blocked.
+  const planRaw = (Array.isArray(user.allowedModules) ? user.allowedModules : [])
+    .map(m => String(m).toLowerCase()).filter(m => VALID.includes(m));
+  const planModules = planRaw.length ? planRaw : [...VALID];
+
+  // Gate 1 (plan-level): a module-scoped route requires the plan to include that module.
+  // Applies to everyone — admin included — so a plan without a module fully disables its pages.
+  if (allowedModules.length > 0 && !allowedModules.some(m => planModules.includes(m))) {
+    return <Navigate to="/unauthorized" replace />;
+  }
+
+  // Gate 2 (per-user): admins & sub-admins have full access within plan-enabled modules.
+  const isAdmin = user?.is_admin === 1 || Number(user?.role) === 3 || perms.includes('subadmin');
   if (isAdmin) return children;
 
-  const perms = Array.isArray(user.permissions) ? user.permissions : [];
-  const userModules = perms.filter(p => ['regular', 'outsourcing'].includes(p));
-
-  // Access if the user has a matching order module OR a matching feature permission
+  // Regular user: module access limited to perms ∩ plan; feature perms also grant access.
+  const userModules = perms.filter(p => VALID.includes(p)).filter(m => planModules.includes(m));
   const hasModuleAccess = allowedModules.some(m => userModules.includes(m));
   const hasPermissionAccess = allowedPermissions.some(p => perms.includes(p));
 

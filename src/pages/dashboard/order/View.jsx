@@ -365,6 +365,7 @@ export default function ViewOrder() {
                                        <span className='text-[13.5px] text-white font-medium truncate'>{p?.location}</span>
                                     </div>
                                     <div className='grid grid-cols-1 sm:grid-cols-3 gap-x-5 gap-y-3'>
+                                       <Field label='Customer'>{p?.customer || '—'}</Field>
                                        <Field label='Reference No.'>{p?.referenceNo || '—'}</Field>
                                        <Field label='Appointment'>{p?.appointment || 'No'}</Field>
                                        <Field label='Date'><TimeFormat time={false} date={p?.date} /></Field>

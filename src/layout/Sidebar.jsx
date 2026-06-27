@@ -27,8 +27,11 @@ export default function Sidebar({toggle}) {
 
   const location = useLocation();
   const {user}  = useContext(UserContext);
-  const { user: multiTenantUser, logout: multiTenantLogout, activeModule, setActiveModule } = useAuth();
-  const { isSuperAdmin, tenant, getTenantApi } = useMultiTenant();
+  const { user: multiTenantUser, logout: multiTenantLogout, activeModule, setActiveModule, isSuperAdminUser } = useAuth();
+  const { tenant, getTenantApi } = useMultiTenant();
+  // Gate super-admin-only UI on the authenticated user, NOT the tenant-context flag
+  // (that flag is stored in localStorage and can be stale after switching logins).
+  const isSuperAdmin = isSuperAdminUser;
   // Replace local counts state with context values
   const { counts, loadingCounts } = useSidebarCounts();
   
@@ -393,8 +396,16 @@ export default function Sidebar({toggle}) {
               {(currentUser?.is_admin === 1 || isSuperAdmin || currentUser?.permissions?.includes('subadmin')) && (
               <li>
                 <Link className={`group transition-all duration-300 ${location.pathname === '/commodity-and-equipments' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/commodity-and-equipments'} >
-                  <VscGraphLine className={`${location.pathname === '/commodity-and-equipments' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} /> 
+                  <VscGraphLine className={`${location.pathname === '/commodity-and-equipments' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} />
                   <span className="font-medium">Equip & Revenue Items</span>
+                </Link>
+              </li>
+              )}
+              {(currentUser?.is_admin === 1 || Number(currentUser?.role) === 3) && (
+              <li>
+                <Link className={`group transition-all duration-300 ${location.pathname === '/billing' ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]" : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`} to={'/billing'} >
+                  <MdOutlineDocumentScanner className={`${location.pathname === '/billing' ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} />
+                  <span className="font-medium">Billing & Plan</span>
                 </Link>
               </li>
               )}

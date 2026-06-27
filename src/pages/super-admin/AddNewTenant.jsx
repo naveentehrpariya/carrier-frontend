@@ -1,24 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { 
+import {
   BuildingOfficeIcon,
   UserIcon,
-  EnvelopeIcon,
-  PhoneIcon,
-  KeyIcon,
-  CreditCardIcon,
   CheckCircleIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ClipboardDocumentIcon,
+  EyeIcon,
+  EyeSlashIcon,
+  ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline';
 import SuperAdminLayout from '../../layout/SuperAdminLayout';
 import Api from '../../api/Api';
 
+const ACCENT = '#a091ff';
+
 export default function AddNewTenant() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [plansLoading, setPlansLoading] = useState(false);
-  const [plans, setPlans] = useState([]);
   const [formData, setFormData] = useState({
     companyName: '',
     companySlug: '',
@@ -27,12 +28,22 @@ export default function AddNewTenant() {
     adminPhone: '',
     adminPassword: '',
     confirmPassword: '',
-    subscriptionPlan: ''
   });
 
   const [errors, setErrors] = useState({});
   const [slugAvailable, setSlugAvailable] = useState(null);
   const [checkingSlug, setCheckingSlug] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  // Credentials returned after a successful create — shown once for handoff.
+  const [created, setCreated] = useState(null);
+
+  const baseDomain = useMemo(() => {
+    try {
+      return process.env.REACT_APP_TENANT_DOMAIN || window.location.hostname.replace(/^www\./, '');
+    } catch {
+      return 'app';
+    }
+  }, []);
 
   // Auto-generate slug from company name
   useEffect(() => {
@@ -43,426 +54,453 @@ export default function AddNewTenant() {
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .trim();
-      
-      setFormData(prev => ({ ...prev, companySlug: slug }));
+      setFormData((prev) => ({ ...prev, companySlug: slug }));
+    } else {
+      setFormData((prev) => ({ ...prev, companySlug: '' }));
     }
   }, [formData.companyName]);
 
-  // Fetch active subscription plans
+  // Check slug availability (debounced)
   useEffect(() => {
-    const fetchPlans = async () => {
-      setPlansLoading(true);
+    if (!formData.companySlug || formData.companySlug.length <= 2) {
+      setSlugAvailable(null);
+      return;
+    }
+    let active = true;
+    const timer = setTimeout(async () => {
+      setCheckingSlug(true);
       try {
-        const res = await Api.get('/api/super-admin/subscription-plans');
-        let fetchedPlans = [];
-        // Support both response shapes
-        if (Array.isArray(res.data)) {
-          fetchedPlans = res.data;
-        } else if (Array.isArray(res.data?.plans)) {
-          fetchedPlans = res.data.plans;
-        } else if (Array.isArray(res.data?.data?.plans)) {
-          fetchedPlans = res.data.data.plans;
-        } else if (Array.isArray(res.data?.data)) {
-          fetchedPlans = res.data.data;
-        }
-        setPlans(fetchedPlans);
-        // Preselect first plan
-        if (fetchedPlans.length > 0) {
-          setFormData(prev => ({ ...prev, subscriptionPlan: fetchedPlans[0].slug }));
-        }
+        const response = await Api.get(`/api/super-admin/check-slug?slug=${formData.companySlug}`);
+        if (active) setSlugAvailable(response.data.available);
       } catch (error) {
-        console.error('Failed to load plans', error);
-        toast.error('Failed to load pricing plans');
+        if (active) setSlugAvailable(null);
       } finally {
-        setPlansLoading(false);
+        if (active) setCheckingSlug(false);
       }
+    }, 500);
+    return () => {
+      active = false;
+      clearTimeout(timer);
     };
-    fetchPlans();
-  }, []);
-
-  // Check slug availability
-  useEffect(() => {
-    const checkSlugAvailability = async () => {
-      if (formData.companySlug && formData.companySlug.length > 2) {
-        setCheckingSlug(true);
-        try {
-          const response = await Api.get(`/api/super-admin/check-slug?slug=${formData.companySlug}`);
-          setSlugAvailable(response.data.available);
-        } catch (error) {
-          console.error('Error checking slug availability:', error);
-          setSlugAvailable(null);
-        } finally {
-          setCheckingSlug(false);
-        }
-      }
-    };
-
-    const debounceTimer = setTimeout(checkSlugAvailability, 500);
-    return () => clearTimeout(debounceTimer);
   }, [formData.companySlug]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
   const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.companyName.trim()) newErrors.companyName = 'Company name is required';
-    if (!formData.companySlug.trim()) newErrors.companySlug = 'Company slug is required';
-    if (!formData.adminName.trim()) newErrors.adminName = 'Admin name is required';
-    if (!formData.adminEmail.trim()) newErrors.adminEmail = 'Admin email is required';
-    if (!/\S+@\S+\.\S+/.test(formData.adminEmail)) newErrors.adminEmail = 'Please enter a valid email';
-    if (!formData.subscriptionPlan) newErrors.subscriptionPlan = 'Please select a pricing plan';
-    if (slugAvailable === false) newErrors.companySlug = 'This slug is already taken';
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    const e = {};
+    if (!formData.companyName.trim()) e.companyName = 'Company name is required';
+    if (!formData.companySlug.trim()) e.companySlug = 'A URL slug is required';
+    if (slugAvailable === false) e.companySlug = 'This slug is already taken';
+    if (!formData.adminName.trim()) e.adminName = 'Admin name is required';
+    if (!formData.adminEmail.trim()) e.adminEmail = 'Admin email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.adminEmail)) e.adminEmail = 'Enter a valid email address';
+    if (formData.adminPassword) {
+      if (formData.adminPassword.length < 6) e.adminPassword = 'Use at least 6 characters';
+      if (formData.confirmPassword !== formData.adminPassword)
+        e.confirmPassword = 'Passwords do not match';
+    }
+    setErrors(e);
+    return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (ev) => {
+    ev.preventDefault();
     if (!validateForm()) {
-      toast.error('Please fix the errors in the form');
+      toast.error('Fix the highlighted fields to continue');
       return;
     }
 
     setLoading(true);
     try {
+      // Backend contract (superAdminTenantController.createTenant):
+      // { name, subdomain, contactInfo:{adminName,adminEmail,phone,address}, subscriptionPlanId, adminPassword }
       const payload = {
         name: formData.companyName.trim(),
         subdomain: formData.companySlug.trim(),
-        adminName: formData.adminName.trim(),
-        adminEmail: formData.adminEmail.trim(),
-        adminPhone: formData.adminPhone.trim(),
-        subscriptionPlan: formData.subscriptionPlan, // send slug
-        companyInfo: {
-          name: formData.companyName.trim(),
-          address: '',
+        contactInfo: {
+          adminName: formData.adminName.trim(),
+          adminEmail: formData.adminEmail.trim().toLowerCase(),
           phone: formData.adminPhone.trim(),
-          email: formData.adminEmail.trim()
-        }
+          address: '',
+        },
       };
+      if (formData.adminPassword) payload.adminPassword = formData.adminPassword;
 
       const response = await Api.post('/api/super-admin/tenants', payload);
+      const data = response.data?.data || {};
 
-      if (response.data.status) {
-        toast.success('Tenant created successfully!');
-        navigate('/super-admin/tenants');
+      if (response.data?.status) {
+        toast.success('Tenant provisioned');
+        setCreated({
+          name: formData.companyName.trim(),
+          email: data.credentials?.email || formData.adminEmail.trim(),
+          password: data.credentials?.password || data.tempPassword || '',
+          url: data.credentials?.url || data.tenant?.url || '',
+        });
       } else {
-        toast.error(response.data.message || 'Failed to create tenant');
+        toast.error(response.data?.message || 'Failed to create tenant');
       }
     } catch (error) {
-      console.error('Error creating tenant:', error);
       const status = error.response?.status;
       const data = error.response?.data || {};
       const apiMessage = data.message;
-      const apiErrors = data.errors;
 
       if (status === 409) {
-        toast.error('A tenant with this name or slug already exists');
-        setErrors(prev => ({
-          ...prev,
-          companySlug: prev.companySlug || 'This slug is already taken'
-        }));
-      } else if (Array.isArray(apiErrors) && apiErrors.length) {
-        apiErrors.slice(0, 3).forEach((err) => {
+        const msg = apiMessage || 'A tenant or admin email already exists';
+        toast.error(msg);
+        if (/email/i.test(msg)) setErrors((p) => ({ ...p, adminEmail: msg }));
+        else setErrors((p) => ({ ...p, companySlug: 'This slug is already taken' }));
+      } else if (Array.isArray(data.errors) && data.errors.length) {
+        data.errors.slice(0, 3).forEach((err) => {
           const msg = typeof err === 'string' ? err : err?.message || err?.msg || apiMessage;
           if (msg) toast.error(String(msg));
-          if (typeof msg === 'string') {
-            if (/subdomain|slug/i.test(msg)) {
-              setErrors(prev => ({ ...prev, companySlug: msg }));
-            } else if (/company name|name/i.test(msg)) {
-              setErrors(prev => ({ ...prev, companyName: msg }));
-            }
-          }
         });
       } else {
-        // broader fallbacks to ensure we surface actual server issue
-        let candidateMsg =
-           (typeof data === 'string' && data) ||
-           apiMessage ||
-           (typeof data?.error === 'string' && data.error) ||
-           (typeof data?.title === 'string' && `${data.title}: ${error.message || ''}`) ||
-           error.message ||
-           (status === 0 && 'Network error - cannot reach backend');
- 
-         // If the server returned an HTML error page, extract the meaningful text
-         if (typeof candidateMsg === 'string' && /<!DOCTYPE|<html|<pre/i.test(candidateMsg)) {
-           const preMatch = candidateMsg.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i);
-           const content = preMatch ? preMatch[1] : candidateMsg;
-           const text = content
-             .replace(/<br\s*\/?>(?=\s*|$)/gi, '\n')
-             .replace(/<[^>]*>/g, ' ')
-             .replace(/&nbsp;/gi, ' ')
-             .replace(/\s+/g, ' ')
-             .trim();
-           const errMatch = text.match(/Error:\s*([^\n]+)/i);
-           candidateMsg = errMatch ? `Error: ${errMatch[1].trim()}` : text.slice(0, 200);
-         }
- 
-         const fallbackMsg = candidateMsg || 'Failed to create tenant';
- 
-         toast.error(fallbackMsg);
- 
-         if (typeof fallbackMsg === 'string') {
-           if (/subdomain|slug/i.test(fallbackMsg)) {
-             setErrors(prev => ({ ...prev, companySlug: fallbackMsg }));
-           } else if (/company name|name/i.test(fallbackMsg)) {
-             setErrors(prev => ({ ...prev, companyName: fallbackMsg }));
-           }
-         }
+        toast.error(apiMessage || error.message || 'Failed to create tenant');
       }
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <SuperAdminLayout heading="Add New Tenant">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-6">
-            <button
-              onClick={() => navigate('/super-admin')}
-              className="inline-flex items-center text-gray-400 hover:text-white transition-colors"
+  const copy = (text, label) => {
+    navigator.clipboard?.writeText(text);
+    toast.success(`${label} copied`);
+  };
+
+  // ---- Success handoff screen ----
+  if (created) {
+    return (
+      <SuperAdminLayout heading="Tenant Created">
+        <div className="max-w-xl mx-auto">
+          <div className="flex flex-col items-center text-center mb-8">
+            <div
+              className="h-14 w-14 rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: `${ACCENT}1a`, border: `1px solid ${ACCENT}55` }}
             >
-              <ArrowLeftIcon className="h-5 w-5 mr-2" />
-              Back to Dashboard
+              <CheckCircleIcon className="h-8 w-8" style={{ color: ACCENT }} />
+            </div>
+            <h1 className="text-2xl font-bold text-white">{created.name} is live</h1>
+            <p className="text-gray-400 mt-1 text-sm">
+              These credentials are shown once. Copy and share them with the tenant admin now.
+            </p>
+          </div>
+
+          <div className="bg-dark1 border border-gray-800 rounded-2xl divide-y divide-gray-800">
+            <CredRow label="Workspace URL" value={created.url} onCopy={() => copy(created.url, 'URL')} link />
+            <CredRow label="Admin email" value={created.email} onCopy={() => copy(created.email, 'Email')} />
+            <CredRow label="Password" value={created.password} onCopy={() => copy(created.password, 'Password')} secret />
+          </div>
+
+          <div className="flex items-center gap-3 mt-8">
+            <button
+              onClick={() => {
+                setCreated(null);
+                setFormData({
+                  companyName: '', companySlug: '', adminName: '', adminEmail: '',
+                  adminPhone: '', adminPassword: '', confirmPassword: '',
+                });
+                setSlugAvailable(null);
+              }}
+              className="flex-1 px-5 py-3 border border-gray-700 text-gray-200 rounded-xl hover:bg-gray-800 transition-colors text-sm font-medium"
+            >
+              Create another
+            </button>
+            <button
+              onClick={() => navigate('/super-admin/tenants')}
+              className="flex-1 btn rounded-xl !py-3"
+            >
+              Go to tenants
             </button>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Add New Tenant</h1>
-          <p className="text-gray-400">Create a new tenant account with admin user and subscription plan</p>
         </div>
+      </SuperAdminLayout>
+    );
+  }
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Company Information */}
-          <div className="bg-dark border border-gray-800 rounded-[20px] p-8">
-            <div className="flex items-center mb-6">
-              <BuildingOfficeIcon className="h-6 w-6 text-main mr-3" />
-              <h2 className="text-xl font-semibold text-white">Company Information</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Company Name *
-                </label>
+  // ---- Provisioning form ----
+  return (
+    <SuperAdminLayout heading="Add New Tenant">
+      <div className="max-w-6xl mx-auto">
+        <button
+          onClick={() => navigate('/super-admin')}
+          className="inline-flex items-center text-gray-400 hover:text-white transition-colors text-sm mb-6"
+        >
+          <ArrowLeftIcon className="h-4 w-4 mr-2" />
+          Back to dashboard
+        </button>
+
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-8 items-start">
+          {/* Form column */}
+          <form onSubmit={handleSubmit} className="space-y-6 order-2 lg:order-1">
+            <Section icon={BuildingOfficeIcon} title="Company" step="1">
+              <Field label="Company name" required error={errors.companyName} full>
                 <input
                   type="text"
                   name="companyName"
                   value={formData.companyName}
                   onChange={handleInputChange}
-                  className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3 focus:shadow-0 focus:outline-0 focus:border-main"
-                  placeholder="Enter company name"
+                  className={inputCls(errors.companyName)}
+                  placeholder="Acme Logistics Inc."
+                  autoFocus
                 />
-                {errors.companyName && <p className="mt-1 text-sm text-red-400">{errors.companyName}</p>}
-              </div>
+              </Field>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Company Slug (URL) *
-                </label>
-                <div className="relative">
+              <Field
+                label="Workspace URL"
+                required
+                error={errors.companySlug}
+                full
+                hint="Auto-generated from the company name. Used as the tenant subdomain."
+              >
+                <div className="flex items-stretch">
                   <input
-                    type="text" disabled
+                    type="text"
                     name="companySlug"
                     value={formData.companySlug}
                     onChange={handleInputChange}
-                    className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3 focus:shadow-0 focus:outline-0 focus:border-main"
-                    placeholder="company-slug"
+                    className={`${inputCls(errors.companySlug)} rounded-r-none flex-1 min-w-0`}
+                    placeholder="acme-logistics"
                   />
-                  {checkingSlug && (
-                    <div className="absolute right-3 top-3">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-main"></div>
-                    </div>
-                  )}
-                  {slugAvailable === true && (
-                    <CheckCircleIcon className="absolute right-3 top-3 h-5 w-5 text-green-500" />
-                  )}
-                  {slugAvailable === false && (
-                    <div className="absolute right-3 top-3 h-5 w-5 bg-red-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">✕</span>
-                    </div>
-                  )}
+                  <span className="inline-flex items-center px-3 bg-dark border border-l-0 border-gray-700 rounded-r-xl text-gray-500 text-sm whitespace-nowrap">
+                    .{baseDomain}
+                  </span>
+                  <span className="inline-flex items-center w-9 justify-center">
+                    {checkingSlug && (
+                      <span className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderColor: ACCENT }} />
+                    )}
+                    {!checkingSlug && slugAvailable === true && (
+                      <CheckCircleIcon className="h-5 w-5 text-emerald-400" />
+                    )}
+                    {!checkingSlug && slugAvailable === false && (
+                      <span className="h-4 w-4 rounded-full bg-red-500 text-white text-[10px] flex items-center justify-center">✕</span>
+                    )}
+                  </span>
                 </div>
-                {slugAvailable === true && (
-                  <p className="mt-1 text-sm text-green-400">✓ Slug is available</p>
-                )}
-                {errors.companySlug && <p className="mt-1 text-sm text-red-400">{errors.companySlug}</p>}
-                <p className="mt-1 text-xs text-gray-500">This will be used in the tenant's URL</p>
-              </div>
-            </div>
-          </div>
+              </Field>
+            </Section>
 
-          {/* Admin User */}
-          <div className="bg-dark border border-gray-800 rounded-[20px] p-8">
-            <div className="flex items-center mb-6">
-              <UserIcon className="h-6 w-6 text-main mr-3" />
-              <h2 className="text-xl font-semibold text-white">Admin User</h2>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Admin Name *
-                </label>
+            <Section icon={UserIcon} title="Admin user" step="2">
+              <Field label="Full name" required error={errors.adminName}>
                 <input
                   type="text"
                   name="adminName"
                   value={formData.adminName}
                   onChange={handleInputChange}
-                  className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3 focus:shadow-0 focus:outline-0 focus:border-main"
-                  placeholder="Admin full name"
+                  className={inputCls(errors.adminName)}
+                  placeholder="Jane Doe"
                 />
-                {errors.adminName && <p className="mt-1 text-sm text-red-400">{errors.adminName}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Admin Email *
-                </label>
+              </Field>
+              <Field label="Email" required error={errors.adminEmail}>
                 <input
                   type="email"
                   name="adminEmail"
                   value={formData.adminEmail}
                   onChange={handleInputChange}
-                  className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3 focus:shadow-0 focus:outline-0 focus:border-main"
-                  placeholder="admin@company.com"
+                  className={inputCls(errors.adminEmail)}
+                  placeholder="jane@acme.com"
                 />
-                {errors.adminEmail && <p className="mt-1 text-sm text-red-400">{errors.adminEmail}</p>}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Admin Phone
-                </label>
+              </Field>
+              <Field label="Phone" hint="Optional">
                 <input
                   type="tel"
                   name="adminPhone"
                   value={formData.adminPhone}
                   onChange={handleInputChange}
-                  className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3 focus:shadow-0 focus:outline-0 focus:border-main"
+                  className={inputCls()}
                   placeholder="+1 (555) 123-4567"
                 />
-              </div>
-
-              {/* Password fields can be optionally used later; backend generates temp password */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Admin Password (optional)
-                </label>
-                <input
-                  type="password"
-                  name="adminPassword"
-                  value={formData.adminPassword}
-                  onChange={handleInputChange}
-                  className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3 focus:shadow-0 focus:outline-0 focus:border-main"
-                  placeholder="Enter password"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Confirm Password (optional)
-                </label>
-                <input
-                  type="password"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleInputChange}
-                  className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3 focus:shadow-0 focus:outline-0 focus:border-main"
-                  placeholder="Confirm password"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Subscription & Settings */}
-          <div className="bg-dark border border-gray-800 rounded-[20px] p-8">
-            <div className="flex items-center mb-6">
-              <CreditCardIcon className="h-6 w-6 text-main mr-3" />
-              <h2 className="text-xl font-semibold text-white">Subscription & Settings</h2>
-            </div>
-            
-            {/* Pricing Plans */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-              {plansLoading && (
-                <div className="col-span-3 text-gray-400">Loading plans...</div>
-              )}
-              {!plansLoading && plans.length === 0 && (
-                <div className="col-span-3 text-gray-400">No active plans found</div>
-              )}
-              {!plansLoading && plans.map((plan) => (
-                <div
-                  key={plan._id || plan.slug}
-                  className={`p-4 border rounded-[15px] cursor-pointer transition-colors ${
-                    formData.subscriptionPlan === plan.slug
-                      ? 'border-main bg-main/10'
-                      : 'border-gray-700 hover:border-gray-600'
-                  }`}
-                  onClick={() => setFormData(prev => ({ ...prev, subscriptionPlan: plan.slug }))}
-                >
-                  <div className="flex items-center mb-2">
-                    <input
-                      type="radio"
-                      name="subscriptionPlan"
-                      value={plan.slug}
-                      checked={formData.subscriptionPlan === plan.slug}
-                      onChange={() => {}}
-                      className="mr-2"
-                    />
-                    <h3 className="text-white font-semibold">{plan.name}</h3>
-                  </div>
-                  <p className="text-main font-medium text-sm">Max Users: {plan?.limits?.maxUsers ?? '-'}</p>
-                  <p className="text-gray-400 text-xs mt-1">{plan.description}</p>
+              </Field>
+              <Field
+                label="Password"
+                error={errors.adminPassword}
+                hint="Leave blank to auto-generate"
+              >
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="adminPassword"
+                    value={formData.adminPassword}
+                    onChange={handleInputChange}
+                    className={inputCls(errors.adminPassword)}
+                    placeholder="Auto-generated"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((s) => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                  </button>
                 </div>
-              ))}
-            </div>
+              </Field>
+              {formData.adminPassword && (
+                <Field label="Confirm password" error={errors.confirmPassword} full>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    name="confirmPassword"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    className={inputCls(errors.confirmPassword)}
+                    placeholder="Re-enter password"
+                  />
+                </Field>
+              )}
+            </Section>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Initial Status
-                </label>
-                <input
-                  type="text"
-                  value="Active"
-                  disabled
-                  className="w-full text-white bg-dark1 border border-gray-600 rounded-xl px-4 py-3"
-                />
+            <div
+              className="rounded-2xl p-4 text-sm flex items-start gap-3"
+              style={{ background: `${ACCENT}10`, border: `1px solid ${ACCENT}33` }}
+            >
+              <span className="mt-0.5" style={{ color: ACCENT }}>ⓘ</span>
+              <p className="text-gray-300">
+                No plan is assigned at creation. The tenant admin chooses and buys a subscription
+                after logging in. Order creation stays locked until a plan is active.
+              </p>
+            </div>
+          </form>
+
+          {/* Live manifest — the signature element. Sticky summary that becomes the handoff. */}
+          <aside className="order-1 lg:order-2 lg:sticky lg:top-[140px]">
+            <div className="bg-dark1 border border-gray-800 rounded-2xl overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+                <span className="text-[11px] uppercase tracking-[0.18em] text-gray-500">Provisioning manifest</span>
+                <span className="h-2 w-2 rounded-full animate-pulse" style={{ background: ACCENT }} />
+              </div>
+              <div className="p-5 space-y-4">
+                <ManifestRow label="Tenant">
+                  <span className="text-white font-semibold">
+                    {formData.companyName || <span className="text-gray-600">—</span>}
+                  </span>
+                </ManifestRow>
+                <ManifestRow label="Workspace">
+                  {formData.companySlug ? (
+                    <span className="text-gray-200 break-all">
+                      {formData.companySlug}
+                      <span className="text-gray-500">.{baseDomain}</span>
+                    </span>
+                  ) : (
+                    <span className="text-gray-600">—</span>
+                  )}
+                </ManifestRow>
+                <div className="flex items-center gap-2 text-gray-400 text-sm py-1">
+                  <span className="truncate">{formData.adminName || 'Admin'}</span>
+                  <ArrowRightIcon className="h-3.5 w-3.5 shrink-0" style={{ color: ACCENT }} />
+                  <span className="truncate text-gray-500">{formData.adminEmail || 'email'}</span>
+                </div>
+                <ManifestRow label="Subscription">
+                  <span className="text-gray-400">Buys after login</span>
+                </ManifestRow>
+                <ManifestRow label="Password">
+                  <span className="text-gray-400">
+                    {formData.adminPassword ? 'Set manually' : 'Auto-generated'}
+                  </span>
+                </ManifestRow>
+              </div>
+
+              <div className="p-5 pt-0">
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={loading || slugAvailable === false}
+                  className="w-full btn rounded-xl !py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Provisioning…' : 'Create tenant'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigate('/super-admin')}
+                  className="w-full mt-2 px-5 py-2.5 text-gray-400 hover:text-white text-sm transition-colors"
+                >
+                  Cancel
+                </button>
               </div>
             </div>
-          </div>
-
-          {/* Submit Buttons */}
-          <div className="flex items-center justify-end space-x-4 pt-6">
-            <button
-              type="button"
-              onClick={() => navigate('/super-admin')}
-              className="px-6 py-3 border border-gray-600 text-gray-300 rounded-xl hover:bg-gray-800 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={loading || slugAvailable === false}
-              className="px-6 py-3 btn text-black font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Creating Tenant...' : 'Create Tenant'}
-            </button>
-          </div>
-        </form>
+          </aside>
+        </div>
       </div>
     </SuperAdminLayout>
+  );
+}
+
+// ---- presentational helpers ----
+
+const inputCls = (error) =>
+  `w-full text-white bg-dark1 border rounded-xl px-4 py-3 focus:outline-0 focus:shadow-0 transition-colors ${
+    error ? 'border-red-500/70 focus:border-red-500' : 'border-gray-700 focus:border-[#a091ff]'
+  }`;
+
+function Section({ icon: Icon, title, step, children }) {
+  return (
+    <section className="bg-dark border border-gray-800 rounded-2xl p-6 sm:p-7">
+      <div className="flex items-center mb-5">
+        <div
+          className="h-9 w-9 rounded-xl flex items-center justify-center mr-3"
+          style={{ background: `${ACCENT}1a` }}
+        >
+          <Icon className="h-5 w-5" style={{ color: ACCENT }} />
+        </div>
+        <h2 className="text-base font-semibold text-white">{title}</h2>
+        <span className="ml-auto text-[11px] text-gray-600 tracking-widest">STEP {step}</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-5 gap-y-4">{children}</div>
+    </section>
+  );
+}
+
+function Field({ label, required, error, hint, full, children }) {
+  return (
+    <div className={full ? 'sm:col-span-2' : ''}>
+      <label className="block text-sm font-medium text-gray-300 mb-1.5">
+        {label} {required && <span style={{ color: ACCENT }}>*</span>}
+      </label>
+      {children}
+      {error ? (
+        <p className="mt-1 text-xs text-red-400">{error}</p>
+      ) : hint ? (
+        <p className="mt-1 text-xs text-gray-500">{hint}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function ManifestRow({ label, children }) {
+  return (
+    <div className="flex items-start justify-between gap-4 text-sm">
+      <span className="text-gray-500 shrink-0">{label}</span>
+      <span className="text-right min-w-0">{children}</span>
+    </div>
+  );
+}
+
+function CredRow({ label, value, onCopy, secret, link }) {
+  const [show, setShow] = useState(!secret);
+  return (
+    <div className="flex items-center gap-3 px-5 py-4">
+      <div className="min-w-0 flex-1">
+        <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">{label}</p>
+        <p className="text-white text-sm font-mono truncate">
+          {secret && !show ? '•'.repeat(Math.max(8, String(value).length)) : value || '—'}
+        </p>
+      </div>
+      {secret && (
+        <button onClick={() => setShow((s) => !s)} className="text-gray-500 hover:text-gray-300" title="Reveal">
+          {show ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+        </button>
+      )}
+      {link && value && (
+        <a href={value} target="_blank" rel="noreferrer" className="text-gray-500 hover:text-gray-300" title="Open">
+          <ArrowTopRightOnSquareIcon className="h-5 w-5" />
+        </a>
+      )}
+      <button onClick={onCopy} className="text-gray-500 hover:text-gray-300" title="Copy">
+        <ClipboardDocumentIcon className="h-5 w-5" />
+      </button>
+    </div>
   );
 }

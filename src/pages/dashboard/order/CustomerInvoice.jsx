@@ -300,6 +300,7 @@ export default function CustomerInvoice() {
                                                    {isPick ? 'PICKUP' : 'STOP'} {num}
                                                 </div>
                                                 <div style={{ fontWeight: '600', color: '#111827', fontSize: '12px' }}>{l?.location}</div>
+                                                {l?.customer && <div style={{ fontSize: '10px', color: '#374151', marginTop: '1px', fontWeight: '600' }}>Customer: {l.customer}</div>}
                                                 <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '2px' }}>
                                                    <TimeFormat time={false} date={l?.date} />
                                                    {l?.appointment && <span style={{ fontWeight: '600', marginLeft: '8px' }}>· Appt: {l?.appointment}</span>}

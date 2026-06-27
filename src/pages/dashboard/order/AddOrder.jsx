@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import Api from '../../../api/Api';
 import { UserContext } from '../../../context/AuthProvider';
 import AuthLayout from '../../../layout/AuthLayout';
+import OrderLimitBanner from '../../../components/OrderLimitBanner';
 import Select from 'react-select'
 import { useNavigate, useParams } from 'react-router-dom';
 import Popup from '../../common/Popup';
@@ -992,6 +993,8 @@ export default function AddOrder({ isEdit = false }){
           })()}
         </div>
 
+        {!isEditMode && <OrderLimitBanner />}
+
         <div className='flex flex-col gap-6'>
 
           {/* ── Order basics ──────────────────────────────────── */}
@@ -1159,6 +1162,16 @@ export default function AddOrder({ isEdit = false }){
                                 <GetLocation id="getpickup" initialValue={l.location || ""} placeholder={"Enter Pickup Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
                               </div>
                               <div className="input-item">
+                                <label className={fieldLabel}>Pickup Customer</label>
+                                <input
+                                  value={l.customer || ""}
+                                  onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'customer', e.target.value)}
+                                  type={"text"}
+                                  placeholder={"Pickup Customer Name"}
+                                  className="input-sm"
+                                />
+                              </div>
+                              <div className="input-item">
                                 <label className={fieldLabel}>Pickup Reference No.</label>
                                 <input
                                   required
@@ -1214,6 +1227,16 @@ export default function AddOrder({ isEdit = false }){
                               <div className="input-item">
                                 <label className={fieldLabel}>Delivery Location</label>
                                 <GetDeliveryLocation id="getdelivery"  initialValue={l.location || ""} placeholder={"Enter Delivery Location"} onchange={(value)=>handleNestedInputChange(index, 'locations', locationIndex, 'location', value)} />
+                              </div>
+                              <div className="input-item">
+                                <label className={fieldLabel}>Delivery Customer</label>
+                                <input
+                                  value={l.customer || ""}
+                                  onChange={(e)=>handleNestedInputChange(index, 'locations', locationIndex, 'customer', e.target.value)}
+                                  type={"text"}
+                                  placeholder={"Delivery Customer Name"}
+                                  className="input-sm"
+                                />
                               </div>
                               <div className="input-item">
                                 <label className={fieldLabel}>Delivery Reference No.</label>

@@ -721,11 +721,33 @@ export default function AllTenantsManagement() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="space-y-2">
                           <div>
-                            <span className={`inline-flex uppercase items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPlanBadgeColor(tenant.subscriptionPlan?.slug || tenant.subscription?.planSlug || tenant.subscription?.legacyPlan || '')}`}>
+                            <span className={`inline-flex uppercase items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getPlanBadgeColor(tenant.billing?.planSlug || tenant.subscription?.planSlug || tenant.subscription?.legacyPlan || '')}`}>
                               <CreditCardIcon className="h-3 w-3 mr-1" />
-                              {tenant.subscriptionPlan?.name || tenant.subscription?.planSlug || tenant.subscription?.legacyPlan || 'No Plan'}
+                              {tenant.billing?.planSlug || tenant.subscription?.planSlug || tenant.subscription?.legacyPlan || 'No Plan'}
                             </span>
                           </div>
+                          {(() => {
+                            const s = tenant.billing?.status || 'none';
+                            const map = {
+                              active: ['Active', 'text-emerald-300 bg-emerald-900/40 border-emerald-700'],
+                              expired: ['Expired', 'text-rose-300 bg-rose-900/40 border-rose-700'],
+                              none: ['No subscription', 'text-gray-400 bg-gray-800 border-gray-700'],
+                              trial: ['Trial', 'text-sky-300 bg-sky-900/40 border-sky-700'],
+                              cancelled: ['Cancelled', 'text-amber-300 bg-amber-900/40 border-amber-700'],
+                              past_due: ['Past due', 'text-amber-300 bg-amber-900/40 border-amber-700'],
+                            };
+                            const [label, cls] = map[s] || map.none;
+                            return (
+                              <div>
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium border ${cls}`}>{label}</span>
+                                {tenant.billing?.endDate && s !== 'none' && (
+                                  <span className="ml-2 text-[11px] text-gray-500">
+                                    {s === 'expired' ? 'ended ' : 'until '}{new Date(tenant.billing.endDate).toLocaleDateString()}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()}
                         </div>
                       </td>
 

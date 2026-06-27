@@ -44,6 +44,7 @@ import EmployeeDetail from './pages/dashboard/employees/EmployeeDetail';
 import Unauthorized from './components/Unauthorized';
 import SuperAdminProfile from './pages/super-admin/SuperAdminProfile';
 import UserProfile from './pages/tenant-admin/UserProfile';
+import BillingPage from './pages/tenant-admin/BillingPage';
 import SubscriptionPlans from './pages/super-admin/SubscriptionPlans';
 import LandingPage from './homepage/LandingPage';
 import Drivers from './pages/dashboard/drivers/Drivers';
@@ -86,6 +87,13 @@ export default function App() {
                       <PrivateRoute>
                         <UserProfile />
                       </PrivateRoute>
+                    } />
+
+                    {/* Billing & Subscription - Tenant admin only */}
+                    <Route path="/billing" element={
+                      <RoleBasedRoute allowedRoles={[3]}>
+                        <BillingPage />
+                      </RoleBasedRoute>
                     } />
 
                     {/* Activity Logs - Admin only */}
