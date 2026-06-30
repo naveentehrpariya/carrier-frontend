@@ -1,4 +1,5 @@
 import './App.css';
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import PrivateRoute from './components/PrivateRoute';
@@ -57,6 +58,25 @@ import TrailerDetail from './pages/dashboard/fleet/TrailerDetail';
 import ActivityLogs from './pages/tenant-admin/ActivityLogs';
 
 export default function App() {
+  // Open native date/time pickers on click anywhere in the field, not just the icon.
+  useEffect(() => {
+    const openPicker = (e) => {
+      const el = e.target;
+      if (
+        el &&
+        el.tagName === 'INPUT' &&
+        ['date', 'time', 'datetime-local', 'month', 'week'].includes(el.type) &&
+        typeof el.showPicker === 'function' &&
+        !el.disabled &&
+        !el.readOnly
+      ) {
+        try { el.showPicker(); } catch (_) { /* needs user gesture / unsupported */ }
+      }
+    };
+    document.addEventListener('click', openPicker);
+    return () => document.removeEventListener('click', openPicker);
+  }, []);
+
   return (
     <MultiTenantProvider>
       <MultiTenantAuthProvider>

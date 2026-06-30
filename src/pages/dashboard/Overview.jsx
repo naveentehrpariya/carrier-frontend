@@ -164,7 +164,7 @@ export default function Overview() {
          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
            <div>
              <h2 className='text-[#EDEFF6] font-bold text-3xl md:text-4xl mb-2 flex items-center gap-3'>
-               Welcome to {adminData?.tenantInfo?.tenant?.name || authCompany?.name || currentUser?.company?.name || tenant?.name || currentUser?.tenantId}
+               Welcome to {adminData?.tenantInfo?.company?.name || authCompany?.name || currentUser?.company?.name || adminData?.tenantInfo?.tenant?.name || tenant?.name || currentUser?.name || currentUser?.tenantId}
                {isAdmin && <span className='text-[14px] bg-[#4EA1FF]/10 text-[#4EA1FF] px-3 py-1 rounded-full border border-[#4EA1FF]/20'>(Admin)</span>}
              </h2>
              <p className='text-[#8A8FA3] text-lg'>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   BuildingOfficeIcon, 
   EyeIcon,
@@ -15,7 +16,8 @@ import {
   FunnelIcon,
   PlusIcon,
   ArrowPathIcon,
-  ArrowLeftIcon
+  ArrowLeftIcon,
+  EllipsisHorizontalIcon
 } from '@heroicons/react/24/outline';
 import { TrashIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
@@ -40,6 +42,25 @@ export default function AllTenantsManagement() {
   const [totalTenants, setTotalTenants] = useState(0);
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [menu, setMenu] = useState(null); // { id, top, right } for the portal action menu
+
+  // Close the row action menu on outside click / Escape / scroll / resize.
+  useEffect(() => {
+    if (!menu) return;
+    const close = (e) => { if (!e.target.closest?.('[data-row-actions]')) setMenu(null); };
+    const onKey = (e) => { if (e.key === 'Escape') setMenu(null); };
+    const onScroll = () => setMenu(null);
+    document.addEventListener('mousedown', close);
+    document.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onScroll);
+    return () => {
+      document.removeEventListener('mousedown', close);
+      document.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [menu]);
 
   useEffect(() => {
     console.log('🚀 AllTenantsManagement: Component mounted, about to fetch tenants');
@@ -695,24 +716,34 @@ export default function AllTenantsManagement() {
                   {tenants.map((tenant) => (
                     <tr key={tenant._id} className="hover:bg-gray-900/60 transition-colors">
                       {/* Company Info */}
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
-                            <BuildingOfficeIcon className="h-12 w-12 text-gray-600" />
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3.5">
+                          <div
+                            className="flex-shrink-0 h-11 w-11 rounded-xl flex items-center justify-center font-mona font-bold text-base"
+                            style={{ background: '#a091ff1a', color: '#a091ff', border: '1px solid #a091ff33' }}
+                          >
+                            {String(tenant.name || '?').trim().charAt(0).toUpperCase()}
                           </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-semibold text-white">
-                              {tenant.name}
-                            </div>
-                            {/* <div className="text-sm text-gray-500">
-                              {tenant.subdomain}
-                            </div> */}
-                            <div className="mt-2 flex items-center gap-2"><span className="text-[10px] px-2 py-1 rounded-full bg-gray-800 text-gray-300 border border-gray-700">ID: {tenant.tenantId}</span></div>
-                            {tenant.contactInfo?.adminEmail && (
-                              <div className="text-xs text-gray-400">
-                                {(tenant.contactInfo?.adminName || 'Admin')} • {tenant.contactInfo.adminEmail}
-                              </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-semibold text-white truncate">{tenant.name}</div>
+                            {tenant.company?.name && tenant.company.name !== tenant.name && (
+                              <div className="text-xs text-gray-500 truncate mt-0.5">Company: {tenant.company.name}</div>
                             )}
+                            {(() => {
+                              const a = tenant.admin || (tenant.contactInfo ? { name: tenant.contactInfo.adminName, email: tenant.contactInfo.adminEmail, phone: tenant.contactInfo.phone } : null);
+                              if (!a) return null;
+                              return (
+                                <div className="mt-1 text-xs text-gray-400">
+                                  <div className="flex items-center gap-1.5 truncate">
+                                    <UserGroupIcon className="h-3.5 w-3.5 shrink-0 text-gray-500" />
+                                    <span className="text-gray-300 font-medium truncate">{a.name || 'Admin'}</span>
+                                  </div>
+                                  {a.email && <div className="truncate text-gray-500">{a.email}</div>}
+                                  {a.phone && <div className="truncate text-gray-500">{a.phone}</div>}
+                                </div>
+                              );
+                            })()}
+                            <span className="inline-block mt-1.5 text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.04] text-gray-500">{tenant.tenantId}</span>
                           </div>
                         </div>
                       </td>
@@ -767,24 +798,58 @@ export default function AllTenantsManagement() {
                         {tenant.lastActive ? <TimeFormat date={tenant.lastActive} time={false} /> : 'Never'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
-                          {getAvailableActions(tenant).map((action) => (
-                            <button
-                              key={action.type}
-                              onClick={() => {
-                                if (action.type === 'view') {
-                                  handleViewTenant(tenant);
-                                } else {
-                                  handleTenantAction(tenant, action.type);
-                                }
-                              }}
-                              className={`px-3 py-2 rounded-xl bg-gray-800 text-gray-200 hover:bg-gray-700 transition`}
-                              title={action.label}
-                            >
-                              <action.icon className="h-4 w-4" />
-                            </button>
-                          ))}
-                        </div>
+                        {(() => {
+                          const actions = getAvailableActions(tenant);
+                          const primary = actions.find((a) => a.type === 'view');
+                          const rest = actions.filter((a) => a.type !== 'view');
+                          const open = menu?.id === tenant._id;
+                          const toggle = (e) => {
+                            if (open) { setMenu(null); return; }
+                            const r = e.currentTarget.getBoundingClientRect();
+                            setMenu({ id: tenant._id, top: r.bottom + 8, right: window.innerWidth - r.right });
+                          };
+                          return (
+                            <div data-row-actions className="inline-flex items-center gap-2">
+                              {primary && (
+                                <button
+                                  onClick={() => handleViewTenant(tenant)}
+                                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-semibold text-black transition-colors"
+                                  style={{ background: '#a091ff' }}
+                                >
+                                  <EyeIcon className="h-4 w-4" /> Open
+                                </button>
+                              )}
+                              <button
+                                onClick={toggle}
+                                className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium bg-gray-800 text-gray-200 hover:bg-gray-700 transition-colors"
+                              >
+                                Manage <EllipsisHorizontalIcon className="h-4 w-4" />
+                              </button>
+                              {open && createPortal(
+                                <div
+                                  data-row-actions
+                                  className="fixed w-52 rounded-xl border border-gray-700 bg-[#0d1117] shadow-2xl z-[9999] py-1.5 text-left"
+                                  style={{ top: menu.top, right: menu.right }}
+                                >
+                                  {rest.map((action) => {
+                                    const danger = action.type === 'hardDelete' || action.type === 'suspend' || action.type === 'reject';
+                                    return (
+                                      <button
+                                        key={action.type}
+                                        onClick={() => { setMenu(null); handleTenantAction(tenant, action.type); }}
+                                        className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors ${danger ? 'text-rose-300 hover:bg-rose-500/10' : 'text-gray-200 hover:bg-white/[0.06]'}`}
+                                      >
+                                        <action.icon className="h-4 w-4 shrink-0" />
+                                        {action.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>,
+                                document.body
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
                     </tr>
                   ))}

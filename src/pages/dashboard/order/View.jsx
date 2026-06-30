@@ -293,12 +293,22 @@ export default function ViewOrder() {
                   {trips && trips.length > 0 && (
                      <SectionCard title='Trip Segments (Split)' icon={<TbRoute size={16} />} accent='#fb7185'>
                         <div className='flex flex-col gap-3'>
-                           {trips.map((trip, idx) => (
+                           {(() => {
+                              // Real miles per segment derived from order KM (order.totalDistance is KM),
+                              // proportioned by each trip's raw distance share — matches the salary math.
+                              const orderKm = Number(order?.totalDistance || 0);
+                              const rawTotal = trips.reduce((s, t) => s + Math.max(Number(t.total_km || t.miles || 0), 0), 0);
+                              const MI = 0.621371;
+                              return trips.map((trip, idx) => {
+                              const tripRaw = Math.max(Number(trip.total_km || trip.miles || 0), 0);
+                              const segMiles = (orderKm > 0 && rawTotal > 0) ? (tripRaw / rawTotal) * (orderKm * MI) : Number(trip.miles || 0);
+                              const segKm = segMiles / MI;
+                              return (
                               <div key={idx} className='relative rounded-xl border border-white/[0.06] bg-white/[0.015] p-4'>
                                  <div className='flex items-center justify-between mb-3'>
                                     <span className='text-[11px] font-bold uppercase tracking-[0.14em] text-rose-300'>Segment #{trip.trip_no}</span>
                                     {order?.order_type !== 'outsourcing' && (
-                                       <span className='text-[13px] font-bold text-green-400 font-mona'>${trip.total_driver_pay?.toFixed(2)}</span>
+                                       <span className='text-[13px] font-bold text-green-400 font-mona'><Currency amount={Number(trip.total_driver_pay || 0)} currency='usd' /></span>
                                     )}
                                  </div>
                                  <div className='grid grid-cols-2 sm:grid-cols-3 gap-x-5 gap-y-3'>
@@ -309,14 +319,16 @@ export default function ViewOrder() {
                                           <Field label='Trailer'>{trip.trailer ? `${[trip.trailer.make, trip.trailer.model].filter(Boolean).join(' ') || trip.trailer.type || '—'} ${trip.trailer.unitNumber ? `(${trip.trailer.unitNumber})` : ''}` : "N/A"}</Field>
                                        </>
                                     )}
-                                    <Field label='Miles'>{trip.miles}</Field>
-                                    <Field label='Distance'>{(trip.total_km || (trip.miles * 1.60934)).toFixed ? (trip.total_km || (trip.miles * 1.60934)).toFixed(2) : (Number(trip.total_km || (trip.miles * 1.60934)).toFixed(2))} km</Field>
+                                    <Field label='Miles'>{segMiles.toFixed(2)}</Field>
+                                    <Field label='Distance'>{segKm.toFixed(2)} km</Field>
                                  </div>
                                  <p className='flex items-center gap-1.5 text-[11px] text-gray-500 mt-3 pt-3 border-t border-white/[0.05]'>
                                     <HiOutlineLocationMarker className='text-gray-600' /> {trip.start_location} <span className='text-gray-700'>→</span> {trip.end_location}
                                  </p>
                               </div>
-                           ))}
+                              );
+                              });
+                           })()}
                         </div>
                      </SectionCard>
                   )}
@@ -409,7 +421,11 @@ export default function ViewOrder() {
                            <Currency amount={order?.input_settle_amount > 0 ? order.input_settle_amount : (order?.settle_amount || 0)} currency={order?.input_settle_amount > 0 ? cur : (order?.revenue_currency || 'usd')} />
                         </TotalItem>
                         <TotalItem label='Owner Profit'>
-                           <Currency amount={order?.owner_profit || 0} currency={order?.revenue_currency || 'usd'} />
+                           {(order?.input_total_amount > 0 && order?.input_settle_amount > 0) ? (
+                              <Currency amount={Number(order.input_total_amount) - Number(order.input_settle_amount)} currency={cur} />
+                           ) : (
+                              <Currency amount={order?.owner_profit || 0} currency={order?.revenue_currency || 'usd'} />
+                           )}
                         </TotalItem>
                      </>
                   )}

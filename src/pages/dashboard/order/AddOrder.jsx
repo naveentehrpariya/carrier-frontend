@@ -593,7 +593,17 @@ export default function AddOrder({ isEdit = false }){
         driver: normalizedDrivers.length > 0 ? normalizedDrivers[0] : null,
         truck: pickId(order.truck),
         trailer: pickId(order.trailer),
-        settle_amount: Number(order.settle_amount || 0),
+        settle_amount: (() => {
+          // settle_amount is stored in base currency; the form edits in input currency.
+          // Prefer the exact typed value (input_settle_amount); else back-convert.
+          if (Number(order.input_settle_amount) > 0) return Number(order.input_settle_amount);
+          const ic = (order.input_currency || order.revenue_currency || 'usd');
+          const bc = (order.revenue_currency || 'usd');
+          if (ic !== bc && Number(order.total_amount) > 0 && Number(order.input_total_amount) > 0) {
+            return Number((Number(order.settle_amount || 0) * (Number(order.input_total_amount) / Number(order.total_amount))).toFixed(2));
+          }
+          return Number(order.settle_amount || 0);
+        })(),
         driver_assignment_mode: order.driver_assignment_mode || 'company_driver'
       });
 

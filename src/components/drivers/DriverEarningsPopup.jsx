@@ -18,23 +18,23 @@ function toISODate(d) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function monthRange(shift = 0) {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth() + shift, 1);
-  const end = new Date(now.getFullYear(), now.getMonth() + shift + 1, 0);
+function fmtMilesKm(value) {
+  const miles = Number(value || 0);
+  const km = miles * 1.609344;
+  return `${miles.toFixed(2)} mi (${km.toFixed(2)} km)`;
+}
+
+function monthRangeFor(month, year) {
+  const start = new Date(year, month - 1, 1);
+  const end = new Date(year, month, 0);
   return { from: toISODate(start), to: toISODate(end) };
 }
 
-function fmtMilesKm(value) {
-  const miles = Number(value || 0);
-  const km = miles * 1.60934;
-  return `${miles.toFixed(2)} mi (${km.toFixed(2)} km)`;
-}
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function DriverEarningsPopup({ driver, open, onClose }) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
-  const [mode, setMode] = useState('current');
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
   const [orders, setOrders] = useState([]);
@@ -55,6 +55,16 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
   const [deletingId, setDeletingId] = useState(null);
 
   const cityRate = Number(driver?.driverProfile?.cityHoursRate || 0);
+
+  // Monthly payslip (parity with owner-operator salary)
+  const _now = new Date();
+  const [selMonth, setSelMonth] = useState(_now.getMonth() + 1);
+  const [selYear, setSelYear] = useState(_now.getFullYear());
+  const [payCurrency, setPayCurrency] = useState('CAD');
+  const [salary, setSalary] = useState(null);
+  const [generating, setGenerating] = useState(false);
+  const [history, setHistory] = useState([]);
+  const [downloadingId, setDownloadingId] = useState(null);
 
   const fetchSummary = useCallback(async (override = {}) => {
     if (!driver?._id) return;
@@ -98,30 +108,69 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
     }
   }, [driver, from, to]);
 
+  const fetchSalary = useCallback(async (month, year, currency) => {
+    if (!driver?._id) return;
+    try {
+      const qs = new URLSearchParams({ month: String(month), year: String(year), currency });
+      const res = await Api.get(`/driver/${driver._id}/salary?${qs.toString()}`);
+      if (res.data.status) setSalary(res.data.salary || null);
+    } catch {
+      setSalary(null);
+    }
+  }, [driver]);
+
+  const fetchHistory = useCallback(async () => {
+    if (!driver?._id) return;
+    try {
+      const res = await Api.get(`/driver/${driver._id}/salary/history`);
+      if (res.data.status) setHistory(res.data.lists || []);
+    } catch {
+      setHistory([]);
+    }
+  }, [driver]);
+
+  // Load everything for a given month/year/currency.
+  const loadMonth = useCallback(async (month, year, currency) => {
+    const r = monthRangeFor(month, year);
+    setFrom(r.from);
+    setTo(r.to);
+    await Promise.all([fetchSummary(r), fetchDeductions(r), fetchSalary(month, year, currency), fetchHistory()]);
+  }, [fetchSummary, fetchDeductions, fetchSalary, fetchHistory]);
+
+  const generatePayslip = async () => {
+    if (!driver?._id) return;
+    setGenerating(true);
+    try {
+      const res = await Api.post(`/driver/${driver._id}/salary/generate`, {
+        month: selMonth, year: selYear, currency: payCurrency,
+      });
+      if (res.data.status) {
+        setSalary(res.data.salary);
+        toast.success('Payslip generated');
+        await loadMonth(selMonth, selYear, payCurrency);
+      } else {
+        toast.error(res.data.message || 'Failed to generate payslip');
+      }
+    } catch (e) {
+      toast.error(e?.response?.data?.message || 'Failed to generate payslip');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   useEffect(() => {
     if (open) {
-      const r = monthRange(0);
-      setMode('current');
-      setFrom(r.from);
-      setTo(r.to);
+      const m = _now.getMonth() + 1;
+      const y = _now.getFullYear();
+      setSelMonth(m);
+      setSelYear(y);
       setNewCityDate('');
       setNewCityHours('');
       setShowDeductForm(false);
-      fetchSummary(r);
-      fetchDeductions(r);
+      loadMonth(m, y, payCurrency);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, driver?._id]);
-
-  const quickSelect = async (nextMode) => {
-    setMode(nextMode);
-    let r;
-    if (nextMode === 'current') r = monthRange(0);
-    else if (nextMode === 'previous') r = monthRange(-1);
-    else return;
-    setFrom(r.from);
-    setTo(r.to);
-    await Promise.all([fetchSummary(r), fetchDeductions(r)]);
-  };
 
   const addCityHour = async () => {
     const hours = Number(newCityHours);
@@ -140,7 +189,7 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
       if (res.data.status) {
         setNewCityDate('');
         setNewCityHours('');
-        await fetchDeductions({ from, to });
+        await Promise.all([fetchDeductions({ from, to }), fetchSalary(selMonth, selYear, payCurrency)]);
         toast.success('City hours saved');
       } else {
         toast.error(res.data.message || 'Failed');
@@ -156,7 +205,7 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
     setDeletingId(id);
     try {
       await Api.delete(`/driver/${driver._id}/deduction/${id}`);
-      await fetchDeductions({ from, to });
+      await Promise.all([fetchDeductions({ from, to }), fetchSalary(selMonth, selYear, payCurrency)]);
       toast.success('Removed');
     } catch {
       toast.error('Failed to remove');
@@ -182,7 +231,7 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
       if (res.data.status) {
         setDeductForm({ type: 'advance', amount: '', description: '', date: toISODate(new Date()) });
         setShowDeductForm(false);
-        await fetchDeductions({ from, to });
+        await Promise.all([fetchDeductions({ from, to }), fetchSalary(selMonth, selYear, payCurrency)]);
         toast.success('Deduction saved');
       } else {
         toast.error(res.data.message || 'Failed');
@@ -198,7 +247,7 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
     setDeletingId(id);
     try {
       await Api.delete(`/driver/${driver._id}/deduction/${id}`);
-      await fetchDeductions({ from, to });
+      await Promise.all([fetchDeductions({ from, to }), fetchSalary(selMonth, selYear, payCurrency)]);
       toast.success('Removed');
     } catch {
       toast.error('Failed to remove');
@@ -212,109 +261,24 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
   const netPay = totalPayWithCity - totalDeductions;
   const moneyCurrency = String(summary?.currency || 'USD').toUpperCase();
 
-  const exportPDF = async () => {
+  // Backend-generated PDF (puppeteer, company/default logo, currency-aware). Defaults to the
+  // selected month; pass month/year/currency to download a specific generated payslip.
+  const exportPDF = async (month = selMonth, year = selYear, currency = payCurrency) => {
+    if (!driver?._id) return;
     try {
-      const { jsPDF } = await import('jspdf');
-      const autoTable = (await import('jspdf-autotable')).default;
-      const doc = new jsPDF();
-      doc.setFillColor(20, 24, 32);
-      doc.rect(0, 0, 210, 34, 'F');
-      doc.setFontSize(14);
-      doc.setTextColor(255, 255, 255);
-      doc.text('DRIVER PAYSLIP', 14, 13);
-      doc.setFontSize(11);
-      doc.text(`${driver?.name || ''} • ${driver?.corporateID || ''}`, 14, 22);
-      if (from || to) {
-        doc.setFontSize(9);
-        doc.text(`Range: ${from || '—'} to ${to || '—'}`, 14, 29);
-      }
-      const soloRate = Number(summary?.soloRate ?? driver?.driverProfile?.ratePerMileSolo ?? driver?.driverProfile?.ratePerMile ?? 0);
-      const teamRate = Number(summary?.teamRate ?? driver?.driverProfile?.ratePerMileTeam ?? driver?.driverProfile?.ratePerMile ?? 0);
-      doc.setFontSize(8);
-      doc.text(`Rates: Solo $${soloRate.toFixed(2)}/mi  Team $${teamRate.toFixed(2)}/mi  City $${cityRate.toFixed(2)}/hr`, 14, 33);
-      doc.setTextColor(17, 24, 39);
-      doc.setFontSize(11);
-      const s = summary || {};
-      doc.text(`Total Trips: ${s.totalTrips || 0}`, 14, 46);
-      doc.text(`Total Miles: ${fmtMilesKm(s.totalMiles || 0)}`, 14, 53);
-      doc.text(`Mileage Pay: $${tripPay.toFixed(2)}`, 14, 60);
-      if (totalCityPay > 0) doc.text(`City Pay: $${totalCityPay.toFixed(2)}`, 14, 67);
-      if (totalDeductions > 0) {
-        doc.setTextColor(220, 38, 38);
-        doc.text(`Deductions: -$${totalDeductions.toFixed(2)}`, 14, totalCityPay > 0 ? 74 : 67);
-        doc.setTextColor(17, 24, 39);
-      }
-      doc.setTextColor(16, 185, 129);
-      doc.setFontSize(13);
-      doc.text(`NET PAY: $${netPay.toFixed(2)}`, 14, totalDeductions > 0 ? 84 : (totalCityPay > 0 ? 77 : 70));
-      doc.setTextColor(17, 24, 39);
-      doc.setFontSize(11);
-
-      // Trips table
-      const rows = orders.map((o) => [
-        o.orderSerial ? `CMC${o.orderSerial}` : String(o._id).slice(-6),
-        o.rateType ? String(o.rateType).toUpperCase() : 'SOLO',
-        o.trips,
-        o.miles.toFixed(2),
-        o.km.toFixed(2),
-        `$${o.pay.toFixed(2)}`
-      ]);
-      autoTable(doc, {
-        startY: 96,
-        head: [['Order', 'Type', 'Trips', 'Miles', 'KM', 'Pay']],
-        body: rows,
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [31, 41, 55], textColor: 255 },
-        alternateRowStyles: { fillColor: [249, 250, 251] },
-        columnStyles: { 5: { halign: 'right' } }
-      });
-
-      let nextY = (doc.lastAutoTable?.finalY || 96) + 8;
-
-      // City hours table
-      if (cityHours.length > 0) {
-        const cityRows = cityHours.map((c) => [
-          new Date(c.date).toLocaleDateString(),
-          `${Number(c.hours || 0).toFixed(2)} hrs`,
-          `$${Number(c.rate || 0).toFixed(2)}/hr`,
-          `$${Number(c.amount || 0).toFixed(2)}`
-        ]);
-        doc.setFontSize(10);
-        doc.text('City Hours', 14, nextY + 4);
-        autoTable(doc, {
-          startY: nextY + 8,
-          head: [['Date', 'Hours', 'Rate', 'Pay']],
-          body: cityRows,
-          styles: { fontSize: 9 },
-          headStyles: { fillColor: [31, 41, 55], textColor: 255 },
-          columnStyles: { 3: { halign: 'right' } }
-        });
-        nextY = (doc.lastAutoTable?.finalY || nextY) + 8;
-      }
-
-      // Deductions table
-      if (deductionItems.length > 0) {
-        const dedRows = deductionItems.map((d) => [
-          new Date(d.date).toLocaleDateString(),
-          d.type.replace('_', ' ').toUpperCase(),
-          d.description || '—',
-          `-$${Number(d.amount || 0).toFixed(2)}`
-        ]);
-        doc.setFontSize(10);
-        doc.text('Deductions', 14, nextY + 4);
-        autoTable(doc, {
-          startY: nextY + 8,
-          head: [['Date', 'Type', 'Description', 'Amount']],
-          body: dedRows,
-          styles: { fontSize: 9 },
-          headStyles: { fillColor: [127, 29, 29], textColor: 255 },
-          columnStyles: { 3: { halign: 'right', textColor: [220, 38, 38] } }
-        });
-      }
-
-      doc.save(`payslip-${driver?.name || 'driver'}.pdf`);
+      const qs = new URLSearchParams({ month: String(month), year: String(year), currency });
+      const res = await Api.get(`/driver/${driver._id}/salary/pdf?${qs.toString()}`, { responseType: 'blob' });
+      const blob = new Blob([res.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Driver_Statement_${(driver?.name || 'driver').replace(/\s+/g, '_')}_${month}_${year}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch {
-      toast.error('Failed to generate PDF');
+      toast.error('Failed to export PDF');
     }
   };
 
@@ -332,45 +296,57 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
           <button className="text-gray-400 hover:text-white text-xl leading-none" onClick={onClose}>×</button>
         </div>
 
-        {/* Date range */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {['current', 'previous', 'custom'].map((m) => (
-            <button
-              key={m}
-              className={`px-3 py-2 rounded-xl text-[10px] uppercase font-black border ${mode === m ? 'bg-rose-500/10 border-rose-500/30 text-rose-300' : 'bg-gray-900 border-gray-800 text-gray-300'}`}
-              onClick={() => quickSelect(m)}
-              disabled={loading}
+        {/* Month / Year / Currency picker + actions */}
+        <div className="flex flex-wrap items-end gap-2 mb-4">
+          <div>
+            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Month</label>
+            <select
+              className="input-sm"
+              value={selMonth}
+              onChange={(e) => { const m = Number(e.target.value); setSelMonth(m); loadMonth(m, selYear, payCurrency); }}
+              disabled={loading || generating}
             >
-              {m === 'current' ? 'This Month' : m === 'previous' ? 'Last Month' : 'Custom'}
-            </button>
-          ))}
+              {MONTH_NAMES.map((nm, i) => <option key={i} value={i + 1}>{nm}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Year</label>
+            <select
+              className="input-sm"
+              value={selYear}
+              onChange={(e) => { const y = Number(e.target.value); setSelYear(y); loadMonth(selMonth, y, payCurrency); }}
+              disabled={loading || generating}
+            >
+              {Array.from({ length: 5 }, (_, i) => _now.getFullYear() - i).map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">Currency</label>
+            <select
+              className="input-sm"
+              value={payCurrency}
+              onChange={(e) => { const c = e.target.value; setPayCurrency(c); loadMonth(selMonth, selYear, c); }}
+              disabled={loading || generating}
+            >
+              {['CAD', 'USD', 'INR'].map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
           <div className="flex-1" />
-          <button className="btn sm main-btn text-black font-bold" onClick={exportPDF} disabled={loading}>
+          {salary?.paymentStatus && (
+            <span className={`px-3 py-1.5 rounded-full text-[10px] uppercase font-black border ${
+              salary.paymentStatus === 'paid' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+              : salary.paymentStatus === 'partial' ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+              : 'bg-gray-800 border-gray-700 text-gray-300'}`}>
+              {salary.paymentStatus}
+            </span>
+          )}
+          <button className="btn sm bg-gray-800 text-white font-bold" onClick={generatePayslip} disabled={loading || generating}>
+            {generating ? 'Generating…' : 'Generate Payslip'}
+          </button>
+          <button className="btn sm main-btn text-black font-bold" onClick={() => exportPDF()} disabled={loading || generating}>
             Export PDF
           </button>
         </div>
-
-        {mode === 'custom' && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-            <div>
-              <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">From</label>
-              <input type="date" className="input-sm" value={from} onChange={(e) => setFrom(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-[10px] text-gray-500 uppercase font-bold mb-1 block">To</label>
-              <input type="date" className="input-sm" value={to} onChange={(e) => setTo(e.target.value)} />
-            </div>
-            <div className="flex items-end">
-              <button
-                className="btn bg-gray-800 text-white w-full"
-                onClick={() => { fetchSummary({ from, to }); fetchDeductions({ from, to }); }}
-                disabled={loading}
-              >
-                Apply
-              </button>
-            </div>
-          </div>
-        )}
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
@@ -640,6 +616,58 @@ export default function DriverEarningsPopup({ driver, open, onClose }) {
                 )}
                 {loading && (
                   <tr><td className="px-3 py-10 text-gray-500" colSpan={6}>Loading…</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* ---- GENERATED PAYSLIPS (history) ---- */}
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-sm font-bold text-gray-200">Generated Payslips</h3>
+            <span className="text-[11px] text-gray-500">{history.length} total</span>
+          </div>
+          <div className="rounded-xl border border-gray-800 overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[11px] uppercase text-gray-500 bg-gray-900/60">
+                  <th className="px-3 py-2">Period</th>
+                  <th className="px-3 py-2">Status</th>
+                  <th className="px-3 py-2">Trips</th>
+                  <th className="px-3 py-2 text-right">Net Payable</th>
+                  <th className="px-3 py-2 text-right">Due</th>
+                  <th className="px-3 py-2 text-right">PDF</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((h) => (
+                  <tr key={h._id} className="border-t border-gray-800">
+                    <td className="px-3 py-2 font-semibold text-gray-200">{MONTH_NAMES[(h.month || 1) - 1]} {h.year}</td>
+                    <td className="px-3 py-2">
+                      <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase border ${
+                        h.paymentStatus === 'paid' ? 'border-emerald-500/30 text-emerald-300 bg-emerald-500/10'
+                        : h.paymentStatus === 'partial' ? 'border-amber-500/30 text-amber-300 bg-amber-500/10'
+                        : 'border-gray-700 text-gray-300 bg-gray-800'}`}>
+                        {h.paymentStatus || 'pending'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2">{h.totalTrips || 0}</td>
+                    <td className="px-3 py-2 text-right font-semibold"><Currency amount={Number(h.finalPayable || 0)} currency={h.currency || 'USD'} noConvert /></td>
+                    <td className="px-3 py-2 text-right text-gray-400"><Currency amount={Number(h.dueAmount || 0)} currency={h.currency || 'USD'} noConvert /></td>
+                    <td className="px-3 py-2 text-right">
+                      <button
+                        className="text-[11px] font-bold text-[#a091ff] hover:underline disabled:opacity-50"
+                        onClick={async () => { setDownloadingId(h._id); await exportPDF(h.month, h.year, h.currency); setDownloadingId(null); }}
+                        disabled={downloadingId === h._id}
+                      >
+                        {downloadingId === h._id ? '…' : 'Download'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {history.length === 0 && (
+                  <tr><td className="px-3 py-8 text-center text-gray-500" colSpan={6}>No payslips generated yet</td></tr>
                 )}
               </tbody>
             </table>

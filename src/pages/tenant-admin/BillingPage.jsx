@@ -136,7 +136,15 @@ export default function BillingPage() {
           {/* Usage */}
           <div className="bg-dark1 border border-gray-800 rounded-2xl p-6">
             <span className="text-[11px] uppercase tracking-[0.18em] text-gray-500">Usage</span>
-            {(() => {
+            {needsPlan ? (
+              <div className="mt-6 flex flex-col items-center justify-center text-center py-6">
+                <div className="h-11 w-11 rounded-xl flex items-center justify-center mb-3" style={{ background: `${ACCENT}14`, border: `1px solid ${ACCENT}33` }}>
+                  <span className="text-lg" style={{ color: ACCENT }}>◷</span>
+                </div>
+                <p className="text-gray-300 text-sm font-medium">No active plan</p>
+                <p className="text-gray-500 text-xs mt-1">Choose a plan to set your limits and start tracking usage.</p>
+              </div>
+            ) : (() => {
               const Bar = ({ k, label, sub: subLabel }) => {
                 const u = sub?.usage?.[k] || { current: 0, limit: 0, percentage: null };
                 const pctVal = u.percentage == null ? 0 : Math.min(100, u.percentage);

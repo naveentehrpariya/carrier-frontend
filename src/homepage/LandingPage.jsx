@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheckIcon, TruckIcon, UserGroupIcon, ChartBarIcon, CurrencyDollarIcon, CubeTransparentIcon, CheckCircleIcon, DocumentTextIcon, BanknotesIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import {
+  ShieldCheckIcon, TruckIcon, UserGroupIcon, ChartBarIcon, CurrencyDollarIcon,
+  CubeTransparentIcon, CheckCircleIcon, DocumentTextIcon, BanknotesIcon, MapPinIcon,
+  ClipboardDocumentListIcon, BuildingOffice2Icon, ArrowsRightLeftIcon, BoltIcon,
+  GlobeAltIcon, IdentificationIcon, ReceiptPercentIcon, Cog6ToothIcon, SparklesIcon,
+  LockClosedIcon, ClipboardDocumentCheckIcon, WrenchScrewdriverIcon, ArchiveBoxIcon,
+  CalculatorIcon, PresentationChartLineIcon, KeyIcon, CreditCardIcon
+} from '@heroicons/react/24/outline';
 import { useAuth } from '../context/MultiTenantAuthProvider';
 
 const LogisticsSaaS = () => {
@@ -9,23 +16,85 @@ const LogisticsSaaS = () => {
   const { user, loading } = useAuth();
   
   const faqs = [
-    { q: "Can I manage both asset-based and brokerage operations?", a: "Yes! Our platform is built with a dual-module architecture. You can seamlessly switch between the 'Regular' module for your own fleet (Trucks, Trailers, Drivers) and the 'Outsourcing' module for carrier brokerage." },
-    { q: "How granular are the user permissions?", a: "Extremely granular. You can assign roles like Administrator, Accountant, Employee/Staff, and Driver. Admins can explicitly restrict staff access to specific modules (e.g., only Brokerage) to ensure data security." },
-    { q: "Does the system calculate driver salaries automatically?", a: "Absolutely. The Accounting module automatically calculates driver earnings based on solo/team miles or city hours, and tracks truck gross earnings and carrier payments in real-time." },
-    { q: "Is this suitable for a multi-company setup?", a: "Yes. Our enterprise tier supports a true multi-tenant architecture, allowing you to manage multiple branches, subsidiaries, or client companies from a single Super Admin dashboard." }
+    { q: "Can I manage both asset-based and brokerage operations?", a: "Yes. The platform has a dual-module architecture. Use the 'Regular' module for your own fleet (Trucks, Trailers, Drivers, Owner-Operators) and the 'Outsourcing' module for carrier brokerage — independently or together. Each tenant's plan decides which modules are unlocked." },
+    { q: "How granular are the user permissions?", a: "Very granular. Beyond the core roles (Admin, Accountant, Staff/Dispatcher, Driver), you control 12+ individual permissions: regular, outsourcing, accounting, customers (read/write), carriers (read/write), employees, sub-admin, driver, and invoices. Admins can restrict any staff member to specific modules and actions." },
+    { q: "Does the system calculate driver salaries automatically?", a: "Yes. The accounting module auto-generates payslips from dispatch data — solo miles, team miles, or city hours — and tracks truck gross earnings, carrier payments, and owner-operator statements in real time. Everything exports to PDF." },
+    { q: "Does it handle multiple currencies?", a: "Yes. Orders can be entered in USD, CAD, or INR per order. The platform stores the exact typed amount plus a normalized USD base value with an FX-rate snapshot for accurate reporting and aggregation — no double conversion." },
+    { q: "Is this suitable for a multi-company setup?", a: "Yes. It's true multi-tenant. A Super Admin creates isolated environments (own subdomain, data, subscription, and limits) per company, and can securely emulate any tenant for support. Tenant admins can likewise emulate their own employees to troubleshoot." },
+    { q: "How does billing work?", a: "Each tenant subscribes to a plan (Starter / Professional / Enterprise) on monthly, quarterly, or yearly cycles with cycle discounts. Plans meter team seats and orders-per-month, and unlock modules. A self-serve billing page handles checkout, renewals, usage bars, and purchase history." }
   ];
 
-  const features = [
-    { icon: <TruckIcon className="w-6 h-6" />, title: 'Asset & Fleet Management', desc: 'Track trucks, trailers, and drivers. Manage driver logs, rate-per-mile profiles, and assignment histories effortlessly.' },
-    { icon: <CubeTransparentIcon className="w-6 h-6" />, title: 'Carrier Outsourcing', desc: 'Streamline your brokerage operations. Assign loads to third-party carriers, track their MC numbers, and manage their payments securely.' },
-    { icon: <CurrencyDollarIcon className="w-6 h-6" />, title: 'Advanced Accounting', desc: 'Auto-calculate driver payslips, track truck gross earnings, monitor customer invoices, and analyze per-order profit margins instantly.' },
-    { icon: <ShieldCheckIcon className="w-6 h-6" />, title: 'Role-Based Access Control', desc: 'Secure your data. Assign precise roles (Admin, Accountant, Staff, Driver) and restrict module access on a per-user basis.' },
-    { icon: <UserGroupIcon className="w-6 h-6" />, title: 'Multi-Tenant Architecture', desc: 'Built for scale. Super Admins can create isolated environments for different companies, each with their own subscription and limits.' },
-    { icon: <ChartBarIcon className="w-6 h-6" />, title: 'Real-Time Analytics', desc: 'Get bird\'s-eye views of your operations. Track active loads, revenue trends, and operational bottlenecks from intuitive dashboards.' },
-    { icon: <DocumentTextIcon className="w-6 h-6" />, title: 'Digital Document Management', desc: 'Store BOLs, PODs, rate confirmations, and receipts directly attached to orders or employee profiles with instant preview.' },
-    { icon: <BanknotesIcon className="w-6 h-6" />, title: 'Revenue & Expense Tracking', desc: 'Log individual order expenses, track fuel surcharges, and auto-calculate precise profit margins for every load.' },
-    { icon: <MapPinIcon className="w-6 h-6" />, title: 'Intelligent Dispatching', desc: 'Easily assign drivers, trucks, and trailers to specific orders. Maintain clear visibility of asset allocation across your entire fleet.' }
+  // Full project capability map — grouped so clients see the entire scope
+  const featureGroups = [
+    {
+      label: 'Operations & Dispatch',
+      accent: 'blue',
+      items: [
+        { icon: <ClipboardDocumentListIcon className="w-6 h-6" />, title: 'Order & Load Management', desc: 'Create and track loads end to end with custom order-number prefixes (e.g. CMC-1013), status workflow, and document counts.' },
+        { icon: <MapPinIcon className="w-6 h-6" />, title: 'Intelligent Dispatching', desc: 'Assign drivers, trucks, and trailers to each order with clear visibility of asset allocation across the whole fleet.' },
+        { icon: <ArrowsRightLeftIcon className="w-6 h-6" />, title: 'Trip Planning', desc: 'Plan multi-stop routes with pickup → delivery sequencing, distances, and per-trip detail on every order.' },
+        { icon: <DocumentTextIcon className="w-6 h-6" />, title: 'Document Management', desc: 'Attach BOLs, PODs, rate confirmations, and receipts directly to orders or employee profiles with instant preview.' },
+        { icon: <GlobeAltIcon className="w-6 h-6" />, title: 'Multi-Currency Orders', desc: 'Enter each order in USD, CAD, or INR. Amounts are normalized to a USD base with an FX-rate snapshot for accurate reporting.' },
+      ],
+    },
+    {
+      label: 'Fleet & Assets — Regular Module',
+      accent: 'cyan',
+      items: [
+        { icon: <TruckIcon className="w-6 h-6" />, title: 'Truck Management', desc: 'Maintain your power units and track per-truck gross earnings month over month.' },
+        { icon: <ArchiveBoxIcon className="w-6 h-6" />, title: 'Trailer Management', desc: 'Manage trailers and tie them to orders and assignments alongside trucks and drivers.' },
+        { icon: <IdentificationIcon className="w-6 h-6" />, title: 'Driver Management', desc: 'Driver profiles with rate-per-mile, logs, and full assignment history.' },
+        { icon: <WrenchScrewdriverIcon className="w-6 h-6" />, title: 'Owner-Operators', desc: 'Dedicated owner-operator profiles, financial summaries, owner-operated orders, and exportable settlement statements / pay slips.' },
+      ],
+    },
+    {
+      label: 'Carrier Brokerage — Outsourcing Module',
+      accent: 'amber',
+      items: [
+        { icon: <CubeTransparentIcon className="w-6 h-6" />, title: 'Carrier Management', desc: 'Onboard third-party carriers, track MC numbers, and scope visibility by company or permission.' },
+        { icon: <BuildingOffice2Icon className="w-6 h-6" />, title: 'Customer Management', desc: 'Multi-assign customers to staff, share unassigned customers within a company, and control exactly who sees what.' },
+        { icon: <BanknotesIcon className="w-6 h-6" />, title: 'Carrier Payment Tracking', desc: 'Record and monitor carrier costs per load with payment statuses and per-order profit visibility.' },
+      ],
+    },
+    {
+      label: 'Accounting & Finance',
+      accent: 'emerald',
+      items: [
+        { icon: <CalculatorIcon className="w-6 h-6" />, title: 'Automated Driver Payslips', desc: 'Auto-calculate earnings from solo miles, team miles, or city hours — no spreadsheets, with PDF export.' },
+        { icon: <ReceiptPercentIcon className="w-6 h-6" />, title: 'Customer Invoices', desc: 'Generate permission-gated customer invoice PDFs, with download access restricted to authorized roles.' },
+        { icon: <PresentationChartLineIcon className="w-6 h-6" />, title: 'Finance Reports', desc: 'Module- and period-filtered finance reports (30d/60d/90d/6m/1y/custom) with one-click PDF export.' },
+        { icon: <CurrencyDollarIcon className="w-6 h-6" />, title: 'Profit & Expense Tracking', desc: 'Per-order expenses, fuel surcharges, revenue vs. carrier cost, and precise profit margins on every load.' },
+      ],
+    },
+    {
+      label: 'Platform, Security & Admin',
+      accent: 'violet',
+      items: [
+        { icon: <UserGroupIcon className="w-6 h-6" />, title: 'Multi-Tenant Architecture', desc: 'Isolated environments per company — own subdomain, data, subscription, and limits — managed from a Super Admin dashboard.' },
+        { icon: <ShieldCheckIcon className="w-6 h-6" />, title: 'Role-Based Access Control', desc: '12+ granular permissions across modules and actions on top of Admin / Accountant / Staff / Driver roles.' },
+        { icon: <CreditCardIcon className="w-6 h-6" />, title: 'Subscriptions & Billing', desc: 'Self-serve plans with monthly/quarterly/yearly cycles, discounts, usage limits, checkout, and purchase history.' },
+        { icon: <KeyIcon className="w-6 h-6" />, title: 'Secure Emulation', desc: 'Super Admins emulate tenants and tenant admins emulate employees via short-lived tokens for safe support and troubleshooting.' },
+        { icon: <BoltIcon className="w-6 h-6" />, title: 'Real-Time & Activity Logs', desc: 'Live counters and updates (Pusher / Socket.io) plus a full activity audit trail across the platform.' },
+        { icon: <SparklesIcon className="w-6 h-6" />, title: 'AI Assistance', desc: 'Built-in AI features and automated FX-rate jobs keep data current and reduce manual data entry.' },
+      ],
+    },
   ];
+
+  const roles = [
+    { icon: <Cog6ToothIcon className="w-5 h-5" />, name: 'Super Admin', desc: 'Platform owner. Creates tenants, manages subscription plans, and can securely emulate any company for support.' },
+    { icon: <LockClosedIcon className="w-5 h-5" />, name: 'Tenant Admin', desc: 'Company owner. Full access to all modules, billing, employee management, and employee emulation within their tenant.' },
+    { icon: <ClipboardDocumentCheckIcon className="w-5 h-5" />, name: 'Accountant', desc: 'Finance-focused. Access to accounting, invoices, payslips, and finance reports across the tenant.' },
+    { icon: <MapPinIcon className="w-5 h-5" />, name: 'Staff / Dispatcher', desc: 'Day-to-day operations. Manage orders, customers, and carriers, scoped by the permissions the admin grants.' },
+    { icon: <TruckIcon className="w-5 h-5" />, name: 'Driver', desc: 'Limited driver-scoped access to their own assignments and relevant load information.' },
+  ];
+
+  const accentMap = {
+    blue: 'text-blue-400 bg-blue-500/10 border-blue-500/20 group-hover:border-blue-500/30',
+    cyan: 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20 group-hover:border-cyan-500/30',
+    amber: 'text-amber-400 bg-amber-500/10 border-amber-500/20 group-hover:border-amber-500/30',
+    emerald: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20 group-hover:border-emerald-500/30',
+    violet: 'text-violet-400 bg-violet-500/10 border-violet-500/20 group-hover:border-violet-500/30',
+  };
 
   return (
     <div className="bg-[#030308] text-white min-h-screen selection:bg-blue-500/30 overflow-x-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
@@ -43,8 +112,9 @@ const LogisticsSaaS = () => {
             <span className="text-xl font-extrabold tracking-tighter uppercase" style={{ fontFamily: "'Outfit', sans-serif" }}>Logistikore</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-[11px] font-bold text-gray-200 uppercase tracking-[0.2em]">
-            <a href="#features" className="hover:text-white transition-all">Platform</a>
-            <a href="#accounting" className="hover:text-white transition-all">Accounting</a>
+            <a href="#modules" className="hover:text-white transition-all">Modules</a>
+            <a href="#features" className="hover:text-white transition-all">Features</a>
+            <a href="#roles" className="hover:text-white transition-all">Roles</a>
             <a href="#pricing" className="hover:text-white transition-all">Pricing</a>
           </div>
           <div className="flex gap-4">
@@ -157,23 +227,85 @@ const LogisticsSaaS = () => {
         </div>
       </div>
 
-      {/* --- CORE FEATURES GRID --- */}
-      <section id="features" className="container mx-auto px-6 py-32">
-        <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
+      {/* --- DUAL MODULE OVERVIEW --- */}
+      <section id="modules" className="container mx-auto px-6 py-24">
+        <div className="text-center max-w-2xl mx-auto mb-14 space-y-4">
+          <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.3em]">Two engines, one platform</span>
           <h2 className="text-4xl font-bold tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>Dual-Power Logistics Engine</h2>
-          <p className="text-gray-400">Whether you operate your own fleet or broker freight to external carriers, our platform adapts to your exact workflow.</p>
+          <p className="text-gray-400">Run your own fleet, broker freight to external carriers, or do both. Each tenant's plan unlocks the modules they need.</p>
         </div>
-        
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((f, i) => (
-            <div key={i} className="p-8 rounded-3xl bg-[#0D0D15] border border-white/[0.05] hover:border-blue-500/30 hover:bg-white/[0.02] transition-all group">
-              <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-6 text-blue-400 group-hover:scale-110 transition-transform shadow-inner">
-                {f.icon}
+        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+          <div className="p-8 rounded-3xl bg-[#0D0D15] border border-cyan-500/20">
+            <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center mb-5 text-cyan-400"><TruckIcon className="w-6 h-6" /></div>
+            <h3 className="text-xl font-bold mb-2 text-gray-100">Regular — Asset-Based Fleet</h3>
+            <p className="text-sm text-gray-400 leading-relaxed mb-4">For carriers running their own equipment. Manage trucks, trailers, drivers, and owner-operators with full driver-pay accounting.</p>
+            <div className="flex flex-wrap gap-2">
+              {['Trucks', 'Trailers', 'Drivers', 'Owner-Operators', 'Payslips'].map((t) => (
+                <span key={t} className="text-[11px] font-semibold text-cyan-300/80 bg-cyan-500/5 border border-cyan-500/15 px-2.5 py-1 rounded-full">{t}</span>
+              ))}
+            </div>
+          </div>
+          <div className="p-8 rounded-3xl bg-[#0D0D15] border border-amber-500/20">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-5 text-amber-400"><CubeTransparentIcon className="w-6 h-6" /></div>
+            <h3 className="text-xl font-bold mb-2 text-gray-100">Outsourcing — Carrier Brokerage</h3>
+            <p className="text-sm text-gray-400 leading-relaxed mb-4">For brokers and 3PLs. Assign loads to external carriers, track MC numbers, customer assignments, and carrier payments.</p>
+            <div className="flex flex-wrap gap-2">
+              {['Carriers', 'Customers', 'MC Numbers', 'Carrier Pay', 'Margins'].map((t) => (
+                <span key={t} className="text-[11px] font-semibold text-amber-300/80 bg-amber-500/5 border border-amber-500/15 px-2.5 py-1 rounded-full">{t}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- CORE FEATURES (CATEGORIZED) --- */}
+      <section id="features" className="container mx-auto px-6 py-24">
+        <div className="text-center max-w-2xl mx-auto mb-20 space-y-4">
+          <h2 className="text-4xl font-bold tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>Everything you need, in one platform</h2>
+          <p className="text-gray-400">From dispatch and fleet to accounting, billing, and multi-company administration — the complete operating system for freight & logistics.</p>
+        </div>
+
+        <div className="space-y-20">
+          {featureGroups.map((group, gi) => (
+            <div key={gi}>
+              <div className="flex items-center gap-4 mb-8">
+                <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-gray-300 whitespace-nowrap" style={{ fontFamily: "'Outfit', sans-serif" }}>{group.label}</h3>
+                <div className="h-[1px] flex-1 bg-gradient-to-r from-white/10 to-transparent" />
               </div>
-              <h3 className="text-xl font-bold mb-3 text-gray-100">{f.title}</h3>
-              <p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {group.items.map((f, i) => (
+                  <div key={i} className="p-8 rounded-3xl bg-[#0D0D15] border border-white/[0.05] hover:bg-white/[0.02] transition-all group">
+                    <div className={`w-14 h-14 rounded-2xl border flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-inner ${accentMap[group.accent]}`}>
+                      {f.icon}
+                    </div>
+                    <h4 className="text-lg font-bold mb-3 text-gray-100">{f.title}</h4>
+                    <p className="text-sm text-gray-400 leading-relaxed">{f.desc}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* --- ROLES & PERMISSIONS --- */}
+      <section id="roles" className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-blue-900/5 border-y border-blue-500/10" />
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="text-center max-w-2xl mx-auto mb-14 space-y-4">
+            <span className="text-[10px] font-bold text-blue-400 uppercase tracking-[0.3em]">Built-in access control</span>
+            <h2 className="text-4xl font-bold tracking-tight" style={{ fontFamily: "'Outfit', sans-serif" }}>One platform, every role</h2>
+            <p className="text-gray-400">From platform owners down to drivers — everyone sees exactly what they should, governed by granular per-user permissions.</p>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 max-w-6xl mx-auto">
+            {roles.map((r, i) => (
+              <div key={i} className="p-6 rounded-2xl bg-[#0D0D15] border border-white/[0.06] hover:border-blue-500/30 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4 text-blue-400">{r.icon}</div>
+                <h3 className="text-base font-bold mb-2 text-gray-100">{r.name}</h3>
+                <p className="text-xs text-gray-400 leading-relaxed">{r.desc}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -256,11 +388,11 @@ const LogisticsSaaS = () => {
                <span className="text-gray-500 font-medium">/mo</span>
             </div>
             <ul className="space-y-4 text-sm text-gray-300 flex-1">
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Up to 5 Users</li>
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Up to 100 Orders/mo</li>
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Outsourcing Module</li>
-               <li className="flex items-center gap-3 text-gray-600"><CheckCircleIcon className="w-5 h-5 text-gray-700 flex-shrink-0" /> No Fleet Management</li>
-               <li className="flex items-center gap-3 text-gray-600"><CheckCircleIcon className="w-5 h-5 text-gray-700 flex-shrink-0" /> No Driver Payslips</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Small team seats</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Metered orders per month</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> One module (Regular or Outsourcing)</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Customers, carriers & fleet records</li>
+               <li className="flex items-center gap-3 text-gray-600"><CheckCircleIcon className="w-5 h-5 text-gray-700 flex-shrink-0" /> No advanced accounting</li>
             </ul>
             <Link to="/login" className="mt-8 block w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-center font-bold transition-colors">Start Trial</Link>
           </div>
@@ -273,16 +405,16 @@ const LogisticsSaaS = () => {
             <h3 className="text-xl font-bold mb-2 text-blue-400">Professional</h3>
             <p className="text-sm text-gray-400 mb-6">Full suite for growing fleets and mid-sized brokerages.</p>
             <div className="mb-8">
-               <span className="text-5xl font-black">${billingCycle === 'month' ? '149' : '119'}</span>
+               <span className="text-5xl font-black">${billingCycle === 'month' ? '99' : '79'}</span>
                <span className="text-gray-500 font-medium">/mo</span>
             </div>
             <ul className="space-y-4 text-sm text-gray-200 flex-1">
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" /> Up to 25 Users</li>
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" /> Unlimited Orders</li>
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" /> Outsourcing & Regular Modules</li>
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" /> Full Fleet & Driver Management</li>
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" /> Accounting & Payslips</li>
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" /> Role-Based Access Control</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" /> Larger team seats</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" /> Higher monthly order volume</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" /> Outsourcing & Regular modules</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" /> Full fleet & driver management</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" /> Accounting, payslips & invoices</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-400 flex-shrink-0" /> Finance reports & PDF export</li>
             </ul>
             <Link to="/login" className="mt-8 block w-full py-3 px-4 bg-blue-600 hover:bg-blue-500 rounded-xl text-center font-bold shadow-lg shadow-blue-600/25 transition-colors">Get Professional</Link>
           </div>
@@ -290,18 +422,19 @@ const LogisticsSaaS = () => {
           {/* Enterprise Plan */}
           <div className="bg-[#0D0D15] border border-gray-800 rounded-3xl p-8 flex flex-col">
             <h3 className="text-xl font-bold mb-2 text-white">Enterprise</h3>
-            <p className="text-sm text-gray-400 mb-6">For large organizations requiring multi-tenant control.</p>
+            <p className="text-sm text-gray-400 mb-6">For large organizations requiring unlimited scale.</p>
             <div className="mb-8">
-               <span className="text-5xl font-black">Custom</span>
+               <span className="text-5xl font-black">${billingCycle === 'month' ? '249' : '199'}</span>
+               <span className="text-gray-500 font-medium">/mo</span>
             </div>
             <ul className="space-y-4 text-sm text-gray-300 flex-1">
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Unlimited Users & Orders</li>
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Multi-Tenant Architecture</li>
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Custom Subdomains</li>
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Super Admin Dashboard</li>
-               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Dedicated Account Manager</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Unlimited users & orders</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Both modules, all features</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Custom subdomains</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Super Admin dashboard</li>
+               <li className="flex items-center gap-3"><CheckCircleIcon className="w-5 h-5 text-blue-500 flex-shrink-0" /> Priority support</li>
             </ul>
-            <a href="mailto:enterprise@logistikore.com" className="mt-8 block w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-center font-bold transition-colors">Contact Sales</a>
+            <Link to="/login" className="mt-8 block w-full py-3 px-4 bg-gray-800 hover:bg-gray-700 border border-gray-700 rounded-xl text-center font-bold transition-colors">Get Enterprise</Link>
           </div>
         </div>
       </section>
@@ -370,8 +503,9 @@ const LogisticsSaaS = () => {
                 <span className="tracking-widest">LOGISTIKORE</span>
               </div>
               <div className="flex gap-8 flex-wrap justify-center">
-                <a href="#" className="hover:text-blue-400 transition-colors">Platform</a>
-                <a href="#" className="hover:text-blue-400 transition-colors">Pricing</a>
+                <a href="#features" className="hover:text-blue-400 transition-colors">Features</a>
+                <a href="#modules" className="hover:text-blue-400 transition-colors">Modules</a>
+                <a href="#pricing" className="hover:text-blue-400 transition-colors">Pricing</a>
                 <a href="#" className="hover:text-blue-400 transition-colors">Privacy Policy</a>
                 <a href="#" className="hover:text-blue-400 transition-colors">Terms of Service</a>
               </div>

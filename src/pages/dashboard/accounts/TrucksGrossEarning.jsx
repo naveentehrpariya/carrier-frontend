@@ -5,6 +5,10 @@ import { UserContext } from '../../../context/AuthProvider';
 import Popup from '../../common/Popup';
 import { Link } from 'react-router-dom';
 import TruckExpensesPopup from '../../../components/trucks/TruckExpensesPopup';
+import Currency from '../../common/Currency';
+
+// Gross/expenses are returned in USD base; <Money> converts to the header-selected currency.
+const Money = ({ amount }) => <Currency amount={Number(amount || 0)} currency="usd" />;
 
 function toISODate(d) {
   const pad = (n) => String(n).padStart(2, '0');
@@ -16,11 +20,6 @@ function monthRange(shift = 0) {
   const start = new Date(now.getFullYear(), now.getMonth() + shift, 1);
   const end = new Date(now.getFullYear(), now.getMonth() + shift + 1, 0);
   return { from: toISODate(start), to: toISODate(end) };
-}
-
-function fmtMoney(value) {
-  const n = Number(value || 0);
-  return `$${n.toFixed(2)}`;
 }
 
 function fmtMilesKm(value) {
@@ -225,10 +224,10 @@ export default function TrucksGrossEarning() {
                     </td>
                     <td className="px-4 py-3">{r.totalTrips || 0}</td>
                     <td className="px-4 py-3">{fmtMilesKm(r.totalMiles || 0)}</td>
-                    <td className="px-4 py-3 text-green-400 font-bold">{fmtMoney(r.totalGross)}</td>
-                    <td className="px-4 py-3 text-red-400 font-bold">{fmtMoney(r.totalExpenses)}</td>
+                    <td className="px-4 py-3 text-green-400 font-bold"><Money amount={r.totalGross} /></td>
+                    <td className="px-4 py-3 text-red-400 font-bold"><Money amount={r.totalExpenses} /></td>
                     <td className={`px-4 py-3 font-bold ${(r.profit || 0) >= 0 ? 'text-blue-400' : 'text-red-500'}`}>
-                      {fmtMoney(r.profit)}
+                      <Money amount={r.profit} />
                     </td>
                     <td className="px-4 py-3">{r?.lastDriver?.name ? `${r.lastDriver.name}` : '—'}</td>
                     <td className="px-4 py-3 max-w-[320px] truncate">{r.lastLocation || '—'}</td>
@@ -289,16 +288,16 @@ export default function TrucksGrossEarning() {
                 </div>
                 <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
                   <p className="text-[10px] text-gray-500 uppercase font-bold">Gross</p>
-                  <p className="text-xl font-black text-green-500 mt-1">{fmtMoney(detail.summary?.totalGross || 0)}</p>
+                  <p className="text-xl font-black text-green-500 mt-1"><Money amount={detail.summary?.totalGross || 0} /></p>
                 </div>
                 <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
                   <p className="text-[10px] text-gray-500 uppercase font-bold">Expenses</p>
-                  <p className="text-xl font-black text-red-400 mt-1">{fmtMoney(detail.summary?.totalExpenses || 0)}</p>
+                  <p className="text-xl font-black text-red-400 mt-1"><Money amount={detail.summary?.totalExpenses || 0} /></p>
                 </div>
                 <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
                   <p className="text-[10px] text-gray-500 uppercase font-bold">Profit</p>
                   <p className={`text-xl font-black mt-1 ${(detail.summary?.profit || 0) >= 0 ? 'text-blue-400' : 'text-red-500'}`}>
-                    {fmtMoney(detail.summary?.profit || 0)}
+                    <Money amount={detail.summary?.profit || 0} />
                   </p>
                 </div>
               </div>
@@ -309,7 +308,7 @@ export default function TrucksGrossEarning() {
                   <p className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">
                     All Expenses
                     {detail.summary?.totalExpenses > 0 && (
-                      <span className="ml-2 text-red-400">{fmtMoney(detail.summary.totalExpenses)}</span>
+                      <span className="ml-2 text-red-400"><Money amount={detail.summary.totalExpenses} /></span>
                     )}
                   </p>
                   <button
@@ -354,7 +353,7 @@ export default function TrucksGrossEarning() {
                               </td>
                               <td className="px-3 py-2 capitalize text-gray-400">{e.paid_by}</td>
                               <td className="px-3 py-2 text-gray-400 max-w-[160px] truncate">{e.description || '—'}</td>
-                              <td className="px-3 py-2 text-right text-red-400 font-bold">{fmtMoney(e.amount)}</td>
+                              <td className="px-3 py-2 text-right text-red-400 font-bold"><Money amount={e.amount} /></td>
                             </tr>
                           ))}
                         </tbody>
@@ -390,9 +389,9 @@ export default function TrucksGrossEarning() {
                             </td>
                             <td className="px-3 py-2">{o.trips}</td>
                             <td className="px-3 py-2">{fmtMilesKm(o.miles || 0)}</td>
-                            <td className="px-3 py-2">{fmtMilesKm(o.orderTotalDistance || 0)}</td>
-                            <td className="px-3 py-2">{fmtMoney(o.orderTotalAmount || 0)}</td>
-                            <td className="px-3 py-2 text-right text-green-400 font-bold">{fmtMoney(o.gross || 0)}</td>
+                            <td className="px-3 py-2">{fmtMilesKm(o.orderTotalMiles || 0)}</td>
+                            <td className="px-3 py-2"><Currency amount={Number(o.orderTotalAmount || 0)} currency={o.orderCurrency || 'usd'} /></td>
+                            <td className="px-3 py-2 text-right text-green-400 font-bold"><Currency amount={Number(o.gross || 0)} currency={o.orderCurrency || 'usd'} /></td>
                           </tr>
                         ))}
                         {(detail.orders || []).length === 0 && (

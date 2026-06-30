@@ -74,7 +74,7 @@ export default function TenantDashboard() {
               <BuildingOfficeIcon className="flex-shrink-0 h-8 w-8 text-main" />
               <div className="ml-4">
                 <h1 className="text-xl font-bold text-white md:text-2xl">
-                  {tenantInfo?.tenant?.name || tenant?.name || 'Tenant Dashboard'}
+                  {tenantInfo?.company?.name || tenantInfo?.tenant?.name || tenant?.name || 'Tenant Dashboard'}
                 </h1>
                 <p className="text-sm text-gray-400">
                   Welcome back, {user?.name}

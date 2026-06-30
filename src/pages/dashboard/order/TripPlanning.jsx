@@ -7,6 +7,7 @@ import AuthLayout from '../../../layout/AuthLayout';
 import Loading from '../../common/Loading';
 import TimeFormat from '../../common/TimeFormat';
 import DistanceInMiles from '../../common/DistanceInMiles';
+import Currency from '../../common/Currency';
 import { getOrderNumber } from '../../../utils/orderPrefix';
 import { FaTrash } from 'react-icons/fa';
 import { TbTruckDelivery, TbRoute, TbListDetails, TbBuildingWarehouse, TbArrowRight } from 'react-icons/tb';
@@ -109,6 +110,25 @@ export default function TripPlanning() {
         return sum;
     };
 
+    // Once real per-leg distances (actual miles, from /getdistance totalMiles) are available,
+    // normalize each segment's `miles` to real miles. Legacy stored values may be KM mislabeled
+    // as miles; this keeps pay + display in real miles and matches the backend salary calc
+    // (which derives miles from order.totalDistance km). Manual edits (milesManual) are preserved.
+    useEffect(() => {
+        if (!Array.isArray(pairDistances) || pairDistances.length === 0) return;
+        setTrips((prev) => prev.map((t) => {
+            if (t.milesManual) return t;
+            let sum = 0;
+            for (let i = t.start_stop_index; i < t.end_stop_index; i++) sum += Number(pairDistances[i] || 0);
+            if (sum > 0) {
+                const v = Number(sum.toFixed(2));
+                return { ...t, miles: v, totalDistance: v };
+            }
+            return t;
+        }));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [pairDistances]);
+
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
@@ -137,7 +157,9 @@ export default function TripPlanning() {
                 const driverOptions = driversRes.data.lists.map(d => ({ 
                     value: d._id, 
                     label: `${d.name} (${d.corporateID || 'No ID'})`,
-                    ratePerMile: d.driverProfile?.ratePerMile || 0 
+                    ratePerMile: d.driverProfile?.ratePerMile || 0,
+                    ratePerMileSolo: d.driverProfile?.ratePerMileSolo || 0,
+                    ratePerMileTeam: d.driverProfile?.ratePerMileTeam || 0
                 }));
                 setDrivers(driverOptions);
             }
@@ -194,7 +216,7 @@ export default function TripPlanning() {
                         truck: orderData.order_type === 'regular' ? (orderData.truck || null) : null,
                         trailer: orderData.order_type === 'regular' ? (orderData.trailer || null) : null,
                         carrier: orderData.order_type === 'outsourcing' ? (orderData.carrier || null) : null,
-                        miles: orderData.totalDistance || 0,
+                        miles: Number(orderData.totalDistance || 0) * 0.6214, // totalDistance is km; seed real miles
                         instructions: '',
                         status: 'planned'
                     }]);
@@ -514,8 +536,8 @@ export default function TripPlanning() {
                                     <TbTruckDelivery size={16} />
                                     <span className='font-bold text-[11px] sm:text-xs font-mona'>
                                         {(() => {
-                                            const miles = Number(order?.totalDistance || 0);
-                                            const km = miles * 1.60934;
+                                            const km = Number(order?.totalDistance || 0); // totalDistance is km
+                                            const miles = km * 0.6214;
                                             return `${miles.toFixed(2)} mi (${km.toFixed(2)} km)`;
                                         })()}
                                     </span>
@@ -532,7 +554,7 @@ export default function TripPlanning() {
                                         const t = trips[activeTripIndex];
                                         if (!t) return '';
                                         const miles = Number(t.miles) || sumMilesBetween(t.start_stop_index, t.end_stop_index);
-                                        const km = (Number(t.total_km) > 0) ? Number(t.total_km) : (miles * 1.60934);
+                                        const km = miles * 1.609344; // derive km from real miles (t.total_km is stale)
                                         const label = order.order_type === 'regular'
                                             ? (drivers.find(d => d.value === t.driver)?.label || 'Unassigned')
                                             : (carriers.find(c => c.value === t.carrier)?.label || 'Unassigned');
@@ -613,7 +635,7 @@ export default function TripPlanning() {
                                                     {(() => {
                                                         const miles = Number(trip.miles) || sumMilesBetween(trip.start_stop_index, trip.end_stop_index);
                                                         if (miles <= 0) return 'Distance: —';
-                                                        const km = (Number(trip.total_km) > 0) ? Number(trip.total_km) : (miles * 1.60934);
+                                                        const km = miles * 1.609344; // derive km from real miles (trip.total_km is stale)
                                                         return <>Distance: <span className='text-gray-300'>{miles.toFixed(2)} mi</span> (<span className='text-gray-300'>{km.toFixed(2)} km</span>)</>;
                                                     })()}
                                                 </p>
@@ -752,17 +774,13 @@ export default function TripPlanning() {
                                 <div className='input-item'>
                                     <label className={fieldLabel}>Segment Miles</label>
                                     <div className='relative'>
-                                        <input 
-                                            type="number" 
-                                            className='input-sm pe-12' 
-                                            placeholder='Actual miles for this segment'
-                                            value={trips[activeTripIndex]?.miles || ''}
-                                            onChange={(e) => {
-                                                const newTrips = [...trips];
-                                                newTrips[activeTripIndex].miles = e.target.value;
-                                                newTrips[activeTripIndex].totalDistance = e.target.value;
-                                                setTrips(newTrips);
-                                            }}
+                                        <input
+                                            type="number"
+                                            disabled
+                                            readOnly
+                                            className='input-sm pe-12 opacity-70 cursor-not-allowed'
+                                            placeholder='Auto-calculated from route'
+                                            value={trips[activeTripIndex]?.miles ? Number(trips[activeTripIndex].miles).toFixed(2) : ''}
                                         />
                                         <span className='absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-gray-600 font-bold'>MILES</span>
                                     </div>
@@ -785,17 +803,17 @@ export default function TripPlanning() {
                                             <div key={i} className='flex justify-between items-center mb-2'>
                                                 <div className='flex flex-col'>
                                                     <span className='text-xs text-gray-300 font-semibold'>{r.label}</span>
-                                                    <span className='text-[10px] text-gray-500'>{r.miles.toFixed(2)} mi @ ${r.rate}/mile <span className='text-emerald-500/70 uppercase font-semibold'>({r.rateType})</span></span>
+                                                    <span className='text-[10px] text-gray-500'>{r.miles.toFixed(2)} mi @ <Currency amount={r.rate} currency='usd' />/mile <span className='text-emerald-500/70 uppercase font-semibold'>({r.rateType})</span></span>
                                                 </div>
-                                                <span className='text-emerald-300 font-semibold text-sm font-mona'>${r.pay.toFixed(2)}</span>
+                                                <span className='text-emerald-300 font-semibold text-sm font-mona'><Currency amount={r.pay} currency='usd' /></span>
                                             </div>
                                         ))}
                                         <div className={`flex justify-between items-center ${multi ? 'pt-2 border-t border-emerald-500/20' : ''}`}>
                                             <span className='text-[10px] text-gray-400 uppercase font-bold tracking-[0.13em]'>{multi ? 'Total Driver Pay' : 'Driver Pay'}</span>
-                                            <span className='text-emerald-400 font-bold text-xl font-mona'>${breakdown.total.toFixed(2)}</span>
+                                            <span className='text-emerald-400 font-bold text-xl font-mona'><Currency amount={breakdown.total} currency='usd' /></span>
                                         </div>
                                         {!multi && breakdown.rows[0] && (
-                                            <p className='text-[10px] text-gray-500 mt-1'>Based on {trips[activeTripIndex].miles} miles @ ${breakdown.rows[0].rate}/mile <span className='text-emerald-500/70 uppercase font-semibold'>({breakdown.rows[0].rateType})</span></p>
+                                            <p className='text-[10px] text-gray-500 mt-1'>Based on {Number(trips[activeTripIndex].miles).toFixed(2)} miles @ <Currency amount={breakdown.rows[0].rate} currency='usd' />/mile <span className='text-emerald-500/70 uppercase font-semibold'>({breakdown.rows[0].rateType})</span></p>
                                         )}
                                     </div>
                                     );
