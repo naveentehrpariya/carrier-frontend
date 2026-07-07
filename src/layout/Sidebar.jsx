@@ -106,12 +106,17 @@ export default function Sidebar({toggle}) {
     if (isAccountPath) setAccountOpen(true);
   }, [isAccountPath]);
 
-  const isFleetPath =
-    location.pathname === '/drivers' || location.pathname === '/trucks' || location.pathname === '/trailers' || location.pathname === '/owner-operators';
+  const isFleetPath = location.pathname === '/trucks' || location.pathname === '/trailers';
   const [fleetOpen, setFleetOpen] = React.useState(isFleetPath);
   React.useEffect(() => {
     if (isFleetPath) setFleetOpen(true);
   }, [isFleetPath]);
+
+  const isTeamPath = location.pathname === '/drivers' || location.pathname === '/owner-operators';
+  const [teamOpen, setTeamOpen] = React.useState(isTeamPath);
+  React.useEffect(() => {
+    if (isTeamPath) setTeamOpen(true);
+  }, [isTeamPath]);
 
   const isOrdersPath =
     location.pathname === '/orders' ||
@@ -310,20 +315,6 @@ export default function Sidebar({toggle}) {
                   <div className="space-y-2">
                     <Link
                       className={`group transition-all duration-300 ${
-                        location.pathname === '/drivers'
-                          ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_6px_16px_rgba(139,92,246,0.35)]"
-                          : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'
-                      } py-[10px] px-[14px] border border-white/5 rounded-2xl flex items-center`}
-                      to={'/drivers'}
-                    >
-                      <HiOutlineUserCircle
-                        className={`${location.pathname === '/drivers' ? 'text-white' : 'text-[#EDEFF6]'} me-3`}
-                        size={'1.1rem'}
-                      />
-                      <span className="font-medium">Drivers</span>
-                    </Link>
-                    <Link
-                      className={`group transition-all duration-300 ${
                         location.pathname === '/trucks'
                           ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_6px_16px_rgba(139,92,246,0.35)]"
                           : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'
@@ -338,20 +329,6 @@ export default function Sidebar({toggle}) {
                     </Link>
                     <Link
                       className={`group transition-all duration-300 ${
-                        location.pathname === '/owner-operators'
-                          ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_6px_16px_rgba(139,92,246,0.35)]"
-                          : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'
-                      } py-[10px] px-[14px] border border-white/5 rounded-2xl flex items-center`}
-                      to={'/owner-operators'}
-                    >
-                      <FaUsers
-                        className={`${location.pathname === '/owner-operators' ? 'text-white' : 'text-[#EDEFF6]'} me-3`}
-                        size={'1.1rem'}
-                      />
-                      <span className="font-medium">Owner Operators</span>
-                    </Link>
-                    <Link
-                      className={`group transition-all duration-300 ${
                         location.pathname === '/trailers'
                           ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_6px_16px_rgba(139,92,246,0.35)]"
                           : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'
@@ -363,6 +340,57 @@ export default function Sidebar({toggle}) {
                         size={'1.1rem'}
                       />
                       <span className="font-medium">Trailers</span>
+                    </Link>
+                  </div>
+                </div>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  className={`group transition-all duration-300 w-full ${
+                    isTeamPath
+                      ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_8px_20px_rgba(139,92,246,0.4)]"
+                      : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'
+                  } mb-2 py-[14px] px-[18px] border border-white/5 rounded-2xl flex items-center`}
+                  onClick={() => setTeamOpen((v) => !v)}
+                >
+                  <FaUsers className={`${isTeamPath ? 'text-white' : 'text-[#EDEFF6]'} me-3`} size={'1.4rem'} />
+                  <span className="font-medium">Team</span>
+                  <FiChevronDown className={`ml-auto transition-transform duration-300 ${teamOpen ? 'rotate-180' : ''}`} />
+                </button>
+                <div
+                  className={`-mt-1 ${teamOpen ? 'mb-3' : 'mb-0'} pl-2 border-l border-[var(--main)] overflow-hidden transition-all duration-300 ${
+                    teamOpen ? 'max-h-[360px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    <Link
+                      className={`group transition-all duration-300 ${
+                        location.pathname === '/drivers'
+                          ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_6px_16px_rgba(139,92,246,0.35)]"
+                          : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'
+                      } py-[10px] px-[14px] border border-white/5 rounded-2xl flex items-center`}
+                      to={'/drivers'}
+                    >
+                      <HiOutlineUserCircle
+                        className={`${location.pathname === '/drivers' ? 'text-white' : 'text-[#EDEFF6]'} me-3`}
+                        size={'1.1rem'}
+                      />
+                      <span className="font-medium">Drivers</span>
+                    </Link>
+                    <Link
+                      className={`group transition-all duration-300 ${
+                        location.pathname === '/owner-operators'
+                          ? "bg-gradient-to-br from-[#B39CF6] to-[#8B5CF6] !text-white shadow-[0_6px_16px_rgba(139,92,246,0.35)]"
+                          : 'bg-[#11131A] hover:bg-[#181C24] text-[#EDEFF6]'
+                      } py-[10px] px-[14px] border border-white/5 rounded-2xl flex items-center`}
+                      to={'/owner-operators'}
+                    >
+                      <FaUsers
+                        className={`${location.pathname === '/owner-operators' ? 'text-white' : 'text-[#EDEFF6]'} me-3`}
+                        size={'1.1rem'}
+                      />
+                      <span className="font-medium">Owner Operators</span>
                     </Link>
                   </div>
                 </div>

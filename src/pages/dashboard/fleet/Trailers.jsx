@@ -82,9 +82,9 @@ export default function Trailers() {
           } else {
             toast.error(res.data.message || 'Failed to update trailer');
           }
-        }).catch(() => {
+        }).catch((err) => {
           setLoading(false);
-          toast.error('Failed to update trailer');
+          toast.error(err?.response?.data?.message || 'Failed to update trailer');
         });
     } else {
       const resp = Api.post('/fleet/trailers/add', form);
@@ -110,9 +110,9 @@ export default function Trailers() {
         } else {
           toast.error(res.data.message || 'Failed to add trailer');
         }
-      }).catch(() => {
+      }).catch((err) => {
         setLoading(false);
-        toast.error('Failed to add trailer');
+        toast.error(err?.response?.data?.message || 'Failed to add trailer');
       });
     }
   };

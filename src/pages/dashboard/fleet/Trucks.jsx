@@ -197,9 +197,9 @@ export default function Trucks() {
           toast.error(res.data.message || 'Failed to update truck');
         }
       })
-      .catch(() => {
+      .catch((err) => {
         setLoading(false);
-        toast.error('Failed to update truck');
+        toast.error(err?.response?.data?.message || 'Failed to update truck');
       });
   };
 
@@ -356,9 +356,9 @@ export default function Trucks() {
       } else {
         toast.error(res.data.message || 'Failed to add truck');
       }
-    }).catch(() => {
+    }).catch((err) => {
       setLoading(false);
-      toast.error('Failed to add truck');
+      toast.error(err?.response?.data?.message || 'Failed to add truck');
     });
   };
 
@@ -471,14 +471,15 @@ export default function Trucks() {
             subtitle="Register vehicle details and upload RC/ownership docs"
           />
           <FormSection title="Vehicle details">
-            <Field label="Make"><TextInput name='make' value={form.make} onChange={updateForm} type='text' placeholder='Volvo' /></Field>
-            <Field label="Model"><TextInput name='model' value={form.model} onChange={updateForm} type='text' placeholder='FH16' /></Field>
-            <Field label="Year"><TextInput name='year' value={form.year} onChange={updateForm} type='number' placeholder='2022' /></Field>
-            <Field label="VIN"><TextInput name='vin' value={form.vin} onChange={updateForm} type='text' placeholder='Vehicle Identification Number' /></Field>
-            <Field label="Plate Number"><TextInput name='plateNumber' value={form.plateNumber} onChange={updateForm} type='text' placeholder='ABC123' /></Field>
-            <Field label="Truck No"><TextInput name='truckNumber' value={form.truckNumber} onChange={updateForm} type='text' placeholder='e.g., 101' /></Field>
-            <Field label="Unit Number"><TextInput name='unitNumber' value={form.unitNumber} onChange={updateForm} type='text' placeholder='Unit number' /></Field>
-            <Field label="Capacity (lbs)"><TextInput name='capacity' value={form.capacity} onChange={updateForm} type='number' placeholder='e.g., 80000' /></Field>
+            <Field label="Truck No" hint="Optional"><TextInput name='truckNumber' value={form.truckNumber} onChange={updateForm} type='text' placeholder='e.g., 101' /></Field>
+            <Field label="Plate Number" required><TextInput name='plateNumber' value={form.plateNumber} onChange={updateForm} type='text' placeholder='ABC123' /></Field>
+            <Field label="Unit Number" hint="Optional"><TextInput name='unitNumber' value={form.unitNumber} onChange={updateForm} type='text' placeholder='Unit number' /></Field>
+            
+            <Field label="Make" required><TextInput name='make' value={form.make} onChange={updateForm} type='text' placeholder='Volvo' /></Field>
+            <Field label="Model" required><TextInput name='model' value={form.model} onChange={updateForm} type='text' placeholder='FH16' /></Field>
+            <Field label="Year" hint="Optional"><TextInput name='year' value={form.year} onChange={updateForm} type='number' placeholder='2022' /></Field>
+            <Field label="VIN" hint="Optional"><TextInput name='vin' value={form.vin} onChange={updateForm} type='text' placeholder='Vehicle Identification Number' /></Field>
+            <Field label="Capacity (lbs)" hint="Optional"><TextInput name='capacity' value={form.capacity} onChange={updateForm} type='number' placeholder='e.g., 80000' /></Field>
           </FormSection>
 
           <FormSection title="Ownership" divider>
@@ -499,7 +500,7 @@ export default function Trucks() {
               </label>
             </Field>
             {form.ownerOperated && (
-              <Field full label="Owner Operator">
+              <Field full label="Owner Operator" required>
                 <SelectInput value={form.ownerOperator} onChange={(e) => setForm((p) => ({ ...p, ownerOperator: e.target.value }))}>
                   <option value="" className="text-black">Select owner operator</option>
                   {(ownerOperators || []).map((o) => (
@@ -511,13 +512,15 @@ export default function Trucks() {
           </FormSection>
 
           <FormSection title="Notes & documents" divider>
-            <Field full label="Notes">
+            <Field full label="Notes" hint="Optional">
               <TextInput name='notes' value={form.notes} onChange={updateForm} type='text' placeholder='Optional notes' />
             </Field>
-            <Field full label="Documents">
+            <Field full label="Documents" hint="Optional">
               <input className='input-sm !mt-0 w-full file:mr-3 file:rounded-full file:border-0 file:bg-white/10 file:px-3 file:py-1 file:text-sm file:text-gray-200' type='file' multiple onChange={(e)=>setAddDocs(Array.from(e.target.files || []))} />
             </Field>
           </FormSection>
+
+          <p className="px-6 pb-2 -mt-1 text-[11px] text-gray-500"><span className="text-rose-400">*</span> Required fields</p>
 
           <ModalFooter
             accent={ACCENTS.truck}
@@ -965,23 +968,7 @@ export default function Trucks() {
         <div className='p-6'>
           <div className='grid grid-cols-2 gap-4'>
             <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Make</label>
-              <input name='make' value={editForm.make} onChange={updateEditForm} type='text' placeholder='Volvo' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Model</label>
-              <input name='model' value={editForm.model} onChange={updateEditForm} type='text' placeholder='FH16' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Year</label>
-              <input name='year' value={editForm.year} onChange={updateEditForm} type='number' placeholder='2022' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">VIN</label>
-              <input name='vin' value={editForm.vin} onChange={updateEditForm} type='text' placeholder='Vehicle Identification Number' className="input-sm" />
-            </div>
-            <div className='input-item'>
-              <label className="mt-4 mb-0 block text-sm text-gray-400">Plate Number</label>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Plate Number <span className="text-rose-400">*</span></label>
               <input name='plateNumber' value={editForm.plateNumber} onChange={updateEditForm} type='text' placeholder='ABC123' className="input-sm" />
             </div>
             <div className='input-item'>
@@ -992,6 +979,24 @@ export default function Trucks() {
               <label className="mt-4 mb-0 block text-sm text-gray-400">Unit Number</label>
               <input name='unitNumber' value={editForm.unitNumber} onChange={updateEditForm} type='text' placeholder='Unit number' className="input-sm" />
             </div>
+
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Make <span className="text-rose-400">*</span></label>
+              <input name='make' value={editForm.make} onChange={updateEditForm} type='text' placeholder='Volvo' className="input-sm" />
+            </div>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Model <span className="text-rose-400">*</span></label>
+              <input name='model' value={editForm.model} onChange={updateEditForm} type='text' placeholder='FH16' className="input-sm" />
+            </div>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">Year</label>
+              <input name='year' value={editForm.year} onChange={updateEditForm} type='number' placeholder='2022' className="input-sm" />
+            </div>
+            <div className='input-item'>
+              <label className="mt-4 mb-0 block text-sm text-gray-400">VIN</label>
+              <input name='vin' value={editForm.vin} onChange={updateEditForm} type='text' placeholder='Vehicle Identification Number' className="input-sm" />
+            </div>
+            
             <div className='input-item'>
               <label className="mt-4 mb-0 block text-sm text-gray-400">Capacity (lbs)</label>
               <input name='capacity' value={editForm.capacity} onChange={updateEditForm} type='number' placeholder='e.g., 80000' className="input-sm" />
@@ -1010,7 +1015,7 @@ export default function Trucks() {
             </div>
             {editForm.ownerOperated && (
               <div className='input-item col-span-2'>
-                <label className="mt-1 mb-0 block text-sm text-gray-400">Owner Operator</label>
+                <label className="mt-1 mb-0 block text-sm text-gray-400">Owner Operator <span className="text-rose-400">*</span></label>
                 <select
                   className="input-sm"
                   value={editForm.ownerOperator}
