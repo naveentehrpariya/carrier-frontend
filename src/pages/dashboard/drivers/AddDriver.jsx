@@ -5,10 +5,13 @@ import toast from 'react-hot-toast';
 import { UserContext } from '../../../context/AuthProvider';
 import { HiOutlineUserCircle } from 'react-icons/hi2';
 import GoogleAddressInput from '../../common/GoogleAddressInput';
-import { ModalShell, ModalHeader, Field, TextInput, TextArea, ModalFooter, ACCENTS } from '../../../components/modal/ModalKit';
+import { ModalShell, ModalHeader, Field, TextInput, TextArea, SelectInput, ModalFooter, ACCENTS } from '../../../components/modal/ModalKit';
+
+const CURRENCY_SYMBOLS = { USD: '$', CAD: 'C$', INR: '₹' };
+const CURRENCIES = ['USD', 'CAD', 'INR'];
 
 export default function AddDriver({ text = "Add Driver", classes = "", fetchLists, item = null }) {
-  const { Errors } = useContext(UserContext);
+  const { Errors, selectedCurrency } = useContext(UserContext);
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(item?.name || "");
   const [email, setEmail] = useState(item?.email || "");
@@ -18,6 +21,14 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
   const [state, setState] = useState(item?.state || "");
   const [city, setCity] = useState(item?.city || "");
   const [zipcode, setZipcode] = useState(item?.zipcode || "");
+  // Pay currency: chosen once when the driver is created (defaults to whatever currency the user is
+  // already working in), then LOCKED. Existing drivers predate the field and were always USD.
+  const isEdit = Boolean(item);
+  const normalizeCur = (c) => (CURRENCIES.includes(String(c || '').toUpperCase()) ? String(c).toUpperCase() : 'USD');
+  const [rateCurrency, setRateCurrency] = useState(
+    isEdit ? normalizeCur(item?.driverProfile?.rateCurrency) : normalizeCur(selectedCurrency)
+  );
+  const currencySymbol = CURRENCY_SYMBOLS[rateCurrency] || '$';
   const [ratePerMileSolo, setRatePerMileSolo] = useState(item?.driverProfile?.ratePerMileSolo ?? item?.driverProfile?.ratePerMile ?? "");
   const [ratePerMileTeam, setRatePerMileTeam] = useState(item?.driverProfile?.ratePerMileTeam ?? item?.driverProfile?.ratePerMile ?? "");
   const [cityHoursRate, setCityHoursRate] = useState(item?.driverProfile?.cityHoursRate ?? "");
@@ -53,6 +64,13 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
     if (p.state) setState(p.state);
     if (p.city) setCity(p.city);
     if (p.zipcode) setZipcode(p.zipcode);
+  };
+
+  // On ADD, seed the pay currency from whatever the user is currently viewing money in; it then
+  // stays put for the rest of the form. On EDIT it is immutable, so leave it alone.
+  const openModal = () => {
+    if (!isEdit) setRateCurrency(normalizeCur(selectedCurrency));
+    setOpen(true);
   };
 
   const resetForm = () => {
@@ -104,6 +122,8 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
     try {
       const body = {
         name, email, phone, country, address, state, city, zipcode,
+        // Only meaningful on create — the backend ignores rateCurrency on edit.
+        rateCurrency,
         ratePerMileSolo, ratePerMileTeam, cityHoursRate,
         licenseNumber, licenseIssueDate, licenseExpiry, licenseState,
         notes,
@@ -147,7 +167,7 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
   
   return (
     <>
-      <button className={classes} onClick={() => setOpen(true)}>{text}</button>
+      <button className={classes} onClick={openModal}>{text}</button>
       <Popup open={open} onClose={() => setOpen(false)} showTrigger={false} size="md:max-w-2xl" space="p-0" bg="bg-black">
         <ModalShell accent={ACCENTS.driver}>
           <ModalHeader
@@ -260,24 +280,43 @@ export default function AddDriver({ text = "Add Driver", classes = "", fetchList
           {activeTab === "payment" && (
             <div className='modal-kit-section px-7 py-5'>
               <div className='grid grid-cols-1 gap-4'>
-                <Field label="Rate per Mile (Solo) ($)" hint="Applied when an order has a single driver.">
+                <Field
+                  label="Pay Currency"
+                  required
+                  hint={isEdit
+                    ? 'Locked. This driver is paid in ' + rateCurrency + ' — the rates below are always entered in it.'
+                    : 'The currency the rates below are entered in. Cannot be changed after the driver is created.'}
+                >
+                  <SelectInput
+                    value={rateCurrency}
+                    disabled={isEdit}
+                    onChange={(e)=>setRateCurrency(e.target.value)}
+                    className={isEdit ? 'opacity-60 cursor-not-allowed' : ''}
+                  >
+                    {CURRENCIES.map((c) => (
+                      <option key={c} value={c}>{c} ({CURRENCY_SYMBOLS[c]})</option>
+                    ))}
+                  </SelectInput>
+                </Field>
+
+                <Field label={`Rate per Mile (Solo) (${currencySymbol})`} hint="Applied when an order has a single driver.">
                   <div className='relative'>
-                    <span className='pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 z-10'>$</span>
-                    <TextInput className='ps-8' type='number' step='0.01' value={ratePerMileSolo} onChange={(e)=>setRatePerMileSolo(e.target.value)} placeholder='e.g., 0.75' />
+                    <span className='pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 z-10'>{currencySymbol}</span>
+                    <TextInput className='ps-10' type='number' step='0.01' value={ratePerMileSolo} onChange={(e)=>setRatePerMileSolo(e.target.value)} placeholder='e.g., 0.75' />
                   </div>
                 </Field>
 
-                <Field label="Rate per Mile (Team) ($)" hint="Applied when an order has multiple drivers.">
+                <Field label={`Rate per Mile (Team) (${currencySymbol})`} hint="Applied when an order has multiple drivers.">
                   <div className='relative'>
-                    <span className='pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 z-10'>$</span>
-                    <TextInput className='ps-8' type='number' step='0.01' value={ratePerMileTeam} onChange={(e)=>setRatePerMileTeam(e.target.value)} placeholder='e.g., 0.85' />
+                    <span className='pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 z-10'>{currencySymbol}</span>
+                    <TextInput className='ps-10' type='number' step='0.01' value={ratePerMileTeam} onChange={(e)=>setRatePerMileTeam(e.target.value)} placeholder='e.g., 0.85' />
                   </div>
                 </Field>
 
-                <Field label="City Hours Rate ($/hour)" hint="Used when adding city hours in payslip generation.">
+                <Field label={`City Hours Rate (${currencySymbol}/hour)`} hint="Used when adding city hours in payslip generation.">
                   <div className='relative'>
-                    <span className='pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 z-10'>$</span>
-                    <TextInput className='ps-8' type='number' step='0.01' value={cityHoursRate} onChange={(e)=>setCityHoursRate(e.target.value)} placeholder='e.g., 25.00' />
+                    <span className='pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 z-10'>{currencySymbol}</span>
+                    <TextInput className='ps-10' type='number' step='0.01' value={cityHoursRate} onChange={(e)=>setCityHoursRate(e.target.value)} placeholder='e.g., 25.00' />
                   </div>
                 </Field>
 

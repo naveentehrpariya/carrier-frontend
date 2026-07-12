@@ -135,11 +135,13 @@ export default function EmployeeCard({
           )}
           {employee?.permissions?.includes('driver') && employee?.driverProfile && (
             <div className="space-y-1">
+              {/* Rates are stored in the currency the driver was hired at, not USD. Legacy profiles
+                  predate the field and were always USD. */}
               {typeof employee.driverProfile.ratePerMileSolo !== 'undefined' && (
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400 uppercase tracking-wide">Solo Rate/Mile</span>
                   <span className="text-sm text-rose-400 font-medium">
-                    <Currency amount={Number(employee.driverProfile.ratePerMileSolo || employee.driverProfile.ratePerMile || 0)} currency="USD" />
+                    <Currency amount={Number(employee.driverProfile.ratePerMileSolo || employee.driverProfile.ratePerMile || 0)} currency={employee.driverProfile.rateCurrency || 'USD'} />
                   </span>
                 </div>
               )}
@@ -147,7 +149,7 @@ export default function EmployeeCard({
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400 uppercase tracking-wide">Team Rate/Mile</span>
                   <span className="text-sm text-rose-400 font-medium">
-                    <Currency amount={Number(employee.driverProfile.ratePerMileTeam || employee.driverProfile.ratePerMile || 0)} currency="USD" />
+                    <Currency amount={Number(employee.driverProfile.ratePerMileTeam || employee.driverProfile.ratePerMile || 0)} currency={employee.driverProfile.rateCurrency || 'USD'} />
                   </span>
                 </div>
               )}
@@ -155,7 +157,7 @@ export default function EmployeeCard({
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-gray-400 uppercase tracking-wide">City Rate/Hr</span>
                   <span className="text-sm text-rose-400 font-medium">
-                    <Currency amount={Number(employee.driverProfile.cityHoursRate || 0)} currency="USD" />
+                    <Currency amount={Number(employee.driverProfile.cityHoursRate || 0)} currency={employee.driverProfile.rateCurrency || 'USD'} />
                   </span>
                 </div>
               )}

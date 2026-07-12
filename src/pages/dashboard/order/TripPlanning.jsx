@@ -1,4 +1,4 @@
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { UserContext } from '../../../context/AuthProvider';
 import Api from '../../../api/Api';
@@ -64,6 +64,23 @@ export default function TripPlanning() {
     const [activeTripIndex, setActiveTripIndex] = useState(0);
     const [pairDistances, setPairDistances] = useState([]); // miles between consecutive stops
     const [mobileTab, setMobileTab] = useState('route');
+    const [busy, setBusy] = useState(false);      // in-flight action (save / relay / delete) — page stays visible
+    const [dirty, setDirty] = useState(false);    // unsaved segment edits
+    const initialLoadedRef = useRef(false);       // full-page loader only on first fetch
+
+    // Wrap user edits so we can flag unsaved changes
+    const editTrips = (next) => { setTrips(next); setDirty(true); };
+
+    // What's still missing on a segment before it can be saved
+    const segmentMissing = (trip, orderType) => {
+        if (orderType === 'regular') {
+            const missing = [];
+            if (!((trip.drivers && trip.drivers.length > 0) || trip.driver)) missing.push('Driver');
+            if (!trip.truck) missing.push('Truck');
+            return missing;
+        }
+        return trip.carrier ? [] : ['Carrier'];
+    };
 
     const computePairDistances = useCallback(async (locs) => {
         try {
@@ -130,7 +147,7 @@ export default function TripPlanning() {
     }, [pairDistances]);
 
     const fetchData = useCallback(async () => {
-        setLoading(true);
+        if (!initialLoadedRef.current) setLoading(true);
         try {
             const [orderRes, driversRes, trucksRes, trailersRes, tripsRes, carriersRes] = await Promise.all([
                 Api.get(`/order/detail/${id}`),
@@ -154,9 +171,12 @@ export default function TripPlanning() {
             }
 
             if (driversRes.data.status) {
-                const driverOptions = driversRes.data.lists.map(d => ({ 
-                    value: d._id, 
+                const driverOptions = driversRes.data.lists.map(d => ({
+                    value: d._id,
                     label: `${d.name} (${d.corporateID || 'No ID'})`,
+                    // The rates below are in this currency, not USD. A trip blends its drivers'
+                    // rates into one rate_per_mile, so they must all share it (guarded on save).
+                    rateCurrency: String(d.driverProfile?.rateCurrency || 'USD').toUpperCase(),
                     ratePerMile: d.driverProfile?.ratePerMile || 0,
                     ratePerMileSolo: d.driverProfile?.ratePerMileSolo || 0,
                     ratePerMileTeam: d.driverProfile?.ratePerMileTeam || 0
@@ -166,9 +186,14 @@ export default function TripPlanning() {
             if (trucksRes.data.status) {
                 const truckOptions = (trucksRes.data.lists || []).map(t => {
                     const tName = getTruckLabel(t, 'Unnamed Truck');
-                    return { 
-                        value: t._id, 
-                        label: `${tName} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate'
+                    const ownerName = t.ownerOperator?.fullName || '';
+                    const baseLabel = `${tName} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate';
+                    return {
+                        value: t._id,
+                        label: t.ownerOperated && ownerName ? `${baseLabel} · Owner: ${ownerName}` : baseLabel,
+                        ownerOperated: !!t.ownerOperated,
+                        ownerOperator: t.ownerOperator?._id || t.ownerOperator || null,
+                        ownerName
                     };
                 });
                 setTrucks(truckOptions);
@@ -229,16 +254,26 @@ export default function TripPlanning() {
             } else {
                 setPairDistances([]);
             }
+            setDirty(false); // fresh data from server — nothing unsaved
         } catch (err) {
             Errors(err);
         } finally {
             setLoading(false);
+            initialLoadedRef.current = true;
         }
     }, [Errors, computePairDistances, id]);
 
     useEffect(() => {
         fetchData();
     }, [fetchData]);
+
+    // Warn before closing / reloading the tab with unsaved segment edits
+    useEffect(() => {
+        if (!dirty) return;
+        const onBeforeUnload = (e) => { e.preventDefault(); e.returnValue = ''; };
+        window.addEventListener('beforeunload', onBeforeUnload);
+        return () => window.removeEventListener('beforeunload', onBeforeUnload);
+    }, [dirty]);
 
     const removeTrip = async (index) => {
         try {
@@ -254,11 +289,12 @@ export default function TripPlanning() {
                 }
                 newTrips.splice(index, 1);
                 const renumbered = newTrips.map((t, i) => ({ ...t, trip_no: i + 1 }));
-                setTrips(renumbered);
+                editTrips(renumbered);
                 setActiveTripIndex(Math.max(0, index - 1));
                 return toast.success('Trip segments merged (unsaved)');
             }
-            setLoading(true);
+            if (!window.confirm(`Delete Trip #${index + 1}? Its stops will merge into the neighbouring segment.`)) return;
+            setBusy(true);
             const resp = await Api.delete(`/trip/${trips[index]._id}`);
             if (resp.data.status) {
                 toast.success('Trip deleted and route updated');
@@ -269,12 +305,12 @@ export default function TripPlanning() {
         } catch (e) {
             Errors(e);
         } finally {
-            setLoading(false);
+            setBusy(false);
         }
     };
 
     const saveSplit = async () => {
-        setLoading(true);
+        setBusy(true);
         try {
             // Validate required assignments per segment before saving
             if (order.order_type === 'regular') {
@@ -282,30 +318,43 @@ export default function TripPlanning() {
                     const firstMissingDriver = trips.findIndex(t => !t.driver);
                     if (firstMissingDriver !== -1) {
                         setActiveTripIndex(firstMissingDriver);
-                        setLoading(false);
+                        setMobileTab('trips');
+                        setBusy(false);
                         return toast.error(`Trip #${firstMissingDriver + 1}: please select a Driver`);
                     }
                     const firstMissingTruck = trips.findIndex(t => !t.truck);
                     if (firstMissingTruck !== -1) {
                         setActiveTripIndex(firstMissingTruck);
-                        setLoading(false);
+                        setMobileTab('trips');
+                        setBusy(false);
                         return toast.error(`Trip #${firstMissingTruck + 1}: please select a Truck`);
                     }
-                    const firstMissingTrailer = trips.findIndex(t => !t.trailer);
-                    if (firstMissingTrailer !== -1) {
-                        setActiveTripIndex(firstMissingTrailer);
-                        setLoading(false);
-                        return toast.error(`Trip #${firstMissingTrailer + 1}: please select a Trailer`);
-                    }
+                    // Trailer is optional per trip
                 }
             } else {
                 const firstMissing = trips.findIndex(t => !t.carrier);
                 if (firstMissing !== -1) {
                     setActiveTripIndex(firstMissing);
-                    setLoading(false);
+                    setMobileTab('trips');
+                    setBusy(false);
                     return toast.error(`Trip #${firstMissing + 1}: please select a Carrier`);
                 }
             }
+            // A trip collapses its drivers' rates into one blended rate_per_mile, which is later read
+            // back in each driver's own pay currency — so a mixed-currency trip would silently pay
+            // one of them in the wrong currency. Catch it here so the user sees which trip is bad.
+            const mixedIdx = trips.findIndex((t) => {
+                const list = (t.drivers && t.drivers.length > 0) ? t.drivers : (t.driver ? [t.driver] : []);
+                const curs = new Set(list.map((dVal) => drivers.find(d => d.value === dVal)?.rateCurrency || 'USD'));
+                return curs.size > 1;
+            });
+            if (mixedIdx !== -1) {
+                setActiveTripIndex(mixedIdx);
+                setMobileTab('trips');
+                setBusy(false);
+                return toast.error(`Trip #${mixedIdx + 1}: all drivers on a trip must share the same pay currency.`);
+            }
+
             // Prepare segments for backend
         const segments = trips.map((t) => {
                 const startLoc = order.locations[t.start_stop_index];
@@ -344,15 +393,15 @@ export default function TripPlanning() {
 
             const resp = await Api.post('/order/split', { orderId: id, segments });
             if (resp.data.status) {
-                toast.success('Order split saved successfully');
-                fetchData();
+                toast.success('All trips saved');
+                await fetchData();
             } else {
                 toast.error(resp.data.message || 'Failed to save split');
             }
         } catch (err) {
             Errors(err);
         } finally {
-            setLoading(false);
+            setBusy(false);
         }
     };
 
@@ -391,7 +440,10 @@ export default function TripPlanning() {
                 pay: share * rate,
             };
         });
-        return { rows, total: rows.reduce((s, r) => s + r.pay, 0) };
+        // Save is blocked unless every driver on the trip shares a pay currency, so one code
+        // describes the whole breakdown. Amounts are in it — not USD.
+        const currency = drivers.find(d => d.value === driversList[0])?.rateCurrency || 'USD';
+        return { rows, currency, total: rows.reduce((s, r) => s + r.pay, 0) };
     };
 
     const [relayModal, setRelayModal] = useState(null); // stores the index after which to insert
@@ -439,12 +491,12 @@ export default function TripPlanning() {
         if (!newRelayLocation) return toast.error('Please choose a location');
         if (order.order_type === 'regular') {
             const base = trips?.[0] || {};
-            if (!base.driver || !base.truck || !base.trailer) {
-                return toast.error('Please assign Driver/Truck/Trailer to the first trip before adding another trip');
+            if (!base.driver || !base.truck) {
+                return toast.error('Please assign Driver/Truck to the first trip before adding another trip');
             }
         }
         
-        setLoading(true);
+        setBusy(true);
         try {
             const updatedOrder = { ...order };
             const newStop = {
@@ -481,11 +533,11 @@ export default function TripPlanning() {
                 setRelayModal(null);
                 setNewRelayLocation('');
                 await fetchData();
-            } 
+            }
         } catch (err) {
             Errors(err);
         } finally {
-            setLoading(false);
+            setBusy(false);
         }
     };
     
@@ -513,8 +565,21 @@ export default function TripPlanning() {
                     <p className='text-gray-400 text-[12px] mt-1.5 truncate'>{order.customer?.name} <span className='text-gray-600 mx-1'>•</span> Total distance <span className='text-gray-200'><DistanceInMiles d={order.totalDistance} /></span></p>
                 </div>
                 <div className='flex flex-wrap gap-2.5 w-full sm:w-auto'>
-                    <Link to="/orders" className='text-[12px] uppercase font-bold tracking-wider px-4 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/[0.04] transition-colors flex-1 sm:flex-none text-center'>Back</Link>
-                    <button className='text-[12px] uppercase font-bold tracking-wider px-5 py-2.5 rounded-xl bg-main text-black hover:opacity-90 transition-opacity shadow-lg shadow-[#a091ff]/20 flex-1 sm:flex-none' onClick={saveSplit}>Save All Trips</button>
+                    <Link
+                        to="/orders"
+                        onClick={(e) => {
+                            if (dirty && !window.confirm('You have unsaved trip changes. Leave without saving?')) e.preventDefault();
+                        }}
+                        className='text-[12px] uppercase font-bold tracking-wider px-4 py-2.5 rounded-xl border border-white/10 text-gray-300 hover:bg-white/[0.04] transition-colors flex-1 sm:flex-none text-center'
+                    >Back</Link>
+                    <button
+                        className='relative text-[12px] uppercase font-bold tracking-wider px-5 py-2.5 rounded-xl bg-main text-black hover:opacity-90 transition-opacity shadow-lg shadow-[#a091ff]/20 flex-1 sm:flex-none disabled:opacity-60 disabled:cursor-wait'
+                        onClick={saveSplit}
+                        disabled={busy}
+                    >
+                        {busy ? 'Saving…' : 'Save All Trips'}
+                        {dirty && !busy && <span className='absolute -top-1 -right-1 w-3 h-3 rounded-full bg-amber-400 border-2 border-dark1' title='Unsaved changes'></span>}
+                    </button>
                 </div>
             </div>
 
@@ -576,6 +641,24 @@ export default function TripPlanning() {
                 </div>
             </div>
 
+            {trips.length <= 1 && (
+                <div className='mb-6 bg-[#a091ff]/[0.06] border border-[#a091ff]/20 rounded-2xl px-5 py-4'>
+                    <p className='text-[11px] font-bold uppercase tracking-[0.14em] text-main mb-2.5'>How trip splitting works</p>
+                    <div className='flex flex-col sm:flex-row gap-2.5 sm:gap-6'>
+                        {[
+                            ['1', 'Add a relay point on the route where the driver, truck or carrier changes'],
+                            ['2', order.order_type === 'regular' ? 'Assign driver & truck to each trip segment' : 'Assign a carrier to each trip segment'],
+                            ['3', 'Press "Save All Trips" to apply the split'],
+                        ].map(([n, text]) => (
+                            <div key={n} className='flex items-start gap-2.5 flex-1'>
+                                <span className='w-5 h-5 rounded-full bg-[#a091ff]/15 text-main text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5 font-mona'>{n}</span>
+                                <p className='text-gray-300 text-[12px] leading-relaxed'>{text}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div className='lg:hidden mb-4'>
                 <div className='grid grid-cols-2 bg-[#0c1b26] border border-white/[0.07] rounded-xl p-1'>
                     <button
@@ -616,7 +699,17 @@ export default function TripPlanning() {
                                                 {i + 1}
                                             </div>
                                             <div className='min-w-0'>
-                                                <p className='text-white font-bold text-xs truncate'>Trip Segment #{i+1}</p>
+                                                <div className='flex items-center gap-2 min-w-0'>
+                                                    <p className='text-white font-bold text-xs truncate'>Trip Segment #{i+1}</p>
+                                                    {(() => {
+                                                        const missing = segmentMissing(trip, order.order_type);
+                                                        return missing.length === 0 ? (
+                                                            <span className='text-[8px] font-bold uppercase tracking-[0.08em] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 shrink-0'>Ready</span>
+                                                        ) : (
+                                                            <span className='text-[8px] font-bold uppercase tracking-[0.08em] px-1.5 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/25 shrink-0'>Needs {missing.join(' + ')}</span>
+                                                        );
+                                                    })()}
+                                                </div>
                                                 <p className='text-gray-500 text-[9px] uppercase tracking-wider truncate'>
                                                     {order.locations[trip.start_stop_index]?.city || order.locations[trip.start_stop_index]?.location?.split(',')[0] || 'Start'} → {order.locations[trip.end_stop_index]?.city || order.locations[trip.end_stop_index]?.location?.split(',')[0] || 'End'}
                                                 </p>
@@ -642,10 +735,11 @@ export default function TripPlanning() {
                                             </div>
                                         </div>
                                         {trips.length > 1 && (
-                                            <button 
+                                            <button
                                                 onClick={(e) => { e.stopPropagation(); removeTrip(i); }}
-                                                className='p-2 text-gray-600 hover:text-red-500 transition-colors flex-shrink-0'
-                                                title="Merge this segment"
+                                                disabled={busy}
+                                                className='p-2 text-gray-600 hover:text-red-500 transition-colors flex-shrink-0 disabled:opacity-40'
+                                                title="Remove this segment (its stops merge into the neighbouring trip)"
                                             >
                                                 <FaTrash size={12} />
                                             </button>
@@ -679,14 +773,14 @@ export default function TripPlanning() {
                                                     const values = opts ? opts.map(opt => opt.value) : [];
                                                     newTrips[activeTripIndex].drivers = values;
                                                     newTrips[activeTripIndex].driver = values.length > 0 ? values[0] : null;
-                                                    setTrips(newTrips);
+                                                    editTrips(newTrips);
                                                 }}
                                             />
                                             {(!trips[activeTripIndex]?.drivers || trips[activeTripIndex]?.drivers.length === 0) && (
                                                 <p className='text-[10px] text-rose-400 mt-1'>Driver is required for this segment</p>
                                             )}
                                         </div>
-                                        <div className='grid grid-cols-2 gap-4'>
+                                        <div className='grid grid-cols-1 gap-4'>
                                             <div className='input-item'>
                                                 <label className={fieldLabel}>Truck</label>
                                                 <Select 
@@ -696,9 +790,19 @@ export default function TripPlanning() {
                                                     placeholder="Truck"
                                                     value={trucks.find(t => t.value === trips[activeTripIndex]?.truck)}
                                                     onChange={(opt) => {
+                                                        // Settlements are order-level: block owner/company truck mixing (see splitOrder guard)
+                                                        const meta = trucks.find(t => t.value === opt.value);
+                                                        const orderOwnerId = order.ownerOperator?._id || order.ownerOperator || null;
+                                                        if (order.isOwnerOperatedTruck && orderOwnerId) {
+                                                            if (!meta?.ownerOperated || String(meta.ownerOperator) !== String(orderOwnerId)) {
+                                                                return toast.error(`This order is settled with ${order.ownerOperator?.fullName || 'an owner operator'} — pick one of their trucks.`);
+                                                            }
+                                                        } else if (meta?.ownerOperated) {
+                                                            return toast.error(`Truck belongs to owner operator ${meta.ownerName || ''} — it can't be used on this order (order is not owner-settled).`.trim());
+                                                        }
                                                         const newTrips = [...trips];
                                                         newTrips[activeTripIndex].truck = opt.value;
-                                                        setTrips(newTrips);
+                                                        editTrips(newTrips);
                                                     }}
                                                 />
                                             </div>
@@ -713,7 +817,7 @@ export default function TripPlanning() {
                                                     onChange={(opt) => {
                                                         const newTrips = [...trips];
                                                         newTrips[activeTripIndex].trailer = opt.value;
-                                                        setTrips(newTrips);
+                                                        editTrips(newTrips);
                                                     }}
                                                 />
                                             </div>
@@ -727,7 +831,7 @@ export default function TripPlanning() {
                                                     newTrips[activeTripIndex].driver = null;
                                                     newTrips[activeTripIndex].truck = null;
                                                     newTrips[activeTripIndex].trailer = null;
-                                                    setTrips(newTrips);
+                                                    editTrips(newTrips);
                                                 }}
                                             >
                                                 Clear Segment
@@ -743,7 +847,7 @@ export default function TripPlanning() {
                                                         truck: base.truck,
                                                         trailer: base.trailer
                                                     }));
-                                                    setTrips(newTrips);
+                                                    editTrips(newTrips);
                                                     toast.success('Assets applied to next segments');
                                                 }}
                                             >
@@ -763,7 +867,7 @@ export default function TripPlanning() {
                                             onChange={(opt) => {
                                                 const newTrips = [...trips];
                                                 newTrips[activeTripIndex].carrier = opt.value;
-                                                setTrips(newTrips);
+                                                editTrips(newTrips);
                                             }}
                                         />
                                         {!trips[activeTripIndex]?.carrier && (
@@ -803,17 +907,17 @@ export default function TripPlanning() {
                                             <div key={i} className='flex justify-between items-center mb-2'>
                                                 <div className='flex flex-col'>
                                                     <span className='text-xs text-gray-300 font-semibold'>{r.label}</span>
-                                                    <span className='text-[10px] text-gray-500'>{r.miles.toFixed(2)} mi @ <Currency amount={r.rate} currency='usd' />/mile <span className='text-emerald-500/70 uppercase font-semibold'>({r.rateType})</span></span>
+                                                    <span className='text-[10px] text-gray-500'>{r.miles.toFixed(2)} mi @ <Currency amount={r.rate} currency={breakdown.currency} />/mile <span className='text-emerald-500/70 uppercase font-semibold'>({r.rateType})</span></span>
                                                 </div>
-                                                <span className='text-emerald-300 font-semibold text-sm font-mona'><Currency amount={r.pay} currency='usd' /></span>
+                                                <span className='text-emerald-300 font-semibold text-sm font-mona'><Currency amount={r.pay} currency={breakdown.currency} /></span>
                                             </div>
                                         ))}
                                         <div className={`flex justify-between items-center ${multi ? 'pt-2 border-t border-emerald-500/20' : ''}`}>
                                             <span className='text-[10px] text-gray-400 uppercase font-bold tracking-[0.13em]'>{multi ? 'Total Driver Pay' : 'Driver Pay'}</span>
-                                            <span className='text-emerald-400 font-bold text-xl font-mona'><Currency amount={breakdown.total} currency='usd' /></span>
+                                            <span className='text-emerald-400 font-bold text-xl font-mona'><Currency amount={breakdown.total} currency={breakdown.currency} /></span>
                                         </div>
                                         {!multi && breakdown.rows[0] && (
-                                            <p className='text-[10px] text-gray-500 mt-1'>Based on {Number(trips[activeTripIndex].miles).toFixed(2)} miles @ <Currency amount={breakdown.rows[0].rate} currency='usd' />/mile <span className='text-emerald-500/70 uppercase font-semibold'>({breakdown.rows[0].rateType})</span></p>
+                                            <p className='text-[10px] text-gray-500 mt-1'>Based on {Number(trips[activeTripIndex].miles).toFixed(2)} miles @ <Currency amount={breakdown.rows[0].rate} currency={breakdown.currency} />/mile <span className='text-emerald-500/70 uppercase font-semibold'>({breakdown.rows[0].rateType})</span></p>
                                         )}
                                     </div>
                                     );
@@ -828,7 +932,7 @@ export default function TripPlanning() {
                                         onChange={(e) => {
                                             const newTrips = [...trips];
                                             newTrips[activeTripIndex].instructions = e.target.value;
-                                            setTrips(newTrips);
+                                            editTrips(newTrips);
                                         }}
                                     />
                                 </div>
@@ -887,8 +991,9 @@ export default function TripPlanning() {
                                                     {(loc.location_type === 'relay' || loc.type === 'relay') && (
                                                         <button
                                                             onClick={async () => {
+                                                                if (!window.confirm('Remove this relay point? Trips will be rebuilt around it.')) return;
                                                                 try {
-                                                                    setLoading(true);
+                                                                    setBusy(true);
                                                                     const updatedOrder = { ...order };
                                                                     const newLocations = [...order.locations];
                                                                     newLocations.splice(idx, 1);
@@ -910,26 +1015,17 @@ export default function TripPlanning() {
                                                                 } catch (e) {
                                                                     Errors(e);
                                                                 } finally {
-                                                                    setLoading(false);
+                                                                    setBusy(false);
                                                                 }
                                                             }}
-                                                            className='px-3 py-2 bg-white/[0.04] text-gray-300 rounded-lg text-[11px] font-semibold border border-white/10 hover:bg-white/[0.08] transition-all'
+                                                            disabled={busy}
+                                                            className='px-3 py-2 bg-white/[0.04] text-gray-300 rounded-lg text-[11px] font-semibold border border-white/10 hover:bg-white/[0.08] transition-all disabled:opacity-50'
                                                             title='Remove this relay point'
                                                         >
                                                             Remove
                                                         </button>
                                                     )}
 
-                                                    <div className='hidden sm:flex flex-col items-end gap-1.5'>
-                                                        <label className='flex items-center gap-2 cursor-pointer'>
-                                                            <span className='text-[10px] text-gray-500 font-semibold uppercase tracking-wider'>Arrived</span>
-                                                            <input type="checkbox" className='w-4 h-4 rounded border-white/15 bg-white/[0.04] accent-[#a091ff]' />
-                                                        </label>
-                                                        <label className='flex items-center gap-2 cursor-pointer'>
-                                                            <span className='text-[10px] text-gray-500 font-semibold uppercase tracking-wider'>Departed</span>
-                                                            <input type="checkbox" className='w-4 h-4 rounded border-white/15 bg-white/[0.04] accent-[#a091ff]' />
-                                                        </label>
-                                                    </div>
                                                 </div>
 
                                                 {/* Segment Indicator Bar */}
@@ -992,10 +1088,29 @@ export default function TripPlanning() {
 
                     <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
                         <button className='text-[13px] font-semibold px-4 py-3 rounded-xl border border-white/10 text-gray-300 hover:bg-white/[0.04] transition-colors' onClick={() => setRelayModal(null)}>Cancel</button>
-                        <button className='text-[13px] font-bold px-4 py-3 rounded-xl bg-main text-black hover:opacity-90 transition-opacity' onClick={addRelayPoint}>Add & Create Trips</button>
+                        <button className='text-[13px] font-bold px-4 py-3 rounded-xl bg-main text-black hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-wait' onClick={addRelayPoint} disabled={busy}>{busy ? 'Adding…' : 'Add & Create Trips'}</button>
                     </div>
                 </div>
             </Popup>
+
+            {/* Unsaved-changes bar — Save is always reachable, even deep in a long route */}
+            {dirty && (
+                <div className='fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 sm:gap-4 bg-[#10202e] border border-amber-400/25 rounded-2xl pl-4 pr-2 py-2 shadow-2xl shadow-black/50 max-w-[94vw]'>
+                    <span className='w-2 h-2 rounded-full bg-amber-400 shrink-0 animate-pulse'></span>
+                    <p className='text-[12px] text-gray-200 whitespace-nowrap'>
+                        Unsaved changes
+                        {(() => {
+                            const n = trips.filter(t => segmentMissing(t, order.order_type).length > 0).length;
+                            return n > 0 ? <span className='text-amber-300'> · {n} segment{n > 1 ? 's' : ''} incomplete</span> : null;
+                        })()}
+                    </p>
+                    <button
+                        className='text-[11px] uppercase font-bold tracking-wider px-4 py-2 rounded-xl bg-main text-black hover:opacity-90 transition-opacity disabled:opacity-60 disabled:cursor-wait whitespace-nowrap'
+                        onClick={saveSplit}
+                        disabled={busy}
+                    >{busy ? 'Saving…' : 'Save All Trips'}</button>
+                </div>
+            )}
         </AuthLayout>
     );
 }

@@ -900,11 +900,6 @@ export default function AddOrder({ isEdit = false }){
             setLoading(false);
             return false;
           }
-          if (Number(alldata.settle_amount) > Number(alldata.total_amount || 0)) {
-            toast.error('Settle amount can not be greater than order total');
-            setLoading(false);
-            return false;
-          }
         }
       }
 

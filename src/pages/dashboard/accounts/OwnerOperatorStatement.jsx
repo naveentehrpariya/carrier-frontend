@@ -551,7 +551,7 @@ export default function OwnerOperatorStatement() {
                     const isNeg = signed < 0;
                     return (
                       <tr key={String(r?._id)}>
-                        <td className="inv-mono" style={{ fontSize: '9px' }}>{fullDate(r?.createdAt)}</td>
+                        <td className="inv-mono" style={{ fontSize: '9px' }}>{fullDate(r?.date || r?.createdAt)}</td>
                         <td style={{ fontSize: '10px' }}>{label}</td>
                         <td className="num inv-mono" style={{ color: isNeg ? '#dc2626' : '#065f46', fontWeight: 700 }}>
                           {isNeg ? `-${formatCurrency(Math.abs(signed))}` : `+${formatCurrency(Math.abs(signed))}`}

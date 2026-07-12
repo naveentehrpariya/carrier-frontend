@@ -34,6 +34,7 @@ export default function OwnerOperatorSalary() {
   const [expenseType, setExpenseType] = useState('deduction');
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseNotes, setExpenseNotes] = useState('');
+  const [expenseDate, setExpenseDate] = useState('');
   const [expenseSaving, setExpenseSaving] = useState(false);
   const [editingExpenseRecord, setEditingExpenseRecord] = useState(null);
 
@@ -429,6 +430,7 @@ export default function OwnerOperatorSalary() {
     setExpenseType(type);
     setExpenseAmount('');
     setExpenseNotes('');
+    setExpenseDate(new Date().toISOString().slice(0, 10));
     setExpensePopupOpen(true);
   };
 
@@ -438,6 +440,8 @@ export default function OwnerOperatorSalary() {
     setExpenseType(record?.meta?.expenseType === 'addition' ? 'addition' : 'deduction');
     setExpenseAmount(String(Number(record?.amount || 0)));
     setExpenseNotes(String(record?.notes || ''));
+    const d = record?.date || record?.createdAt;
+    setExpenseDate(d ? new Date(d).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10));
     setExpensePopupOpen(true);
   };
 
@@ -507,12 +511,14 @@ export default function OwnerOperatorSalary() {
         ? await Api.post(`/owner-operators/salary/expense/update/${editingExpenseRecord._id}`, {
             amount,
             notes: expenseNotes,
+            date: expenseDate || undefined,
           })
         : await Api.post(`/owner-operators/salary/expense/${salaryRecord._id}`, {
             expenseType,
             amount,
             currency: popupPayoutCurrency,
             notes: expenseNotes,
+            date: expenseDate || undefined,
           });
       if (res.data?.status) {
         toast.success(editingExpenseRecord?._id ? 'Expense updated' : 'Expense added');
@@ -1071,7 +1077,7 @@ export default function OwnerOperatorSalary() {
                 )}
                 {!popupPaymentsLoading && popupDisplayRecords.map((p) => {
                   const isSyntheticRecord = String(p?._id || '').startsWith('synthetic-');
-                  const createdAtDate = p?.createdAt ? new Date(p.createdAt) : null;
+                  const createdAtDate = (p?.date || p?.createdAt) ? new Date(p.date || p.createdAt) : null;
                   const showDate = !isSyntheticRecord && createdAtDate && !Number.isNaN(createdAtDate.getTime());
                   const canEditExpense = !isSyntheticRecord && p?.type === 'ADJUSTMENT';
                   return (
@@ -1280,17 +1286,28 @@ export default function OwnerOperatorSalary() {
             {selectedOwner?.fullName || 'Owner Operator'} ({selectedOwner?.ownerOperatorId || '—'}) • {monthOptions.find((m) => m.month === popupMonth && m.year === popupYear)?.label || ''}
           </p>
           <div className="grid grid-cols-1 gap-3 mt-4">
-            <div className="input-item">
-              <label className="text-sm text-gray-400">Amount</label>
-              <input
-                className="input-sm"
-                type="number"
-                min="0"
-                step="0.01"
-                value={expenseAmount}
-                onChange={(e) => setExpenseAmount(e.target.value)}
-                placeholder="Enter amount"
-              />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="input-item">
+                <label className="text-sm text-gray-400">Amount</label>
+                <input
+                  className="input-sm"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={expenseAmount}
+                  onChange={(e) => setExpenseAmount(e.target.value)}
+                  placeholder="Enter amount"
+                />
+              </div>
+              <div className="input-item">
+                <label className="text-sm text-gray-400">Date</label>
+                <input
+                  className="input-sm"
+                  type="date"
+                  value={expenseDate}
+                  onChange={(e) => setExpenseDate(e.target.value)}
+                />
+              </div>
             </div>
             <div className="input-item">
               <label className="text-sm text-gray-400">Notes</label>
