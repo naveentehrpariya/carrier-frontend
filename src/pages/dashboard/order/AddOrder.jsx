@@ -19,7 +19,7 @@ import AddCustomer from '../customer/AddCustomer';
 import AddCarrier from '../carrier/AddCarrier';
 import QuickAddItem from '../../../components/order/QuickAddItem';
 import QuickAddAsset from '../../../components/order/QuickAddAsset';
-import { getTruckLabel } from '../../../utils/truckLabel';
+import { getTruckLabel, getTruckOwnerSuffix } from '../../../utils/truckLabel';
 import AddDriver from '../drivers/AddDriver';
 
 // const revenueItemOptions = [
@@ -552,7 +552,7 @@ export default function AddOrder({ isEdit = false }){
       const tName = ([t.make, t.model].filter(Boolean).join(' ') + ((t.truckNumber || t.unitNumber) ? ` ${t.truckNumber || t.unitNumber}` : '')).trim() || 'Unnamed Truck';
       return {
         value: String(t._id),
-        label: `${`${tName} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate'}${t.ownerOperated ? ' • Owner Operated' : ''}`,
+        label: `${`${tName} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate'}${getTruckOwnerSuffix(t)}`,
         ownerOperated: !!t.ownerOperated,
         ownerOperatorName: t?.ownerOperator?.fullName || '',
       };
@@ -718,7 +718,7 @@ export default function AddOrder({ isEdit = false }){
             nextMeta[t._id] = t;
             return {
               value: t._id,
-              label: `${`${tName} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate'}${t.ownerOperated ? ' • Owner Operated' : ''}`,
+              label: `${`${tName} ${t.plateNumber ? `(${t.plateNumber})` : ''}`.trim() || 'No Unit/Plate'}${getTruckOwnerSuffix(t)}`,
               ownerOperated: !!t.ownerOperated,
               ownerOperatorName: t?.ownerOperator?.fullName || ''
             };
@@ -783,7 +783,7 @@ export default function AddOrder({ isEdit = false }){
         const tName = getTruckLabel(doc, 'Unnamed Truck');
         const opt = {
           value: doc._id,
-          label: `${`${tName} ${doc.plateNumber ? `(${doc.plateNumber})` : ''}`.trim() || 'No Unit/Plate'}${doc.ownerOperated ? ' • Owner Operated' : ''}`,
+          label: `${`${tName} ${doc.plateNumber ? `(${doc.plateNumber})` : ''}`.trim() || 'No Unit/Plate'}${getTruckOwnerSuffix(doc)}`,
           ownerOperated: !!doc.ownerOperated,
           ownerOperatorName: doc?.ownerOperator?.fullName || '',
         };
@@ -829,8 +829,16 @@ export default function AddOrder({ isEdit = false }){
         ? (hasCompanyDriverSelected ? 'company_driver' : 'owner_driver')
         : 'company_driver';
 
+      // The order is entered in the header's display currency. Take it straight from the header at
+      // submit time — reading it off `data` lets any stale `setData({...data, ...})` spread reset it
+      // back to the mount-time default. Edit mode keeps the currency the order was saved with.
+      const orderCurrency = isEditMode
+        ? (data.revenue_currency || revCurrency || 'usd')
+        : selectedCurrencyCode;
+
       const alldata = {...data,
         order_type: orderType,
+        revenue_currency: orderCurrency,
         "revenue_items"  : revenueItems || [],
         "carrier_revenue_items"  : isOutsourcing ? (carrierRevenueItems || []) : [],
         "shipping_details" : shippingDetails || [],

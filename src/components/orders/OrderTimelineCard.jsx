@@ -23,11 +23,13 @@ import { getOrderNumber } from '../../utils/orderPrefix';
 const ORDER_TYPE_META = {
   outsourcing: { label: 'Outsourcing', badge: 'bg-indigo-500/15 text-indigo-300 border-indigo-500/30', accent: '#818cf8' },
   owner:       { label: 'Owner Operated', badge: 'bg-orange-500/15 text-orange-300 border-orange-500/30', accent: '#fb923c' },
+  mixed:       { label: 'Mixed Owner', badge: 'bg-amber-500/15 text-amber-300 border-amber-500/30', accent: '#fbbf24' },
   regular:     { label: 'Regular', badge: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30', accent: '#34d399' },
 };
 
 const getOrderTypeMeta = (order) => {
   if (order?.order_type === 'outsourcing') return ORDER_TYPE_META.outsourcing;
+  if (order?.isMixedOwner) return ORDER_TYPE_META.mixed;
   if (order?.isOwnerOperatedTruck) return ORDER_TYPE_META.owner;
   return ORDER_TYPE_META.regular;
 };

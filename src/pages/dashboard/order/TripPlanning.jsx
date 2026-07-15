@@ -71,6 +71,29 @@ export default function TripPlanning() {
     // Wrap user edits so we can flag unsaved changes
     const editTrips = (next) => { setTrips(next); setDirty(true); };
 
+    // Owner-operator settlement is per trip: the truck a leg runs decides who gets paid for it.
+    // An order split across two owners (or an owner + a company truck) is a "mixed" split — each
+    // owner is settled only for their own legs, from a miles share of the order's settle amount.
+    const truckMeta = (truckId) => trucks.find((t) => t.value === truckId) || null;
+    const orderSettleTotal = Number(order?.input_settle_amount || 0) || Number(order?.settle_amount || 0);
+    const legOwners = trips.map((t) => {
+        const meta = truckMeta(t.truck);
+        return meta?.ownerOperated && meta?.ownerOperator
+            ? { id: String(meta.ownerOperator), name: meta.ownerName || 'Owner operator' }
+            : null;
+    });
+    const ownerLegIds = [...new Set(legOwners.filter(Boolean).map((o) => o.id))];
+    const ownerLegNames = [...new Set(legOwners.filter(Boolean).map((o) => o.name))];
+    const hasCompanyLeg = legOwners.some((o) => !o);
+    const isMixedSplit = ownerLegIds.length > 1 || (ownerLegIds.length === 1 && hasCompanyLeg);
+    const typedSettleTotal = trips.reduce((acc, t) => {
+        const v = t.settle_amount;
+        if (v === null || v === undefined || v === '') return acc;
+        return acc + (Number(v) || 0);
+    }, 0);
+    const settlePot = orderSettleTotal > 0 ? orderSettleTotal : typedSettleTotal;
+    const ownerLegsUnpaid = ownerLegIds.length > 0 && settlePot <= 0;
+
     // What's still missing on a segment before it can be saved
     const segmentMissing = (trip, orderType) => {
         if (orderType === 'regular') {
@@ -355,6 +378,13 @@ export default function TripPlanning() {
                 return toast.error(`Trip #${mixedIdx + 1}: all drivers on a trip must share the same pay currency.`);
             }
 
+            // An owner-operator leg with no settle amount would pay the owner nothing for the miles
+            // they ran. Backend rejects it too — catch it here so the user knows which field to fill.
+            if (ownerLegsUnpaid) {
+                setBusy(false);
+                return toast.error('This split uses an owner operator\'s truck. Enter a leg settle amount for each owner trip (or set the order\'s settle amount).');
+            }
+
             // Prepare segments for backend
         const segments = trips.map((t) => {
                 const startLoc = order.locations[t.start_stop_index];
@@ -387,7 +417,11 @@ export default function TripPlanning() {
                     miles: milesVal,
                     totalDistance: milesVal,
                     distance_unit: 'mi',
-                    rate_per_mile: effectiveRate
+                    rate_per_mile: effectiveRate,
+                    // null = derive this leg's settlement from the order's settle amount by miles share
+                    settle_amount: (t.settle_amount === null || t.settle_amount === undefined || t.settle_amount === '')
+                        ? null
+                        : Number(t.settle_amount)
                 };
             });
 
@@ -515,7 +549,10 @@ export default function TripPlanning() {
             // Update the original structure
             updatedOrder.shipping_details[0].locations = newLocations;
 
-            const resp = await Api.put(`/order/update/${id}`, updatedOrder);
+            // Send ONLY the stops. Echoing the whole order back would replay its BASE amounts and
+            // base `revenue_currency` as if the user had just typed them in that currency — the
+            // update handler would re-stamp input_currency to USD and re-convert the money.
+            const resp = await Api.put(`/order/update/${id}`, { shipping_details: updatedOrder.shipping_details });
             if (resp.data.status) {
                 const freshOrder = resp.data.order || updatedOrder;
                 // Build segments from ALL relay points and auto-create trips server-side
@@ -676,6 +713,22 @@ export default function TripPlanning() {
                 </div>
             </div>
 
+            {(isMixedSplit || ownerLegsUnpaid) && (
+                <div className={`mb-4 rounded-xl border px-4 py-3 text-[12px] ${ownerLegsUnpaid ? 'border-rose-500/30 bg-rose-500/10 text-rose-200' : 'border-amber-500/25 bg-amber-500/[0.07] text-amber-200'}`}>
+                    {ownerLegsUnpaid ? (
+                        <>
+                            <span className='font-semibold'>Owner legs have no settle amount.</span>{' '}
+                            {ownerLegNames.join(', ')} run part of this order but nothing is set aside to pay them. Enter a leg settle amount on each owner trip.
+                        </>
+                    ) : (
+                        <>
+                            <span className='font-semibold'>Mixed split.</span>{' '}
+                            Settled per leg: {ownerLegNames.join(', ')}{hasCompanyLeg ? ' + company truck' : ''}. Each owner is paid only for their own legs — by miles share of the order&apos;s settle amount ({settlePot.toLocaleString()} {String(order?.input_currency || 'usd').toUpperCase()}), unless you type a leg amount.
+                        </>
+                    )}
+                </div>
+            )}
+
             <div className='grid grid-cols-1 lg:grid-cols-12 gap-6'>
                 <div className={`${mobileTab === 'trips' ? 'block' : 'hidden'} lg:block lg:col-span-4`}>
                     <div className='space-y-4'>
@@ -790,22 +843,40 @@ export default function TripPlanning() {
                                                     placeholder="Truck"
                                                     value={trucks.find(t => t.value === trips[activeTripIndex]?.truck)}
                                                     onChange={(opt) => {
-                                                        // Settlements are order-level: block owner/company truck mixing (see splitOrder guard)
-                                                        const meta = trucks.find(t => t.value === opt.value);
-                                                        const orderOwnerId = order.ownerOperator?._id || order.ownerOperator || null;
-                                                        if (order.isOwnerOperatedTruck && orderOwnerId) {
-                                                            if (!meta?.ownerOperated || String(meta.ownerOperator) !== String(orderOwnerId)) {
-                                                                return toast.error(`This order is settled with ${order.ownerOperator?.fullName || 'an owner operator'} — pick one of their trucks.`);
-                                                            }
-                                                        } else if (meta?.ownerOperated) {
-                                                            return toast.error(`Truck belongs to owner operator ${meta.ownerName || ''} — it can't be used on this order (order is not owner-settled).`.trim());
-                                                        }
                                                         const newTrips = [...trips];
                                                         newTrips[activeTripIndex].truck = opt.value;
                                                         editTrips(newTrips);
                                                     }}
                                                 />
+                                                {truckMeta(trips[activeTripIndex]?.truck)?.ownerOperated && (
+                                                    <p className='text-[10px] text-amber-300/90 mt-1'>
+                                                        Owner operator: {truckMeta(trips[activeTripIndex]?.truck)?.ownerName || '—'} — this leg is settled to them.
+                                                    </p>
+                                                )}
                                             </div>
+                                            {truckMeta(trips[activeTripIndex]?.truck)?.ownerOperated && (
+                                                <div className='input-item'>
+                                                    <label className={fieldLabel}>
+                                                        Leg settle amount ({String(order?.input_currency || 'usd').toUpperCase()})
+                                                    </label>
+                                                    <input
+                                                        type='number'
+                                                        min='0'
+                                                        step='0.01'
+                                                        className='input-sm'
+                                                        placeholder={`Auto (miles share of ${orderSettleTotal || 0})`}
+                                                        value={trips[activeTripIndex]?.settle_amount ?? ''}
+                                                        onChange={(e) => {
+                                                            const newTrips = [...trips];
+                                                            newTrips[activeTripIndex].settle_amount = e.target.value === '' ? null : e.target.value;
+                                                            editTrips(newTrips);
+                                                        }}
+                                                    />
+                                                    <p className='text-[10px] text-gray-400 mt-1'>
+                                                        Leave blank to split the order&apos;s settle amount across legs by miles.
+                                                    </p>
+                                                </div>
+                                            )}
                                             <div className='input-item'>
                                                 <label className={fieldLabel}>Trailer</label>
                                                 <Select 
@@ -998,7 +1069,8 @@ export default function TripPlanning() {
                                                                     const newLocations = [...order.locations];
                                                                     newLocations.splice(idx, 1);
                                                                     updatedOrder.shipping_details[0].locations = newLocations;
-                                                                    const resp = await Api.put(`/order/update/${id}`, updatedOrder);
+                                                                    // Stops only — see the relay-add call: echoing the full order re-stamps its currency.
+                                                                    const resp = await Api.put(`/order/update/${id}`, { shipping_details: updatedOrder.shipping_details });
                                                                     if (resp.data.status) {
                                                                         // Rebuild segments after removal
                                                                         const segments = buildSegmentsFromLocations(resp.data.order || updatedOrder);
